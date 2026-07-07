@@ -655,7 +655,7 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
 
 <header id="hdr">
   <span class="mark">◆</span>
-  <h1>WAR&nbsp;<small>v64 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
+  <h1>WAR&nbsp;<small>v65 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
   <div id="ticker">
     <div class="tk bl">▣ BLUE <b id="tk-bl">0</b></div>
     <div class="tk rd">▣ RED <b id="tk-rd">0</b></div>
@@ -763,6 +763,9 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
       <button class="spb" data-spd="1">1×</button>
       <button class="spb on" data-spd="2">2×</button>
       <button class="spb" data-spd="8">8×</button>
+    </div>
+    <div class="btnrow" style="margin-top:5px">
+      <button class="btn sm" id="voiceBtn" title="Commanders call out orders, reactions and radio chatter on the ticker and feed">🎙 Voicelines: ON</button>
     </div>
   </div>
 
@@ -909,6 +912,19 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
   <div id="wiki" class="pane"></div>
   <div id="notes" class="pane">
   <div id="pnInner">
+    <div class="pn-ver">WAR v65 <span class="pn-date">Jul 2026</span></div>
+    <div class="pn-section">Asymmetric Warfare — skill, gear &amp; the small war</div>
+    <div class="pn-item new"><b>Individual skill &amp; gear, game-wide.</b> Every unit in every mode now carries two personal stats set at spawn: <b>skill</b> (marksmanship/fieldcraft, 0–1 — from national quality, subtype and the luck of who you got; feeds accuracy directly, an operator vs a conscript is worth ±10 points of hit chance) and <b>gear</b> (tier 0 improvised / 1 standard / 2 top-tier — tier 2 night vision cancels most of the darkness penalty, and infantry body armor reduces damage taken). The asymmetric scenarios push these to the extremes; ordinary battles feel them as texture.</div>
+    <div class="pn-item new"><b>✚ Downed Bird</b> — a Mogadishu-1993-pattern raid gone wrong: a handful of Tier-1 operators with <b>callsigns</b> (a named callsign going down is an event on the feed) hold a crash site at the center of a hostile city while militia waves — technicals, iron sights, endless numbers — pour in from every direction. <b>Casualty-sensitive victory</b>: lose more than half the operators and no body count redeems the mission; hold until the relief column at T+110s.</div>
+    <div class="pn-item new"><b>◙ Night Compound</b> — a Benghazi-2012-pattern annex defence, always fought at night: NVGs, plates and marksmanship on the rooftops against militia assault waves out of the dark — and mortars that take most of the night to find the range, exactly as they historically did. Verified across repeated runs to be a knife-edge hold: usually the annex holds, sometimes the waves get through early.</div>
+    <div class="pn-item new"><b>⌖ FPV Ambush</b> — the Ukraine-2022–24 / civil-war asymmetry: a conventional armored column pushes into ground held by irregulars with dug-in AT teams, jammers, and <b>FPV drone waves that keep coming</b> (fresh drones every ~20s — they're cheap). Victory by blunting the armor: kill 60% of the column's vehicles before your own force breaks.</div>
+    <div class="pn-item new"><b>Militia reinforcement waves</b> — Downed Bird and Night Compound stream fresh RED fighters in from the map edges on a cadence, so the defence never runs out of targets — or of trouble.</div>
+    <div class="pn-section">Amphibious Combat — game-wide foundation</div>
+    <div class="pn-item new"><b>Water is now a contested medium, not a wall.</b> Any ground unit in any mode can enter water: infantry swim/take assault craft (slow), IFV/APC/recon vehicles are <b>amphib-rated</b> and swim best, tanks ford painfully, artillery barge-crawls. While in the water a unit fires at −15 accuracy and takes +35% damage — crossing under fire is possible and bloody, exactly as it should be. This is the movement/exposure foundation for the larger naval &amp; combined-arms overhaul.</div>
+    <div class="pn-item fix"><b>Latent stuck-in-water freeze fixed</b> — the old movement multipliers were a hard 0.0 on water cells, so any ground unit whose pathing carried it one step into water was frozen there forever (it could never move out because its speed was multiplied to zero at its current position). The new amphibious multipliers are small but non-zero, so units wade out instead of freezing.</div>
+    <div class="pn-item new"><b>≋ Beach Landing scenario</b> — a dedicated coastal map (western ocean, surf line, beach, rising ground): naval gunline offshore, amtracs swimming in, infantry wading the surf under registered artillery fire. Win by establishing a beachhead (ground force firmly ashore + the defence broken); lose the landing in the water.</div>
+    <div class="pn-section">🎙 Commander Voicelines (fun mode)</div>
+    <div class="pn-item new"><b>Commanders now talk.</b> A toggleable voiceline system (on by default — 🎙 button under the speed controls) has commanders call out on the ticker and feed at <b>real</b> moments: the opening address at engage, first contact, every plan change the cognitive AI actually makes (frontal assault, flank, artillery prep, defence, pause each have their own lines), a rally cry when their force's cohesion breaks, victory and defeat addresses — and a casualty call when a named operator goes down. Line choice is flavored by the speaking commander's personality: aggressive commanders bark ("Audacity. Always audacity."), cautious ones steady the line ("Slow is smooth, smooth is fast."). Purely cosmetic, zero simulation effect, rate-limited so it stays fun.</div>
     <div class="pn-ver">WAR v64 <span class="pn-date">Jul 2026</span></div>
     <div class="pn-section">Bug Audit &amp; Fixes</div>
     <div class="pn-item fix"><b>The war couldn't actually be paused.</b> The theatre war clock (<code>warTicker</code>) ran on its own <code>requestAnimationFrame</code> loop and never once checked a pause flag — the existing "⏸ Hold" control only ever froze a single rendered battle, not supply, reinforcement, counterattacks or the strategic instruments ticking underneath it. A real theatre-wide pause now exists: see War Options below.</div>
@@ -1781,6 +1797,10 @@ function roadMulAt(x,y){
 /* Is this position impassable due to an unbridged river? */
 function riverBlocksAt(x,y,u){
   if(u&&(u.flies||u.t==='nav'))return false; // air/naval ignore rivers
+  // v65: a unit already swimming in open water can't be "blocked by a river" —
+  // it is IN the water. (Fixes landing forces walled off by a generated river
+  // segment crossing the ocean.)
+  if(u&&typeof inWaterU==='function'&&inWaterU(u))return false;
   for(const rv of RIVERS){
     const dx=rv.x2-rv.x1, dy=rv.y2-rv.y1, len2=dx*dx+dy*dy;
     if(len2<1)continue;
@@ -1802,6 +1822,20 @@ function riverBlocksAt(x,y,u){
 function placeStructures(scenario){
   STRUCTURES=[];RIVERS=[];ROADS=[];
   const W=WORLD.w,H=WORLD.h;
+
+  if(scenario==='amphibious'){
+    // v65: coastal assault map — NO rivers (a generated river through the
+    // ocean walled off the swim lanes via riverBlocksAt), no cities in the
+    // sea. Defensive works on the ridge behind the beach, one road inland.
+    STRUCTURES.push({type:'bunker',x:W*0.50,y:H*0.30,w:10,h:8,rot:Math.PI,label:'Beach Bunker N',side:'RED',hp:200,maxHp:200});
+    STRUCTURES.push({type:'bunker',x:W*0.50,y:H*0.70,w:10,h:8,rot:Math.PI,label:'Beach Bunker S',side:'RED',hp:200,maxHp:200});
+    STRUCTURES.push({type:'tower',x:W*0.55,y:H*0.50,w:5,h:5,rot:0,label:'Observation Post',hp:60,maxHp:60});
+    STRUCTURES.push({type:'ruin',x:W*0.44,y:H*0.42,w:8,h:6,rot:0.4,label:'Seawall Ruin',hp:100,maxHp:100});
+    STRUCTURES.push({type:'ruin',x:W*0.45,y:H*0.62,w:8,h:6,rot:2.2,label:'Seawall Ruin',hp:100,maxHp:100});
+    STRUCTURES.push({type:'airbase',x:W*0.88,y:H*0.5,w:22,h:10,rot:0,label:'RED Airbase',side:'RED',hp:250,maxHp:250,isAirbase:true,launchRadius:12,repairRate:5});
+    ROADS.push({x1:W*0.42,y1:H*0.5,x2:W*0.88,y2:H*0.5,built:true,side:null,label:'Coast Road'});
+    return;
+  }
 
   if(scenario==='baseDefence'){
     STRUCTURES.push({type:'base',x:W*0.50,y:H*0.50,w:24,h:20,rot:0,label:'FORT BRAVO',side:'BLUE',hp:500,maxHp:500,isBase:true});
@@ -5649,12 +5683,30 @@ function terrainMoveMul(u){
     // Naval units move fast on water, slow on land (coastal batteries / landing)
     return T.water?T.mNav:(ttype==='coast'?T.mNav*0.6:0.25);
   }
+  // ── v65 AMPHIBIOUS: water is no longer a hard wall for ground forces ──
+  // Infantry swim / take assault craft; amphib-designed vehicles (IFV/APC/
+  // recon) swim; everything else fords painfully. Slow + exposed (accuracy
+  // and damage-taken penalties applied in fireAt/applyDmg), so open water is
+  // a contested medium, not free maneuver space. This also fixes a latent
+  // stuck-forever bug: the old 0.0 multipliers froze any ground unit whose
+  // pathing carried it one step into a water cell.
+  if(T.water){
+    if(u.t==='inf')return 0.24;
+    if(u.t==='veh')return u.amphib?0.30:0.10;
+    if(u.t==='sup')return 0.12;
+    if(u.t==='ew')return 0.10;
+    return 0.05; // arty / bml barge-crawl
+  }
   if(u.t==='arty'){
-    // Artillery is slow everywhere; water is impassable
-    if(T.water)return 0.05;
-    return u.t==='arty'?T.mVeh*0.55:T.mVeh;
+    return T.mVeh*0.55;
   }
   return u.t==='inf'?T.mInf:T.mVeh;
+}
+/* v65: is this ground unit currently in the water? (drives combat penalties) */
+function inWaterU(u){
+  if(!u||u.flies||u.t==='nav')return false;
+  const T=TTYPE[terrainTypeAt(u.x,u.y)];
+  return !!(T&&T.water);
 }
 
 /* ══════ STATISTICS ══════ */
@@ -5838,6 +5890,19 @@ function spawnUnit(side,t,x,y,isOperator){
   const range=d.range*(0.95+Math.random()*0.10)*m[3]*sm[3];
   const fire =d.cd*(0.92+Math.random()*0.16)/Math.max(0.5,m[4]*sm[4]);
   const quality=(maxHp/d.hp/m[0]/sm[0]+dmg/d.dmg/m[1]/sm[1]+spd/d.spd/m[2]/sm[2])/3;
+  // ── v65: INDIVIDUAL SKILL & GEAR — every crew is a person now ──
+  // skill: marksmanship/fieldcraft 0..1 (national quality + subtype + the luck
+  //   of who you got). Feeds accuracy directly; asymmetric scenarios override
+  //   it hard (a Tier-1 operator vs a teenager with a rifle is 0.9 vs 0.2).
+  // gear: equipment tier 0=improvised · 1=standard issue · 2=top-tier
+  //   (plates, optics, NVG). Tier 2 shrugs off the night penalty and infantry
+  //   body armor reduces damage taken. Derived from the country multipliers.
+  const _mAvg=(m[0]+m[1]+m[2]+m[3]+m[4])/5;
+  const skill=clamp(0.30+(quality-0.9)*0.9+(_mAvg-1)*0.8+Math.random()*0.25,0.05,0.98);
+  const gear=_mAvg>1.06?2:_mAvg>0.94?1:0;
+  // v65: amphibious-capable platforms (swim capability — APCs/IFVs/recon are
+  // designed for it; everything else fords slowly and hates it)
+  const amphib=(sub.name==='IFV'||sub.name==='APC'||sub.name==='Recon Vehicle');
   const dmgMul=sub.dmgOver?{...d.dmgMul,...sub.dmgOver}:{...d.dmgMul};
   for(const k of TKEYS)if(dmgMul[k]===undefined)dmgMul[k]=0.5;
   const splash=sub.splash!==undefined?sub.splash:d.splash;
@@ -5859,6 +5924,7 @@ function spawnUnit(side,t,x,y,isOperator){
     dmgMul,splash,flies,slope:d.slope,cover,kamikaze,noFire,operatorOrigin,
     col:d.col,face:side==='BLUE'?0:Math.PI,muzzle:0,kills:0,
     quality,vet:quality>1.08,
+    skill,gear,amphib,callsign:null, // v65: individual skill/gear/amphib
     jamRadius:d.jamRadius||0,jamPower:d.jamPower||0,
     isOperator:isOperator||false,
     stationary:false,
@@ -6161,11 +6227,197 @@ const SCENARIOS={
     },
     victoryDesc:'UAS dominance achieved',
   },
+
+  /* ══════ v65 — ASYMMETRIC WARFARE ══════
+     Small-unit, casualty-sensitive fights where individual skill and gear
+     decide as much as mass. Modeled on Mogadishu 1993, Benghazi 2012, the
+     FPV/ATGM ambush warfare of Ukraine 2022–24 and modern civil wars.   */
+
+  /* 8 ── DOWNED BIRD (Mogadishu-style raid extraction) ── */
+  blackhawk:{
+    id:'blackhawk',name:'Downed Bird',glyph:'✚',mapType:'land',
+    desc:'<b>A raid gone wrong.</b> An elite task force holds a crash site in the middle of a hostile city while armed militia converge from every direction — thousands of rifles against a few dozen operators with the best training and gear on earth. <b>Casualty-sensitive:</b> lose more than half the operators and the mission is a political catastrophe no body count can redeem. Hold the perimeter until the relief column arrives (T+110s). Militia reinforcement waves keep coming.',
+    tags:['Asymmetric','Elite vs Mass','Urban','Casualty-Sensitive','Skill & Gear'],
+    applyFn(){
+      _navalMap=false;
+      Object.assign(FORCE.BLUE,{country:'USA',tac:'defense',formation:'box',
+        inf:14,veh:0,air:2,arty:0,nav:0,dro:2,ew:1,sup:1,bml:0});
+      Object.assign(FORCE.RED,{country:'SYR',tac:'mass',formation:'dispersed',
+        inf:42,veh:6,air:0,arty:2,nav:0,dro:0,ew:0,sup:2,bml:0});
+      FORCE.BLUE.country='USA';FORCE.RED.country='SYR';
+    },
+    postSpawnFn(){
+      const cx=WORLD.w*0.5,cy=WORLD.h*0.5;
+      for(const u of UNITS){
+        if(!u.alive)continue;
+        if(u.side==='BLUE'){
+          if(u.t==='inf'){ASYM_makeElite(u,'Spec-Ops');u.x=cx+rnd(-10,10);u.y=cy+rnd(-8,8);
+            u.cover=Math.min(0.45,(u.cover||0)+0.12);} // wreckage & rubble
+          else if(u.t==='air'){ASYM_sub(u,'air','Attack Heli');u.x=cx+rnd(-15,15);u.y=cy+rnd(-12,12);}
+          else{u.x=cx+rnd(-9,9);u.y=cy+rnd(-8,8);}
+        }else{
+          ASYM_militia(u);
+          if(u.t==='arty'){
+            // militia don't own field guns — mortars, and they take time to
+            // set up and register (an opening salvo was one-shotting the
+            // packed perimeter at T+5)
+            ASYM_sub(u,'arty','Mortar Battery');
+            u.cd=rnd(30,55);
+          }
+          const a=Math.random()*Math.PI*2,rr=Math.min(WORLD.w,WORLD.h)*0.42;
+          u.x=clamp(cx+Math.cos(a)*rr,3,WORLD.w-3);u.y=clamp(cy+Math.sin(a)*rr*0.9,5,WORLD.h-5);
+        }
+      }
+      _militiaWaveT=0;_militiaWaveN=0;
+      pushEvent('BLUE','Crash site secured — perimeter up, relief column ETA T+110s','blue');
+    },
+    winCond(bA,rA,t){
+      const S=STATS.BLUE;const lost=S.lossByType.inf||0,start=S.startCount.inf||1;
+      if(lost/start>0.5)return'RED';                          // casualty threshold — political defeat
+      if(powerAlive('BLUE')<STATS.BLUE.startPower*0.18)return'RED';
+      if(t>110)return'BLUE';                                  // relief column arrives
+      if(powerAlive('RED')<STATS.RED.startPower*0.12)return'BLUE';
+      return null;
+    },
+    victoryDesc:'Relief column reaches the crash site — everyone comes home',
+  },
+
+  /* 9 ── NIGHT COMPOUND (Benghazi-style annex defence) ── */
+  benghazi:{
+    id:'benghazi',name:'Night Compound',glyph:'◙',mapType:'land',
+    desc:'<b>Hold the annex through the night.</b> A handful of contractors on the rooftops of a walled compound — night vision, plates, and marksmanship against militia assault waves coming out of the dark, with technicals and, worst of all, mortars that eventually find the range. <b>Casualty-sensitive:</b> lose half the team and the compound falls with them. Hold until dawn (T+130s).',
+    tags:['Asymmetric','Night','Compound Defence','Casualty-Sensitive','Mortars'],
+    applyFn(){
+      _navalMap=false;
+      Object.assign(FORCE.BLUE,{country:'USA',tac:'defense',formation:'box',
+        inf:10,veh:0,air:0,arty:0,nav:0,dro:1,ew:1,sup:1,bml:0});
+      Object.assign(FORCE.RED,{country:'SYR',tac:'mass',formation:'wedge',
+        inf:28,veh:4,air:0,arty:3,nav:0,dro:0,ew:0,sup:2,bml:0});
+      FORCE.BLUE.country='USA';FORCE.RED.country='SYR';
+    },
+    postSpawnFn(){
+      // Force a clear night — this fight is ABOUT night vision superiority
+      ENV.night=true;ENV.weather='clear';ENV.visibility=WEATHER_MODS.clear;ENV.fog=0;
+      try{const el=document.getElementById('condtag');if(el)el.textContent='· 🌙 ☀ Night · clear 100%';}catch(e){}
+      const cx=WORLD.w*0.5,cy=WORLD.h*0.5;
+      for(const u of UNITS){
+        if(!u.alive)continue;
+        if(u.side==='BLUE'){
+          if(u.t==='inf')ASYM_makeElite(u,'Spec-Ops');
+          // spread across the compound so one mortar stonk can't erase the team
+          u.x=cx+rnd(-11,11);u.y=cy+rnd(-9,9);
+          u.cover=Math.min(0.55,(u.cover||0)+0.30); // rooftops & walls
+        }else{
+          ASYM_militia(u);
+          if(u.t==='arty'){
+            ASYM_sub(u,'arty','Mortar Battery');
+            // the mortars take most of the night to find the range — the
+            // historical arc: assault waves first, accurate fire near dawn
+            u.cd=rnd(55,80);
+          }
+          u.x=clamp(WORLD.w*(0.72+Math.random()*0.22),3,WORLD.w-3);
+          u.y=rnd(0.15,0.85)*WORLD.h;
+        }
+      }
+      _militiaWaveT=0;_militiaWaveN=0;
+      pushEvent('BLUE','Annex rooftops manned — NVGs on, hold until dawn','blue');
+    },
+    winCond(bA,rA,t){
+      const S=STATS.BLUE;const lost=S.lossByType.inf||0,start=S.startCount.inf||1;
+      if(lost/start>0.5)return'RED';
+      if(t>130)return'BLUE';                                  // dawn — and the guns go quiet
+      if(powerAlive('RED')<STATS.RED.startPower*0.15)return'BLUE';
+      return null;
+    },
+    victoryDesc:'Dawn breaks — the annex holds',
+  },
+
+  /* 10 ── FPV AMBUSH (Ukraine-style drone/ATGM asymmetry & civil wars) ── */
+  insurgency:{
+    id:'insurgency',name:'FPV Ambush',glyph:'⌖',mapType:'land',
+    desc:'<b>The column meets the drones.</b> A conventional armored column pushes down the MSR into ground held by irregulars — AT teams dug into the treelines, cheap FPV drones coming in waves, jammers fighting for the spectrum. The weak side\'s math: a $500 drone versus a $5M tank. Blunt the armor before it grinds through — the pattern of Ukraine 2022–24 and of every civil war where the outgunned side got clever.',
+    tags:['Asymmetric','FPV Drones','ATGM Ambush','Civil War','EW'],
+    applyFn(){
+      _navalMap=false;
+      Object.assign(FORCE.BLUE,{country:'POL',tac:'asymmetric',formation:'dispersed',
+        inf:18,veh:0,air:0,arty:2,nav:0,dro:16,ew:2,sup:2,bml:0});
+      Object.assign(FORCE.RED,{country:'RUS',tac:'blitzkrieg',formation:'column',
+        inf:12,veh:16,air:3,arty:4,nav:0,dro:2,ew:2,sup:4,bml:0});
+      FORCE.BLUE.country='POL';FORCE.RED.country='RUS';
+    },
+    postSpawnFn(){
+      for(const u of UNITS){
+        if(!u.alive)continue;
+        if(u.side==='BLUE'){
+          // irregulars: motivated and dispersed, AT-heavy, mid gear
+          if(u.t==='inf'&&Math.random()<0.5)ASYM_sub(u,'inf','AT Trooper');
+          u.skill=clamp(0.45+Math.random()*0.3,0,0.98);u.gear=1;
+        }else{
+          // conscript column: standard gear, low individual skill
+          u.skill=clamp(0.25+Math.random()*0.25,0,0.98);
+        }
+      }
+      _militiaWaveT=0;_militiaWaveN=0;
+      pushEvent('BLUE','Ambush set — AT teams in the treelines, FPV crews standing by','blue');
+    },
+    winCond(bA,rA,t){
+      const R=STATS.RED;const vLost=R.lossByType.veh||0,vStart=R.startCount.veh||1;
+      if(vLost/vStart>=0.6)return'BLUE';                      // the column is blunted
+      if(powerAlive('BLUE')<STATS.BLUE.startPower*0.25)return'RED';
+      if(t>150)return(vLost/vStart>=0.4)?'BLUE':'RED';
+      return null;
+    },
+    victoryDesc:'The column is blunted — burning armor litters the MSR',
+  },
+
+  /* 11 ── BEACH LANDING (v65 amphibious foundation) ── */
+  amphibious:{
+    id:'amphibious',name:'Beach Landing',glyph:'≋',mapType:'coast',
+    desc:'<b>Amphibious assault.</b> The task force comes out of the western ocean: a naval gunline offshore, amtracs swimming ashore, infantry wading through the surf under fire. The defender is dug in behind the beach with artillery registered on the waterline. Get force ashore and break the defence — or die in the water. <i>Foundation of the combined-arms naval overhaul: every ground unit in every mode can now enter water (slow, exposed, and taking extra damage), with IFV/APC/recon swimming best.</i>',
+    tags:['Amphibious','Naval Gunfire','Beachhead','Combined Arms'],
+    applyFn(){
+      _navalMap=false;_coastMap=true;
+      Object.assign(FORCE.BLUE,{country:'USA',tac:'combined',formation:'line',
+        inf:16,veh:8,air:4,arty:0,nav:6,dro:2,ew:1,sup:2,bml:0});
+      Object.assign(FORCE.RED,{country:'RUS',tac:'defense',formation:'refused_flank',
+        inf:20,veh:7,air:3,arty:6,nav:0,dro:4,ew:2,sup:2,bml:0});
+      FORCE.BLUE.country='USA';FORCE.RED.country='RUS';
+    },
+    postSpawnFn(){
+      const W=WORLD.w,H=WORLD.h;
+      for(const u of UNITS){
+        if(!u.alive)continue;
+        if(u.side==='BLUE'){
+          if(u.t==='nav'){u.x=W*rnd(0.04,0.10);u.y=rnd(0.15,0.85)*H;}                 // gunline offshore
+          else if(u.t==='veh'){ASYM_sub(u,'veh',Math.random()<0.6?'APC':'IFV');u.amphib=true;
+            u.x=W*rnd(0.12,0.20);u.y=rnd(0.2,0.8)*H;}                                  // amtracs swimming in
+          else if(u.t==='inf'){u.x=W*rnd(0.14,0.22);u.y=rnd(0.2,0.8)*H;}               // first wave in the surf
+          else if(!u.flies){u.x=W*rnd(0.05,0.13);u.y=rnd(0.2,0.8)*H;}                  // support afloat
+        }else{
+          if(!u.flies&&u.t!=='nav')u.x=Math.max(u.x,W*0.46);                           // dug in behind the beach
+        }
+      }
+      pushEvent('BLUE','First wave in the water — naval gunfire commencing','blue');
+    },
+    winCond(bA,rA,t){
+      // Beachhead: BLUE ground force firmly ashore, east of the surf line
+      const ashore=UNITS.filter(u=>u.alive&&u.side==='BLUE'&&!u.flies&&u.t!=='nav'&&u.x>WORLD.w*0.42).length;
+      const bp=powerAlive('BLUE'),bp0=STATS.BLUE.startPower;
+      const rp=powerAlive('RED'),rp0=STATS.RED.startPower;
+      if(bp<bp0*0.25)return'RED';                             // the landing died in the water
+      if(ashore>=10&&rp<rp0*0.45)return'BLUE';                // beachhead established, defence broken
+      if(t>150)return ashore>=8?'BLUE':'RED';
+      return null;
+    },
+    victoryDesc:'Beachhead established — follow-on forces landing',
+  },
 };
 
 /* Naval map flag — flat ocean terrain */
 let _navalMap=false;
+let _coastMap=false;  // v65: amphibious coastline map
 let _droneWaveTimer=0,_droneWaveN=0;  // for drone swarm scenario
+let _militiaWaveT=0,_militiaWaveN=0;  // v65: militia / FPV reinforcement waves
 
 /* Build the naval (flat ocean) terrain */
 function buildNavalTerrain(){
@@ -6194,10 +6446,43 @@ function buildNavalTerrain(){
   const sv=document.getElementById('seedval');if(sv)sv.textContent='NAVAL';
 }
 
-/* Patch buildTerrain to respect naval flag */
+/* v65: coastal terrain — western ocean, surf line, beach, rising ground.
+   Built for the Beach Landing scenario; the amphibious movement rules it
+   exercises are global (any water cell in any mode behaves the same). */
+function buildCoastTerrain(){
+  HEIGHT=[];CELLN=[];TMAP=[];
+  const surfGX=GX*0.36; // the waterline
+  for(let i=0;i<=GX;i++){HEIGHT[i]=[];
+    for(let j=0;j<=GZ;j++){
+      const t=Math.max(0,(i-surfGX)/(GX*0.64)); // 0 at sea, 1 at far inland edge
+      let h=0.2;
+      if(i>=surfGX-2){
+        h=0.2+t*9+Math.max(0,snoise(i*0.25,j*0.25,(SEED||13)))*2.4*t;
+      }
+      HEIGHT[i][j]=h;
+    }
+  }
+  const dxC=WORLD.w/GX,dzC=WORLD.h/GZ;
+  for(let i=0;i<GX;i++){CELLN[i]=[];TMAP[i]=[];
+    for(let j=0;j<GZ;j++){
+      const hL=HEIGHT[i][j],hR=HEIGHT[i+1][j],hD=HEIGHT[i][j+1];
+      let nxC=-(hR-hL)/dxC,nyC=1,nzC=-(hD-hL)/dzC;
+      const lC=Math.hypot(nxC,nyC,nzC);CELLN[i][j]={x:nxC/lC,y:nyC/lC,z:nzC/lC};
+      const hA=(hL+hR+HEIGHT[i+1][j+1]+hD)*0.25;
+      TMAP[i][j]= i<surfGX-1?'water'
+                : i<surfGX+2?'coast'
+                : hA>6.5?'mountain'
+                : (snoise(i*0.3,j*0.3,5)>0.28?'forest':'plains');
+    }
+  }
+  const sv=document.getElementById('seedval');if(sv)sv.textContent='COAST';
+}
+
+/* Patch buildTerrain to respect naval/coast flags */
 const _origBuildTerrain=buildTerrain;
 function buildTerrainForMode(seed){
   if(_navalMap) buildNavalTerrain();
+  else if(_coastMap) buildCoastTerrain();
   else _origBuildTerrain(seed);
 }
 
@@ -6216,6 +6501,34 @@ function stepScenario(){
         spawnUnit('RED','dro',x,y);
       }
       pushEvent('RED',`Wave ${_droneWaveN}: ${waveSize} drones launched`,'red');
+    }
+  }
+
+  /* v65: militia reinforcement waves — the mob keeps coming (Downed Bird / Night Compound) */
+  if(ACTIVE_SCENARIO.id==='blackhawk'||ACTIVE_SCENARIO.id==='benghazi'){
+    _militiaWaveT+=DT;
+    const waveCap=ACTIVE_SCENARIO.id==='blackhawk'?4:3;
+    if(_militiaWaveT>26&&_militiaWaveN<waveCap){
+      _militiaWaveT=0;_militiaWaveN++;
+      const n=5+_militiaWaveN*2;
+      for(let i=0;i<n;i++){
+        const fromEast=Math.random()<0.6;
+        const x=fromEast?WORLD.w*rnd(0.88,0.97):WORLD.w*rnd(0.03,0.97);
+        const y=fromEast?rnd(0.1,0.9)*WORLD.h:(Math.random()<0.5?WORLD.h*0.06:WORLD.h*0.94);
+        spawnUnit('RED','inf',x,y);
+        ASYM_militia(UNITS[UNITS.length-1]);
+      }
+      pushEvent('RED',`Militia wave ${_militiaWaveN}: ${n} more fighters pour in from the city`,'red');
+    }
+  }
+  /* v65: FPV resupply waves for the insurgency — drones are cheap and keep coming */
+  if(ACTIVE_SCENARIO.id==='insurgency'){
+    _militiaWaveT+=DT;
+    if(_militiaWaveT>20&&_militiaWaveN<4){
+      _militiaWaveT=0;_militiaWaveN++;
+      const n=3+_militiaWaveN;
+      for(let i=0;i<n;i++)spawnUnit('BLUE','dro',WORLD.w*rnd(0.05,0.15),rnd(0.15,0.85)*WORLD.h);
+      pushEvent('BLUE',`FPV wave ${_militiaWaveN}: ${n} fresh drones up`,'blue');
     }
   }
 
@@ -6271,6 +6584,7 @@ function renderScenarioUI(){
 window.selectScenario=uiAction(function(key){
   if(SIM.running&&!SIM.over){log('Cannot change scenario mid-battle','#ffcc44');return;}
   ACTIVE_SCENARIO=key==='free'?null:SCENARIOS[key];
+  _coastMap=false; // v65: only the amphibious scenario's applyFn re-arms this
   if(ACTIVE_SCENARIO) ACTIVE_SCENARIO.applyFn();
   else _navalMap=false;
   syncOOB();
@@ -6568,6 +6882,10 @@ function fireAt(u,o){
   if(ENV.night)acc-=(u.sub==='Spec-Ops'||u.sub==='MBT'||u.sub==='Attack Heli')?0.03:0.10; // NV-equipped less affected
   // ── Commander experience: competence gives a small accuracy edge (±0.06) ──
   if(typeof cmdr==='function'){const _ce=cmdr(u.side).experience; acc+=(_ce-0.55)*0.13;}
+  // ── v65: individual skill & gear ──
+  if(u.skill!==undefined)acc+=(u.skill-0.5)*0.22;          // marksmanship — an operator vs a conscript is ±0.1
+  if(ENV.night&&(u.gear||0)>=2)acc+=0.08;                   // NVG/optics cancel most of the dark
+  if(inWaterU(u))acc-=0.15;                                 // firing while wading/swimming ashore
   // ── v49 COMBINED-ARMS / SPACE modifiers ──
   if(u._caObserved)acc+=0.10;                       // observed indirect fire (FO in the loop)
   if(u._caJTAC)acc+=0.08;                           // JTAC-designated air attack
@@ -7061,6 +7379,9 @@ function applyDmg(src,tgt,amt){
     // every tick, regardless of whether it should push through).
   }
   if(amt<=0)return; // ricochet with no damage still suppressed above
+  // ── v65: gear tier & amphibious exposure ──
+  if(tgt.t==='inf'&&(tgt.gear||0)>0)amt=Math.round(amt*(1-0.09*tgt.gear)); // plates & helmets
+  if(inWaterU(tgt))amt=Math.round(amt*1.35);                                // caught in the water — no cover, slow
   // v42: assaulting units accept higher casualties (exposure while pushing through)
   if(tgt.assaulting)amt=Math.round(amt*MORALE.assaultDmgTaken);
   tgt.hp-=amt;STATS[src.side].dmgDealt+=amt;
@@ -20864,6 +21185,221 @@ try{updateWarBtn();}catch(e){}
 })();
 /* ═══════════════════ END WAR LAYER ═══════════════════ */
 
+/* ══════════════════════════════════════════════════════════════════════
+   v65 — ASYMMETRIC WARFARE HELPERS
+   ─────────────────────────────────────────────────────────────────────
+   Individual skill & gear are now first-class unit stats (set at spawn for
+   every battle in every mode). These helpers let the asymmetric scenarios
+   push them to the extremes: Tier-1 operators with callsigns on one side,
+   massed militia with iron sights and technicals on the other.
+   ══════════════════════════════════════════════════════════════════════ */
+(function(){
+  const CALLSIGNS=['Super Six-One','Super Six-Four','Chalk Two','Chalk Four',
+    'Reaper One','Viper Two','Bravo Six','Rhino One','Ghost Three','Talon Five',
+    'Juliet One','Kilo Two','Anvil Seven','Hammer Two-One','Oscar Mike','Sierra Nine'];
+  let _csIdx=0;
+  function nextCallsign(){
+    if(_csIdx===0)for(let i=CALLSIGNS.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[CALLSIGNS[i],CALLSIGNS[j]]=[CALLSIGNS[j],CALLSIGNS[i]];}
+    return CALLSIGNS[(_csIdx++)%CALLSIGNS.length];
+  }
+
+  /* Swap a unit onto a named subtype (mirrors spawnStationary's override) */
+  window.ASYM_sub=function(u,t,name){
+    try{
+      const sub=SUBTYPES[t]&&SUBTYPES[t].find(s=>s.name===name);
+      if(!sub)return;
+      u.sub=sub.name;u.subGlyph=sub.glyph;
+      u.dmgMul={...TYPES[t].dmgMul};
+      if(sub.dmgOver)Object.assign(u.dmgMul,sub.dmgOver);
+      for(const k of TKEYS)if(u.dmgMul[k]===undefined)u.dmgMul[k]=0.5;
+      if(sub.splash!==undefined)u.splash=sub.splash;
+      if(t==='veh')u.amphib=(name==='IFV'||name==='APC'||name==='Recon Vehicle');
+    }catch(e){}
+  };
+
+  /* Tier-1 operator: top skill, top gear, a callsign, and stat bumps that
+     make one operator worth several line infantry — but never invincible. */
+  window.ASYM_makeElite=function(u,subName){
+    try{
+      if(subName)ASYM_sub(u,u.t,subName);
+      u.skill=0.85+Math.random()*0.13;
+      u.gear=2;
+      u.callsign=nextCallsign();
+      u.maxHp*=1.15;u.hp=u.maxHp;
+      u.dmg*=1.15;u.range*=1.10;
+      u.vet=true;
+      if(u.morale!==undefined)u.morale=Math.min(100,u.morale+15);
+    }catch(e){}
+  };
+
+  /* Militia fighter: minimal training, improvised gear, technicals for
+     vehicles. Dangerous only in numbers — which is exactly the point. */
+  window.ASYM_militia=function(u){
+    try{
+      u.skill=0.12+Math.random()*0.20;
+      u.gear=0;
+      u.dmg*=0.85;
+      if(u.t==='veh')ASYM_sub(u,'veh','HMMWV'); // technicals
+    }catch(e){}
+  };
+
+  /* Elite losses are named and felt — a callsign going down is an event */
+  const _kU=killUnit;
+  killUnit=function(src,tgt){
+    const hadCallsign=tgt&&tgt.alive&&tgt.callsign;
+    _kU(src,tgt);
+    if(hadCallsign){
+      try{pushEvent(tgt.side,`✚ ${tgt.callsign} is down`,tgt.side.toLowerCase());}catch(e){}
+      try{if(window.VOICE&&VOICE.on)VOICE.say(tgt.side,'mandown',{callsign:tgt.callsign});}catch(e){}
+    }
+  };
+})();
+
+/* ══════════════════════════════════════════════════════════════════════
+   v65 — COMMANDER VOICELINES (fun mode, on by default, toggleable)
+   ─────────────────────────────────────────────────────────────────────
+   Commanders call out orders and reactions on the ticker + feed, keyed to
+   REAL events (battle start, first contact, plan changes from the cognitive
+   AI loop, cohesion breaks, elite casualties, victory/defeat) and flavored
+   by the speaking commander's personality: aggressive commanders bark,
+   cautious ones steady the line. Purely cosmetic — zero sim effect.
+   ══════════════════════════════════════════════════════════════════════ */
+(function(){
+  const V=window.VOICE={on:true,_t:-99,_mandownT:-99};
+
+  const POOLS={
+    engage:{
+      agg:["Attack, attack — and when in doubt, attack.",
+           "I want their reserve looking for new work by nightfall. Forward!",
+           "Audacity. Always audacity. Move out!",
+           "We are not here to hold ground. We are here to take theirs."],
+      cau:["Slow is smooth, smooth is fast. Advance by bounds.",
+           "Nobody dies for ground we can shell first. Patience.",
+           "Let them come to us — the ground does half the killing.",
+           "Check your spacing. Heroes make widows."],
+      gen:["All stations, this is actual — execute, execute, execute.",
+           "Eyes up, intervals out. Let's go to work.",
+           "Move like you have a plan. We do.",
+           "Good hunting. Bring everyone home."]},
+    contact:{
+      gen:["Contact! Weapons free — pick your targets.",
+           "There they are. Fix them and flank them.",
+           "First blood on the board. Fire discipline, people.",
+           "Enemy on the field — talk to me, corners and rooftops."]},
+    FRONTAL_ASSAULT:{
+      gen:["Straight up the middle — punch through before they set.",
+           "No fancy footwork. Mass, violence, momentum.",
+           "Hit them front-on. Speed is our armor."]},
+    FLANK_ATTACK:{
+      gen:["Swing the hook — I want their flank folded by the next report.",
+           "Hold their nose and kick them in the ribs.",
+           "They set up for a front-door fight. Use the window."]},
+    ARTILLERY_PREP:{
+      gen:["Guns first. Nobody walks in until the ground stops moving.",
+           "Fire plan Alpha — shift on my mark.",
+           "Let steel do the arguing for a while."]},
+    DEFENSE_IN_DEPTH:{
+      gen:["Dig in and make them bleed for every meter.",
+           "Bend, never break — then snap back.",
+           "Hold the line. The counterpunch comes when they're spent."]},
+    OPERATIONAL_PAUSE:{
+      gen:["Consolidate. Ammo, water, casualties — in that order.",
+           "We pause now so we can hit twice as hard in ten minutes.",
+           "Reset the line. Patience is a weapon too."]},
+    broken:{
+      gen:["Rally on me! RALLY ON ME!",
+           "Hold together, damn it — a running man dies tired!",
+           "Steady! We are NOT done here!"]},
+    mandown:{
+      gen:["{cs} is down — I want smoke and suppression, NOW!",
+           "We lost {cs}. Cover and recover — nobody gets left.",
+           "{cs} is down! Tighten the perimeter!"]},
+    victory:{
+      gen:["Field's ours. Good work — now count the cost.",
+           "Send it up the chain: objective secured.",
+           "That's how it's done. Now we hold what we took."]},
+    defeat:{
+      gen:["Break contact. We live to fight the next one.",
+           "Get my people out — everything else is replaceable.",
+           "They were better today. Tomorrow is ours."]},
+  };
+
+  function pick(arr){return arr[(Math.random()*arr.length)|0];}
+
+  V.say=function(side,event,opt){
+    if(!V.on)return;
+    const now=(typeof SIM!=='undefined'&&SIM)?SIM.t:0;
+    const forced=(event==='victory'||event==='defeat');
+    if(!forced&&now-V._t<7)return;                 // global chatter cooldown
+    if(event==='mandown'){if(now-V._mandownT<5)return;V._mandownT=now;}
+    const pool=POOLS[event];if(!pool)return;
+    const C=(typeof cmdr==='function')?cmdr(side):null;
+    let lines=pool.gen;
+    if(C&&pool.agg&&C.aggression>0.65)lines=pool.agg;
+    else if(C&&pool.cau&&C.caution>0.60)lines=pool.cau;
+    if(!lines||!lines.length)return;
+    let line=pick(lines);
+    if(opt&&opt.callsign)line=line.replace(/\{cs\}/g,opt.callsign);
+    const name=C?C.name:side+' Actual';
+    const col=side==='BLUE'?SIDECOL.BLUE:side==='RED'?SIDECOL.RED:'#ffce5a';
+    V._t=now;
+    try{tickerPush(`🎙 ${name}: “${line}”`,col);}catch(e){}
+    try{log(`🎙 ${name}: “${line}”`,col);}catch(e){}
+  };
+
+  /* ── hooks into real events ─────────────────────────────────────────── */
+  // Battle start: rollCommanders runs once per engagement, right after the
+  // commanders exist — the natural moment for the opening address.
+  const _rc=rollCommanders;
+  rollCommanders=function(){
+    _rc();
+    try{_safeTimeout(()=>{V.say('BLUE','engage');_safeTimeout(()=>V.say('RED','engage'),2600);},900);}catch(e){}
+  };
+  // First contact + cohesion breaks come through the turning-point logger
+  const _ltp=logTurningPoint;
+  logTurningPoint=function(type,text,side){
+    _ltp(type,text,side);
+    try{
+      if(type==='firstcontact'){const s=Math.random()<0.5?'BLUE':'RED';V.say(s,'contact');}
+      else if(type==='cohesion'&&side){V.say(side==='BLUE'?'RED':'BLUE','broken');}
+    }catch(e){}
+  };
+  // Plan changes from the cognitive AI loop (rate-limited, 45% of cycles)
+  const _eop=executeOperationalPlan;
+  executeOperationalPlan=function(side,plan){
+    _eop(side,plan);
+    try{if(plan&&POOLS[plan.type]&&Math.random()<0.45)V.say(side,plan.type);}catch(e){}
+  };
+  // Verdict lines — winner and loser both speak
+  const _fin=finish;
+  finish=function(result){
+    const wasOver=SIM.over;
+    _fin(result);
+    if(wasOver)return;
+    try{
+      if(result==='BLUE'||result==='RED'){
+        const loser=result==='BLUE'?'RED':'BLUE';
+        V.say(result,'victory');
+        _safeTimeout(()=>V.say(loser,'defeat'),2200);
+      }
+    }catch(e){}
+  };
+
+  /* toggle button */
+  try{
+    const vb=document.getElementById('voiceBtn');
+    if(vb){
+      vb.classList.add('on');
+      vb.addEventListener('click',()=>{
+        V.on=!V.on;
+        vb.textContent='🎙 Voicelines: '+(V.on?'ON':'OFF');
+        vb.classList.toggle('on',V.on);
+        log('Commander voicelines '+(V.on?'enabled':'muted'),'#7ec8e3');
+      });
+    }
+  }catch(e){}
+})();
+
 buildTerrain(SEED);
 placeStructures(null);
 resetStats();resize();resizePlanCanvas();
@@ -20873,6 +21409,7 @@ renderFormationUI();renderDoctrineUI();
 renderScenarioUI();
 renderAAR();renderIntel();renderTacticsTab();renderWiki();
 switchTab('aar',false);
+log('WAR v65 — ASYMMETRIC WARFARE: individual skill & gear on every unit · ✚ Downed Bird (Mogadishu raid) · ◙ Night Compound (Benghazi annex) · ⌖ FPV Ambush (Ukraine/civil-war drone asymmetry) · casualty-sensitive victories & named operator callsigns · AMPHIBIOUS combat game-wide (≋ Beach Landing) · 🎙 commander voicelines','#ffd77a');
 log('WAR v63 — ⚒ THE FOUNDRY (Inventor mode, off by default): genuine invention of new mechanics from effect primitives — blockship barriers from scuttled fleets, bespoke reactive cyber-ISR systems, novel combined-arms doctrines, kill-zones, perception warfare · problem-driven diagnosis for quality · costed, budgeted & cabinet-gated · proven blueprints inscribed in the Doctrine Book and re-forgeable across wars','#e0b0ff');
 log('WAR v62 — Keynesian war debt (borrow past the breaking point; victory redeems, defeat reckons; war bonds & debt crises) · tactical victories propagate to the strategic layer · ⚗ EXPERIMENTAL MODE: hypersonics, autonomous swarms, AI command fusion, cyber & orbital (unstable by design; base game unaffected)','#8fd6ff');
 log('WAR v61 — The Overlord Architecture: heads-of-state AI (5 archetypes, real risk/reward personalities) · cabinet & assembly with vetoes and peace mandates · branch ministers + THE INVENTOR with a permanent Doctrine Book · strategic fog, opponent memory & assumptions · emergent learning gated by adaptability · full chain of command with a central executor (👑 CABINET tab)','#ffd77a');
