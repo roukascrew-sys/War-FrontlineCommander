@@ -655,7 +655,7 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
 
 <header id="hdr">
   <span class="mark">◆</span>
-  <h1>WAR&nbsp;<small>v65 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
+  <h1>WAR&nbsp;<small>v66 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
   <div id="ticker">
     <div class="tk bl">▣ BLUE <b id="tk-bl">0</b></div>
     <div class="tk rd">▣ RED <b id="tk-rd">0</b></div>
@@ -912,6 +912,29 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
   <div id="wiki" class="pane"></div>
   <div id="notes" class="pane">
   <div id="pnInner">
+    <div class="pn-ver">WAR v66 <span class="pn-date">Jul 2026</span></div>
+    <div class="pn-section">⚓ The Naval Overhaul — the fleet joins the war</div>
+    <div class="pn-item new"><b>Real systems at real scaled ranges.</b> Classes rebuilt from published specifications (Mk 45 5"/62 gun ~24 km · Harpoon 130–310 km · SM-2/6 area SAMs 240–460 km · Tomahawk ~1,600 km · Mk 48 torpedo ~50 km · carrier air wing combat radius ~720 km). At this map's scale (land artillery = 30): warships' base range is now <b>32</b> — the gunline properly outranges tube artillery from offshore; ship-launched <b>land-attack cruise missiles reach the entire map</b>; torpedoes are short-ranged (16) but ship-killers.</div>
+    <div class="pn-item new"><b>The 3D domain — carriers above, submarines below.</b> <b>⊞ Aircraft Carrier (CVN)</b>: a 100k-ton mobile airfield assigned automatically to any 4+-hull fleet — friendly aircraft within its ~45u service radius <b>rearm and refuel alongside</b> (its own armament is point-defence only; protect it). <b>⊛ Submarine</b>: runs <b>submerged</b> — only aircraft overhead or warships close enough for a sonar solution (&lt;14u) can engage it; guns and land fires cannot touch it; launching torpedoes or cruise missiles <b>unmasks the boat for ~9s</b>. <b>▣ Assault Ship (LHD)</b>: closes with a coastline and puts marine platoons and amtracs into the water, lift by lift.</div>
+    <div class="pn-item new"><b>Naval support to the land battle.</b> Destroyers/cruisers/frigates project a <b>SAM umbrella ~30u over the littoral</b> — friendly troops under it are measurably harder for enemy aircraft to hit (the SM-2/6 pattern). DDGs, CGs and SSNs run deliberate <b>cruise-missile launch cycles</b> against high-value land targets: enemy artillery, missile launchers, EW, air defences and logistics. Naval gunfire (the range-32 main batteries) pounds the beach in direct support.</div>
+    <div class="pn-item new"><b>Naval support to the strategic war.</b> Coastal sectors within reach of reserve naval power get a <b>carrier group offshore</b> when their battle is rendered (+2 sorties and a naval gunline), and <b>SEALIFT</b>: a coastal sector supplied by a fleet in being is never fully cut off — supply throughput floors at 75% past any severed land MSR. Guided naval munitions already ride the existing GPS/PNT satellite state, tying the fleet into the space layer.</div>
+    <div class="pn-item fix"><b>Fleet composition</b> — capital ships are never random rolls (weight 0 in the subtype table); they're assigned by fleet logic at spawn, so the Naval &amp; Air scenario now reliably fields opposing carrier battle groups with escorts and a submarine each, and Beach Landing fields a proper amphibious task force (gunline + CVN + LHD).</div>
+    <div class="pn-section">⚔ Combined Arms — the branches fight as one</div>
+    <div class="pn-item new"><b>SEAD before strike packages (the air gate).</b> Built on joint SEAD doctrine (MCWP 3-22.2: suppression aircraft lead; everything behind them depends on it). When the enemy has a live, layered AD net (3+ SAM/AAA emitters, including SAM ships) and you have the means to suppress it, your <b>strike aircraft hold at the push point</b> — only SEAD jets and pure air-to-air work inside the envelope. The gate lifts when the net is worked down below 3 emitters ("corridor open — push") or when the commander's patience runs out (<b>15–45s scaled by aggression</b>: "accepts the SAM risk"). Verified: an 11-emitter net gates BLUE's strikers within 2 scan cycles, and both lift paths fire.</div>
+    <div class="pn-item new"><b>Supported advance (the ground gate).</b> Infantry and armor moving into ground where local enemy power exceeds 1.35× their own support <b>hold short and wait for air cover</b> when their side has aircraft up — advancing at a crawl until fast-movers are within ~32u or the commander's patience (18–32s by aggression) expires and they go without it. Commanders announce holds and releases on the net.</div>
+    <div class="pn-item new"><b>Conventional ≠ asymmetric (the discipline gate).</b> Both gates apply only to professional forces: a side's <b>discipline</b> is computed live from its troops' individual skill/gear plus commander experience. Below the threshold — a militia — there is no ATO and no fire-support net: <b>they swarm</b>, exactly as the v65 asymmetric scenarios intend. The two kinds of war now genuinely fight differently.</div>
+    <div class="pn-section">⛺ Battle Framing — wars are fought over someone's ground</div>
+    <div class="pn-item new"><b>The defender defends its home ground.</b> War-sector battles read territory control: past 58/42 the owning side <b>defends in prepared positions</b> — ~60% of its combat units dug in on the objectives (+cover, +morale for fighting at home), the rest in depth across its half, fires and logistics in the rear — while the attacker mounts a deliberate assault from its line of departure. Contested sectors (control ≈ 50) remain classic meeting engagements, and ordinary skirmishes are untouched.</div>
+    <div class="pn-item new"><b>Attacker intel opens the deep battle.</b> The attacker's intelligence picture (commander quality + SOF capacity) gates two openers: at <b>intel &gt; 55%</b>, SOF teams (callsigned, Tier-1) are <b>already operating in the defender's rear</b> when the battle starts; at <b>intel &gt; 40%</b> with air available, an <b>airborne drop</b> puts up to 3 sticks behind the forward line. Verified live: an 85%-intel BLUE assault opened with 2 SOF teams deep and 3 paradropped squads mid-map.</div>
+    <div class="pn-section">☄ Saturation Warfare — the thousand-missile problem</div>
+    <div class="pn-item new"><b>Raids now arrive in real numbers.</b> Modern saturation attacks are dozens-to-hundreds of airframes at once (Iran→Israel Apr 2024: ~300+ drones/missiles, ~99% stopped). The new <b>salvo system</b> resolves each raid statistically against the defender's <b>layered interception capacity</b> (interceptors, SAM batteries, AAA, MANPADS, EW soft-kill, Aegis ships), draws a representative skyful of tracks, and lands the leakers as real impacts. Big raids <b>always</b> leak a little (~1.5% floor); a saturated or attrited net leaks catastrophically. Live counters (raids / inbound / intercepted / leakers) on the Live tab.</div>
+    <div class="pn-item new"><b>Missile Defence rebuilt</b> — single off-map missiles replaced by 24–80+ missile raids on a cadence; the defender now spawns a proper layered network (5 SAM batteries + MANPADS teams). Verified: ~97% interception with a healthy net over 100–235-missile campaigns — and it degrades honestly as batteries die.</div>
+    <div class="pn-item new"><b>Drone Swarm rebuilt</b> — waves every ~16s up to 9 waves, each larger than a normal battlefield's whole force; real airframes spawn to a performance ceiling (~190 units) and <b>the rest of each launch package resolves through the salvo system</b>, so a wave reads "Wave 3: 132 airframes launched" and means it.</div>
+    <div class="pn-section">Fixes &amp; UI</div>
+    <div class="pn-item new"><b>Per-sector doctrines (both sides).</b> A new <b>Sector Doctrines</b> panel on the war setup screen: BLUE picks any doctrine (all 16, from Blitzkrieg to SEAD/DEAD Package) per sector; RED's commander auto-assigns per sector from terrain + temperament (defense in the mountains, blitzkrieg on the plain, asymmetric in the cities). Applied whenever that sector's battle is fought; side defaults restore at war's end.</div>
+    <div class="pn-item fix"><b>Voicelines you can actually see and hear.</b> They previously went only to the scrolling ticker/feed (easy to miss entirely). Now: a <b>radio overlay</b> floats over the top of the map — big type, side colour, fades after ~5s — and lines are <b>spoken aloud</b> via the browser's built-in speech synthesis (fully local, distinct voice per side: BLUE crisp, RED deep). The 🎙 button cycles <b>VOICE → TEXT → OFF</b>. New line pools for the new doctrine moments: SEAD holds, corridor-open calls, air-cover waits, cruise-missile launches, airborne drops, saturation raids.</div>
+    <div class="pn-item fix"><b>NaN veterancy (pre-existing since the stat was added)</b> — supply trucks and EW jammers have zero weapon damage, so the spawn-time quality formula divided 0/0 = NaN, silently poisoning every force's "avg veterancy" stat (and, since v65, those units' skill stat). Guarded.</div>
+    <div class="pn-item new"><b>Live tab deepened</b> — new <b>Combined-Arms Picture</b> (battle frame + attacker intel, per-side discipline %, air-gate state, units holding for air, AD launchers up), <b>Naval Picture</b> (hull count, SAM ships, CVN/LHD/SSN status incl. submerged/exposed, aircraft cycling on the carrier deck, cruise missiles fired, marine lifts ashore), and the <b>Air &amp; Missile Defence</b> raid ledger.</div>
     <div class="pn-ver">WAR v65 <span class="pn-date">Jul 2026</span></div>
     <div class="pn-section">Asymmetric Warfare — skill, gear &amp; the small war</div>
     <div class="pn-item new"><b>Individual skill &amp; gear, game-wide.</b> Every unit in every mode now carries two personal stats set at spawn: <b>skill</b> (marksmanship/fieldcraft, 0–1 — from national quality, subtype and the luck of who you got; feeds accuracy directly, an operator vs a conscript is worth ±10 points of hit chance) and <b>gear</b> (tier 0 improvised / 1 standard / 2 top-tier — tier 2 night vision cancels most of the darkness penalty, and infantry body armor reduces damage taken). The asymmetric scenarios push these to the extremes; ordinary battles feel them as texture.</div>
@@ -3046,13 +3069,32 @@ const SUBTYPES={
     {name:'ATGM Battery',  glyph:'◉', w:1, m:[0.88,1.27,2.00,0.96,0.75], dmgOver:{inf:0.5,veh:6.0,air:0.2,arty:1.5,nav:2.0}},
     {name:'AA Battery',    glyph:'⊗', w:2, m:[0.94,1.18,1.50,1.15,0.60], dmgOver:{inf:0.2,veh:0.2,air:8.0,arty:0.3,nav:2.0}},
   ],
+  /* v66 naval overhaul — classes scaled from real systems:
+     Mk 45 5" gun ~24 km · Harpoon 130-310 km · SM-2/6 240-460 km ·
+     Tomahawk ~1,600 km (whole map) · Mk 48 torpedo ~50 km (short, lethal) ·
+     carrier air wing combat radius ~720 km (mobile airfield). */
   nav:[
-    {name:'Destroyer',     glyph:'⬡', w:3, m:[1.00,1.00,1.00,1.00,1.00], splash:10.0},
-    {name:'Frigate',       glyph:'⬢', w:2, m:[0.80,0.82,1.33,0.86,0.89], splash:8.0},
-    {name:'Corvette',      glyph:'◉', w:2, m:[0.65,0.73,1.67,0.79,0.78]},
-    {name:'Gunboat',       glyph:'◊', w:3, m:[0.50,0.55,2.00,0.57,0.67]},
-    {name:'Missile Cruiser',glyph:'⊕',w:1, m:[1.31,1.36,1.00,1.14,1.00], dmgOver:{inf:1.0,veh:2.0,air:4.0,arty:2.0,nav:1.5}},
-    {name:'Submarine',     glyph:'⊛', w:1, m:[1.10,1.27,1.33,1.07,1.00], dmgOver:{inf:0.4,veh:2.0,air:0.5,arty:1.5,nav:3.0}},
+    {name:'Destroyer',     glyph:'⬡', w:3, m:[1.00,1.00,1.00,1.00,1.00], splash:10.0,
+     note:'DDG — 5" gun + VLS: NGFS, area air defence (SM-2/6), Tomahawk land-attack.'},
+    {name:'Frigate',       glyph:'⬢', w:2, m:[0.80,0.82,1.33,0.86,0.89], splash:8.0,
+     note:'FFG — escort: point/local air defence, ASW screen for the capital ships.'},
+    {name:'Corvette',      glyph:'◉', w:2, m:[0.65,0.73,1.67,0.79,0.78],
+     note:'Littoral combatant — fast, cheap, coastal patrol and ASuW missiles.'},
+    {name:'Gunboat',       glyph:'◊', w:3, m:[0.50,0.55,2.00,0.57,0.67],
+     note:'Patrol craft — riverine/littoral fire support, no blue-water endurance.'},
+    {name:'Missile Cruiser',glyph:'⊕',w:1, m:[1.31,1.36,1.00,1.14,1.00], dmgOver:{inf:1.0,veh:2.0,air:4.0,arty:2.0,nav:1.5},
+     note:'CG — the fleet air-defence commander: deepest SAM magazine + Tomahawk strike.'},
+    {name:'Submarine',     glyph:'⊛', w:1, m:[1.10,1.27,1.33,0.50,1.00], dmgOver:{inf:0.4,veh:2.0,air:0.5,arty:1.5,nav:3.0},
+     submerged:true,
+     note:'SSN — submerged and near-invisible: only aircraft or close-in ASW ships can engage it. Mk 48s are short-ranged but ship-killers; launching exposes the boat briefly. Also carries land-attack cruise missiles.'},
+    /* Capital ships — never rolled randomly (w:0); assigned by fleet logic:
+       a 4+-hull force rates a carrier, amphibious operations rate an LHD. */
+    {name:'Aircraft Carrier',glyph:'⊞',w:0, m:[3.20,0.15,0.85,0.50,0.40], dmgOver:{inf:0.2,veh:0.2,air:2.5,arty:0.2,nav:0.3,dro:2.0},
+     isCarrier:true,
+     note:'CVN — a 100,000-ton mobile airfield. Its combat power IS its air wing: friendly aircraft rearm and refuel alongside. Own armament is point defence only (CIWS/ESSM). Protect it.'},
+    {name:'Assault Ship',  glyph:'▣', w:0, m:[2.20,0.30,0.90,0.50,0.50], dmgOver:{inf:0.5,veh:0.3,air:1.5,arty:0.3,nav:0.4,dro:1.5},
+     isLHD:true,
+     note:'LHD — amphibious assault ship: closes with the coast and puts marine platoons and amtracs into the water.'},
   ],
   /* Dove bombing drones — single subtype, operator spawns as Rifleman on death */
   dro:[
@@ -3122,7 +3164,10 @@ const TYPES={
        hp:80, spd:2,  range:30,cd:2.20,dmg:28,splash:8.0,
        dmgMul:{inf:3.0,veh:1.8,air:0.1,arty:0.8,nav:1.5,dro:2.0,ew:2.0},prefers:'veh',flies:false,slope:0.80,cover:0.0},
   nav:{name:'Naval',   glyph:'⬡',col:'#7fdfdf',cost:7,
-       hp:160,spd:3,  range:28,cd:1.80,dmg:25,splash:10.0,
+       /* v66: range 28→32 — a 5"/62 Mk 45 reaches ~24 km and the SM-2/6
+          family 240-460 km; at this map's scale (land arty=30) warships
+          properly outrange tube artillery from offshore */
+       hp:160,spd:3,  range:32,cd:1.80,dmg:25,splash:10.0,
        dmgMul:{inf:2.0,veh:2.0,air:0.5,arty:1.5,nav:1.0,dro:1.5,ew:2.0},prefers:'veh',flies:false,slope:0.0, cover:0.0},
   dro:{name:'Kamikaze Drone',glyph:'⬟',col:'#ffdf7f',cost:3,
        hp:16, spd:9, range:18,cd:0.60,dmg:18,splash:6.0,
@@ -5872,6 +5917,9 @@ function buildForces(){
       spawnUnit(side,t,finalX,finalY);
     }
   }
+  // v66: assign capital ships by fleet logic (4+ hulls rate a carrier;
+  // any real fleet runs a submarine)
+  try{NAV_assignCapitals();}catch(e){}
   STATS.BLUE.peak=countSide('BLUE');STATS.RED.peak=countSide('RED');
 }
 function spawnUnit(side,t,x,y,isOperator){
@@ -5889,7 +5937,10 @@ function spawnUnit(side,t,x,y,isOperator){
     : spd;
   const range=d.range*(0.95+Math.random()*0.10)*m[3]*sm[3];
   const fire =d.cd*(0.92+Math.random()*0.16)/Math.max(0.5,m[4]*sm[4]);
-  const quality=(maxHp/d.hp/m[0]/sm[0]+dmg/d.dmg/m[1]/sm[1]+spd/d.spd/m[2]/sm[2])/3;
+  // v66 fix (pre-existing): supply trucks / EW jammers have d.dmg=0, so the
+  // damage term was 0/0=NaN — every truck's quality (and the whole side's
+  // "avg veterancy" stat it feeds) has been NaN since the stat was added.
+  const quality=(maxHp/d.hp/m[0]/sm[0]+(d.dmg>0?dmg/d.dmg/m[1]/sm[1]:1)+spd/d.spd/m[2]/sm[2])/3;
   // ── v65: INDIVIDUAL SKILL & GEAR — every crew is a person now ──
   // skill: marksmanship/fieldcraft 0..1 (national quality + subtype + the luck
   //   of who you got). Feeds accuracy directly; asymmetric scenarios override
@@ -5911,6 +5962,10 @@ function spawnUnit(side,t,x,y,isOperator){
   const kamikaze=sub.kamikaze||d.kamikaze||false;
   const noFire=sub.noFire||d.noFire||false;
   const isSupply=sub.isSupply||d.isSupply||false;
+  // v66 naval: capital-ship roles + submarine depth state
+  const isCarrier=sub.isCarrier||false;
+  const isLHD=sub.isLHD||false;
+  const submerged=sub.submerged||false;
   // EW: store operator spawn x/y for drones
   const operatorOrigin=(t==='dro')?{x,y}:null;
   // Logistics: ammo & fuel start full; supply trucks carry their own stock
@@ -5925,6 +5980,7 @@ function spawnUnit(side,t,x,y,isOperator){
     col:d.col,face:side==='BLUE'?0:Math.PI,muzzle:0,kills:0,
     quality,vet:quality>1.08,
     skill,gear,amphib,callsign:null, // v65: individual skill/gear/amphib
+    isCarrier,isLHD,submerged,_subExpose:0,_cmCd:0,_lhdTroops:isLHD?6:0, // v66 naval
     jamRadius:d.jamRadius||0,jamPower:d.jamPower||0,
     isOperator:isOperator||false,
     stationary:false,
@@ -6039,15 +6095,16 @@ const SCENARIOS={
       FORCE.BLUE.country='USA';FORCE.RED.country='IRN';
       _droneWaveTimer=0; _droneWaveN=0;
     },
-    // Special win: RED wins by destroying >70% of blue power; BLUE wins by surviving 90s
+    // Special win: RED wins by destroying >70% of blue power; BLUE wins by
+    // riding out the full launch campaign (v66: 9 waves ≈ 150s of raids)
     winCond(bA,rA,t){
       const bp=powerAlive('BLUE'),bp0=STATS.BLUE.startPower;
-      if(bp<bp0*0.30) return 'RED';         // BLUE force broken
-      if(t>90&&rA===0) return 'BLUE';       // survived wave
-      if(t>90&&bp>bp0*0.40) return 'BLUE';  // surviving with strength
+      if(bp<bp0*0.30) return 'RED';          // BLUE force broken
+      if(t>150&&rA===0) return 'BLUE';       // survived the campaign
+      if(t>150&&bp>bp0*0.40) return 'BLUE';  // surviving with strength
       return null;
     },
-    victoryDesc:'Swarm repelled — air defense holds',
+    victoryDesc:'Swarm campaign repelled — air defense holds',
   },
 
   /* 2 ── MISSILE DEFENCE ── */
@@ -6059,11 +6116,23 @@ const SCENARIOS={
       _navalMap=false;
       Object.assign(FORCE.BLUE,{
         country:'ISR',tac:'precision',formation:'box',
-        inf:4,veh:2,air:8,arty:0,nav:0,dro:3,ew:4,sup:2});
+        inf:6,veh:2,air:8,arty:5,nav:0,dro:3,ew:4,sup:2});
       Object.assign(FORCE.RED,{
         country:'PRK',tac:'mass',formation:'line',
         inf:8,veh:3,air:4,arty:10,nav:0,dro:6,ew:2,sup:2});
       FORCE.BLUE.country='ISR';FORCE.RED.country='PRK';
+    },
+    // v66: the defender is a LAYERED air-defence network — dedicated SAM
+    // batteries (Iron Dome / Patriot pattern) + MANPADS teams, or the
+    // saturation raids simply erase it (Iran→Israel Apr 2024 stopped ~99%
+    // because the network existed)
+    postSpawnFn(){
+      for(const u of UNITS){
+        if(!u.alive||u.side!=='BLUE')continue;
+        if(u.t==='arty')ASYM_sub(u,'arty','AA Battery');
+        else if(u.t==='inf'&&Math.random()<0.5)ASYM_sub(u,'inf','MANPADS');
+      }
+      pushEvent('BLUE','Layered air-defence network up — SAM batteries hot, interceptors on strip alert','blue');
     },
     winCond(bA,rA,t){
       // BLUE wins if RED arty destroyed or time limit; RED wins on blue force break
@@ -6397,6 +6466,16 @@ const SCENARIOS={
           if(!u.flies&&u.t!=='nav')u.x=Math.max(u.x,W*0.46);                           // dug in behind the beach
         }
       }
+      // v66: a real amphibious task force — one hull becomes the LHD with
+      // embarked marines (a carrier is auto-assigned by fleet logic if the
+      // gunline runs 4+ hulls)
+      try{
+        const gl=UNITS.filter(u=>u.alive&&u.side==='BLUE'&&u.t==='nav'&&!u.isCarrier&&!u.submerged);
+        if(gl.length&&!gl.some(u=>u.isLHD)){
+          NAV_convert(gl[gl.length-1],'Assault Ship');
+          pushEvent('BLUE','Assault ship in the transport area — marine lifts standing by','blue');
+        }
+      }catch(e){}
       pushEvent('BLUE','First wave in the water — naval gunfire commencing','blue');
     },
     winCond(bA,rA,t){
@@ -6491,16 +6570,23 @@ function stepScenario(){
   if(!ACTIVE_SCENARIO) return;
   if(ACTIVE_SCENARIO.id==='droneSwarm'){
     _droneWaveTimer+=DT;
-    // spawn a new wave every 20s, up to 5 waves
-    if(_droneWaveTimer>20&&_droneWaveN<5){
+    // v66: MASS — waves every ~16s, up to 9, each far larger than a normal
+    // battlefield's whole force. Real airframes spawn up to a perf ceiling;
+    // the rest of each wave resolves through the saturation-salvo system,
+    // so a "wave" is a hundred-plus airframes, not eight.
+    if(_droneWaveTimer>16&&_droneWaveN<9){
       _droneWaveTimer=0;_droneWaveN++;
-      const waveSize=4+_droneWaveN*2;
-      for(let i=0;i<waveSize;i++){
+      const waveSize=12+_droneWaveN*6;
+      const alive=UNITS.reduce((n,u)=>n+(u.alive?1:0),0);
+      const real=Math.max(0,Math.min(waveSize,190-alive));
+      for(let i=0;i<real;i++){
         const x=(0.85+Math.random()*0.10)*WORLD.w;
         const y=rnd(0.1,0.9)*WORLD.h;
         spawnUnit('RED','dro',x,y);
       }
-      pushEvent('RED',`Wave ${_droneWaveN}: ${waveSize} drones launched`,'red');
+      const virt=(waveSize-real)*3+waveSize*2; // the rest of the launch package
+      if(virt>0)try{fireSaturationSalvo('BLUE',virt,'drone');}catch(e){}
+      pushEvent('RED',`Wave ${_droneWaveN}: ${waveSize+virt} airframes launched — ${real} penetrating the engagement zone`,'red');
     }
   }
 
@@ -6532,30 +6618,18 @@ function stepScenario(){
     }
   }
 
-  /* Intermittent off-map ballistic strikes in missileDefence scenario */
+  /* v66: missileDefence — saturation raids, not single missiles. Real
+     saturation attacks arrive dozens-to-hundreds at a time (Iran→Israel
+     Apr 2024: ~300+ airframes, ~99% intercepted). Each raid resolves
+     against BLUE's layered interception net via the salvo system. */
   if(ACTIVE_SCENARIO&&ACTIVE_SCENARIO.id==='missileDefence'){
-    if(!_interStrikeTimer)_interStrikeTimer=rnd(15,30);
+    if(!_interStrikeTimer)_interStrikeTimer=rnd(10,18);
     _interStrikeTimer-=DT;
     if(_interStrikeTimer<=0){
-      _interStrikeTimer=rnd(20,45); // random re-arm
+      _interStrikeTimer=rnd(22,40);
       _interStrikeN=((_interStrikeN||0)+1);
-      // Aim at a random BLUE unit or random map point
-      const blueUnits=UNITS.filter(u=>u.alive&&u.side==='BLUE');
-      const tgtX=blueUnits.length?blueUnits[Math.floor(Math.random()*blueUnits.length)].x+rnd(-8,8):rnd(20,80);
-      const tgtY=blueUnits.length?blueUnits[Math.floor(Math.random()*blueUnits.length)].y+rnd(-8,8):rnd(20,110);
-      const tgtE=terrainH(tgtX,tgtY)+ICON_HOVER;
-      // Launch from off-map (RED side) — use a dummy source far to the right
-      const srcX=WORLD.w*0.98+20, srcY=rnd(WORLD.h*0.1,WORLD.h*0.9);
-      const srcE=5;
-      FX.tracers.push({
-        x1:srcX,y1:srcY,e1:srcE,x2:tgtX,y2:tgtY,e2:tgtE,
-        col:'#ff4466',age:0,life:8.0,hit:true,proj:'ballistic',
-        srcType:'bml',peakAlt:ALT.ORBIT*4,
-        isInterStrike:true, // flag so we apply damage on arrival
-        impactX:tgtX,impactY:tgtY,impactE:tgtE,
-        dmg:60+Math.random()*40,splash:18,
-      });
-      pushEvent('RED',`Off-map ballistic strike #${_interStrikeN} inbound!`,'red');
+      const count=24+((Math.random()*56)|0); // 24–80 per raid, rising waves
+      try{fireSaturationSalvo('BLUE',count+_interStrikeN*6,'missile');}catch(e){}
     }
   }
 }
@@ -6593,6 +6667,402 @@ window.selectScenario=uiAction(function(key){
   renderScenarioUI();
   log(`Mode: ${ACTIVE_SCENARIO?ACTIVE_SCENARIO.name:'Country vs Country'}`,'#7ec8e3');
 });
+
+/* ══════════════════════════════════════════════════════════════════════
+   v66 — NAVAL OPERATIONS · COMBINED-ARMS DOCTRINE · BATTLE FRAMING · SALVOS
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── FLEET COMPOSITION: capital ships assigned by fleet logic ─────────────
+   A force sailing 4+ hulls rates a carrier (its escorts screen it); any real
+   fleet runs a submarine. Conversion rescales stats from the subtype tables
+   so a converted hull is exactly what a spawned one would have been.      */
+function NAV_convert(u,name){
+  const pool=SUBTYPES.nav;
+  const oldS=pool.find(s=>s.name===u.sub)||pool[0];
+  const s=pool.find(x=>x.name===name);
+  if(!s)return;
+  u.maxHp*=s.m[0]/oldS.m[0];u.hp=u.maxHp;
+  u.dmg*=s.m[1]/oldS.m[1];u.spd*=s.m[2]/oldS.m[2];
+  u.range*=s.m[3]/oldS.m[3];u.fire*=oldS.m[4]/s.m[4];
+  u.sub=s.name;u.subGlyph=s.glyph;
+  u.dmgMul={...TYPES.nav.dmgMul};
+  if(s.dmgOver)Object.assign(u.dmgMul,s.dmgOver);
+  for(const k of TKEYS)if(u.dmgMul[k]===undefined)u.dmgMul[k]=0.5;
+  if(s.splash!==undefined)u.splash=s.splash;
+  u.isCarrier=!!s.isCarrier;u.isLHD=!!s.isLHD;u.submerged=!!s.submerged;
+  if(u.isLHD)u._lhdTroops=6;
+}
+function NAV_assignCapitals(){
+  for(const side of ['BLUE','RED']){
+    const fleet=UNITS.filter(u=>u.alive&&u.side===side&&u.t==='nav');
+    if(fleet.length>=4&&!fleet.some(u=>u.isCarrier)){
+      const big=fleet.slice().sort((a,b)=>b.maxHp-a.maxHp)[0];
+      NAV_convert(big,'Aircraft Carrier');
+      pushEvent(side,`${side} sails a carrier battle group — the air wing rearms at sea`,side.toLowerCase());
+    }
+    if(fleet.length>=3&&!fleet.some(u=>u.submerged)){
+      const pick=fleet.find(u=>!u.isCarrier&&!u.isLHD);
+      if(pick)NAV_convert(pick,'Submarine');
+    }
+  }
+}
+
+/* ── NAVAL OPERATIONS STEP ────────────────────────────────────────────────
+   The fleet's four jobs beyond direct gunnery, each at real scaled ranges:
+   1. SAM umbrella (SM-2/6 class, ~30u) — friendly units under it are harder
+      for enemy aircraft to hit, projecting air defence over the littoral.
+   2. Carrier aviation (~45u service radius) — friendly aircraft rearm and
+      refuel alongside: the air wing regenerates without flying home.
+   3. LHD amphibious ops — marine platoons and amtracs put into the water
+      when the ship closes with a coastline.
+   4. Land-attack cruise missiles (Tomahawk class ≈ whole map) — DDGs, CGs
+      and submarines service high-value land targets (fires, AD, C2,
+      logistics) on deliberate launch cycles.                             */
+const NAVOPS={cm:{BLUE:0,RED:0},marines:{BLUE:0,RED:0},_t:0,_msgT:{BLUE:-99,RED:-99}};
+function stepNavalOps(dt){
+  for(const u of UNITS){
+    if(!u.alive)continue;
+    if(u._subExpose>0)u._subExpose=Math.max(0,u._subExpose-dt);
+    if(u._cmCd>0)u._cmCd-=dt;
+  }
+  NAVOPS._t+=dt;if(NAVOPS._t<1.0)return;NAVOPS._t=0;
+  for(const side of ['BLUE','RED']){
+    const enemy=side==='BLUE'?'RED':'BLUE';
+    const fleet=UNITS.filter(u=>u.alive&&u.side===side&&u.t==='nav');
+    for(const u of UNITS)if(u.alive&&u.side===side)u._navAdCover=false;
+    if(!fleet.length)continue;
+    // 1) naval SAM umbrella
+    const samShips=fleet.filter(u=>!u.submerged&&(u.sub==='Destroyer'||u.sub==='Frigate'||u.sub==='Missile Cruiser'));
+    if(samShips.length){
+      for(const u of UNITS){
+        if(!u.alive||u.side!==side||u.t==='nav'||u.flies)continue;
+        for(const s of samShips){if(dist(u.x,u.y,s.x,s.y)<30){u._navAdCover=true;break;}}
+      }
+    }
+    // 2) carrier aviation
+    const carriers=fleet.filter(u=>u.isCarrier);
+    if(carriers.length){
+      for(const a of UNITS){
+        if(!a.alive||a.side!==side||a.t!=='air')continue;
+        a._carrierSup=false;
+        for(const c of carriers){
+          if(dist(a.x,a.y,c.x,c.y)<45){a.ammo=Math.min(100,a.ammo+7);a.fuel=Math.min(100,a.fuel+9);a._carrierSup=true;break;}
+        }
+      }
+    }
+    // 3) LHD amphibious operations
+    for(const lhd of fleet){
+      if(!lhd.isLHD||(lhd._lhdTroops|0)<=0)continue;
+      lhd._lhdCd=(lhd._lhdCd||0)-1;
+      if(lhd._lhdCd>0)continue;
+      let dxL=0,dyL=0,found=false;
+      for(let r=6;r<=28&&!found;r+=5)for(const a of [0,Math.PI,Math.PI/3,-Math.PI/3,Math.PI/2,-Math.PI/2]){
+        const tx=lhd.x+Math.cos(a)*r,ty=lhd.y+Math.sin(a)*r;
+        const T=TTYPE[terrainTypeAt(clamp(tx,1,WORLD.w-1),clamp(ty,1,WORLD.h-1))];
+        if(T&&!T.water){dxL=Math.cos(a);dyL=Math.sin(a);found=true;break;}
+      }
+      if(!found)continue;
+      lhd._lhdCd=8;lhd._lhdTroops--;
+      const kind=(lhd._lhdTroops%3===0)?'veh':'inf';
+      spawnUnit(side,kind,clamp(lhd.x+dxL*4,2,WORLD.w-2),clamp(lhd.y+dyL*4,4,WORLD.h-4));
+      const mu=UNITS[UNITS.length-1];
+      if(kind==='veh'){ASYM_sub(mu,'veh','APC');mu.amphib=true;}
+      else{mu.skill=clamp(mu.skill+0.15,0,0.98);mu.gear=Math.max(mu.gear||0,1);}
+      NAVOPS.marines[side]++;
+      pushEvent(side,`${side} assault ship puts ${kind==='veh'?'an amtrac':'marines'} in the water — ${lhd._lhdTroops} lifts remaining`,side.toLowerCase());
+    }
+    // 4) land-attack cruise missiles
+    const shooters=fleet.filter(u=>u.sub==='Destroyer'||u.sub==='Missile Cruiser'||u.sub==='Submarine');
+    if(shooters.length){
+      const hvt=UNITS.filter(u=>u.alive&&u.side===enemy&&!u.flies&&u.t!=='nav'&&
+        (u.t==='arty'||u.t==='bml'||u.t==='ew'||u.t==='sup'||CA_GROUND_AD.has(u.sub)));
+      for(const s of shooters){
+        if(s._cmCd>0)continue;
+        if(s._cmCd===0&&NAVOPS.cm[side]===0&&Math.random()<0.5){s._cmCd=rnd(8,20);continue;} // stagger first launches
+        if(!hvt.length)break;
+        s._cmCd=rnd(30,55);
+        const tgt=hvt[(Math.random()*hvt.length)|0];
+        if(s.submerged)s._subExpose=9;
+        const tx=clamp(tgt.x+rnd(-3,3),2,WORLD.w-2),ty=clamp(tgt.y+rnd(-3,3),4,WORLD.h-4);
+        FX.tracers.push({x1:s.x,y1:s.y,e1:1,x2:tx,y2:ty,e2:terrainH(tx,ty)+1,
+          col:'#8fe3ff',age:0,life:5.5,hit:true,proj:'missile',srcType:'nav',peakAlt:0,
+          isInterStrike:true,srcSide:side,srcSub:s.sub+' cruise missile',quiet:true,
+          impactX:tx,impactY:ty,impactE:terrainH(tx,ty)+1,dmg:rnd(45,75),splash:12});
+        NAVOPS.cm[side]++;
+        if(SIM.t-NAVOPS._msgT[side]>18){NAVOPS._msgT[side]=SIM.t;
+          pushEvent(side,`${side} ${s.sub} launches land-attack cruise missiles — target: enemy ${tgt.sub}`,side.toLowerCase());
+          try{if(window.VOICE)VOICE.say(side,'navstrike');}catch(e){}}
+      }
+    }
+  }
+}
+
+/* ── COMBINED-ARMS DOCTRINE ENGINE ────────────────────────────────────────
+   Codifies how the branches actually fight together (MCWP 3-22.2 / joint
+   SEAD doctrine): suppression aircraft lead strike packages — nothing else
+   presses into a live, layered SAM net; and infantry/armor hold short of
+   heavily contested ground until air is on station, unless the commander's
+   patience runs out (aggressive commanders accept the risk sooner).
+   DISCIPLINE GATE: only professional forces fight this way — a militia
+   (low skill/gear) has no ATO and no fire-support net; it swarms. That is
+   the intended difference between conventional and asymmetric warfare.  */
+const CA_GROUND_AD=new Set(['MANPADS','AA Vehicle','AA Battery']);
+const CA={gate:{BLUE:false,RED:false},gateSince:{BLUE:0,RED:0},disc:{BLUE:1,RED:1},
+  adzones:{BLUE:[],RED:[]},airOn:{BLUE:[],RED:[]},holds:{BLUE:0,RED:0},
+  _t:0,_msgT:{BLUE:-99,RED:-99},_gMsgT:{BLUE:-99,RED:-99}};
+window.CA=CA;
+function CA_adThreatAt(side,x,y){
+  let n=0;
+  for(const z of CA.adzones[side]){if(dist(x,y,z.x,z.y)<z.r)n++;}
+  return n;
+}
+function stepCombinedArms(dt){
+  CA._t+=dt;if(CA._t<1.5)return;CA._t=0;
+  for(const side of ['BLUE','RED']){
+    const enemy=side==='BLUE'?'RED':'BLUE';
+    // force discipline: individual skill/gear + commander experience
+    let sk=0,n=0;
+    for(const u of UNITS){
+      if(u.alive&&u.side===side&&!u.flies&&(u.t==='inf'||u.t==='veh')){
+        sk+=(u.skill||0.5)+(u.gear||1)*0.08;n++;if(n>=50)break;}
+    }
+    const C=(typeof cmdr==='function')?cmdr(side):null;
+    CA.disc[side]=n?clamp((sk/n)*0.8+(C?C.experience*0.25:0.15),0,1):1;
+    // the enemy's air-defence picture (ground SAM/AAA + SAM ships)
+    const zones=[];
+    for(const u of UNITS){
+      if(!u.alive||u.side!==enemy)continue;
+      if(CA_GROUND_AD.has(u.sub)||(u.t==='nav'&&!u.submerged&&(u.sub==='Destroyer'||u.sub==='Frigate'||u.sub==='Missile Cruiser')))
+        zones.push({x:u.x,y:u.y,r:Math.max(14,u.range*1.15)});
+    }
+    CA.adzones[side]=zones;
+    // AIR GATE — hold the strikers while the net is up and we have SEAD/fires to work it
+    const disciplined=CA.disc[side]>0.5;
+    const seadAlive=UNITS.some(u=>u.alive&&u.side===side&&u.sub==='SEAD Aircraft');
+    const supMeans=seadAlive||UNITS.some(u=>u.alive&&u.side===side&&(u.t==='arty'||u.t==='bml'));
+    const wantGate=disciplined&&zones.length>=3&&supMeans;
+    if(wantGate&&!CA.gate[side]){
+      CA.gate[side]=true;CA.gateSince[side]=SIM.t;
+      if(SIM.t-CA._msgT[side]>20){CA._msgT[side]=SIM.t;
+        pushEvent(side,`${side} strike packages holding at the push point — SEAD working the SAM net (${zones.length} emitters up)`,side.toLowerCase());
+        try{if(window.VOICE)VOICE.say(side,'seadhold');}catch(e){}}
+    }else if(CA.gate[side]){
+      const maxWait=45-30*(C?C.aggression:0.5);
+      if(zones.length<3){
+        CA.gate[side]=false;
+        pushEvent(side,`${side} corridor open — SAM net suppressed, strike packages pushing`,side.toLowerCase());
+        try{if(window.VOICE)VOICE.say(side,'seadgo');}catch(e){}
+      }else if(SIM.t-CA.gateSince[side]>maxWait){
+        CA.gate[side]=false;
+        pushEvent(side,`${side} accepts the SAM risk — strikers going in without full suppression`,side.toLowerCase());
+      }
+    }
+    CA.airOn[side]=UNITS.filter(u=>u.alive&&u.side===side&&u.t==='air'&&u.ammo>8).map(u=>({x:u.x,y:u.y}));
+  }
+  // GROUND GATE — supported advance into contested ground (coarse power grid)
+  const GB=14,bw=WORLD.w/GB,bh=WORLD.h/8;
+  const pow={BLUE:Array.from({length:GB},()=>new Float32Array(8)),
+             RED:Array.from({length:GB},()=>new Float32Array(8))};
+  for(const u of UNITS){
+    if(!u.alive||u.flies)continue;
+    const bx=Math.min(GB-1,Math.max(0,(u.x/bw)|0)),by=Math.min(7,Math.max(0,(u.y/bh)|0));
+    pow[u.side][bx][by]+=TYPES[u.t].cost;
+  }
+  const powNear=(s,x,y,r)=>{
+    let p=0;
+    const x0=Math.max(0,((x-r)/bw)|0),x1=Math.min(GB-1,((x+r)/bw)|0);
+    const y0=Math.max(0,((y-r)/bh)|0),y1=Math.min(7,((y+r)/bh)|0);
+    for(let i=x0;i<=x1;i++)for(let j=y0;j<=y1;j++)p+=pow[s][i][j];
+    return p;
+  };
+  for(const side of ['BLUE','RED']){
+    if(CA.disc[side]<=0.5){CA.holds[side]=0;continue;} // militia swarm — no ATO, no waiting
+    const enemy=side==='BLUE'?'RED':'BLUE';
+    const hasAir=CA.airOn[side].length>=2;
+    let holds=0;
+    if(hasAir){
+      const patience=(cmdr(side).aggression||0.5)>0.5?18:32;
+      for(const u of UNITS){
+        if(!u.alive||u.side!==side||u.flies||u.routing)continue;
+        if(u.t!=='inf'&&u.t!=='veh')continue;
+        if((u._caWaited||0)>patience)continue; // patience exhausted — they go without it
+        const ep=powNear(enemy,u.x,u.y,24),fp=powNear(side,u.x,u.y,16);
+        if(ep>fp*1.35&&ep>25){
+          const covered=CA.airOn[side].some(a=>dist(a.x,a.y,u.x,u.y)<32);
+          if(!covered){u._caHoldT=2.0;u._caWaited=(u._caWaited||0)+1.5;holds++;}
+          else u._caWaited=0;
+        }
+      }
+    }
+    CA.holds[side]=holds;
+    if(holds>=6&&SIM.t-CA._gMsgT[side]>25){
+      CA._gMsgT[side]=SIM.t;
+      pushEvent(side,`${side} assault elements holding short of contested ground — waiting on air cover (${holds} units)`,side.toLowerCase());
+      try{if(window.VOICE)VOICE.say(side,'gwait');}catch(e){}
+    }
+  }
+}
+
+/* ── BATTLE FRAMING — wars are fought over someone's ground ──────────────
+   A war-sector battle is not two sides materialising at opposite map edges.
+   Territory control decides the frame: the side that holds the sector
+   defends it — dispersed in depth, dug in on the objectives, morale of
+   fighting at home — while the attacker mounts a deliberate assault from
+   its line of departure, with SOF already in the enemy rear and an
+   airborne drop on the deep objectives if its intel picture supports it.
+   Contested ground (control ≈ 50%) stays a classic meeting engagement,
+   and non-war skirmishes are untouched.                                  */
+const FRAME={mode:'meeting',attacker:null,defender:null,intel:0,notes:[]};
+window.FRAME=FRAME;
+function applyBattleFrame(n){
+  FRAME.mode='meeting';FRAME.attacker=null;FRAME.defender=null;FRAME.intel=0;FRAME.notes=[];
+  if(!n)return;
+  const c=n.control;
+  let defender=null;
+  if(c>=58)defender='BLUE';else if(c<=42)defender='RED';
+  if(!defender)return; // contested ground — meeting engagement as before
+  const attacker=defender==='BLUE'?'RED':'BLUE';
+  FRAME.mode='assault';FRAME.defender=defender;FRAME.attacker=attacker;
+  let intel=0.30+0.40*(WAR.cmdrQ[attacker]||0.6);
+  try{if(WAR.strat)intel+=clamp(WAR.strat.sof[attacker]/300,0,0.20);}catch(e){}
+  FRAME.intel=clamp(intel,0,1);
+  const W=WORLD.w,defLeft=(defender==='BLUE');
+  // 1) defender: prepared positions in depth, anchored on the objectives
+  const objs=(typeof OBJ!=='undefined'&&OBJ.points)?OBJ.points:[];
+  let oi=0;
+  for(const u of UNITS){
+    if(!u.alive||u.side!==defender||u.flies||u.t==='nav')continue;
+    if(u.t==='arty'||u.t==='ew'||u.t==='sup'||u.t==='bml'){
+      u.x=W*(defLeft?rnd(0.06,0.20):rnd(0.80,0.94));u.y=rnd(0.12,0.88)*WORLD.h;
+    }else{
+      if(objs.length&&(oi%5<3)){ // ~60% dug in on the capture points
+        const o=objs[oi%objs.length];
+        u.x=clamp(o.x+rnd(-10,10),3,W-3);u.y=clamp(o.y+rnd(-9,9),4,WORLD.h-4);
+      }else{
+        u.x=W*(defLeft?rnd(0.22,0.55):rnd(0.45,0.78));u.y=rnd(0.10,0.90)*WORLD.h;
+      }
+      oi++;
+      u.cover=Math.min(0.5,(u.cover||0)+0.08);
+      if(u.morale!==undefined)u.morale=Math.min(100,u.morale+6);
+    }
+  }
+  FRAME.notes.push(defender+' defends prepared positions in depth');
+  // 2) attacker extras, gated by its intelligence picture
+  const atkInf=UNITS.filter(u=>u.alive&&u.side===attacker&&u.t==='inf');
+  const atkAir=UNITS.filter(u=>u.alive&&u.side===attacker&&u.t==='air').length;
+  if(FRAME.intel>0.55&&atkInf.length>4){
+    let sof=0;
+    for(const u of atkInf){
+      if(sof>=2)break;
+      ASYM_makeElite(u,'Spec-Ops');
+      u.x=W*(defLeft?rnd(0.10,0.30):rnd(0.70,0.90));u.y=rnd(0.15,0.85)*WORLD.h;sof++;
+    }
+    FRAME.notes.push(attacker+' SOF teams already in the enemy rear ('+sof+')');
+    pushEvent(attacker,attacker+' special forces active behind enemy lines — intel picture '+Math.round(FRAME.intel*100)+'%',attacker.toLowerCase());
+  }
+  if(FRAME.intel>0.40&&atkAir>=2&&atkInf.length>7){
+    let dropped=0;
+    for(const u of atkInf){
+      if(dropped>=3)break;
+      if(u.callsign)continue;
+      u.x=W*rnd(0.42,0.58);u.y=rnd(0.2,0.8)*WORLD.h;u._paradrop=true;dropped++;
+    }
+    if(dropped){
+      FRAME.notes.push(attacker+' airborne dropped behind the forward line ('+dropped+')');
+      pushEvent(attacker,attacker+' airborne drop on the deep objectives — '+dropped+' sticks on the ground',attacker.toLowerCase());
+      try{if(window.VOICE)VOICE.say(attacker,'paradrop');}catch(e){}
+    }
+  }
+  try{setPhase(`${defender} defends its ground at ${n.name} — ${attacker} assaulting (intel ${Math.round(FRAME.intel*100)}%)`);}catch(e){}
+  try{log(`Battle framing: ${defender} on home ground (control ${Math.round(c)}%) — prepared defence vs deliberate assault`,'#9adcff');}catch(e){}
+}
+
+/* v66: RED assigns a doctrine per sector — terrain + commander temperament.
+   (BLUE picks its own per-sector doctrines on the war setup screen.) */
+function redSectorDoctrine(n){
+  try{
+    const C=(typeof COMMANDERS!=='undefined'&&COMMANDERS.RED)?COMMANDERS.RED:null;
+    const G=(typeof GENERALS!=='undefined'&&FORCE.RED)?GENERALS[FORCE.RED.country]:null;
+    const agg=(C?C.aggression:(G&&G.traits&&G.traits.aggression))||0.5;
+    const armor=(C?C.armorBias:0.5)||0.5;
+    const t=n&&n.terrain?n.terrain.id:'open';
+    const map={
+      open:   armor>0.55?'blitzkrieg':'mass',
+      desert: 'blitzkrieg',
+      urban:  agg>0.6?'mass':'asymmetric',
+      hills:  'defense',
+      mountain:'defense',
+      river:  'precision',
+      forest: 'maneuver',
+      coastal:'combined',
+      marsh:  'attrition',
+    };
+    const pick=map[t]||null;
+    return (pick&&TACTICS[pick])?pick:null;
+  }catch(e){return null;}
+}
+
+/* ── SATURATION SALVOS — the thousand-missile problem ────────────────────
+   Modern saturation raids (Iran→Israel Apr 2024: ~300+ drones and missiles,
+   ~99% intercepted; Russian Shahed/cruise packages over Ukraine: dozens to
+   hundreds per night) involve numbers no per-unit engine should simulate.
+   The salvo system resolves the raid statistically against the defender's
+   layered interception capacity (interceptors, SAMs, AAA, MANPADS, EW
+   soft-kill, Aegis ships) and renders a representative fraction of the sky
+   full of fire; leakers strike as real impacts.                          */
+const SALVO={inb:0,intc:0,leak:0,last:'',raids:0};
+window.SALVO=SALVO;
+function fireSaturationSalvo(tgtSide,count,kind){
+  const srcSide=tgtSide==='BLUE'?'RED':'BLUE';
+  const D=UNITS.filter(u=>u.alive&&u.side===tgtSide);
+  let cap=0;
+  for(const u of D){
+    if(u.sub==='Interceptor')cap+=8;
+    else if(u.sub==='Fighter Jet')cap+=4;
+    else if(u.sub==='AA Battery')cap+=14;      // a Patriot/Iron Dome battery services many tracks
+    else if(u.sub==='AA Vehicle')cap+=6;
+    else if(u.sub==='MANPADS')cap+=3;
+    else if(u.t==='ew')cap+=5;                  // soft-kill: decoyed/jammed off course
+    else if(u.t==='nav'&&(u.sub==='Destroyer'||u.sub==='Missile Cruiser'))cap+=9; // Aegis
+  }
+  // Per-track kill probability: capacity vs raid size decides the ratio —
+  // a net with depth stops ~90-99% (Iran→Israel Apr 2024), a saturated or
+  // thin net leaks catastrophically. Big raids ALWAYS leak a little: even
+  // a perfect night lets one or two through.
+  const pk=Math.min(0.985,(cap/Math.max(1,count))*(0.80+Math.random()*0.25));
+  let intercepted=Math.round(count*pk);
+  if(count>=25)intercepted=Math.min(intercepted,count-(1+((Math.random()*3)|0)));
+  intercepted=Math.max(0,Math.min(count,intercepted));
+  const leakers=count-intercepted;
+  SALVO.inb+=count;SALVO.intc+=intercepted;SALVO.leak+=leakers;SALVO.raids++;
+  SALVO.last=`${count} inbound · ${intercepted} intercepted · ${leakers} leakers`;
+  const srcX=tgtSide==='BLUE'?WORLD.w*0.99:WORLD.w*0.01;
+  const draw=Math.min(count,36);
+  const drawLeak=Math.ceil(draw*leakers/Math.max(1,count));
+  for(let i=0;i<draw;i++){
+    const isLeak=i<drawLeak;
+    const tu=D.length?D[(Math.random()*D.length)|0]:null;
+    const tx=clamp(tu?tu.x+rnd(-10,10):WORLD.w*0.3,2,WORLD.w-2);
+    const ty=clamp(tu?tu.y+rnd(-8,8):rnd(20,WORLD.h-20),4,WORLD.h-4);
+    FX.tracers.push({x1:srcX,y1:rnd(0.05,0.95)*WORLD.h,e1:5,x2:tx,y2:ty,e2:terrainH(tx,ty)+1,
+      col:kind==='drone'?'#ffdf7f':'#ff4466',age:0,life:kind==='drone'?6:7.5,hit:isLeak,
+      proj:kind==='drone'?'missile':'ballistic',srcType:'bml',peakAlt:kind==='drone'?ALT.ORBIT:ALT.ORBIT*4,
+      isInterStrike:isLeak,srcSide:srcSide,srcSub:kind==='drone'?'Shahed-class OWA drone':'Ballistic leaker',quiet:true,
+      impactX:tx,impactY:ty,impactE:terrainH(tx,ty)+1,
+      dmg:kind==='drone'?rnd(14,26):rnd(35,80),splash:kind==='drone'?7:14});
+  }
+  // leakers beyond the drawn fraction resolve as direct attrition
+  const extraLeak=Math.max(0,leakers-drawLeak);
+  const dummy={side:srcSide,t:'bml',sub:'saturation leaker',kills:0,x:srcX,y:WORLD.h/2,dmgMul:{}};
+  for(let i=0;i<extraLeak;i++){
+    const tu=D[(Math.random()*D.length)|0];
+    if(tu&&Math.random()<0.5)applyDmg(dummy,tu,Math.round(rnd(10,30)));
+  }
+  const msg=`⚠ SATURATION ${kind==='drone'?'DRONE':'MISSILE'} RAID vs ${tgtSide} — ${SALVO.last} (intercept net capacity ${cap})`;
+  pushEvent(srcSide,msg,'gold');
+  try{tickerPush(msg,'#ffce5a');}catch(e){}
+  try{if(window.VOICE&&leakers>3)VOICE.say(tgtSide,'saturation');}catch(e){}
+}
 
 /* ══════ PROJECTILE TYPES ══════ */
 const PROJ_TYPE={
@@ -6650,6 +7120,18 @@ function canHit(a,v){
     // Artillery can't engage flying targets (they hit ground areas)
     if(vFlies) return false;
   }
+  // ── v66: THE UNDERSEA DOMAIN ──
+  // A submerged submarine can only be engaged by aircraft (air-dropped
+  // torpedoes/sonobuoys overhead) or by warships close enough for a sonar
+  // solution (~torpedo/ASROC range). Guns and land fires cannot touch it.
+  // Firing exposes the boat for a few seconds (periscope-depth launch).
+  if(v.submerged&&(v._subExpose||0)<=0){
+    const asw=(a.flies&&a.t==='air')||(a.t==='nav'&&dist(a.x,a.y,v.x,v.y)<14);
+    if(!asw)return false;
+  }
+  // a submerged sub itself only fights ships (torpedoes) — its land-attack
+  // cruise missiles are handled by stepNavalOps, not direct fire
+  if(a.submerged&&v.t!=='nav'&&!v.flies)return false;
   return true;
 }
 function acquire(u){
@@ -6672,6 +7154,16 @@ function acquire(u){
 
   for(const o of UNITS){
     if(!o.alive||o.side===u.side||!canHit(u,o))continue;
+    // ── v66 COMBINED ARMS: SEAD before strike packages ──
+    // Strike aircraft do not press ground attacks into an unsuppressed SAM
+    // net (MCWP 3-22.2: suppression aircraft lead; everything behind them
+    // depends on it). While the side's air gate is up, only SEAD jets and
+    // pure air-to-air work inside the enemy AD envelope; strikers hold for
+    // targets outside it. Militia/low-discipline sides ignore all of this.
+    if(u.flies&&u.t==='air'&&typeof CA!=='undefined'&&CA.gate[u.side]
+       &&!o.flies&&o.t!=='dro'&&u.sub!=='SEAD Aircraft'&&u.sub!=='Interceptor'){
+      if(CA_adThreatAt(u.side,o.x,o.y)>=2)continue;
+    }
     // ── Detection-gated targeting (v45) ──
     // A unit can only engage an enemy its OWN side has detected (or one very
     // close — you can always see what's right next to you). This makes recon
@@ -6825,6 +7317,8 @@ function fireAt(u,o){
   const sd=STATS[u.side];sd.shots++;u.muzzle=0.12;
   // ── Counter-battery: register this shot for radar tracking ──
   if(u.t==='arty'||u.t==='bml')cbatRegisterShot(u);
+  // v66: a submerged submarine that fires unmasks itself for a few seconds
+  if(u.submerged)u._subExpose=9;
   // ── Ammo drain ──
   const drain=LOGI.ammoDrain[u.t]||0;
   u.ammo=Math.max(0,u.ammo-drain);
@@ -6892,7 +7386,7 @@ function fireAt(u,o){
   if(u._caTeamAcc)acc+=u._caTeamAcc;                // combined-arms team bonus
   if(u._caArmorCover)acc+=0.04;                     // infantry fighting alongside armor
   if(u._linkAccPen)acc-=u._linkAccPen;              // cut from the C2 net — no net cueing
-  if(u.flies&&o._caAdCover)acc-=0.12;               // target under a friendly AD umbrella
+  if(u.flies&&(o._caAdCover||o._navAdCover))acc-=0.12; // target under a friendly AD umbrella (land or naval SAM)
   if(typeof V49G!=='undefined'&&V49G.gpsAcc){       // GPS/PNT constellation state
     const _pt=projTypeOf(u);
     if(_pt==='missile'||_pt==='atgm'||_pt==='bomb'||_pt==='ballistic'||_pt==='aa_missile')
@@ -8876,6 +9370,8 @@ function step(){
       const morSpdMul=(u.morale!==undefined&&u.morale>80&&!u.routing)?MORALE.highMoraleSpdMul:1.0;
       let spd=u.spd*tacSpdMul*bSpdMul*morSpdMul*(cohesion(u.side)<0.3&&tac!=='mass'?0.8:1);
       spd*=(u._fatigueSpdMul||1); // fatigue speed penalty
+      // v66 combined arms: units holding for air/fires support advance at a crawl
+      if(u._caHoldT>0){spd*=0.15;u._caHoldT-=DT;}
       spd*=(1+(u.momentum||0)*MORALE.momentumSpdBonus); // v42: momentum carries a moving column
       // v37: weather degrades air operations (fog/storm ground aircraft)
       if(u.flies)spd*=(WEATHER_AIR[ENV.weather]||1.0);
@@ -9260,6 +9756,8 @@ function step(){
   safeStep('deepStrikes',()=>stepDeepStrikes(DT));
   safeStep('ewBurnout',()=>stepEWBurnout(DT));
   safeStep('rwr',()=>stepRWR(DT));
+  safeStep('navalOps',()=>stepNavalOps(DT));        // v66: fleet operations
+  safeStep('combinedArms',()=>stepCombinedArms(DT)); // v66: SEAD/air-cover doctrine gates
 
   // elevation sampling
   _elevTimer+=DT;
@@ -9315,16 +9813,19 @@ function stepFX(rdt){
       const prog=t.age/t.life;
       if(prog>=0.98){
         t.impactDone=true;
-        // Splash damage to all BLUE units within splash radius
+        // v66: generalized — srcSide/tgtSide on the tracer decide who it hurts
+        // (naval cruise missiles + saturation salvos fire both directions);
+        // default preserves the original RED→BLUE inter-strike behaviour.
+        const srcSide=t.srcSide||'RED', tgtSide=srcSide==='BLUE'?'RED':'BLUE';
         for(const u of UNITS){
-          if(!u.alive||u.side==='RED')continue;
+          if(!u.alive||u.side!==tgtSide)continue;
           const dd=dist(u.x,u.y,t.impactX,t.impactY);
           if(dd<t.splash){
-            applyDmg({side:'RED',t:'bml',sub:'Iskander-M',kills:0},u,(t.dmg*(1-dd/t.splash))|0);
+            applyDmg({side:srcSide,t:'bml',sub:t.srcSub||'Iskander-M',kills:0,x:t.x1,y:t.y1},u,(t.dmg*(1-dd/t.splash))|0);
           }
         }
-        FX.rings.push({x:t.impactX,y:t.impactY,e:t.impactE,r:0,max:14,age:0,life:0.8,col:'#ff4466'});
-        pushEvent('RED',`Inter-strike impacted — blast radius ${t.splash.toFixed(0)} units`,'red');
+        FX.rings.push({x:t.impactX,y:t.impactY,e:t.impactE,r:0,max:14,age:0,life:0.8,col:t.col||'#ff4466'});
+        if(!t.quiet)pushEvent(srcSide,`${t.srcSub||'Strike'} impacted — blast radius ${t.splash.toFixed(0)} units`,srcSide.toLowerCase());
       }
     }
   }
@@ -11791,6 +12292,54 @@ function renderLive(){
     }
   }
 
+  // ── v66: COMBINED-ARMS PICTURE — how the branches are actually working together ──
+  if(SIM.running||SIM.over){
+    h+='<div class="ssec">Combined-Arms Picture</div>';
+    if(FRAME.mode==='assault'){
+      h+=row('Battle frame',`${FRAME.defender} defends · ${FRAME.attacker} assaults`,'warn');
+      h+=row('Attacker intel',Math.round(FRAME.intel*100)+'%',FRAME.intel>0.55?'good':'warn');
+      for(const nte of FRAME.notes)h+=`<div class="note">▸ ${nte}</div>`;
+    }else h+=row('Battle frame','Meeting engagement');
+    for(const side of['BLUE','RED']){
+      const cls=side==='BLUE'?'bl':'rd';
+      const adAssets=UNITS.filter(u=>u.alive&&u.side===side&&CA_GROUND_AD.has(u.sub)).length;
+      const gate=CA.gate[side==='BLUE'?'RED':'BLUE']; // enemy gated BY this side's AD
+      h+=row(`${side} discipline`,Math.round(CA.disc[side]*100)+'%'+(CA.disc[side]<=0.5?' (irregular — swarms)':' (professional)'),cls);
+      h+=row(`${side} air gate`,CA.gate[side]?'HOLDING — SAM net live':'strikes cleared',CA.gate[side]?'warn':'good');
+      h+=row(`${side} ground holds`,CA.holds[side]>0?CA.holds[side]+' units waiting on air cover':'—',CA.holds[side]>0?'warn':'');
+      h+=row(`${side} AD assets`,adAssets+' launchers up',cls);
+    }
+  }
+
+  // ── v66: NAVAL PICTURE ──
+  const fleets={BLUE:UNITS.filter(u=>u.alive&&u.side==='BLUE'&&u.t==='nav'),
+                RED:UNITS.filter(u=>u.alive&&u.side==='RED'&&u.t==='nav')};
+  if(fleets.BLUE.length||fleets.RED.length){
+    h+='<div class="ssec">Naval Picture</div>';
+    for(const side of['BLUE','RED']){
+      const F=fleets[side];if(!F.length)continue;
+      const cls=side==='BLUE'?'bl':'rd';
+      const cvn=F.filter(u=>u.isCarrier).length,sub=F.filter(u=>u.submerged).length,
+            lhd=F.filter(u=>u.isLHD).length,
+            sam=F.filter(u=>u.sub==='Destroyer'||u.sub==='Frigate'||u.sub==='Missile Cruiser').length;
+      const supported=UNITS.filter(u=>u.alive&&u.side===side&&u._carrierSup).length;
+      h+=row(`${side} fleet`,`${F.length} hulls · ${sam} SAM ships${cvn?' · CVN':''}${lhd?' · LHD':''}${sub?' · SSN'+(F.some(u=>u.submerged&&u._subExpose>0)?' (EXPOSED)':' (submerged)'):''}`,cls);
+      if(cvn)h+=row(`${side} carrier ops`,supported+' aircraft cycling on the deck',cls);
+      if(NAVOPS.cm[side])h+=row(`${side} cruise missiles`,NAVOPS.cm[side]+' launched',cls);
+      if(NAVOPS.marines[side])h+=row(`${side} marines landed`,NAVOPS.marines[side]+' lifts ashore',cls);
+    }
+  }
+
+  // ── v66: AIR & MISSILE DEFENCE — saturation raid ledger ──
+  if(SALVO.raids>0){
+    h+='<div class="ssec">Air & Missile Defence</div>';
+    h+=row('Raids absorbed',SALVO.raids);
+    h+=row('Total inbound',SALVO.inb,'warn');
+    h+=row('Intercepted',SALVO.intc+' ('+Math.round(100*SALVO.intc/Math.max(1,SALVO.inb))+'%)','good');
+    h+=row('Leakers through',SALVO.leak,SALVO.leak>SALVO.inb*0.2?'warn':'');
+    if(SALVO.last)h+=`<div class="note">Last raid: ${SALVO.last}</div>`;
+  }
+
   h+=terrainLegend();
   statsEl.innerHTML=h;
 }
@@ -12719,6 +13268,12 @@ function showBanner(result){
 /* ══════ CONTROL ══════ */
 const goBtn=document.getElementById('goBtn'),pauseBtn=document.getElementById('pauseBtn'),resetBtn=document.getElementById('resetBtn');
 function startBattle(){
+  // v66: skirmishes are always meeting engagements; only war-sector entries
+  // re-frame the battle (enterBattle calls applyBattleFrame after this)
+  try{FRAME.mode='meeting';FRAME.attacker=null;FRAME.defender=null;FRAME.intel=0;FRAME.notes=[];}catch(e){}
+  try{SALVO.inb=0;SALVO.intc=0;SALVO.leak=0;SALVO.last='';SALVO.raids=0;}catch(e){}
+  try{NAVOPS.cm.BLUE=0;NAVOPS.cm.RED=0;NAVOPS.marines.BLUE=0;NAVOPS.marines.RED=0;}catch(e){}
+  try{CA.gate.BLUE=false;CA.gate.RED=false;CA.holds.BLUE=0;CA.holds.RED=0;}catch(e){}
   if(ACTIVE_SCENARIO) ACTIVE_SCENARIO.applyFn(); // re-apply scenario forces
   if(powerOf(FORCE.BLUE)===0&&powerOf(FORCE.RED)===0){log('Both forces need at least one unit','#ffcc44');return;}
   // Build terrain appropriate to mode
@@ -15853,6 +16408,7 @@ const WAR={
     deployMode:'auto',     // 'auto' (intensity-weighted, matches v51) | 'manual'
     weights:[1,1,1,1,1,1], // manual per-sector share (BLUE only)
     formations:['balanced','balanced','balanced','balanced','balanced','balanced'], // BLUE only
+    doctrines:['','','','','',''], // v66: per-sector BLUE doctrine (''=side default)
     theaterId:'generic',   // v53: real-world-inspired front geography
   },
   paneView:'front',        // War-tab sub-navigation: 'front' | 'command' | 'log'
@@ -15974,6 +16530,7 @@ function beginWar(){
   }
   WAR.t=0;WAR.active=true;WAR.over=false;WAR.result=null;WAR.focus=null;WAR.observing=false;
   WAR.paused=false;WAR._preSimPaused=false;
+  WAR._baseTac={BLUE:FORCE.BLUE.tac,RED:FORCE.RED.tac}; // v66: per-sector doctrines restore to these
   WAR.events=[];WAR.munLogged={};WAR._reinT=0;WAR._ctrT=0;WAR._frozenT=0;
   WAR.morale.BLUE=0;WAR.morale.RED=0;
   WAR.mainEffort.BLUE=null;WAR.mainEffort.RED=null;
@@ -16024,6 +16581,11 @@ function recomputeLines(){
       // its own convoys and adds local throughput on top of the line network
       const escort=wcl((n.forces[side].air||0)/8,0,0.15);
       mul=wcl(mul+escort,0.15,1);
+      // v66: SEALIFT — a coastal sector with reserve naval power in being is
+      // never fully cut off: ships run supplies up the beach past any severed
+      // land MSR (the reason navies matter to land wars at all)
+      if(n.terrain&&n.terrain.id==='coastal'&&(WAR.reserves[side].nav||0)>=2)
+        mul=Math.max(mul,0.75);
       const prev=n.munMul[side];
       n.munMul[side]=mul;
       const key=n.id+side;
@@ -16459,16 +17021,35 @@ function enterBattle(id){
     if(n.support[side].air&&WAR.bases[side].find(b=>b.type==='airbase').integrity>50){
       FORCE[side].air=Math.min(CAPS.air,FORCE[side].air+2);
     }
+    // v66: CARRIER GROUP OFFSHORE — a coastal sector within reach of reserve
+    // naval power gets the fleet: carrier air wing sorties + a naval gunline
+    // join the rendered battle (the fleet projecting power over the beach)
+    if(side==='BLUE')n._cvn={BLUE:false,RED:false};
+    if(n.terrain&&n.terrain.id==='coastal'&&(WAR.reserves[side].nav||0)>=2){
+      FORCE[side].air=Math.min(CAPS.air,(FORCE[side].air||0)+2);
+      FORCE[side].nav=Math.min(CAPS.nav,(FORCE[side].nav||0)+2);
+      n._cvn[side]=true;
+    }
   }
   if(forcePow(n.forces.BLUE,'BLUE')<1||forcePow(n.forces.RED,'RED')<1){
     // one side has nothing here — resolve without rendering
     resolveNode(n,forcePow(n.forces.BLUE,'BLUE')>=1?'BLUE':'RED');
     WAR.focus=null;return;
   }
+  // ── v66: per-sector doctrine — a theatre fights differently on every axis ──
+  // BLUE's is picked on the setup screen (Sector Doctrines); RED's commander
+  // assigns one per sector from terrain + its own temperament.
+  try{
+    if(!WAR._baseTac)WAR._baseTac={BLUE:FORCE.BLUE.tac,RED:FORCE.RED.tac};
+    const bd=WAR.setup.doctrines[n.id];
+    FORCE.BLUE.tac=(bd&&TACTICS[bd])?bd:WAR._baseTac.BLUE;
+    FORCE.RED.tac=redSectorDoctrine(n)||WAR._baseTac.RED;
+  }catch(e){}
   WAR._entering=true;
   try{_origStartBattle();}finally{WAR._entering=false;}
   if(WAR.paused){SIM.paused=true;try{if(typeof pauseBtn!=='undefined'&&pauseBtn){pauseBtn.disabled=true;}}catch(e){}} // theatre pause holds through re-entry
   applyNodeModifiers(n);
+  try{applyBattleFrame(n);}catch(e){} // v66: defender's ground, SOF, airborne
   MAP.mode='tac';updateWarBtn();
   WAR.observing=(WAR.commandMode==='theatre');
   try{setPhase(`${n.name} — forces deploying (front sector ${n.id+1}/6)`);}catch(e){}
@@ -16498,6 +17079,7 @@ function applyNodeModifiers(n){
         try{if(window.CF&&CF.cyber&&CF.cyber[side])CF.cyber[side].def=Math.min(0.95,CF.cyber[side].def+0.05);}catch(e){}
       }
       if(n.support[side].air)log(`${side} airbase in range — +2 sorties committed`,side==='BLUE'?SIDECOL.BLUE:SIDECOL.RED);
+      if(n._cvn&&n._cvn[side])log(`${side} carrier group offshore — +2 sorties, naval gunline on call`,side==='BLUE'?SIDECOL.BLUE:SIDECOL.RED);
     }
   }catch(e){}
 }
@@ -16915,6 +17497,26 @@ function renderWarPane_(){
     }
     h+='</div>';
 
+    /* v66: SECTOR DOCTRINES — one doctrine per sector, per side. A theatre
+       commander doesn't fight the mountains the way he fights the plain. */
+    h+=`<div style="border:1px solid var(--line2);border-radius:4px;padding:6px 8px;margin:8px 0">
+      <div style="font-size:7px;letter-spacing:2px;color:var(--warn);text-transform:uppercase;margin-bottom:4px">Sector Doctrines — BLUE fights each axis its own way</div>
+      <div style="font-size:6.5px;color:var(--faint);line-height:1.5;margin-bottom:4px">
+        Pick a doctrine per sector (default = your side doctrine). It takes effect whenever that
+        sector's battle is fought. RED's commander assigns its own per-sector doctrines from
+        terrain and temperament.</div>`;
+    for(let i=0;i<curTheater.sectors.length;i++){
+      const sc2=curTheater.sectors[i]||{};
+      const g2=(TERRAIN_TYPES_BY_ID[sc2.terrain]||{}).glyph||'';
+      h+=`<div style="display:flex;align-items:center;gap:5px;margin:2px 0;font-size:6.8px">
+        <span style="width:110px;color:var(--cyan);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${g2} ${esc(sc2.name||NODE_NAMES[i]||('Sector '+(i+1)))}</span>
+        ${sel(`tcDeployDoctrine(${i},this.value)`,
+          `<option value="">— side default —</option>`+
+          Object.entries(TACTICS).map(([k,tc])=>`<option value="${k}" ${setup.doctrines[i]===k?'selected':''}>${esc(tc.name)}</option>`).join(''))}
+      </div>`;
+    }
+    h+='</div>';
+
     h+=sec('⚔ Order of Battle preview — theatre pool');
     const oobRow=side=>{
       const cty=COUNTRIES[FORCE[side].country]||{};
@@ -17107,6 +17709,7 @@ window.warEnd=(typeof uiAction==='function')?uiAction(function(){
   if(!WAR.active)return;
   if(WAR.focus!=null)stopTactical();
   WAR.active=false;WAR.over=true;WAR.focus=null;WAR.observing=false;WAR.paused=false;
+  try{if(WAR._baseTac){FORCE.BLUE.tac=WAR._baseTac.BLUE;FORCE.RED.tac=WAR._baseTac.RED;}}catch(e){} // v66: restore side doctrines
   MAP.mode='tac';updateWarBtn();
   try{setPhase('Standby — select forces');}catch(e){}
   try{log('War ended — theater stood down','#7ec8e3');}catch(e){}
@@ -17139,6 +17742,7 @@ window.tcReserveRatio=(typeof uiAction==='function')?uiAction(function(v){WAR.se
 window.tcDeployMode=(typeof uiAction==='function')?uiAction(function(mode){WAR.setup.deployMode=mode;renderWarPaneSafe();}):function(m){WAR.setup.deployMode=m;};
 window.tcDeployWeight=(typeof uiAction==='function')?uiAction(function(i,v){WAR.setup.weights[+i]=wcl(+v,0.1,10);renderWarPaneSafe();}):function(i,v){WAR.setup.weights[+i]=+v;};
 window.tcDeployFormation=(typeof uiAction==='function')?uiAction(function(i,f){WAR.setup.formations[+i]=f;renderWarPaneSafe();}):function(i,f){WAR.setup.formations[+i]=f;};
+window.tcDeployDoctrine=(typeof uiAction==='function')?uiAction(function(i,d){WAR.setup.doctrines[+i]=d;renderWarPaneSafe();}):function(i,d){WAR.setup.doctrines[+i]=d;}; // v66
 window.tcPaneView=(typeof uiAction==='function')?uiAction(function(v){WAR.paneView=v;renderWarPaneSafe();}):function(v){WAR.paneView=v;};
 
 if(typeof window.issueOrder==='function'){
@@ -21265,7 +21869,9 @@ try{updateWarBtn();}catch(e){}
    cautious ones steady the line. Purely cosmetic — zero sim effect.
    ══════════════════════════════════════════════════════════════════════ */
 (function(){
-  const V=window.VOICE={on:true,_t:-99,_mandownT:-99};
+  // v66: mode cycles voice(text+speech) → text → off; V.on kept for compat
+  const V=window.VOICE={mode:'voice',_t:-99,_mandownT:-99};
+  Object.defineProperty(V,'on',{get(){return V.mode!=='off';},set(v){V.mode=v?'voice':'off';}});
 
   const POOLS={
     engage:{
@@ -21322,12 +21928,85 @@ try{updateWarBtn();}catch(e){}
       gen:["Break contact. We live to fight the next one.",
            "Get my people out — everything else is replaceable.",
            "They were better today. Tomorrow is ours."]},
+    // v66: combined-arms & naval doctrine calls
+    seadhold:{
+      gen:["Strike package, hold at the push point — Weasels are working the SAM net.",
+           "Nobody crosses the FEBA until those emitters are down. SEAD's up.",
+           "That net is live and layered. We do this by the book — suppression first."]},
+    seadgo:{
+      gen:["Corridor's open — strike package, push push push.",
+           "Emitters are down. All players, cleared into the box.",
+           "SAM net's suppressed. Go make it count."]},
+    gwait:{
+      gen:["Hold the line — I am not sending you into that without air.",
+           "Wait for the fast-movers. Patience keeps you alive.",
+           "Fix them and wait — CAS is inbound, then we go."]},
+    gogo:{
+      gen:["Air's overhead — all elements, advance!",
+           "Cover's on station. Move now, move fast.",
+           "That's our top cover. Take the ground."]},
+    navstrike:{
+      gen:["Birds away from the gunline — cruise missiles running in.",
+           "The fleet just joined the war. Stand by for impact.",
+           "Tomahawks inbound on their rear. Watch the fireworks."]},
+    paradrop:{
+      gen:["Green light, green light — sticks are out the door.",
+           "Airborne's on the ground behind them. Now squeeze.",
+           "They have paratroopers in their rear and they know it."]},
+    saturation:{
+      gen:["Saturation raid inbound — all launchers free, weapons free!",
+           "The sky is full of them. Shoot until the rails are dry.",
+           "Layered defence, by sectors — take the leakers on the way down!"]},
   };
 
   function pick(arr){return arr[(Math.random()*arr.length)|0];}
 
+  /* ── v66: RADIO OVERLAY — voicelines you can actually SEE ──
+     A dedicated comms box floats over the top of the map: big type, side
+     colour, radio-static frame, fades after a few seconds. Lines still go
+     to the ticker and feed, but this is the primary display now. */
+  let _radioBox=null;
+  function radioShow(name,line,col){
+    try{
+      if(!_radioBox){
+        const mid=document.getElementById('mid');if(!mid)return;
+        _radioBox=document.createElement('div');
+        _radioBox.id='radioBox';
+        _radioBox.style.cssText='position:absolute;top:40px;left:50%;transform:translateX(-50%);z-index:60;'+
+          'display:flex;flex-direction:column;gap:4px;align-items:center;pointer-events:none;max-width:72%';
+        mid.appendChild(_radioBox);
+      }
+      const d=document.createElement('div');
+      d.style.cssText='background:rgba(6,10,22,0.88);border:1px solid '+col+';border-left:3px solid '+col+
+        ';border-radius:4px;padding:5px 12px;font-size:10px;letter-spacing:0.5px;color:#e8f0ff;'+
+        'text-shadow:0 0 8px '+col+';box-shadow:0 2px 14px rgba(0,0,0,0.5);transition:opacity 1.2s;white-space:normal;text-align:center';
+      d.innerHTML='<span style="color:'+col+';font-weight:700">🎙 '+name+':</span> “'+line+'”';
+      _radioBox.appendChild(d);
+      while(_radioBox.children.length>2)_radioBox.removeChild(_radioBox.firstChild);
+      setTimeout(()=>{try{d.style.opacity='0';}catch(e){}},5200);
+      setTimeout(()=>{try{if(d.parentNode)d.parentNode.removeChild(d);}catch(e){}},6600);
+    }catch(e){}
+  }
+
+  /* ── v66: SPEECH — voicelines you can actually HEAR ──
+     Web Speech API (fully local, no network, CSP-safe). Each side gets a
+     distinct voice character: BLUE crisp and higher, RED slower and deeper. */
+  function radioSpeak(line,side){
+    try{
+      if(typeof speechSynthesis==='undefined')return;
+      if(speechSynthesis.pending&&speechSynthesis.speaking)return; // don't stack a backlog
+      const utt=new SpeechSynthesisUtterance(line);
+      utt.rate=side==='BLUE'?1.08:0.96;
+      utt.pitch=side==='BLUE'?1.0:0.72;
+      utt.volume=0.9;
+      const vs=speechSynthesis.getVoices();
+      if(vs&&vs.length>1)utt.voice=vs[side==='BLUE'?0:1%vs.length];
+      speechSynthesis.speak(utt);
+    }catch(e){}
+  }
+
   V.say=function(side,event,opt){
-    if(!V.on)return;
+    if(V.mode==='off')return;
     const now=(typeof SIM!=='undefined'&&SIM)?SIM.t:0;
     const forced=(event==='victory'||event==='defeat');
     if(!forced&&now-V._t<7)return;                 // global chatter cooldown
@@ -21343,6 +22022,8 @@ try{updateWarBtn();}catch(e){}
     const name=C?C.name:side+' Actual';
     const col=side==='BLUE'?SIDECOL.BLUE:side==='RED'?SIDECOL.RED:'#ffce5a';
     V._t=now;
+    radioShow(name,line,col);
+    if(V.mode==='voice')radioSpeak(line,side);
     try{tickerPush(`🎙 ${name}: “${line}”`,col);}catch(e){}
     try{log(`🎙 ${name}: “${line}”`,col);}catch(e){}
   };
@@ -21385,16 +22066,19 @@ try{updateWarBtn();}catch(e){}
     }catch(e){}
   };
 
-  /* toggle button */
+  /* toggle button — cycles VOICE (text overlay + speech) → TEXT → OFF */
   try{
     const vb=document.getElementById('voiceBtn');
+    const labels={voice:'🎙 Voicelines: VOICE',text:'🎙 Voicelines: TEXT',off:'🎙 Voicelines: OFF'};
     if(vb){
+      vb.textContent=labels[V.mode];
       vb.classList.add('on');
       vb.addEventListener('click',()=>{
-        V.on=!V.on;
-        vb.textContent='🎙 Voicelines: '+(V.on?'ON':'OFF');
-        vb.classList.toggle('on',V.on);
-        log('Commander voicelines '+(V.on?'enabled':'muted'),'#7ec8e3');
+        V.mode=V.mode==='voice'?'text':V.mode==='text'?'off':'voice';
+        vb.textContent=labels[V.mode];
+        vb.classList.toggle('on',V.mode!=='off');
+        try{if(V.mode!=='voice'&&typeof speechSynthesis!=='undefined')speechSynthesis.cancel();}catch(e){}
+        log('Commander voicelines: '+V.mode.toUpperCase()+(V.mode==='voice'?' (radio overlay + spoken audio)':V.mode==='text'?' (radio overlay only)':''),'#7ec8e3');
       });
     }
   }catch(e){}
@@ -21409,6 +22093,7 @@ renderFormationUI();renderDoctrineUI();
 renderScenarioUI();
 renderAAR();renderIntel();renderTacticsTab();renderWiki();
 switchTab('aar',false);
+log('WAR v66 — THE NAVAL & COMBINED-ARMS UPDATE: carriers/submarines/LHDs at real scaled ranges (Tomahawk=whole map, SM-6 umbrellas, Mk 48s) · fleet supports land (NGFS, cruise strikes, sealift, carrier groups offshore) · SEAD-before-strikers + supported-advance doctrine gates (militia swarm instead) · defender fights on its own ground, attacker opens with SOF & airborne by intel · saturation salvo raids (hundreds inbound, layered interception) · per-sector doctrines both sides · voicelines now visible (radio overlay) & audible (speech)','#7fdfdf');
 log('WAR v65 — ASYMMETRIC WARFARE: individual skill & gear on every unit · ✚ Downed Bird (Mogadishu raid) · ◙ Night Compound (Benghazi annex) · ⌖ FPV Ambush (Ukraine/civil-war drone asymmetry) · casualty-sensitive victories & named operator callsigns · AMPHIBIOUS combat game-wide (≋ Beach Landing) · 🎙 commander voicelines','#ffd77a');
 log('WAR v63 — ⚒ THE FOUNDRY (Inventor mode, off by default): genuine invention of new mechanics from effect primitives — blockship barriers from scuttled fleets, bespoke reactive cyber-ISR systems, novel combined-arms doctrines, kill-zones, perception warfare · problem-driven diagnosis for quality · costed, budgeted & cabinet-gated · proven blueprints inscribed in the Doctrine Book and re-forgeable across wars','#e0b0ff');
 log('WAR v62 — Keynesian war debt (borrow past the breaking point; victory redeems, defeat reckons; war bonds & debt crises) · tactical victories propagate to the strategic layer · ⚗ EXPERIMENTAL MODE: hypersonics, autonomous swarms, AI command fusion, cyber & orbital (unstable by design; base game unaffected)','#8fd6ff');
