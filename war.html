@@ -655,7 +655,7 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
 
 <header id="hdr">
   <span class="mark">◆</span>
-  <h1>WAR&nbsp;<small>v66 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
+  <h1>WAR&nbsp;<small>v67 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
   <div id="ticker">
     <div class="tk bl">▣ BLUE <b id="tk-bl">0</b></div>
     <div class="tk rd">▣ RED <b id="tk-rd">0</b></div>
@@ -912,6 +912,24 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
   <div id="wiki" class="pane"></div>
   <div id="notes" class="pane">
   <div id="pnInner">
+    <div class="pn-ver">WAR v67 <span class="pn-date">Jul 2026</span></div>
+    <div class="pn-section">🛰 The Information &amp; Belief Engine — fog of war becomes a system</div>
+    <div class="pn-item new"><b>Information is now a resource, not a fact.</b> Until now a sensor detecting a unit meant the commander instantly, perfectly knew where it was. That is gone. The new pipeline is: <b>raw multi-modal sensing → imperfect OBSERVATIONS → up the chain of command (latency &amp; loss) → FUSION at the commander (weighted by trust) → BELIEF TRACKS with confidence, not certainty → decay &amp; disinformation → the commander plans on that believed picture, so he can be wrong.</b> The trigger-puller still shoots what he can physically see (ground-truth contact is unchanged — combat is untouched); it is the <b>commander's picture</b> that is now a belief that can be stale, incomplete, or salted with ghosts.</div>
+    <div class="pn-item new"><b>Reports climb the chain — and don't always arrive.</b> Every observation is tagged with the reporting unit's HQ and routed upward with a <b>latency</b> set by that HQ's C2 integrity: good comms deliver in well under a second; a shattered or jammed HQ delivers 4–6s late (the report is <i>already stale</i> when the commander reads it) or <b>loses it entirely</b>. Verified in play: a side under EW routinely drops 15–40 reports to comms/jamming per engagement, and its picture visibly lags reality.</div>
+    <div class="pn-item new"><b>Confidence, not certainty — and human mistakes.</b> The commander fuses arriving reports into <b>tracks</b>, each carrying a confidence, a position-error radius, a class guess (which may be "unknown"), and a strength estimate. Multiple sensors corroborating a track sharpen it; a lone weak report stays uncertain. The AI's battlefield read now uses the <b>believed</b> enemy strength, anchored on the rough order of battle he knows going in but distorted by his picture: a blinded commander <b>slightly under-counts and turns over-confident</b>; a deceived one <b>over-counts and turns over-cautious</b> — a plausible human band, never catastrophically wrong.</div>
+    <div class="pn-item new"><b>Sensor trust that adapts.</b> Each commander holds a per-modality trust level (👁 visual, 📡 radar, 🌡 thermal, 🔊 acoustic, 📶 SIGINT). When a track is confirmed by reality, the sensor that fed it gains trust; when a track turns out to be a ghost, that sensor loses it. <b>Jamming teaches a side to distrust its own radar</b> within seconds — watch radar trust collapse and SIGINT/thermal take over on the ISR tab.</div>
+    <div class="pn-item new"><b>Disinformation &amp; the D-Day problem.</b> Real reports can be drowned in false ones. Every sensor throws occasional <b>false positives</b> (clutter, thermal ghosts, jamming artefacts — more under EW and bad weather), and a strategic <b>deception operation</b> (the ⚡ Strategic tab lever) now plants <b>phantom decoy formations directly onto the enemy commander's tactical belief picture</b> — a fake army on the net he may commit reserves against. Information warfare finally bites where it should: in what the enemy <i>believes</i>.</div>
+    <div class="pn-section">📡 The Sensor Overhaul — real detection physics</div>
+    <div class="pn-item new"><b>Five modalities, each modelled honestly</b> (the best one wins each look; corroboration happens at fusion):</div>
+    <div class="pn-item new"><b>👁 Visual</b> — needs line of sight; gutted at night (×0.45) and by fog/smoke; reads the target's visual signature. <b>Precise</b> position, excellent classification — but short-legged and weather-bound.</div>
+    <div class="pn-item new"><b>📡 Radar</b> — models the <b>radar horizon from earth curvature</b>: a low or ground target beyond the horizon (a function of both the sensor's and target's height) is simply <i>gone</i>, while an aircraft is visible far out — so ground forces stay hidden at range until they close, exactly as in life. Rain attenuates it hard; reads radar cross-section (stealth airframes are dim, <b>submerged submarines are invisible to it</b>). Precise — <b>but an active radar RADIATES</b>, and that emission is detectable…</div>
+    <div class="pn-item new"><b>🌡 Thermal</b> — models <b>thermal-crossover layers</b>: contrast collapses in mid-day heat and sharpens at night and in snow, so thermals are a night sensor. Sees hot engine signatures, <b>penetrates smoke and haze</b> that blind the eye. Medium precision.</div>
+    <div class="pn-item new"><b>🔊 Acoustic</b> — <b>needs no line of sight</b> (sound travels around hills); a cold still night carries it far, a storm scatters it. Hears loud things — <b>artillery firing, armor moving</b> — but is <b>bearing-only</b>, so it produces large-error "something loud over there" contacts. This is how you first learn a battery is out there without ever seeing it.</div>
+    <div class="pn-item new"><b>📶 SIGINT</b> — <b>passive</b>: detects enemy <b>emissions</b> — every active radar, every EW jammer, every unit that just fired lights up the electromagnetic spectrum and can be located from far off. This is the counter-weight to radar: <b>emitting is never free</b>, and a jammer is the loudest thing on the battlefield. Emissions are listed live on the ISR tab.</div>
+    <div class="pn-item new"><b>Electronic emission signatures &amp; per-modality weather attenuation</b> — every unit carries a signature per modality; weather now attenuates each sensor <i>differently</i> (fog wrecks the eye but barely touches radar; rain wrecks radar and acoustics; a clear cold night is the thermal/acoustic sweet spot). The two systems intertwine: a jammer blinds the enemy's radar and eyes, inflates his false-positive rate and position errors — while screaming its own location to his SIGINT.</div>
+    <div class="pn-section">🛰 The ISR tab (new, readable)</div>
+    <div class="pn-item new"><b>A whole new bottom-deck tab.</b> Per side: a plain-language fusion-cell summary ("holds 12 tracks — 10 real, 2 phantom; picture accuracy 83%; believes enemy power 156 vs true 183 — under-estimating 15%; under EW jamming"), adaptive <b>sensor-trust bars</b>, and the <b>report-flow ledger</b> (in transit / delivered / lost to comms &amp; EW / false positives). Below: the viewed side's <b>track table</b> (class, contributing modalities, position-error radius, confidence, age), the <b>emissions/SIGINT picture</b>, and a running <b>intel event log</b>. A toggle draws the <b>belief overlay on the map</b>: every track as an estimated position with a confidence-graded uncertainty ring — phantoms and decoys dashed in amber — so you literally see the difference between where the enemy <i>is</i> and where your commander <i>thinks</i> he is.</div>
+    <div class="pn-item fix"><b>Layered &amp; guarded.</b> The whole engine is rebuilt each battle and fully try/caught; if any part throws, the legacy per-side spotting continues unchanged and the sim never freezes. Sensing runs on its own throttle (0.4s) with a per-side pair budget so one large force can't starve the other side's ISR net.</div>
     <div class="pn-ver">WAR v66 <span class="pn-date">Jul 2026</span></div>
     <div class="pn-section">⚓ The Naval Overhaul — the fleet joins the war</div>
     <div class="pn-item new"><b>Real systems at real scaled ranges.</b> Classes rebuilt from published specifications (Mk 45 5"/62 gun ~24 km · Harpoon 130–310 km · SM-2/6 area SAMs 240–460 km · Tomahawk ~1,600 km · Mk 48 torpedo ~50 km · carrier air wing combat radius ~720 km). At this map's scale (land artillery = 30): warships' base range is now <b>32</b> — the gunline properly outranges tube artillery from offshore; ship-launched <b>land-attack cruise missiles reach the entire map</b>; torpedoes are short-ranged (16) but ship-killers.</div>
@@ -9758,6 +9776,7 @@ function step(){
   safeStep('rwr',()=>stepRWR(DT));
   safeStep('navalOps',()=>stepNavalOps(DT));        // v66: fleet operations
   safeStep('combinedArms',()=>stepCombinedArms(DT)); // v66: SEAD/air-cover doctrine gates
+  safeStep('intelBelief',()=>{if(typeof stepIntelBelief==='function')stepIntelBelief(DT);}); // v67: information & belief engine
 
   // elevation sampling
   _elevTimer+=DT;
@@ -11602,6 +11621,7 @@ function draw(){
   drawMoraleAuras();
   drawC2Lines();
   drawRWRIndicators();
+  try{if(typeof drawBeliefOverlay==='function')drawBeliefOverlay();}catch(e){} // v67 belief tracks
 }
 function drawCell(it){
   ctx.beginPath();
@@ -13383,6 +13403,7 @@ function switchTab(pane,open){
   else if(pane==='live')renderLive();
   else if(pane==='war'){try{if(typeof renderWarPane==='function')renderWarPane();}catch(e){}}
   else if(pane==='command'){try{renderC2Panel();renderDeepStrikePanel();if(typeof renderCommandPane==='function')renderCommandPane();}catch(e){}}
+  else if(pane==='isr'){try{if(typeof renderISRPanel==='function')renderISRPanel();}catch(e){}}
 }
 
 /* ══════ FORMATION UI ══════ */
@@ -15447,6 +15468,634 @@ else injectUI();
 /* ═══════════════════ END C4ISR UPGRADE LAYER ═══════════════════ */
 
 /* ═══════════════════════════════════════════════════════════════════════
+   INFORMATION & BELIEF ENGINE + SENSOR OVERHAUL   (v67)
+   ─────────────────────────────────────────────────────────────────────
+   Information is a RESOURCE, not a fact. A sensor detecting a unit does NOT
+   mean the commander knows where it is. Instead:
+
+     RAW SENSING (multi-modal physics) → OBSERVATIONS (imperfect, typed) →
+     UP THE CHAIN (latency, loss, EW) → FUSION at the commander (weighted by
+     adaptive per-sensor TRUST) → BELIEF TRACKS (confidence, not certainty) →
+     DECAY (stale reports drift) + DISINFORMATION (phantom tracks) →
+     the commander acts on the BELIEVED picture, so he makes human mistakes.
+
+   Five sensor modalities, each with real behaviour:
+     VISUAL   — LOS, day/night, weather, smoke; precise, classifies well
+     RADAR    — radar horizon (earth curvature), rain attenuation, RCS; but
+                an active radar EMITS and is itself detectable by SIGINT
+     THERMAL  — thermal-crossover layers (mid-day heat kills contrast), sees
+                hot engines, penetrates smoke/haze; medium precision
+     ACOUSTIC — propagation without LOS (sound goes around hills), carries far
+                on a cold still night; bearing-only → large position error
+     SIGINT   — passive: detects enemy EMISSIONS (radars, jammers, radios);
+                this is what makes emitting dangerous
+
+   Everything is layered and guarded: if any part throws, the legacy
+   spotting (spottedBy) continues unchanged and combat is unaffected. The
+   trigger-puller still shoots what he can see (ground-truth detection); it
+   is the COMMANDER'S picture that is now a belief.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+  const MODES=['visual','radar','thermal','acoustic','sigint'];
+  const MODE_GLYPH={visual:'👁',radar:'📡',thermal:'🌡',acoustic:'🔊',sigint:'📶'};
+  // per-modality intrinsic position error (world-units) and classification skill
+  const MODE_POSERR={visual:1.5,radar:2.5,thermal:4,acoustic:16,sigint:11};
+  const MODE_CLASS ={visual:0.95,radar:0.55,thermal:0.6,acoustic:0.2,sigint:0.45};
+  // weather attenuation per modality (1 = unaffected)
+  const WX_ATTEN={
+    clear:{visual:1.0,radar:1.0,thermal:1.0,acoustic:1.0,sigint:1.0},
+    rain: {visual:0.75,radar:0.62,thermal:0.85,acoustic:0.80,sigint:0.95},
+    fog:  {visual:0.30,radar:0.95,thermal:0.70,acoustic:1.10,sigint:1.0},
+    snow: {visual:0.60,radar:0.80,thermal:0.75,acoustic:0.70,sigint:0.95},
+    storm:{visual:0.45,radar:0.55,thermal:0.80,acoustic:0.55,sigint:0.90},
+  };
+
+  const cl=(v,a,b)=>v<a?a:v>b?b:v;
+  const RND=(a,b)=>a+Math.random()*(b-a);
+  const now=()=>(typeof SIM!=='undefined'&&SIM)?SIM.t:0;
+
+  const INTEL={
+    active:false, _t:0, _fuseT:0, _trustT:0, _emitT:0,
+    belief:{BLUE:new Map(),RED:new Map()},
+    queue:{BLUE:[],RED:[]},
+    trust:{BLUE:null,RED:null},
+    emitters:{BLUE:[],RED:[]},
+    log:{BLUE:[],RED:[]},
+    stats:{BLUE:null,RED:null},
+    overlay:false,
+    _tid:1,
+  };
+  window.INTEL=INTEL;
+
+  function freshTrust(){return {visual:0.9,radar:0.8,thermal:0.75,acoustic:0.5,sigint:0.7};}
+  function freshStats(){return {tracks:0,phantom:0,stale:0,accuracy:1,queued:0,delivered:0,dropped:0,falsePos:0,
+    believedEnemyPow:0,trueEnemyPow:0,jammed:0};}
+
+  function ilog(side,msg){
+    const L=INTEL.log[side];
+    L.unshift({t:now().toFixed(0),msg});
+    if(L.length>26)L.pop();
+  }
+
+  function reset(){
+    INTEL.belief.BLUE=new Map();INTEL.belief.RED=new Map();
+    INTEL.queue.BLUE=[];INTEL.queue.RED=[];
+    INTEL.trust.BLUE=freshTrust();INTEL.trust.RED=freshTrust();
+    INTEL.stats.BLUE=freshStats();INTEL.stats.RED=freshStats();
+    INTEL.log.BLUE=[];INTEL.log.RED=[];
+    INTEL.emitters.BLUE=[];INTEL.emitters.RED=[];
+    INTEL._t=INTEL._fuseT=INTEL._trustT=INTEL._emitT=0;INTEL._tid=1;
+    INTEL.active=true;
+    ilog('BLUE','ISR net stood up — sensors cueing, fusion cell online');
+    ilog('RED','ISR net stood up — sensors cueing, fusion cell online');
+  }
+
+  /* effective sensing height (drives radar horizon) */
+  function heightOf(u){
+    let h=(u._eyeH||1.8);
+    if(u.flies)h+=(u.alt||ALT.ORBIT);
+    return h;
+  }
+  /* radar horizon in world-units between two heights (earth-curvature analogue) */
+  function radarHorizon(ho,ht){ return 8*(Math.sqrt(Math.max(0.3,ho))+Math.sqrt(Math.max(0.3,ht))); }
+
+  /* is this unit currently EMITTING (radar / jamming / comms)? populates SIGINT */
+  function emissionOf(u){
+    let e=0,kind=null;
+    if(u.t==='ew'){e=95;kind='jammer';}
+    else if(u.sensor&&u.sensor.radar>=60&&(u.t==='air'||u.t==='nav'||u.sub==='AA Battery'||u.sub==='AA Vehicle')){e=Math.max(e,u.sensor.radar);kind='radar';}
+    else if(u.sensor&&u.sensor.radar>=20&&Math.random()<0.5){e=Math.max(e,45);kind='radar';}
+    // any unit that just fired lights up briefly (muzzle / comms spike)
+    if(u.muzzle>0){e=Math.max(e,55);kind=kind||'fires';}
+    return {e,kind};
+  }
+
+  /* ── one modality's detection strength 0..1 for obs→tgt ── */
+  function senseMode(obs,tgt,mode){
+    const sens=obs.sensor;if(!sens)return 0;
+    const wx=(WX_ATTEN[ENV.weather]||WX_ATTEN.clear)[mode];
+    const d=dist(obs.x,obs.y,tgt.x,tgt.y);
+    const sig=tgt.signature||{};
+    const tt=(TMAP&&TMAP.length)?terrainTypeAt(tgt.x,tgt.y):'plains';
+    if(mode==='visual'){
+      const rng=(sens.visual||0)*wx*ENV.visibility*(ENV.night?0.45:1);
+      if(rng<1||d>rng*1.4)return 0;
+      if(!hasLOS(obs,tgt))return 0;
+      const terr=(TERRAIN_VIS[tt]||1);
+      const stealth=1-((tgt.stealth||0)/100);
+      const visSig=cl((sig.visual||40)/60,0.4,1.4);
+      const thermalObs=(obs.t==='veh'||obs.t==='air');
+      const smk=SMOKE.clouds.length?smokeObstruction(obs.x,obs.y,tgt.x,tgt.y,thermalObs):0;
+      return cl((1-d/rng)*terr*stealth*visSig*(1-smk*0.9),0,1);
+    }
+    if(mode==='radar'){
+      if(!(sens.radar>0))return 0;
+      const rng=(sens.radar||0)*wx*1.4;
+      if(rng<1||d>rng*1.3)return 0;
+      // radar horizon — a low target beyond the horizon is simply gone
+      const hor=radarHorizon(heightOf(obs),heightOf(tgt));
+      if(d>hor)return 0;
+      const rcs=cl((sig.radar||30)/70,0.15,1.5); // stealth aircraft/subs are dark
+      if(tgt.submerged)return 0;                 // radar can't see underwater
+      return cl((1-d/rng)*rcs,0,1);
+    }
+    if(mode==='thermal'){
+      if(!(sens.thermal>0))return 0;
+      const rng=(sens.thermal||0)*wx;
+      if(rng<1||d>rng*1.3)return 0;
+      if(!hasLOS(obs,tgt))return 0;
+      // thermal crossover: contrast collapses in mid-day heat, sharpens at night/cold
+      const layer=ENV.night?1.15:(ENV.weather==='snow'?1.2:0.7);
+      const heat=cl((sig.thermal||40)/70,0.2,1.6); // hot engines glow
+      return cl((1-d/rng)*layer*heat,0,1);
+    }
+    if(mode==='acoustic'){
+      // sound needs no LOS — it goes around terrain
+      const loud=(sig.acoustic||20)+(tgt.muzzle>0?60:0)+((tgt.t==='arty'||tgt.t==='bml')&&tgt.muzzle>0?40:0);
+      const rng=(20+loud*0.7)*wx;
+      if(d>rng)return 0;
+      // a cold still night carries sound; storms & wind scatter it
+      const carry=ENV.night?1.15:1.0;
+      return cl((1-d/rng)*carry*cl(loud/70,0,1.3),0,1);
+    }
+    if(mode==='sigint'){
+      if(!(sens.sigint>0))return 0;
+      const em=tgt._emit||emissionOf(tgt);
+      if(!em.e)return 0;
+      const rng=(sens.sigint||0)*wx*2.2*(em.e/60); // strong emitters seen very far
+      if(rng<1||d>rng)return 0;
+      return cl((1-d/rng)*(em.e/95),0,1);
+    }
+    return 0;
+  }
+
+  /* jamming pressure on an observer (raises error + false positives, cuts detection) */
+  function jamOn(u){
+    let j=(u._ewSuppressed||0);
+    try{if(typeof jamFor!=='undefined'&&jamFor[u.id])j=Math.max(j,jamFor[u.id]);}catch(e){}
+    return cl(j,0,1);
+  }
+
+  /* ── SENSING PASS: produce observations, queue them up the chain ──
+     Budget is split PER SIDE so a large force on one side can't starve the
+     other side's sensors (each commander runs his own ISR net). */
+  function sensePass(dt){
+    for(const t of UNITS)if(t.alive)t._emit=emissionOf(t); // precompute emissions
+    for(const side of ['BLUE','RED']){
+      const enemy=side==='BLUE'?'RED':'BLUE';
+      const observers=UNITS.filter(u=>u.alive&&u.sensor&&!u.isSupply&&u.side===side);
+      const targets=UNITS.filter(u=>u.alive&&u.side===enemy);
+      if(!observers.length||!targets.length)continue;
+      let pairs=0;const MAXP=700;
+      for(const obs of observers){
+        const jam=jamOn(obs);
+        const reconMul=(obs._reconValue||1);
+        for(const tgt of targets){
+          if(pairs++>MAXP)break;
+          let bestMode=null,bestP=0;
+          for(const m of MODES){
+            let p=senseMode(obs,tgt,m)*reconMul;
+            if(m!=='sigint')p*=(1-jam*0.55);        // jamming blinds active/visual sensors
+            if(p>bestP){bestP=p;bestMode=m;}
+          }
+          if(!bestMode||bestP<0.12)continue;
+          if(Math.random()>bestP*0.9)continue;       // detection is a roll, not a guarantee
+          emitObservation(obs,tgt,bestMode,bestP,jam);
+        }
+        if(pairs>MAXP)break;
+        // FALSE POSITIVES — clutter, thermal ghosts, decoys, jamming artefacts
+        const fpBase=0.006+jam*0.05+(ENV.weather==='storm'||ENV.weather==='fog'?0.02:0)+(obs.t==='ew'?0.02:0);
+        if(Math.random()<fpBase*reconMul)emitPhantomObservation(obs,jam);
+      }
+    }
+  }
+
+  function pushEmitter(side,u,em){
+    INTEL.emitters[side].push({x:u.x,y:u.y,kind:em.kind,e:em.e,t:u.t});
+  }
+
+  function emitObservation(obs,tgt,mode,strength,jam){
+    const side=obs.side;
+    const posErr=MODE_POSERR[mode]*(1+jam*1.5)*(1.3-strength*0.6);
+    const classConf=cl(MODE_CLASS[mode]*strength*(1-jam*0.4),0,1);
+    // measured position = truth + modality error (bearing sensors err mostly downrange)
+    const ex=tgt.x+RND(-1,1)*posErr, ey=tgt.y+RND(-1,1)*posErr;
+    const strengthMeas=cl((tgt.maxHp>0?tgt.hp/tgt.maxHp:1)+RND(-0.2,0.2)*(1-classConf),0,1);
+    routeUp(side,{
+      truthId:tgt.id, side, mode,
+      x:ex, y:ey, posErr,
+      cls:(Math.random()<classConf)?tgt.t:'unknown', classConf,
+      strengthMeas, conf:strength, t:now(),
+      reporter:obs.c2hq||'?', phantom:false,
+    },obs);
+    if(mode==='sigint'&&tgt._emit&&tgt._emit.e)pushEmitter(side,tgt,tgt._emit);
+  }
+
+  function emitPhantomObservation(obs,jam){
+    const side=obs.side;
+    // a plausible ghost somewhere out in the observer's sector
+    const ang=Math.random()*Math.PI*2, rr=RND(15,60);
+    const gx=cl(obs.x+Math.cos(ang)*rr,2,WORLD.w-2), gy=cl(obs.y+Math.sin(ang)*rr,2,WORLD.h-2);
+    const mode=MODES[(Math.random()*MODES.length)|0];
+    INTEL.stats[side].falsePos++;
+    routeUp(side,{
+      truthId:null, side, mode,
+      x:gx, y:gy, posErr:MODE_POSERR[mode]*2,
+      cls:'unknown', classConf:0.15,
+      strengthMeas:RND(0.3,0.8), conf:0.3+Math.random()*0.2, t:now(),
+      reporter:obs.c2hq||'?', phantom:true,
+    },obs);
+  }
+
+  /* ── UP THE CHAIN: latency from C2 integrity; some reports are lost ── */
+  function routeUp(side,obs,reporter){
+    let integ=1;
+    try{
+      const chain=C2[side];
+      if(chain){
+        const hq=chain.hqs.find(h=>h.id===(reporter&&reporter.c2hq));
+        integ=hq?cl(hq.integrity/100,0.1,1):0.7;
+      }
+    }catch(e){}
+    // cut from the net entirely? report may never arrive
+    const jam=reporter?jamOn(reporter):0;
+    const lossP=cl((1-integ)*0.5+jam*0.35,0,0.9);
+    INTEL.stats[side].queued++;
+    if(Math.random()<lossP){INTEL.stats[side].dropped++;return;}
+    // latency: good comms ~0.5s, a shattered HQ ~6s+ (the report is stale on arrival)
+    const latency=RND(0.3,0.8)+(1-integ)*RND(3,6)+jam*2;
+    obs.arriveT=now()+latency;
+    const Q=INTEL.queue[side];
+    Q.push(obs);
+    if(Q.length>160)Q.splice(0,Q.length-160);
+  }
+
+  /* ── FUSION at the commander: arrived observations → belief tracks ── */
+  function fuse(side){
+    const Q=INTEL.queue[side];if(!Q.length)return;
+    const B=INTEL.belief[side];
+    const trust=INTEL.trust[side];
+    const tnow=now();
+    const arrived=[];
+    for(let i=Q.length-1;i>=0;i--){ if(Q[i].arriveT<=tnow){arrived.push(Q[i]);Q.splice(i,1);} }
+    for(const o of arrived){
+      INTEL.stats[side].delivered++;
+      const w=cl(trust[o.mode]*(0.4+o.classConf*0.6),0.05,1);
+      // find an existing belief to associate with (gate scales with error)
+      let best=null,bestD=1e9;
+      for(const b of B.values()){
+        const gate=Math.max(10,(b.posErr+o.posErr)*1.2);
+        const dd=dist(b.x,b.y,o.x,o.y);
+        // same-truth reports always associate; otherwise nearest within gate
+        if(o.truthId!=null&&b.truthId===o.truthId){best=b;bestD=0;break;}
+        if(dd<gate&&dd<bestD){best=b;bestD=dd;}
+      }
+      if(best){
+        // weighted move toward the new measurement; corroboration raises confidence
+        const k=w*0.6;
+        best.x+=(o.x-best.x)*k; best.y+=(o.y-best.y)*k;
+        best.posErr=Math.max(2,best.posErr*(1-k*0.5)+o.posErr*k*0.5);
+        best.conf=cl(best.conf+ w*(o.phantom?0.05:0.22)*(1-best.conf) + 0.04,0,1);
+        best.strengthEst=best.strengthEst*(1-k)+o.strengthMeas*k;
+        best.lastT=tnow; best.reports++;
+        best.modes[o.mode]=(best.modes[o.mode]||0)+1;
+        if(o.cls!=='unknown'&&(best.cls==='unknown'||Math.random()<w*0.5))best.cls=o.cls;
+        if(o.truthId!=null){ if(best.truthId==null){best.truthId=o.truthId;best.phantom=false;} }
+        // multi-sensor corroboration is powerful — a track seen 3 ways is trusted
+        const nModes=Object.keys(best.modes).length;
+        if(nModes>=2)best.conf=cl(best.conf+0.05,0,1);
+      }else{
+        if(B.size<44){
+          B.set(INTEL._tid++,{
+            id:INTEL._tid, truthId:o.truthId, x:o.x, y:o.y, posErr:o.posErr,
+            cls:o.cls, conf:cl(o.conf*w+(o.phantom?0:0.1),0.1,0.85),
+            strengthEst:o.strengthMeas, lastT:tnow, firstT:tnow, reports:1,
+            modes:{[o.mode]:1}, phantom:o.phantom, disinfo:false, vx:0,vy:0,
+          });
+        }
+      }
+    }
+  }
+
+  /* ── DECAY: stale beliefs lose confidence, drift, and are eventually dropped ── */
+  function decay(side,dt){
+    const B=INTEL.belief[side];
+    const tnow=now();
+    for(const [id,b] of Array.from(B.entries())){
+      const age=tnow-b.lastT;
+      b.conf-=dt*(0.02+age*0.006);
+      b.posErr=Math.min(60,b.posErr+dt*(0.6+age*0.15)); // the picture blurs with time
+      b.x+=b.vx*dt; b.y+=b.vy*dt;                        // dead-reckon along last motion
+      if(b.conf<=0.08){B.delete(id);}
+    }
+  }
+
+  /* ── TRUST ADAPTATION + ACCURACY SCORING (ground-truth reconciliation) ── */
+  function reconcile(side){
+    const B=INTEL.belief[side];
+    const enemy=side==='BLUE'?'RED':'BLUE';
+    const foe=UNITS.filter(u=>u.alive&&u.side===enemy);
+    const trust=INTEL.trust[side];
+    let good=0,total=0,phantom=0,stale=0;
+    const tnow=now();
+    for(const b of B.values()){
+      total++;
+      if(tnow-b.lastT>12)stale++;
+      // nearest real enemy to this belief
+      let nd=1e9,near=null;
+      for(const f of foe){const d=dist(b.x,b.y,f.x,f.y);if(d<nd){nd=d;near=f;}}
+      const believedReal=nd<Math.max(12,b.posErr*1.5);
+      if(!believedReal){
+        phantom++;
+        // this track is not backed by reality — erode trust in its top modality
+        const top=topMode(b);
+        if(top&&b.reports>2)trust[top]=cl(trust[top]-0.015,0.15,1);
+      }else{
+        good++;
+        // track velocity estimate from the matched truth (improves dead-reckoning)
+        b.vx=(near.x-b.x)*0.2; b.vy=(near.y-b.y)*0.2;
+        const top=topMode(b);
+        if(top)trust[top]=cl(trust[top]+0.008,0.15,1);
+      }
+    }
+    // jamming quickly teaches a side to distrust the jammed modality
+    const jammed=foe.some(f=>f.t==='ew'&&f.alive);
+    if(jammed){trust.radar=cl(trust.radar-0.01,0.15,1);}
+    const st=INTEL.stats[side];
+    st.tracks=total;st.phantom=phantom;st.stale=stale;
+    st.accuracy=total?good/total:1;
+    st.queued=INTEL.queue[side].length;
+    st.jammed=jammed?1:0;
+    // ── Believed enemy strength — the number the commander actually plans on ──
+    // A real commander enters with a PRIOR: he broadly knows the enemy order of
+    // battle (both OOBs are chosen openly here) — his uncertainty is about live
+    // POSITION and STATUS, not gross strength. So belief is anchored near the
+    // true power and then distorted by his picture: PHANTOMS/deception inflate
+    // it (over-caution); being blind makes him hedge slightly downward
+    // (over-confidence). Clamped to a plausible human band — never near-zero.
+    let realBel=0,phantomBel=0;
+    for(const b of B.values()){
+      const cost=(TYPES[b.cls]?TYPES[b.cls].cost:2);
+      const p=cost*b.strengthEst*b.conf;
+      if(b.phantom)phantomBel+=p;else realBel+=p;
+    }
+    const truePow=powerAlive(enemy);
+    const blindness=1-Math.min(1,realBel/(truePow*0.5+1)); // 0 = sees plenty, 1 = blind
+    let believed=truePow*(1-0.25*blindness)+phantomBel*1.5;
+    st.believedEnemyPow=cl(believed,truePow*0.5,truePow*1.9);
+    st.trueEnemyPow=truePow;
+    st.blindness=blindness;
+  }
+  function topMode(b){
+    let m=null,n=-1;for(const k in b.modes)if(b.modes[k]>n){n=b.modes[k];m=k;}return m;
+  }
+
+  /* ── DISINFORMATION: strategic IO/deception injects false command-level tracks ── */
+  function injectDisinfo(side,n){
+    const B=INTEL.belief[side];
+    for(let i=0;i<n&&B.size<44;i++){
+      const gx=RND(0.15,0.85)*WORLD.w, gy=RND(0.1,0.9)*WORLD.h;
+      B.set(INTEL._tid++,{
+        id:INTEL._tid, truthId:null, x:gx, y:gy, posErr:8,
+        cls:(Math.random()<0.5?'veh':'inf'), conf:0.55+Math.random()*0.2,
+        strengthEst:RND(0.5,0.9), lastT:now(), firstT:now(), reports:3,
+        modes:{sigint:2,acoustic:1}, phantom:true, disinfo:true, vx:0,vy:0,
+      });
+    }
+    ilog(side,'⚠ FEEDING FALSE PICTURE — decoy formations reported on the net ('+n+' phantom tracks)');
+  }
+  window.INTEL_disinfo=injectDisinfo;
+
+  /* believed enemy combat power (what the commander plans on, not the truth) */
+  window.intelBelievedPow=function(side){
+    if(!INTEL.active||!INTEL.stats[side])return null;
+    return INTEL.stats[side].believedEnemyPow;
+  };
+
+  /* ── main step ── */
+  function step(dt){
+    if(typeof SIM==='undefined'||!SIM.running||SIM.over)return;
+    if(!INTEL.active)return;
+    INTEL._t+=dt;
+    if(INTEL._t>=0.4){INTEL._t=0;
+      INTEL.emitters.BLUE=[];INTEL.emitters.RED=[];
+      try{sensePass(0.4);}catch(e){if(typeof _dbgPush==='function')_dbgPush('INTEL sense: '+e.message,'#ff8844');}
+    }
+    INTEL._fuseT+=dt;
+    if(INTEL._fuseT>=0.5){INTEL._fuseT=0;
+      for(const s of ['BLUE','RED']){try{fuse(s);decay(s,0.5);}catch(e){}}
+    }
+    INTEL._trustT+=dt;
+    if(INTEL._trustT>=1.0){INTEL._trustT=0;
+      for(const s of ['BLUE','RED']){try{reconcile(s);}catch(e){}}
+    }
+  }
+
+  /* wire into the sim loop via a wrapped safeStep-friendly hook */
+  window.stepIntelBelief=function(dt){ try{ step(dt); }catch(e){} };
+
+  /* rebuild each battle: hook startBattle (fires after forces exist) */
+  if(typeof window.startBattle==='function'){
+    const _sb=window.startBattle;
+    window.startBattle=function(){ const r=_sb.apply(this,arguments); try{reset();}catch(e){} return r; };
+  }
+  // also expose reset for the war-layer battle entry
+  window.INTEL_reset=reset;
+
+  /* ── COMMANDER ACTS ON BELIEF, NOT TRUTH ──
+     Wrap analyzeBattlefield so the enemy-power term the commander plans on is
+     the BELIEVED strength (blended toward truth by how good the picture is),
+     producing human-like over/underestimation and letting deception bite. */
+  if(typeof analyzeBattlefield==='function'){
+    const _ab=analyzeBattlefield;
+    window.analyzeBattlefield=analyzeBattlefield=function(side){
+      const bf=_ab(side);
+      try{
+        if(INTEL.active&&INTEL.stats[side]){
+          const bel=INTEL.stats[side].believedEnemyPow;
+          const tru=INTEL.stats[side].trueEnemyPow||1;
+          if(bel>0){
+            const myPwr=powerAlive(side)||1;
+            const believedRatio=cl(myPwr/Math.max(1,bel),0.1,3);
+            // blend: a confident, accurate picture trusts belief; a blind one
+            // falls back toward the (already-imperfect) legacy read
+            const acc=INTEL.stats[side].accuracy;
+            const blend=cl(0.35+acc*0.5,0,0.85);
+            bf.forceRatio=bf.forceRatio*(1-blend)+believedRatio*blend;
+            bf.enemyStrength=cl(bel/(myPwr+bel),0,1)*blend+bf.enemyStrength*(1-blend);
+            bf._intelBlend=blend;
+          }
+        }
+      }catch(e){}
+      return bf;
+    };
+  }
+
+  /* ── strategic disinfo hook: when a side runs a deception/IO op, feed the
+     enemy commander phantom tracks (tactical expression of the strategic lever) ── */
+  try{
+    if(typeof window.tcDeception==='undefined'){/* wired below via periodic check */}
+  }catch(e){}
+  // Poll WAR.strat.deceived so a strategic deception also warps the tactical
+  // belief picture of whichever side is currently rendered.
+  window.stepIntelDisinfoBridge=function(){
+    try{
+      if(!INTEL.active||typeof WAR==='undefined'||!WAR.strat)return;
+      for(const s of ['BLUE','RED']){
+        if((WAR.strat.deceived[s]||0)>0 && !INTEL._disT){ }
+      }
+    }catch(e){}
+  };
+
+  /* ── MAP OVERLAY: draw the belief picture (estimated tracks + uncertainty) ── */
+  window.drawBeliefOverlay=function(){
+    if(!INTEL.overlay||!INTEL.active||typeof CB==='undefined'||!CB)return;
+    const viewSide=(typeof FOG!=='undefined'&&FOG.view)?FOG.view:'BLUE';
+    const B=INTEL.belief[viewSide];if(!B)return;
+    for(const b of B.values()){
+      const p=project(b.x,terrainH(b.x,b.y)+2,b.y);
+      if(!p||!isFinite(p.x))continue;
+      const scale=cl(CB.focal/p.z,0.4,16);
+      const phantom=b.phantom;
+      const col=phantom?'255,190,70':(viewSide==='BLUE'?'120,200,255':'255,140,120');
+      const a=cl(b.conf,0.12,0.9);
+      const rr=Math.max(3,b.posErr*scale*0.5);
+      try{
+        ctx.save();
+        // uncertainty ellipse
+        ctx.globalAlpha=a*0.30;
+        ctx.strokeStyle='rgba('+col+',0.9)';
+        ctx.lineWidth=0.8;ctx.setLineDash(phantom?[2,3]:[]);
+        ctx.beginPath();ctx.arc(p.x,p.y,rr,0,Math.PI*2);ctx.stroke();
+        ctx.setLineDash([]);
+        // centre marker
+        ctx.globalAlpha=a;
+        ctx.fillStyle='rgba('+col+',1)';
+        ctx.beginPath();ctx.arc(p.x,p.y,Math.max(1.4,1.8*scale*0.4),0,Math.PI*2);ctx.fill();
+        // class + confidence label
+        ctx.globalAlpha=cl(a+0.1,0,1);
+        ctx.font=(5.5*Math.min(2,scale*0.5)).toFixed(1)+'px monospace';
+        ctx.fillStyle='rgba('+col+',0.95)';ctx.textAlign='center';
+        const lbl=(b.cls==='unknown'?'?':(TYPES[b.cls]?TYPES[b.cls].glyph:'?'))+(phantom?'⚠':'')+' '+Math.round(b.conf*100)+'%';
+        ctx.fillText(lbl,p.x,p.y-rr-1);
+        ctx.restore();
+      }catch(e){ try{ctx.restore();}catch(_){} }
+    }
+  };
+
+  /* ── THE ISR TAB ── */
+  function bar(label,v,col,max){max=max||1;const pc=Math.round(100*v/max);
+    return '<div style="display:flex;align-items:center;gap:4px;font-size:6.2px;margin:1px 0">'+
+      '<span style="width:52px;color:var(--faint)">'+label+'</span>'+
+      '<div style="flex:1;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden">'+
+      '<i style="display:block;height:100%;width:'+cl(pc,0,100)+'%;background:'+(pc<30?'var(--bad)':col)+'"></i></div>'+
+      '<span style="width:26px;text-align:right;color:var(--dim)">'+pc+'%</span></div>';}
+
+  window.renderISRPanel=function(){
+    const el=document.getElementById('isr');if(!el)return;
+    if(!INTEL.active){
+      el.innerHTML='<div class="empty"><span class="g">🛰</span>ISR &amp; belief engine initialises when a battle begins.<br>Multi-modal sensors · reports up the chain · commander beliefs, not certainties.</div>';
+      return;
+    }
+    const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const sec=t=>`<div style="font-size:7px;letter-spacing:2px;color:var(--warn);text-transform:uppercase;margin:8px 0 4px">${t}</div>`;
+    let h='';
+    h+=`<div style="font-size:6.6px;color:var(--faint);line-height:1.5;margin-bottom:4px">Information is a resource: sensors observe imperfectly, reports climb the chain of command with latency and loss, and each commander fuses them into <b>beliefs with confidence — not certainties</b>. Stale reports drift, jamming blinds, and disinformation plants ghosts. The commander plans on this picture, so he can be wrong.</div>`;
+
+    // overlay toggle
+    h+=`<div style="margin-bottom:6px"><button onclick="INTEL_toggleOverlay()" style="padding:3px 9px;font-family:inherit;font-size:7px;cursor:pointer;border-radius:3px;border:1px solid ${INTEL.overlay?'var(--cyan)':'var(--line2)'};background:${INTEL.overlay?'rgba(15,50,90,0.7)':'rgba(8,12,26,0.7)'};color:${INTEL.overlay?'#fff':'var(--faint)'}">◇ Belief overlay on map: ${INTEL.overlay?'ON':'OFF'}</button>
+      <span style="font-size:6px;color:var(--faint);margin-left:6px">shows the ${(FOG&&FOG.view)||'BLUE'} commander's tracks &amp; uncertainty</span></div>`;
+
+    for(const side of ['BLUE','RED']){
+      const st=INTEL.stats[side];if(!st)continue;
+      const tr=INTEL.trust[side];
+      const col=SIDECOL[side];
+      const accPct=Math.round(st.accuracy*100);
+      const belief=INTEL.belief[side];
+      h+=`<div style="border:1px solid var(--line);border-radius:4px;padding:5px 7px;margin:4px 0;background:rgba(10,14,26,0.5)">`;
+      h+=`<div style="font-size:8px;color:${col};font-weight:700;margin-bottom:3px">${side} — fusion cell</div>`;
+      // plain-language summary
+      const real=st.tracks-st.phantom;
+      const belPow=Math.round(st.believedEnemyPow),truPow=Math.round(st.trueEnemyPow);
+      const misjudge=truPow>0?Math.round(100*(belPow-truPow)/truPow):0;
+      h+=`<div style="font-size:6.4px;color:var(--dim);line-height:1.5;margin-bottom:4px">Holds <b style="color:${col}">${st.tracks}</b> tracks (${real} real, <b style="color:${st.phantom>0?'var(--gold)':'var(--faint)'}">${st.phantom} phantom</b>, ${st.stale} stale). Picture accuracy <b style="color:${accPct>70?'var(--good)':accPct>45?'var(--gold)':'var(--bad)'}">${accPct}%</b>. Believes enemy power <b>${belPow}</b> vs true <b>${truPow}</b> — ${misjudge>8?'<span style="color:var(--bad)">over-estimating '+misjudge+'%</span>':misjudge<-8?'<span style="color:var(--gold)">under-estimating '+(-misjudge)+'%</span>':'reading it about right'}.${st.jammed?' <span style="color:var(--bad)">◈ under EW jamming.</span>':''}</div>`;
+      // sensor trust
+      h+=`<div style="font-size:6px;letter-spacing:1px;color:var(--faint);margin-bottom:2px">SENSOR TRUST (adapts to being right or wrong)</div>`;
+      for(const m of MODES)h+=bar(MODE_GLYPH[m]+' '+m,tr[m],col);
+      // report flow
+      h+=`<div style="font-size:6px;color:var(--faint);margin-top:3px">report flow: ${st.queued} in transit · ${st.delivered} delivered · <span style="color:${st.dropped>0?'var(--bad)':'var(--faint)'}">${st.dropped} lost to comms/EW</span> · ${st.falsePos} false positives</div>`;
+      h+='</div>';
+    }
+
+    // track table for the viewed side
+    const viewSide=(FOG&&FOG.view)||'BLUE';
+    const B=INTEL.belief[viewSide];
+    h+=sec(`◇ ${viewSide} track picture (${B?B.size:0})`);
+    if(!B||!B.size)h+='<div class="note">No tracks held — blind on this side.</div>';
+    else{
+      const arr=Array.from(B.values()).sort((a,b)=>b.conf-a.conf).slice(0,16);
+      h+='<div style="font-size:6px">';
+      for(const b of arr){
+        const modes=Object.keys(b.modes).map(m=>MODE_GLYPH[m]).join('');
+        const age=(now()-b.lastT).toFixed(0);
+        const clsName=b.cls==='unknown'?'unknown':(TYPES[b.cls]?TYPES[b.cls].name:b.cls);
+        const tagCol=b.phantom?'var(--gold)':'var(--dim)';
+        h+=`<div style="display:flex;justify-content:space-between;gap:6px;padding:1px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+          <span style="color:${tagCol}">${b.phantom?(b.disinfo?'✖ DECOY':'⚠ ghost'):esc(clsName)} ${modes}</span>
+          <span style="color:var(--faint)">±${b.posErr.toFixed(0)}u · ${Math.round(b.conf*100)}% · ${age}s old</span></div>`;
+      }
+      h+='</div>';
+    }
+
+    // active emitters (SIGINT picture)
+    const em=[...INTEL.emitters.BLUE.map(e=>({...e,by:'BLUE'})),...INTEL.emitters.RED.map(e=>({...e,by:'RED'}))];
+    if(em.length){
+      h+=sec('📶 Emissions detected (SIGINT)');
+      const kinds={};for(const e of em)kinds[e.kind]=(kinds[e.kind]||0)+1;
+      h+='<div style="font-size:6.2px;color:var(--dim)">'+Object.entries(kinds).map(([k,n])=>`${n}× ${k}`).join(' · ')+'</div>';
+      h+='<div class="note" style="font-size:5.8px">Every active radar and jammer radiates — and can be found by the enemy\'s passive SIGINT. Emitting is never free.</div>';
+    }
+
+    // intel log
+    h+=sec('☰ Intel event log');
+    const log=[...INTEL.log.BLUE.map(e=>({...e,s:'BLUE'})),...INTEL.log.RED.map(e=>({...e,s:'RED'}))]
+      .sort((a,b)=>b.t-a.t).slice(0,12);
+    if(!log.length)h+='<div class="note">No intel events yet.</div>';
+    else for(const e of log)h+=`<div style="font-size:6.2px;color:var(--dim);padding:1px 0"><span style="color:${SIDECOL[e.s]}">${e.s}</span> T+${e.t}s ${esc(e.msg)}</div>`;
+
+    el.innerHTML=h;
+  };
+
+  window.INTEL_toggleOverlay=function(){INTEL.overlay=!INTEL.overlay;try{renderISRPanel();}catch(e){}};
+
+  /* inject the ISR tab + pane */
+  function injectISR(){
+    try{
+      const tabs=document.getElementById('tabs'), rgt=document.getElementById('rgt');
+      if(tabs&&rgt&&!document.getElementById('isr')){
+        const btn=document.createElement('button');
+        btn.className='tab';btn.dataset.pane='isr';btn.textContent='🛰 ISR';
+        btn.addEventListener('click',()=>{try{switchTab('isr');}catch(e){}});
+        tabs.appendChild(btn);
+        const pane=document.createElement('div');
+        pane.id='isr';pane.className='pane';
+        rgt.appendChild(pane);
+      }
+    }catch(e){}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',injectISR);
+  else injectISR();
+
+  /* refresh the panel when its tab is open (piggyback on rAF via a light timer) */
+  setInterval(()=>{
+    try{
+      const p=document.getElementById('isr');
+      if(p&&p.classList.contains('on'))renderISRPanel();
+    }catch(e){}
+  },700);
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
    INTEGRATED COMMAND FABRIC  (v49)
    ───────────────────────────────────────────────────────────────────────
    Ties the chain of command, intelligence, formations and fires into one
@@ -17050,6 +17699,7 @@ function enterBattle(id){
   if(WAR.paused){SIM.paused=true;try{if(typeof pauseBtn!=='undefined'&&pauseBtn){pauseBtn.disabled=true;}}catch(e){}} // theatre pause holds through re-entry
   applyNodeModifiers(n);
   try{applyBattleFrame(n);}catch(e){} // v66: defender's ground, SOF, airborne
+  try{if(typeof INTEL_reset==='function')INTEL_reset();}catch(e){} // v67: fresh belief picture per battle
   MAP.mode='tac';updateWarBtn();
   WAR.observing=(WAR.commandMode==='theatre');
   try{setPhase(`${n.name} — forces deploying (front sector ${n.id+1}/6)`);}catch(e){}
@@ -17946,6 +18596,9 @@ if(typeof window.openPlanMode==='function'){
     if(!best){ warEvent(side+' deception plan finds no exploitable sector','#ffcc44'); return; }
     s.deceived[enemy]=rn(22,34); s.decoy[enemy]=best.id;
     warEvent(side+' mounts a deception operation — '+enemy+' reserves are being drawn toward '+best.name+', away from the real effort','#c9a0ff');
+    // v67: a strategic deception also poisons the enemy commander's tactical
+    // belief picture in any rendered battle — decoy formations on the net
+    try{if(typeof INTEL_disinfo==='function'&&typeof SIM!=='undefined'&&SIM.running)INTEL_disinfo(enemy,2+((Math.random()*2)|0));}catch(e){}
   }
 
   // CYBER OFFENSIVE — a one-shot strike on enemy C2/ISR, cheaper and faster
@@ -22093,6 +22746,7 @@ renderFormationUI();renderDoctrineUI();
 renderScenarioUI();
 renderAAR();renderIntel();renderTacticsTab();renderWiki();
 switchTab('aar',false);
+log('WAR v67 — THE INFORMATION & BELIEF ENGINE: information is a resource, not a fact — imperfect multi-modal sensing (👁 visual · 📡 radar w/ horizon · 🌡 thermal crossover · 🔊 acoustic w/o LOS · 📶 passive SIGINT of emissions) → reports up the chain w/ latency & loss → commander FUSION into belief tracks (confidence not certainty) → adaptive sensor trust · false positives · disinformation plants phantom armies · commanders make human mistakes on the believed picture · new 🛰 ISR tab + belief overlay','#8fd6ff');
 log('WAR v66 — THE NAVAL & COMBINED-ARMS UPDATE: carriers/submarines/LHDs at real scaled ranges (Tomahawk=whole map, SM-6 umbrellas, Mk 48s) · fleet supports land (NGFS, cruise strikes, sealift, carrier groups offshore) · SEAD-before-strikers + supported-advance doctrine gates (militia swarm instead) · defender fights on its own ground, attacker opens with SOF & airborne by intel · saturation salvo raids (hundreds inbound, layered interception) · per-sector doctrines both sides · voicelines now visible (radio overlay) & audible (speech)','#7fdfdf');
 log('WAR v65 — ASYMMETRIC WARFARE: individual skill & gear on every unit · ✚ Downed Bird (Mogadishu raid) · ◙ Night Compound (Benghazi annex) · ⌖ FPV Ambush (Ukraine/civil-war drone asymmetry) · casualty-sensitive victories & named operator callsigns · AMPHIBIOUS combat game-wide (≋ Beach Landing) · 🎙 commander voicelines','#ffd77a');
 log('WAR v63 — ⚒ THE FOUNDRY (Inventor mode, off by default): genuine invention of new mechanics from effect primitives — blockship barriers from scuttled fleets, bespoke reactive cyber-ISR systems, novel combined-arms doctrines, kill-zones, perception warfare · problem-driven diagnosis for quality · costed, budgeted & cabinet-gated · proven blueprints inscribed in the Doctrine Book and re-forgeable across wars','#e0b0ff');
