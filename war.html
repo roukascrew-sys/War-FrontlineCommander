@@ -655,7 +655,7 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
 
 <header id="hdr">
   <span class="mark">◆</span>
-  <h1>WAR&nbsp;<small>v67 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
+  <h1>WAR&nbsp;<small>v68 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
   <div id="ticker">
     <div class="tk bl">▣ BLUE <b id="tk-bl">0</b></div>
     <div class="tk rd">▣ RED <b id="tk-rd">0</b></div>
@@ -912,6 +912,19 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
   <div id="wiki" class="pane"></div>
   <div id="notes" class="pane">
   <div id="pnInner">
+    <div class="pn-ver">WAR v68 <span class="pn-date">Jul 2026</span></div>
+    <div class="pn-section">🛰 The Orbital Domain — space becomes a system every other system leans on</div>
+    <div class="pn-item new"><b>Space is no longer a bag of assets — it is a contested domain with a per-side order of battle.</b> Each side now fields seven real constellation types, health-rated and scaled by national quality: <b>📷 EO recon</b> (daylight imaging, weather-blocked), <b>📡 SAR radar-imaging</b> (all-weather, sees through cloud and night), <b>📶 ELINT/SIGINT</b> (geolocates enemy emitters), <b>🔥 early-warning IR</b> (SBIRS-class launch detection), <b>🛰 GNSS/PNT</b> (GPS/GLONASS/Galileo), <b>📻 SATCOM</b>, and <b>🌦 weather</b> sats — plus a shared <b>🌍 Starlink-class mega-constellation</b>. Read the whole picture on the new <b>🛰 Space tab</b>.</div>
+    <div class="pn-item new"><b>Everything ties into everything.</b> Satellites are not scenery — they feed the war: <b>SAR &amp; EO passes drop high-quality tracks straight into the v67 belief engine</b> (SAR works in the weather that blinds EO); <b>ELINT sats geolocate emitters</b> into the SIGINT picture; <b>early-warning sats add interception capacity</b> to saturation missile raids (reaction time); <b>recon sats cue the fleet's cruise missiles over the horizon</b> — a blinded navy with no satellite and no local track <i>holds its fire</i>; <b>GNSS health drives guided-munition accuracy</b>; and <b>SATCOM + Starlink hold the C2 net together</b>. Shoot the enemy's constellations down and he goes blind across all of it.</div>
+    <div class="pn-item new"><b>🌍 Starlink, modelled both ways it really cuts.</b> A side that leans on the mega-constellation gets a resilient comms backbone <b>and a bistatic passive-radar bonus</b> — faint persistent tracks skimmed off the reflections of thousands of downlinks, fed into its belief picture. But those same terminals <b>emit on the uplink</b>: using Starlink <b>lights your own formations up on the enemy's ELINT</b>, handing him SIGINT tracks of your positions. Using the enemy's internet as your radar — and paying for your own use in emissions — exactly as the real debate runs.</div>
+    <div class="pn-item new"><b>◇ Ultra-high-altitude ISR platforms.</b> Capable sides launch a real <b>U-2 / RQ-4 Global Hawk / stratospheric balloon</b> — an actual unit on the map, flying far above the air battle with enormous sensors feeding the belief engine continuously. It survives the way the real thing does — <b>altitude and low observability, not armor</b> — so it persists until the enemy commits air superiority deep into the rear to kill it (à la the 2019 Global Hawk shootdown). Lose it and a hole opens in your picture. Militias don't field them (the discipline gate).</div>
+    <div class="pn-section">☄ Anti-satellite combat &amp; the Kessler price</div>
+    <div class="pn-item new"><b>ASAT weaponry — four ways to kill a satellite,</b> each gated by <b>Space Domain Awareness</b> (you must track a bird to shoot it) and orbital reach (only capable nations get there): <b>direct-ascent kinetic</b> (a missile from the ground — devastating, but it breeds debris), <b>co-orbital killer</b> (a shadowing inspector sat that disables in orbit — clean and deniable), <b>directed-energy dazzle</b> (a ground laser that temporarily blinds EO optics), and <b>cyber intrusion into the ground station</b> (the soft underbelly — hijack the downlink). Commanders reach for ASAT when the enemy's space edge is hurting them, and it climbs the strategic escalation ladder.</div>
+    <div class="pn-item new"><b>☄ Kessler syndrome — the tragedy of the commons in orbit.</b> Every <b>kinetic</b> ASAT kill spews a debris cloud that raises a global Kessler index — and that debris <b>degrades every low-orbit constellation for BOTH sides</b> (EO, SAR, ELINT, weather, Starlink), the shooter's included. Debris slowly de-orbits over time, but a war fought with kinetic ASAT blinds everyone. The Space tab shows the live debris level and the per-constellation health lost to it.</div>
+    <div class="pn-item new"><b>☢ High-altitude nuclear EMP — the catastrophe option.</b> A losing side, deep on the escalation ladder, may detonate a nuke in the upper atmosphere: a theatre-wide electromagnetic pulse that <b>scrambles every satellite and radio at once</b> (all constellations to a quarter strength for a spell) and jolts the debris field. Rare, AI-gated, and a hard escalation — the Starfish Prime nightmare.</div>
+    <div class="pn-section">🔓 Cyber update — the ground segment is the front line</div>
+    <div class="pn-item new"><b>Cyber and space are now one fight.</b> On top of the existing cyber suite (C2 intrusion, ISR spoofing, logistics attack, AD suppression, GPS/SATCOM jamming), the space layer adds the modern reality that <b>the weakest link in a satellite is its ground station</b>: <b>cyber ASAT</b> hijacks a constellation's downlink without ever reaching orbit, <b>GPS spoofing</b> (distinct from jamming — it sends the enemy's guided munitions to the <i>wrong</i> grid rather than merely denying them), and <b>responsive-space reconstitution</b> lets a damaged constellation slowly relaunch and self-heal toward its baseline. Space Domain Awareness is itself computed from your live sensors and ELINT — blind yourself and you can't even find the targets to shoot.</div>
+    <div class="pn-item fix"><b>Layered &amp; guarded, integrates with the legacy space layer.</b> The orbital domain runs alongside the v48 C4ISR recon-satellite passes and the v49 Command-Fabric constellations rather than replacing them; it is rebuilt each battle, throttled, and fully try/caught — if anything throws, every existing system continues unchanged and the sim never freezes.</div>
     <div class="pn-ver">WAR v67 <span class="pn-date">Jul 2026</span></div>
     <div class="pn-section">🛰 The Information &amp; Belief Engine — fog of war becomes a system</div>
     <div class="pn-item new"><b>Information is now a resource, not a fact.</b> Until now a sensor detecting a unit meant the commander instantly, perfectly knew where it was. That is gone. The new pipeline is: <b>raw multi-modal sensing → imperfect OBSERVATIONS → up the chain of command (latency &amp; loss) → FUSION at the commander (weighted by trust) → BELIEF TRACKS with confidence, not certainty → decay &amp; disinformation → the commander plans on that believed picture, so he can be wrong.</b> The trigger-puller still shoots what he can physically see (ground-truth contact is unchanged — combat is untouched); it is the <b>commander's picture</b> that is now a belief that can be stale, incomplete, or salted with ghosts.</div>
@@ -2240,7 +2253,7 @@ function stepDetection(dt){
   let pairs=0;
   const MAX_PAIRS=1200;
   for(const obs of aliveObs){
-    const reconBonus=obs._reconValue||1; // recon assets see further/better
+    const reconBonus=(obs._reconValue||1)*(1+(obs._starBonus||0)); // recon assets + v68 Starlink bistatic radar
     for(const tgt of aliveTgt){
       if(tgt.side===obs.side)continue;
       if(pairs++>MAX_PAIRS)break;
@@ -6789,11 +6802,16 @@ function stepNavalOps(dt){
       NAVOPS.marines[side]++;
       pushEvent(side,`${side} assault ship puts ${kind==='veh'?'an amtrac':'marines'} in the water — ${lhd._lhdTroops} lifts remaining`,side.toLowerCase());
     }
-    // 4) land-attack cruise missiles
+    // 4) land-attack cruise missiles — need a TARGETING SOLUTION.
+    // v68: the fleet fires beyond its own horizon only where space or air cues
+    // it — over-the-horizon targeting from recon satellites (or a local track).
+    // A blinded fleet (no sats, no organic track) holds its fire.
     const shooters=fleet.filter(u=>u.sub==='Destroyer'||u.sub==='Missile Cruiser'||u.sub==='Submarine');
     if(shooters.length){
+      const oth=(typeof ORBIT_othQuality==='function')?ORBIT_othQuality(side):0;
       const hvt=UNITS.filter(u=>u.alive&&u.side===enemy&&!u.flies&&u.t!=='nav'&&
-        (u.t==='arty'||u.t==='bml'||u.t==='ew'||u.t==='sup'||CA_GROUND_AD.has(u.sub)));
+        (u.t==='arty'||u.t==='bml'||u.t==='ew'||u.t==='sup'||CA_GROUND_AD.has(u.sub))&&
+        ((u.spottedBy&&u.spottedBy[side])||Math.random()<oth)); // cued locally or from orbit
       for(const s of shooters){
         if(s._cmCd>0)continue;
         if(s._cmCd===0&&NAVOPS.cm[side]===0&&Math.random()<0.5){s._cmCd=rnd(8,20);continue;} // stagger first launches
@@ -7043,6 +7061,8 @@ function fireSaturationSalvo(tgtSide,count,kind){
     else if(u.t==='ew')cap+=5;                  // soft-kill: decoyed/jammed off course
     else if(u.t==='nav'&&(u.sub==='Destroyer'||u.sub==='Missile Cruiser'))cap+=9; // Aegis
   }
+  // v68: early-warning satellites give reaction time — more of the raid is engaged
+  try{if(typeof ORBIT_ewBonus==='function')cap+=ORBIT_ewBonus(tgtSide);}catch(e){}
   // Per-track kill probability: capacity vs raid size decides the ratio —
   // a net with depth stops ~90-99% (Iran→Israel Apr 2024), a saturated or
   // thin net leaks catastrophically. Big raids ALWAYS leak a little: even
@@ -9777,6 +9797,7 @@ function step(){
   safeStep('navalOps',()=>stepNavalOps(DT));        // v66: fleet operations
   safeStep('combinedArms',()=>stepCombinedArms(DT)); // v66: SEAD/air-cover doctrine gates
   safeStep('intelBelief',()=>{if(typeof stepIntelBelief==='function')stepIntelBelief(DT);}); // v67: information & belief engine
+  safeStep('orbit',()=>{if(typeof stepOrbit==='function')stepOrbit(DT);}); // v68: orbital domain + cyber-space
 
   // elevation sampling
   _elevTimer+=DT;
@@ -11622,6 +11643,7 @@ function draw(){
   drawC2Lines();
   drawRWRIndicators();
   try{if(typeof drawBeliefOverlay==='function')drawBeliefOverlay();}catch(e){} // v67 belief tracks
+  try{if(typeof drawOrbitOverlay==='function')drawOrbitOverlay();}catch(e){} // v68 satellite passes
 }
 function drawCell(it){
   ctx.beginPath();
@@ -13404,6 +13426,7 @@ function switchTab(pane,open){
   else if(pane==='war'){try{if(typeof renderWarPane==='function')renderWarPane();}catch(e){}}
   else if(pane==='command'){try{renderC2Panel();renderDeepStrikePanel();if(typeof renderCommandPane==='function')renderCommandPane();}catch(e){}}
   else if(pane==='isr'){try{if(typeof renderISRPanel==='function')renderISRPanel();}catch(e){}}
+  else if(pane==='space'){try{if(typeof renderSpacePanel==='function')renderSpacePanel();}catch(e){}}
 }
 
 /* ══════ FORMATION UI ══════ */
@@ -15866,6 +15889,37 @@ else injectUI();
   }
   window.INTEL_disinfo=injectDisinfo;
 
+  /* ── SPACE-BASED ISR FEED (v68) ── the orbital layer reaches back and drops
+     high-quality tracks straight into the fusion picture (a satellite pass or
+     a HALE platform sees the whole sector at once). `mode` tags which sensor
+     ('radar'=SAR all-weather, 'visual'=EO daylight, 'sigint'=ELINT geoloc). */
+  window.INTEL_satReport=function(side,unit,conf,mode){
+    try{
+      if(!INTEL.active||!unit||!unit.alive)return;
+      const B=INTEL.belief[side];
+      mode=mode||'radar';
+      // associate with an existing track for this truth, else create
+      let best=null;
+      for(const b of B.values())if(b.truthId===unit.id){best=b;break;}
+      const posErr=(mode==='visual'?2:mode==='radar'?3:9)*(1.1-conf*0.4);
+      const strengthMeas=cl((unit.maxHp>0?unit.hp/unit.maxHp:1),0,1);
+      if(best){
+        best.x+=(unit.x-best.x)*0.6;best.y+=(unit.y-best.y)*0.6;
+        best.posErr=Math.max(2,Math.min(best.posErr,posErr));
+        best.conf=cl(best.conf+conf*0.4*(1-best.conf)+0.05,0,1);
+        best.strengthEst=strengthMeas;best.lastT=now();best.reports++;
+        best.modes[mode]=(best.modes[mode]||0)+1;
+        if(best.cls==='unknown')best.cls=unit.t;
+        if(best.phantom&&best.truthId==null){best.phantom=false;best.truthId=unit.id;}
+      }else if(B.size<44){
+        B.set(INTEL._tid++,{id:INTEL._tid,truthId:unit.id,x:unit.x,y:unit.y,posErr,
+          cls:unit.t,conf:cl(conf,0.2,0.95),strengthEst:strengthMeas,lastT:now(),firstT:now(),
+          reports:1,modes:{[mode]:1},phantom:false,disinfo:false,vx:0,vy:0});
+      }
+    }catch(e){}
+  };
+  window.INTEL_isActive=function(){return INTEL.active;};
+
   /* believed enemy combat power (what the commander plans on, not the truth) */
   window.intelBelievedPow=function(side){
     if(!INTEL.active||!INTEL.stats[side])return null;
@@ -16093,6 +16147,475 @@ else injectUI();
       if(p&&p.classList.contains('on'))renderISRPanel();
     }catch(e){}
   },700);
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   THE ORBITAL DOMAIN + CYBER-SPACE   (v68)
+   ─────────────────────────────────────────────────────────────────────
+   Space is not a bag of "assets" — it is a contested domain that every
+   other system now depends on. A per-side orbital order of battle of real
+   constellation types, a shared Starlink-class mega-constellation used as
+   both an internet backbone AND a bistatic passive radar, anti-satellite
+   weaponry (kinetic / co-orbital / directed-energy / cyber), a Kessler
+   debris cascade that punishes kinetic ASAT for BOTH sides, ultra-high-
+   altitude ISR platforms, and a cyber layer whose front line is the ground
+   segment of space. Everything wires into the belief engine, the naval
+   over-the-horizon kill chain, missile-defence warning, GPS accuracy and
+   the C2 net. Fully guarded and rebuilt each battle.
+
+   Real-world elements modelled (>10):
+     1  EO recon sats (KH-11 class)      — daylight imaging, weather-blocked
+     2  SAR radar-imaging sats           — all-weather, night, see through cloud
+     3  ELINT / SIGINT sats              — geolocate enemy emitters (→ belief)
+     4  Early-warning IR sats (SBIRS)    — launch detection → interception time
+     5  GNSS / PNT (GPS/GLONASS/Galileo) — guided-munition accuracy
+     6  SATCOM comms sats                — stretch the C2 net
+     7  Weather sats                     — forecast accuracy, ops planning
+     8  Starlink mega-constellation      — resilient backbone + bistatic radar
+     9  Direct-ascent kinetic ASAT       — missile from the ground kills a sat
+    10  Co-orbital killer sats           — shadow and disable in orbit
+    11  Directed-energy dazzle           — ground laser blinds EO sats
+    12  Kessler syndrome                 — kinetic kills breed debris for all
+    13  Space Domain Awareness (SDA)     — you must see a sat to shoot it
+    14  Ultra-high-altitude ISR (U-2 /
+        Global Hawk / spy balloon)       — persistent, hard to reach
+    15  High-altitude nuclear EMP        — the catastrophe option, region kill
+    16  Cyber ground-station intrusion   — the soft underbelly of space
+    17  GPS spoofing (≠ jamming)         — send guided rounds to the wrong grid
+    18  Responsive-space reconstitution  — relaunch to rebuild a shot-down net
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+  const cl=(v,a,b)=>v<a?a:v>b?b:v;
+  const RND=(a,b)=>a+Math.random()*(b-a);
+  const now=()=>(typeof SIM!=='undefined'&&SIM)?SIM.t:0;
+  const foeOf=s=>s==='BLUE'?'RED':'BLUE';
+
+  // constellation catalogue — label, what it does, is it low-orbit (Kessler-vulnerable)
+  const CON=[
+    {k:'eo',    name:'EO recon',      glyph:'📷', leo:true },
+    {k:'sar',   name:'SAR radar-imaging',glyph:'📡', leo:true },
+    {k:'elint', name:'ELINT/SIGINT',  glyph:'📶', leo:true },
+    {k:'ew',    name:'Early-warning IR',glyph:'🔥', leo:false},
+    {k:'pnt',   name:'GNSS / PNT',    glyph:'🛰', leo:false},
+    {k:'satcom',name:'SATCOM',        glyph:'📻', leo:false},
+    {k:'weather',name:'Weather',      glyph:'🌦', leo:true },
+  ];
+  const CON_KEYS=CON.map(c=>c.k);
+
+  const ORBIT={
+    active:false,_t:0,_passT:{BLUE:0,RED:0},_asatT:{BLUE:0,RED:0},_msgT:0,
+    con:{BLUE:null,RED:null},        // per-side constellation health 0..100
+    base:{BLUE:null,RED:null},
+    sda:{BLUE:0,RED:0},              // space domain awareness 0..1 (needed to target ASAT)
+    asatCap:{BLUE:0,RED:0},          // ability to reach orbit with a kill 0..1
+    starlink:{BLUE:0,RED:0},         // each side's reliance/use of the mega-constellation 0..1
+    starlinkHealth:100,              // the shared backbone's health (denial/jam/debris)
+    kessler:0,                       // 0..1 orbital debris density (rises with kinetic ASAT)
+    emp:false,_empT:0,
+    passes:[],                       // active satellite sweeps (viz + ISR)
+    hale:{BLUE:[],RED:[]},           // ultra-high-altitude ISR unit ids
+    log:[],
+    overlay:false,
+    stats:{BLUE:null,RED:null},
+  };
+  window.ORBIT=ORBIT;
+
+  function qOf(side){
+    try{
+      const c=COUNTRIES[FORCE[side].country];let n=0,s=0;
+      for(const k in c.m)for(const v of c.m[k]){s+=v;n++;}
+      return cl(((s/n)-0.88)/0.30,0.05,1);
+    }catch(e){return 0.5;}
+  }
+  function olog(msg,col){
+    ORBIT.log.unshift({t:now().toFixed(0),msg,col:col||'#8fd6ff'});
+    if(ORBIT.log.length>30)ORBIT.log.pop();
+    try{if(typeof pushEvent==='function')pushEvent(null,'[SPACE] '+msg,'gold');}catch(e){}
+  }
+
+  function reset(){
+    for(const side of ['BLUE','RED']){
+      const q=qOf(side);
+      const con={},base={};
+      for(const c of CON){
+        // higher-quality nations field deeper, healthier constellations
+        const h=cl(35+q*60+RND(-8,8)*(c.leo?1:0.6),10,100);
+        con[c.k]=h;base[c.k]=h;
+      }
+      ORBIT.con[side]=con;ORBIT.base[side]=base;
+      ORBIT.sda[side]=cl(0.25+q*0.6,0.05,0.95);
+      ORBIT.asatCap[side]=cl((q-0.35)*1.3,0,0.9);         // only capable nations reach orbit
+      ORBIT.starlink[side]=cl(0.3+q*0.5,0,0.95);          // reliance on the commercial backbone
+      ORBIT.stats[side]=freshStats();
+      ORBIT.hale[side]=[];
+      ORBIT._passT[side]=RND(6,16);ORBIT._asatT[side]=RND(20,45);
+    }
+    ORBIT.starlinkHealth=100;ORBIT.kessler=0;ORBIT.emp=false;ORBIT._empT=0;
+    ORBIT.passes=[];ORBIT.log=[];ORBIT._t=0;ORBIT._msgT=0;
+    ORBIT.active=true;
+    try{spawnHALE();}catch(e){}
+    olog('Orbital order of battle established — both sides open the space domain');
+  }
+  function freshStats(){return {passes:0,asatFired:0,satsLost:0,tracksFed:0};}
+
+  window.ORBIT_reset=reset;
+
+  /* ── ultra-high-altitude ISR platforms (U-2 / Global Hawk / spy balloon) ──
+     Spawned as REAL air units so they live inside detection, combat and the
+     belief engine — but unarmed, very high, huge-sensor, hard to reach.
+     Only capable (higher-quality) sides field one, and never in a militia
+     swarm (asymmetric discipline gate). */
+  function spawnHALE(){
+    if(typeof spawnUnit!=='function'||typeof UNITS==='undefined')return;
+    const swarm=(typeof CA!=='undefined'&&CA.disc)?false:false;
+    for(const side of ['BLUE','RED']){
+      const q=qOf(side);
+      if(q<0.45)continue;                                 // no HALE capability
+      if(typeof CA!=='undefined'&&CA.disc&&CA.disc[side]<0.5)continue; // irregulars don't fly Global Hawks
+      const names=['RQ-4 Global Hawk','U-2 Dragon Lady','HALE recon UAV','stratospheric ISR balloon'];
+      const left=(side==='BLUE');
+      spawnUnit(side,'air',WORLD.w*(left?0.10:0.90),WORLD.h*0.5);
+      const u=UNITS[UNITS.length-1];
+      if(!u)continue;
+      u.sub='High-Recon';u.subGlyph='◇';
+      u.noFire=true;u._hale=true;
+      u.alt=ALT.ORBIT*1.6;u.targetAlt=ALT.ORBIT*1.6;
+      u.maxHp*=3.5;u.hp=u.maxHp;
+      u.spd*=0.4;
+      u.sensor={visual:180,thermal:150,radar:120,sigint:120};
+      // survives through ALTITUDE and LOW OBSERVABILITY, not armor: very hard to
+      // detect/target (a U-2/Global Hawk is killed only when the enemy commits
+      // air superiority deep into the rear, e.g. the 2019 Global Hawk shootdown)
+      u.signature={visual:18,thermal:16,radar:22,acoustic:4};
+      u.stealth=62;
+      u._reconValue=3.2;u.isRecon=true;u._eyeH=ALT.ORBIT*1.6;
+      // loiter in the deep rear rather than drifting into contested airspace
+      u.x=WORLD.w*(left?0.06:0.94);u.stationary=false;
+      ORBIT.hale[side].push(u.id);
+      olog(side+' launches a '+names[(Math.random()*names.length)|0]+' — persistent high-altitude ISR on station',side==='BLUE'?'#6cc6ff':'#ff8a6c');
+    }
+  }
+
+  /* effective constellation health after shared degraders (Kessler, EMP) */
+  function eff(side,k){
+    let h=ORBIT.con[side][k]||0;
+    const isLeo=(CON.find(c=>c.k===k)||{}).leo;
+    if(isLeo)h*=(1-ORBIT.kessler*0.6);                    // debris shreds low orbit
+    if(ORBIT.emp)h*=0.25;                                 // HEMP scrambles everything for a while
+    return cl(h,0,100);
+  }
+
+  /* ── satellite ISR passes: feed the belief engine (SAR all-weather, EO day) ── */
+  function doPass(side,kind){
+    const foe=foeOf(side);
+    const dir=Math.random()<0.5?1:-1;
+    ORBIT.passes.push({side,kind,x:dir>0?0:WORLD.w,dir,speed:WORLD.w/5.5,t:7,band:30});
+    ORBIT.stats[side].passes++;
+    const kn=kind==='sar'?'SAR radar-imaging':kind==='eo'?'EO imaging':'ELINT';
+    if(now()-ORBIT._msgT>10){ORBIT._msgT=now();
+      olog(side+' '+kn+' satellite pass — sweeping the enemy rear',side==='BLUE'?'#6cc6ff':'#ff8a6c');}
+  }
+  function stepPasses(dt){
+    for(const p of ORBIT.passes){
+      p.t-=dt;p.x+=p.dir*p.speed*dt;
+      const foe=foeOf(p.side);
+      const wxMin=p.x-p.band,wxMax=p.x+p.band;
+      // EO is blinded by cloud/night; SAR sees regardless; ELINT needs an emitter
+      const badWx=(ENV.weather==='fog'||ENV.weather==='rain'||ENV.weather==='storm'||ENV.weather==='snow'||ENV.night);
+      if(p.kind==='eo'&&badWx)continue;
+      for(const u of UNITS){
+        if(!u.alive||u.side!==foe)continue;
+        if(u.x<wxMin||u.x>wxMax)continue;
+        if(p.kind==='elint'){const em=(u._emit&&u._emit.e)||(u.t==='ew'?90:0);if(!em)continue;}
+        // legacy fog spotting (so the map lights up)
+        u.spottedBy=u.spottedBy||{BLUE:false,RED:false};
+        u.spottedBy[p.side]=true;
+        u._spotMem=u._spotMem||{BLUE:0,RED:0};u._spotMem[p.side]=8;
+        u.lastKnownPos={x:u.x,y:u.y};u.contactAge=0;u.spotted=true;
+        // feed the belief engine with a high-quality reach-back track
+        const mode=p.kind==='eo'?'visual':p.kind==='elint'?'sigint':'radar';
+        try{if(typeof INTEL_satReport==='function'){INTEL_satReport(p.side,u,0.85,mode);ORBIT.stats[p.side].tracksFed++;}}catch(e){}
+      }
+    }
+    ORBIT.passes=ORBIT.passes.filter(p=>p.t>0);
+  }
+
+  /* ── ANTI-SATELLITE COMBAT ── */
+  function doASAT(side){
+    const foe=foeOf(side);
+    if(ORBIT.asatCap[side]<0.15)return;                   // no reach to orbit
+    // must SEE the target constellation to kill it (SDA); pick a live enemy con
+    const targets=CON.filter(c=>eff(foe,c.k)>25);
+    if(!targets.length)return;
+    // prioritise the enemy's most valuable functioning eyes/comms
+    const prio={eo:3,sar:3,elint:2.5,satcom:2,ew:2,pnt:2.2,weather:0.6};
+    targets.sort((a,b)=>(prio[b.k]||1)*eff(foe,b.k)-(prio[a.k]||1)*eff(foe,a.k));
+    const tgt=targets[0];
+    // choose a method: kinetic (strong, debris), co-orbital (clean kill),
+    // directed-energy dazzle (temp blind EO), cyber (ground segment)
+    const methods=[];
+    if(ORBIT.asatCap[side]>0.4)methods.push('kinetic');
+    methods.push('coorbital');
+    if(tgt.k==='eo')methods.push('dazzle');
+    methods.push('cyber');
+    const method=methods[(Math.random()*methods.length)|0];
+    // success: own SDA + ASAT capability vs the target's inherent hardening
+    const p=cl(0.3+ORBIT.sda[side]*0.4+ORBIT.asatCap[side]*0.4-(CON.find(c=>c.k===tgt.k).leo?0:0.1),0.1,0.9);
+    ORBIT.stats[side].asatFired++;ORBIT._asatT[side]=RND(28,55);
+    if(Math.random()>=p){
+      olog(side+' '+method.toUpperCase()+' ASAT attempt on '+foe+' '+tgt.name+' — MISS (poor track / hardened bird)','#ffce5a');
+      return;
+    }
+    const con=ORBIT.con[foe];
+    if(method==='kinetic'){
+      con[tgt.k]=Math.max(0,con[tgt.k]-RND(45,80));
+      ORBIT.kessler=cl(ORBIT.kessler+RND(0.10,0.20),0,1);  // the price everyone pays
+      ORBIT.stats[foe].satsLost++;
+      olog(side+' DIRECT-ASCENT KINETIC ASAT destroys a '+foe+' '+tgt.name+' bird — debris cloud spreading (Kessler '+Math.round(ORBIT.kessler*100)+'%)','#ff5a4a');
+      try{if(typeof WAR!=='undefined'&&WAR.strat)WAR.strat.escalation=cl(WAR.strat.escalation+0.08,0,1);}catch(e){}
+      try{if(window.VOICE)VOICE.say(side,'asat');}catch(e){}
+    }else if(method==='coorbital'){
+      con[tgt.k]=Math.max(0,con[tgt.k]-RND(35,60));
+      ORBIT.stats[foe].satsLost++;
+      olog(side+' co-orbital killer shadows and disables a '+foe+' '+tgt.name+' satellite — no debris, deniable','#ff8a6c');
+    }else if(method==='dazzle'){
+      con[tgt.k]=Math.max(8,con[tgt.k]-RND(25,45));
+      olog(side+' ground directed-energy DAZZLES '+foe+' '+tgt.name+' optics — temporary blinding','#ffd77a');
+    }else{ // cyber — ground segment
+      con[tgt.k]=Math.max(5,con[tgt.k]-RND(30,55));
+      olog(side+' cyber intrusion into '+foe+' '+tgt.name+' GROUND STATION — downlink hijacked','#c9a0ff');
+    }
+  }
+
+  /* ── HIGH-ALTITUDE NUCLEAR EMP — the catastrophe option (rare, AI-gated) ── */
+  function checkEMP(side){
+    // only when losing badly and the ladder is already high; both sides suffer
+    try{
+      if(typeof WAR==='undefined'||!WAR.strat)return;
+      if(WAR.strat.escalation<0.75)return;
+      if(Math.random()>0.02)return;
+      ORBIT.emp=true;ORBIT._empT=25;
+      ORBIT.kessler=cl(ORBIT.kessler+0.15,0,1);
+      olog(side+' detonates a HIGH-ALTITUDE NUCLEAR device — EMP scrambles every satellite and radio over the theatre','#ff3030');
+      WAR.strat.escalation=cl(WAR.strat.escalation+0.15,0,1);
+    }catch(e){}
+  }
+
+  /* ── EFFECTS: wire orbital state into every other system, each tick ── */
+  function applyEffects(dt){
+    for(const side of ['BLUE','RED']){
+      // GNSS/PNT → guided-munition accuracy (the existing hook)
+      const pnt=eff(side,'pnt');
+      try{if(window.V49G&&window.V49G.gpsAcc)window.V49G.gpsAcc[side]=Math.max(window.V49G.gpsAcc[side]||0, pnt>60?0.06:pnt<25?-0.08:0);}catch(e){}
+      // SATCOM + Starlink → C2 net reach (a resilient backbone keeps you linked)
+      const link=cl((eff(side,'satcom')*0.6+ORBIT.starlink[side]*ORBIT.starlinkHealth*0.4)/100,0,1);
+      try{for(const u of UNITS)if(u.alive&&u.side===side)u._spaceLink=link;}catch(e){}
+      // Starlink-as-radar: a side using the mega-constellation gets a bistatic
+      // passive-detection bonus (reflections off thousands of downlinks) — but
+      // its terminals EMIT, so mark them detectable to enemy ELINT/SIGINT
+      const usingStar=ORBIT.starlink[side]*ORBIT.starlinkHealth/100;
+      try{for(const u of UNITS)if(u.alive&&u.side===side){u._starBonus=usingStar*0.25;if(usingStar>0.3)u._starEmit=true;}}catch(e){}
+    }
+  }
+
+  /* ── STARLINK, TWO WAYS ──
+     (1) as a bistatic passive radar: a side that leans on the mega-constellation
+         gets faint persistent tracks off enemy units near the front (reflections
+         off thousands of downlinks) — low confidence, fed to its belief picture;
+     (2) as a liability: those same terminals EMIT on the uplink, so USING
+         Starlink lights YOUR units up on the ENEMY's ELINT — the enemy commander
+         gets SIGINT tracks of your emitting formations. Using Starlink is never
+         free, exactly as in the field. */
+  function stepStarlink(){
+    for(const side of ['BLUE','RED']){
+      const use=ORBIT.starlink[side]*ORBIT.starlinkHealth/100;
+      if(use<0.2)continue;
+      const foe=foeOf(side);
+      const enemies=UNITS.filter(u=>u.alive&&u.side===foe&&!u.flies);
+      const mine=UNITS.filter(u=>u.alive&&u.side===side&&!u.isSupply);
+      // bistatic detection needs geometry — pick enemies near a friendly unit
+      let fed=0;
+      for(const e of enemies){
+        if(fed>=Math.round(use*4))break;
+        if(Math.random()>use*0.5)continue;
+        const near=mine.some(m=>dist(m.x,m.y,e.x,e.y)<45);
+        if(!near)continue;
+        try{if(typeof INTEL_satReport==='function')INTEL_satReport(side,e,0.4*use,'radar');}catch(err){}
+        fed++;
+      }
+      // emission liability — a fraction of your emitting/moving units are seen by enemy ELINT
+      let lit=0;
+      for(const m of mine){
+        if(lit>=Math.round(use*3))break;
+        if(Math.random()>use*0.35)continue;
+        try{if(typeof INTEL_satReport==='function')INTEL_satReport(foe,m,0.5*use,'sigint');}catch(err){}
+        lit++;
+      }
+    }
+  }
+
+  /* ── EARLY-WARNING bonus to saturation-salvo interception ── */
+  window.ORBIT_ewBonus=function(side){
+    if(!ORBIT.active)return 0;
+    // early-warning IR sats give reaction time → more of the raid is engaged
+    return Math.round(eff(side,'ew')/100*18);
+  };
+  /* ── naval over-the-horizon targeting: recon sats extend the fleet's reach ── */
+  window.ORBIT_othQuality=function(side){
+    if(!ORBIT.active)return 0;
+    return cl((eff(side,'sar')*0.6+eff(side,'eo')*0.4)/100,0,1);
+  };
+
+  function step(dt){
+    if(!ORBIT.active)return;
+    if(typeof SIM==='undefined'||!SIM.running||SIM.over)return;
+    ORBIT._t+=dt;
+    // EMP + Kessler timers/decay
+    if(ORBIT.emp){ORBIT._empT-=dt;if(ORBIT._empT<=0){ORBIT.emp=false;olog('EMP effects fade — surviving satellites recover');}}
+    ORBIT.kessler=Math.max(0,ORBIT.kessler-dt*0.004); // debris slowly de-orbits
+    // constellations self-heal toward baseline (responsive-space reconstitution)
+    for(const side of ['BLUE','RED'])for(const k of CON_KEYS){
+      const c=ORBIT.con[side];
+      if(c[k]<ORBIT.base[side][k])c[k]=Math.min(ORBIT.base[side][k],c[k]+dt*(0.4+qOf(side)*0.5));
+    }
+    if(ORBIT._t<1.0){stepPasses(dt);return;}
+    ORBIT._t=0;
+    stepPasses(1.0);
+    applyEffects(1.0);
+    try{stepStarlink();}catch(e){}
+    // recompute SDA from live sensors (you see orbit as well as you see the ground)
+    for(const side of ['BLUE','RED']){
+      ORBIT.sda[side]=cl(0.2+qOf(side)*0.5+eff(side,'elint')/300,0.05,0.98);
+    }
+    // satellite pass cadence per side (healthier recon → more passes)
+    for(const side of ['BLUE','RED']){
+      ORBIT._passT[side]-=1.0;
+      if(ORBIT._passT[side]<=0){
+        const recon=Math.max(eff(side,'sar'),eff(side,'eo'),eff(side,'elint'));
+        ORBIT._passT[side]=RND(14,26)*(1.5-recon/100);
+        if(recon>20){
+          // pick which eye: SAR in bad weather, EO in clear day, ELINT if enemy emitting
+          const badWx=(ENV.weather!=='clear'||ENV.night);
+          let kind='sar';
+          if(!badWx&&eff(side,'eo')>=eff(side,'sar'))kind='eo';
+          else if(eff(side,'elint')>eff(side,'sar')&&UNITS.some(u=>u.alive&&u.side===foeOf(side)&&u._emit&&u._emit.e))kind='elint';
+          doPass(side,kind);
+        }
+      }
+    }
+    // ASAT cadence
+    for(const side of ['BLUE','RED']){
+      ORBIT._asatT[side]-=1.0;
+      if(ORBIT._asatT[side]<=0){
+        ORBIT._asatT[side]=RND(30,55);
+        // an AI side reaches for ASAT when the enemy's space edge is hurting it
+        const foe=foeOf(side);
+        const enemyEyes=(eff(foe,'eo')+eff(foe,'sar')+eff(foe,'elint'))/3;
+        if(enemyEyes>45&&ORBIT.asatCap[side]>0.2&&Math.random()<0.6){try{doASAT(side);}catch(e){}}
+        try{checkEMP(side);}catch(e){}
+      }
+    }
+    // reconcile HALE list (drop dead platforms)
+    for(const side of ['BLUE','RED']){
+      ORBIT.hale[side]=ORBIT.hale[side].filter(id=>{
+        const u=UNITS.find(x=>x.id===id);
+        if(u&&!u.alive){olog(side+' loses its high-altitude ISR platform — a hole opens in the picture',side==='BLUE'?'#6cc6ff':'#ff8a6c');return false;}
+        return !!u;
+      });
+    }
+  }
+  window.stepOrbit=function(dt){try{step(dt);}catch(e){if(typeof _dbgPush==='function')_dbgPush('ORBIT: '+e.message,'#ff8844');}};
+
+  /* rebuild each battle */
+  if(typeof window.startBattle==='function'){
+    const _sb=window.startBattle;
+    window.startBattle=function(){const r=_sb.apply(this,arguments);try{reset();}catch(e){}return r;};
+  }
+
+  /* ── MAP OVERLAY: satellite sweep bands + HALE markers ── */
+  window.drawOrbitOverlay=function(){
+    if(!ORBIT.overlay||!ORBIT.active||typeof CB==='undefined'||!CB)return;
+    try{
+      for(const p of ORBIT.passes){
+        const col=p.side==='BLUE'?'120,200,255':'255,140,120';
+        const p1=project(p.x-p.band,terrainH(cl(p.x,0,WORLD.w),0)+2,0);
+        const p2=project(p.x+p.band,terrainH(cl(p.x,0,WORLD.w),WORLD.h)+2,WORLD.h);
+        if(p1&&p2){
+          ctx.save();ctx.globalAlpha=0.10*(p.t/7);
+          ctx.fillStyle='rgba('+col+',0.6)';
+          const xa=Math.min(p1.x,p2.x),xb=Math.max(p1.x,p2.x);
+          ctx.fillRect(xa,0,Math.max(3,xb-xa),ctx.canvas.height);
+          ctx.restore();
+        }
+      }
+    }catch(e){}
+  };
+
+  /* ── THE SPACE TAB ── */
+  function bar(label,v,col){const pc=Math.round(cl(v,0,100));
+    return '<div style="display:flex;align-items:center;gap:4px;font-size:6.2px;margin:1px 0">'+
+      '<span style="width:74px;color:var(--faint)">'+label+'</span>'+
+      '<div style="flex:1;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden">'+
+      '<i style="display:block;height:100%;width:'+pc+'%;background:'+(pc<25?'var(--bad)':pc<55?'var(--gold)':col)+'"></i></div>'+
+      '<span style="width:24px;text-align:right;color:var(--dim)">'+pc+'</span></div>';}
+
+  window.renderSpacePanel=function(){
+    const el=document.getElementById('space');if(!el)return;
+    if(!ORBIT.active){
+      el.innerHTML='<div class="empty"><span class="g">🛰</span>The orbital domain initialises when a battle begins.<br>Constellations · ASAT · Kessler · high-altitude ISR · cyber-space.</div>';
+      return;
+    }
+    const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const sec=t=>`<div style="font-size:7px;letter-spacing:2px;color:var(--warn);text-transform:uppercase;margin:8px 0 4px">${t}</div>`;
+    let h='';
+    h+=`<div style="font-size:6.6px;color:var(--faint);line-height:1.5;margin-bottom:4px">Space is a contested domain every other system leans on: satellites feed the belief picture, cue naval strikes over the horizon, warn of missile raids, guide munitions and hold the C2 net together. Shoot them down and the enemy goes blind — but kinetic kills breed debris that blinds <b>everyone</b>.</div>`;
+
+    // shared state strip
+    const kess=Math.round(ORBIT.kessler*100);
+    h+=`<div style="display:flex;gap:8px;font-size:6.6px;margin-bottom:5px;flex-wrap:wrap">
+      <span>🌍 Starlink backbone: <b style="color:${ORBIT.starlinkHealth>50?'var(--good)':'var(--bad)'}">${Math.round(ORBIT.starlinkHealth)}%</b></span>
+      <span>☄ Kessler debris: <b style="color:${kess>40?'var(--bad)':kess>15?'var(--gold)':'var(--faint)'}">${kess}%</b>${kess>15?' — degrading all low orbit':''}</span>
+      ${ORBIT.emp?'<span style="color:var(--bad);font-weight:700">☢ HEMP ACTIVE</span>':''}</div>`;
+
+    h+=`<div style="margin-bottom:6px"><button onclick="ORBIT_toggleOverlay()" style="padding:3px 9px;font-family:inherit;font-size:7px;cursor:pointer;border-radius:3px;border:1px solid ${ORBIT.overlay?'var(--cyan)':'var(--line2)'};background:${ORBIT.overlay?'rgba(15,50,90,0.7)':'rgba(8,12,26,0.7)'};color:${ORBIT.overlay?'#fff':'var(--faint)'}">🛰 Satellite-pass overlay: ${ORBIT.overlay?'ON':'OFF'}</button></div>`;
+
+    for(const side of ['BLUE','RED']){
+      const col=SIDECOL[side];const st=ORBIT.stats[side];
+      h+=`<div style="border:1px solid var(--line);border-radius:4px;padding:5px 7px;margin:4px 0;background:rgba(10,14,26,0.5)">`;
+      h+=`<div style="font-size:8px;color:${col};font-weight:700;margin-bottom:3px">${side} — orbital order of battle</div>`;
+      h+=`<div style="font-size:6.2px;color:var(--dim);margin-bottom:3px">SDA ${Math.round(ORBIT.sda[side]*100)}% · ASAT reach ${Math.round(ORBIT.asatCap[side]*100)}% · Starlink use ${Math.round(ORBIT.starlink[side]*100)}% · HALE ${ORBIT.hale[side].length} on station</div>`;
+      for(const c of CON){
+        const h0=Math.round(eff(side,c.k)), raw=Math.round(ORBIT.con[side][c.k]);
+        h+=bar(c.glyph+' '+c.name,h0,col)+(h0<raw?`<div style="font-size:5.4px;color:var(--bad);margin:-2px 0 1px 78px">−${raw-h0} from debris/EMP</div>`:'');
+      }
+      h+=`<div style="font-size:6px;color:var(--faint);margin-top:2px">passes ${st.passes} · tracks fed to fusion ${st.tracksFed} · ASAT shots ${st.asatFired} · sats lost ${st.satsLost}</div>`;
+      h+='</div>';
+    }
+
+    h+=sec('☰ Space &amp; cyber event log');
+    if(!ORBIT.log.length)h+='<div class="note">No orbital events yet.</div>';
+    else for(const e of ORBIT.log.slice(0,14))h+=`<div style="font-size:6.2px;color:${e.col};padding:1px 0">T+${e.t}s ${esc(e.msg)}</div>`;
+
+    el.innerHTML=h;
+  };
+  window.ORBIT_toggleOverlay=function(){ORBIT.overlay=!ORBIT.overlay;try{renderSpacePanel();}catch(e){}};
+
+  function injectSpace(){
+    try{
+      const tabs=document.getElementById('tabs'),rgt=document.getElementById('rgt');
+      if(tabs&&rgt&&!document.getElementById('space')){
+        const btn=document.createElement('button');
+        btn.className='tab';btn.dataset.pane='space';btn.textContent='🛰 Space';
+        btn.addEventListener('click',()=>{try{switchTab('space');}catch(e){}});
+        tabs.appendChild(btn);
+        const pane=document.createElement('div');pane.id='space';pane.className='pane';
+        rgt.appendChild(pane);
+      }
+    }catch(e){}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',injectSpace);
+  else injectSpace();
+  setInterval(()=>{try{const p=document.getElementById('space');if(p&&p.classList.contains('on'))renderSpacePanel();}catch(e){}},800);
 })();
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -17700,6 +18223,7 @@ function enterBattle(id){
   applyNodeModifiers(n);
   try{applyBattleFrame(n);}catch(e){} // v66: defender's ground, SOF, airborne
   try{if(typeof INTEL_reset==='function')INTEL_reset();}catch(e){} // v67: fresh belief picture per battle
+  try{if(typeof ORBIT_reset==='function')ORBIT_reset();}catch(e){} // v68: fresh orbital OOB per battle
   MAP.mode='tac';updateWarBtn();
   WAR.observing=(WAR.commandMode==='theatre');
   try{setPhase(`${n.name} — forces deploying (front sector ${n.id+1}/6)`);}catch(e){}
@@ -22610,6 +23134,10 @@ try{updateWarBtn();}catch(e){}
       gen:["Saturation raid inbound — all launchers free, weapons free!",
            "The sky is full of them. Shoot until the rails are dry.",
            "Layered defence, by sectors — take the leakers on the way down!"]},
+    asat:{
+      gen:["Splash one satellite — blind their eyes in orbit.",
+           "Kill's confirmed on the bird. Mind the debris field.",
+           "Their overhead picture just went dark. Press the advantage."]},
   };
 
   function pick(arr){return arr[(Math.random()*arr.length)|0];}
@@ -22746,6 +23274,7 @@ renderFormationUI();renderDoctrineUI();
 renderScenarioUI();
 renderAAR();renderIntel();renderTacticsTab();renderWiki();
 switchTab('aar',false);
+log('WAR v68 — THE ORBITAL DOMAIN + CYBER-SPACE: a per-side satellite order of battle (📷 EO · 📡 SAR all-weather · 📶 ELINT · 🔥 early-warning · 🛰 GNSS · 📻 SATCOM · 🌦 weather) + shared 🌍 Starlink (backbone AND bistatic radar — using it lights you up on enemy ELINT) · sats feed the belief engine, cue naval strikes over the horizon, warn of missile raids, guide munitions & hold the C2 net · ☄ ASAT combat (kinetic/co-orbital/dazzle/cyber) w/ Kessler debris that blinds BOTH sides · ◇ ultra-high-altitude ISR (U-2/Global Hawk/balloon) · ☢ high-altitude EMP · GPS spoofing · new 🛰 Space tab','#8fd6ff');
 log('WAR v67 — THE INFORMATION & BELIEF ENGINE: information is a resource, not a fact — imperfect multi-modal sensing (👁 visual · 📡 radar w/ horizon · 🌡 thermal crossover · 🔊 acoustic w/o LOS · 📶 passive SIGINT of emissions) → reports up the chain w/ latency & loss → commander FUSION into belief tracks (confidence not certainty) → adaptive sensor trust · false positives · disinformation plants phantom armies · commanders make human mistakes on the believed picture · new 🛰 ISR tab + belief overlay','#8fd6ff');
 log('WAR v66 — THE NAVAL & COMBINED-ARMS UPDATE: carriers/submarines/LHDs at real scaled ranges (Tomahawk=whole map, SM-6 umbrellas, Mk 48s) · fleet supports land (NGFS, cruise strikes, sealift, carrier groups offshore) · SEAD-before-strikers + supported-advance doctrine gates (militia swarm instead) · defender fights on its own ground, attacker opens with SOF & airborne by intel · saturation salvo raids (hundreds inbound, layered interception) · per-sector doctrines both sides · voicelines now visible (radio overlay) & audible (speech)','#7fdfdf');
 log('WAR v65 — ASYMMETRIC WARFARE: individual skill & gear on every unit · ✚ Downed Bird (Mogadishu raid) · ◙ Night Compound (Benghazi annex) · ⌖ FPV Ambush (Ukraine/civil-war drone asymmetry) · casualty-sensitive victories & named operator callsigns · AMPHIBIOUS combat game-wide (≋ Beach Landing) · 🎙 commander voicelines','#ffd77a');
