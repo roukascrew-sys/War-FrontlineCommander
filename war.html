@@ -655,7 +655,7 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
 
 <header id="hdr">
   <span class="mark">◆</span>
-  <h1>WAR&nbsp;<small>v69 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
+  <h1>WAR&nbsp;<small>v70 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
   <div id="ticker">
     <div class="tk bl">▣ BLUE <b id="tk-bl">0</b></div>
     <div class="tk rd">▣ RED <b id="tk-rd">0</b></div>
@@ -912,6 +912,14 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
   <div id="wiki" class="pane"></div>
   <div id="notes" class="pane">
   <div id="pnInner">
+    <div class="pn-ver">WAR v70 <span class="pn-date">Jul 2026</span></div>
+    <div class="pn-section">⚒ PROSPECT × THE INVENTOR — the meta lab: the AI breeds, tests and adopts the future of war</div>
+    <div class="pn-item new"><b>Prospect is now part sandbox, part simulator — and the AI plays it to win.</b> The prospective layer no longer just fields future tech; the AI now <b>adapts to the new weaponry</b>, discovers the "new metas" each horizon creates, and adopts the best doctrine and employment of technology to pursue victory across every front. The Inventor's forge mechanic has been massively expanded into a full <b>evolutionary meta lab</b> on <code>PROSPECT.LAB</code>: it breeds <i>employment genomes</i> (aggression, EMCON discipline, dispersion, tech-bet depth, and per-technology reliance on autonomy/DE/swarms/quantum/hypersonics/orbital/doctrine) through mutation, crossover and survival-of-the-fittest across <b>Monte-Carlo duels</b> in each era's power landscape. Console: <code>PROSPECT.LAB.explore({era:'2035'})</code> evolves a meta from scratch; <code>PROSPECT.LAB.report('2040')</code> prints the era's matchup table.</div>
+    <div class="pn-item new"><b>The lab models the TRADE-OFFS, so its answers are honest.</b> Early lab builds "won" by turning every dial to maximum — so the duel engine was rebuilt around real tensions: a <b>force-design budget</b> (you cannot buy everything), <b>EMCON self-blinding</b> (running dark also dims your own kill-chain unless passive/quantum ISR compensates), <b>concentration vs dispersion</b> (massing wins fights and eats saturation salvos), and a <b>maturity tax</b> (betting beyond the era's proven tech means misfires — IFF fratricide, runaway swarms, hallucinated orders). After the rebuild the champions differentiated by era exactly as real force-design debates do.</div>
+    <div class="pn-item new"><b>📕 The doctrine book — twelve doctrines bred from 36 evolutionary runs and 1,800+ duels per era,</b> written into the Prospect tab with battle notes quoting the lab's <i>measured</i> win rates. 2030: <b>Silent Saturation</b> (the champion — run dark, disperse, drown them in cheap airframes: 96% vs Ghost Lance, 100% vs Watchful Bastion), <b>Ghost Lance</b>, <b>Steel Rain</b>, and <b>Watchful Bastion</b> — a recorded 0% <i>failure</i> kept as a warning that pure defense concedes the meta. 2035: <b>Shield-and-Lance</b> (matured lasers blunt the swarm — beats 2030's champion 97%, the book's cleanest counter-meta story), <b>Kill-Web Rush</b>, <b>Mirage Legion</b>, <b>Quiet Depths</b> (a quantum-ISR specialist). 2040: <b>Tempo Sovereign</b> (the transparent-battlefield champion — hiding is dead, win the OODA war), <b>Lance Storm</b> (its only measured answer, 33%), <b>Proven Hand</b> (the professional's floor — never embarrassed, never decisive), and <b>Icarus Gambit</b> — the second recorded failure: a 1.0 bet on unproven everything, 0% across 1,800+ duels. The future must be bought at the rate it matures.</div>
+    <div class="pn-item new"><b>⚒ Live meta-adaptation in battle.</b> With prospect on, each commander <b>opens</b> with the book doctrine that fits his personality (aggressive commanders reach for aggressive metas, cunning ones for EMCON and quantum ISR) — and when he senses he is <i>losing the meta fight</i> (power trend collapsing, belief picture blind, misfires biting), the Inventor's field response kicks in: he shifts to the lab's measured <b>counter</b> to the enemy's doctrine. Stubborn commanders cling to dying metas (the personality gate), shifts carry a cooldown and a 3-shift limit, and every opening and shift is logged to the feed and the Prospect tab's live panel. Doctrine adoption drives the <i>real</i> engine: side tactics, per-domain doctrines, emission discipline, swarm and hypersonic employment.</div>
+    <div class="pn-item new"><b>Eleven new prospective systems</b> join the capability tree, each wired into real mechanics: <b>AI logistics command</b> (predictive resupply), <b>deep-magazine arsenal ships</b>, <b>railgun / hypervelocity artillery</b>, <b>EW decoy/jammer swarms</b> (phantom tracks for the enemy belief engine), <b>UUV wolfpacks</b>, <b>autonomous ground vehicles</b>, <b>on-orbit servicing/repair</b> (constellations self-heal faster), <b>counter-hypersonic glide interceptors</b> (thins the uninterceptable leakers), <b>resilient mesh C2</b> (comms-loss immunity), <b>cognitive-EW adaptive jamming</b>, and <b>orbital fires cueing</b> — bringing the tree to 32 capabilities across all seven domains, every one carrying era, maturity tier, reliability and ideology note.</div>
+    <div class="pn-item fix"><b>FIXED: one doctrine per DOMAIN per side.</b> The doctrine picker no longer allows only a single doctrine per color — each side now sets a <b>Combined-arms doctrine</b> plus independent <b>Land</b>, <b>Air</b> and <b>Naval</b> overrides (naval appears when the force fields ships). Every per-unit doctrine read in the engine — combat matchups, morale doctrine bonuses, posture and targeting — resolves through the unit's domain slot first, falling back to the side-wide doctrine, so an infantry brigade can fight under Defense-in-Depth while the air wing flies SEAD/DEAD and the fleet runs Distributed Lethality.</div>
     <div class="pn-ver">WAR v69 <span class="pn-date">Jul 2026</span></div>
     <div class="pn-section">🔬 WARVAL — a validation suite that tests the engine against real history</div>
     <div class="pn-item new"><b>Code-accessible, never on screen.</b> A rigorous, headless test harness lives on <code>window.WARVAL</code> — it renders nothing, touches no game state, and never runs on its own. Open the console and type <code>WARVAL.run()</code>. It exists purely to answer one question honestly: does the engine <i>actually</i> reproduce how real wars ended, or only in theory?</div>
@@ -3414,9 +3422,25 @@ const powerOf=f=>TKEYS.reduce((s,k)=>s+(f[k]||0)*(TYPES[k]?TYPES[k].cost:1),0);
 
 /* ══════ FORCE ══════ */
 const FORCE={
-  BLUE:{country:'USA',inf:14,veh:7,air:5,arty:3,nav:2,dro:3,ew:1,sup:3,bml:1,tac:'precision',formation:'wedge'},
-  RED: {country:'RUS',inf:22,veh:10,air:6,arty:4,nav:2,dro:4,ew:2,sup:3,bml:2,tac:'mass',formation:'line'},
+  // v70: tacD = per-DOMAIN doctrine (land / air / naval); '' = inherit the
+  // side-wide (combined-arms) doctrine in .tac. One doctrine per domain per side.
+  BLUE:{country:'USA',inf:14,veh:7,air:5,arty:3,nav:2,dro:3,ew:1,sup:3,bml:1,tac:'precision',formation:'wedge',tacD:{land:'',air:'',naval:''}},
+  RED: {country:'RUS',inf:22,veh:10,air:6,arty:4,nav:2,dro:4,ew:2,sup:3,bml:2,tac:'mass',formation:'line',tacD:{land:'',air:'',naval:''}},
 };
+/* v70: the effective doctrine for ONE UNIT — its domain slot if set, else the
+   side-wide doctrine. Air domain covers aircraft + drones; naval covers ships;
+   land covers everything else. The side-wide .tac remains the combined-arms
+   doctrine used by the plan/adaptation level. */
+function unitTac(u){
+  const F=FORCE[u.side];if(!F)return 'combined';
+  const D=F.tacD;
+  if(D){
+    if(u.t==='air'||u.t==='dro'){if(D.air&&TACTICS[D.air])return D.air;}
+    else if(u.t==='nav'){if(D.naval&&TACTICS[D.naval])return D.naval;}
+    else{if(D.land&&TACTICS[D.land])return D.land;}
+  }
+  return F.tac||'combined';
+}
 
 /* ══════ FORMATIONS ══════
    Each formation defines how units are spatially arranged at spawn.
@@ -7082,8 +7106,13 @@ function fireSaturationSalvo(tgtSide,count,kind){
   const pk=Math.min(0.985,(cap/Math.max(1,count))*(0.80+Math.random()*0.25));
   let intercepted=Math.round(count*pk);
   if(count>=25)intercepted=Math.min(intercepted,count-(1+((Math.random()*3)|0)));
-  // v69: if the RAIDER fields hypersonics, a slice is simply uninterceptable
-  try{if(typeof PROSPECT_hyperLeak==='function'){const hl=PROSPECT_hyperLeak(srcSide);if(hl>0)intercepted=Math.min(intercepted,Math.floor(count*(1-hl)));}}catch(e){}
+  // v69: if the RAIDER fields hypersonics, a slice is simply uninterceptable —
+  // v70: unless the defender fields glide-phase counter-hypersonic interceptors
+  try{if(typeof PROSPECT_hyperLeak==='function'){
+    let hl=PROSPECT_hyperLeak(srcSide);
+    if(typeof PROSPECT_counterHyper==='function')hl=Math.max(0,hl-PROSPECT_counterHyper(tgtSide));
+    if(hl>0)intercepted=Math.min(intercepted,Math.floor(count*(1-hl)));
+  }}catch(e){}
   intercepted=Math.max(0,Math.min(count,intercepted));
   const leakers=count-intercepted;
   SALVO.inb+=count;SALVO.intc+=intercepted;SALVO.leak+=leakers;SALVO.raids++;
@@ -7201,7 +7230,7 @@ function acquire(u){
        3. Subtype-specific doctrine (AA hunts air, tanks hunt tanks, etc.)
      Units pick the highest-threat valid target in range, not a fixed rock-paper-scissors.  */
   let best=null,bs=1e9;
-  const tac=FORCE[u.side].tac;
+  const tac=unitTac(u); // v70: per-domain doctrine
   const myPos={x:u.x,y:u.y};
 
   for(const o of UNITS){
@@ -7378,7 +7407,7 @@ function fireAt(u,o){
   const coh=cohesion(u.side);
   const eU=elevOf(u),eO=elevOf(o);
   const hgad=(u.flies||o.flies)?0:clamp((eU-eO)/8,-0.5,0.5);
-  const tac=FORCE[u.side].tac;
+  const tac=unitTac(u); // v70: per-domain doctrine
   // base accuracy — apply EW jam penalty
   const jam=jamFor[u.id]||0;
   const morPenalty=(u.morale!==undefined&&u.morale<25)?(1-(u.morale/25))*0.40:0;
@@ -8144,7 +8173,7 @@ function stepMorale(dt){
       if(ev.side===u.side&&dist(u.x,u.y,ev.x,ev.y)<10) dm+=MORALE.assistBonus;
 
     // Doctrine
-    dm+=(MORALE.doctrineBonus[FORCE[u.side].tac]||0)*dt;
+    dm+=(MORALE.doctrineBonus[unitTac(u)]||0)*dt; // v70: per-domain doctrine
 
     // ── Objective morale (v39): holding ground feels good, contesting drives initiative ──
     if(!u.flies&&OBJ.points.length){
@@ -8688,7 +8717,7 @@ function step(){
     u.face=Math.atan2(o.y-u.y,o.x-u.x);
     const eU=elevOf(u),eO=elevOf(o);
     const hgad=(u.flies||o.flies)?0:clamp((eU-eO)/8,-0.5,0.5);
-    const tac=FORCE[u.side].tac;
+    const tac=unitTac(u); // v70: per-domain doctrine
 
     // ── DEEP TACTIC MODIFIERS ──────────────────────────────────────
     // Each doctrine shapes the entire force differently by unit type.
@@ -9813,6 +9842,7 @@ function step(){
   safeStep('intelBelief',()=>{if(typeof stepIntelBelief==='function')stepIntelBelief(DT);}); // v67: information & belief engine
   safeStep('orbit',()=>{if(typeof stepOrbit==='function')stepOrbit(DT);}); // v68: orbital domain + cyber-space
   safeStep('prospect',()=>{if(typeof stepProspect==='function')stepProspect(DT);}); // v69: prospective-mode framework
+  safeStep('prospectMeta',()=>{if(typeof stepProspect2==='function')stepProspect2(DT);}); // v70: new systems + live meta-adaptation
 
   // elevation sampling
   _elevTimer+=DT;
@@ -13467,37 +13497,60 @@ function renderFormationUI(){
     `<span style="color:var(--blue)">Blue: ${bl.name}</span> — ${bl.desc}<br><br>`+
     `<span style="color:var(--red)">Red: ${rd.name}</span> — ${rd.desc}`;
 }
+/* v70: ONE DOCTRINE PER DOMAIN PER SIDE — Combined Arms (side-wide, drives the
+   plan/adaptation level) plus Land / Air / Naval unit-domain overrides.
+   A domain left on "— follow combined —" inherits the side doctrine, so the
+   old single-pick behaviour remains the untouched default. Naval only shows
+   when the side actually fields ships. */
 function renderDoctrineUI(){
   for(const side of['BLUE','RED']){
     const elId=side==='BLUE'?'doc-bl':'doc-rd';
     const el=document.getElementById(elId); if(!el)continue;
+    if(!FORCE[side].tacD)FORCE[side].tacD={land:'',air:'',naval:''};
+    const D=FORCE[side].tacD;
     const cur=FORCE[side].tac||'precision';
-    const isBlue=side==='BLUE';
-    let h='';
-    // Group by category
-    for(const [catKey,cat] of Object.entries(TACTIC_CATS)){
-      const tacsInCat=Object.entries(TACTICS).filter(([,v])=>v.cat===catKey);
-      if(!tacsInCat.length)continue;
-      h+=`<div style="font-size:6px;letter-spacing:1.5px;color:${cat.col};text-transform:uppercase;
-           margin:5px 0 2px;width:100%">${cat.label}</div>`;
-      for(const [key,tac] of tacsInCat){
-        const on=cur===key;
-        const cls=on?(isBlue?'on':'rd-on'):'';
-        const catGlyphs={air:'◆',ground:'▲',combined:'⊕'};
-        const glyph=catGlyphs[tac.cat]||'⊹';
-        h+=`<button class="fmbtn ${cls}" onclick="setDoctrine('${side}','${key}')"
-              title="${tac.desc}">${glyph} ${tac.name}</button>`;
+    const opts=(sel,filter)=>{
+      let o=`<option value="">— follow combined —</option>`;
+      for(const [key,tac] of Object.entries(TACTICS)){
+        if(filter&&!filter(tac))continue;
+        o+=`<option value="${key}" ${sel===key?'selected':''}>${tac.name}</option>`;
       }
+      return o;
+    };
+    const rowSt='display:flex;align-items:center;gap:4px;margin:2px 0;width:100%';
+    const lblSt='width:52px;font-size:6px;letter-spacing:1px;text-transform:uppercase;color:var(--faint);flex-shrink:0';
+    const selSt='flex:1;min-width:0;font-family:inherit;font-size:6.5px;background:rgba(8,12,26,0.9);color:var(--cyan);border:1px solid var(--line2);border-radius:3px;padding:1px 2px';
+    let h='';
+    // COMBINED (side-wide) — the primary doctrine
+    h+=`<div style="${rowSt}"><span style="${lblSt}">⊕ Combined</span>
+      <select style="${selSt}" onchange="setDoctrine('${side}',this.value)">${
+        Object.entries(TACTICS).map(([key,tac])=>`<option value="${key}" ${cur===key?'selected':''}>${tac.name}</option>`).join('')}</select></div>`;
+    // per-domain overrides (the v70 fix: one doctrine per domain per side)
+    h+=`<div style="${rowSt}"><span style="${lblSt}">▲ Land</span>
+      <select style="${selSt}" onchange="setDoctrineD('${side}','land',this.value)">${opts(D.land,t=>t.cat!=='air')}</select></div>`;
+    h+=`<div style="${rowSt}"><span style="${lblSt}">◆ Air</span>
+      <select style="${selSt}" onchange="setDoctrineD('${side}','air',this.value)">${opts(D.air,t=>t.cat!=='ground')}</select></div>`;
+    if((FORCE[side].nav||0)>0){
+      h+=`<div style="${rowSt}"><span style="${lblSt}">⬡ Naval</span>
+        <select style="${selSt}" onchange="setDoctrineD('${side}','naval',this.value)">${opts(D.naval,t=>t.cat!=='air')}</select></div>`;
     }
     el.innerHTML=h;
   }
   // Description
   const desc=document.getElementById('doc-desc');
   if(desc){
+    const dsum=side=>{
+      const D=FORCE[side].tacD||{};
+      const parts=[TACTICS[FORCE[side].tac||'precision'].name];
+      if(D.land&&TACTICS[D.land])parts.push('Land: '+TACTICS[D.land].name);
+      if(D.air&&TACTICS[D.air])parts.push('Air: '+TACTICS[D.air].name);
+      if(D.naval&&TACTICS[D.naval])parts.push('Naval: '+TACTICS[D.naval].name);
+      return parts.join(' · ');
+    };
     const bl=TACTICS[FORCE.BLUE.tac||'precision'];
-    const rd=TACTICS[FORCE.RED.tac||'mass'];
-    desc.innerHTML=`<span style="color:var(--blue)">Blue: ${bl.name}</span> — ${bl.desc}<br><br>`+
-      `<span style="color:var(--red)">Red: ${rd.name}</span> — ${rd.desc}`;
+    desc.innerHTML=`<span style="color:var(--blue)">Blue: ${dsum('BLUE')}</span><br>`+
+      `<span style="color:var(--red)">Red: ${dsum('RED')}</span><br><br>`+
+      `<span style="color:var(--faint)">${bl.desc}</span>`;
   }
 }
 window.setDoctrine=uiAction(function(side,key){
@@ -13506,6 +13559,13 @@ window.setDoctrine=uiAction(function(side,key){
   renderDoctrineUI();
   renderAdaptPanel();
   log(`${side} doctrine: ${TACTICS[key].name}`,SIDECOL[side]);
+});
+window.setDoctrineD=uiAction(function(side,domain,key){
+  if(SIM.running&&!SIM.over){log('Cannot change doctrine mid-battle','#ffcc44');return;}
+  if(!FORCE[side].tacD)FORCE[side].tacD={land:'',air:'',naval:''};
+  FORCE[side].tacD[domain]=key;
+  renderDoctrineUI();
+  log(`${side} ${domain} doctrine: ${key?TACTICS[key].name:'follows combined'}`,SIDECOL[side]);
 });
 
 window.setFormation=uiAction(function(side,key){
@@ -15606,6 +15666,8 @@ else injectUI();
     else if(u.sensor&&u.sensor.radar>=20&&Math.random()<0.5){e=Math.max(e,45);kind='radar';}
     // any unit that just fired lights up briefly (muzzle / comms spike)
     if(u.muzzle>0){e=Math.max(e,55);kind=kind||'fires';}
+    // v70: prospective EMCON doctrine — a side running silent radiates less
+    try{if(typeof PROSPECT_emconMul==='function')e*=PROSPECT_emconMul(u.side);}catch(err){}
     return {e,kind};
   }
 
@@ -15758,7 +15820,9 @@ else injectUI();
     }catch(e){}
     // cut from the net entirely? report may never arrive
     const jam=reporter?jamOn(reporter):0;
-    const lossP=cl((1-integ)*0.5+jam*0.35,0,0.9);
+    let lossP=cl((1-integ)*0.5+jam*0.35,0,0.9);
+    // v70: prospective quantum-secure comms — unjammable report links
+    try{if(typeof PROSPECT_commsBonus==='function')lossP*=(1-PROSPECT_commsBonus(side));}catch(err){}
     INTEL.stats[side].queued++;
     if(Math.random()<lossP){INTEL.stats[side].dropped++;return;}
     // latency: good comms ~0.5s, a shattered HQ ~6s+ (the report is stale on arrival)
@@ -18241,6 +18305,7 @@ function enterBattle(id){
   try{if(typeof INTEL_reset==='function')INTEL_reset();}catch(e){} // v67: fresh belief picture per battle
   try{if(typeof ORBIT_reset==='function')ORBIT_reset();}catch(e){} // v68: fresh orbital OOB per battle
   try{if(typeof PROSPECT_onBattleStart==='function')PROSPECT_onBattleStart();}catch(e){} // v69: prospective mode
+  try{if(typeof PROSPECT_metaReset==='function')PROSPECT_metaReset();}catch(e){} // v70: fresh meta per battle
   MAP.mode='tac';updateWarBtn();
   WAR.observing=(WAR.commandMode==='theatre');
   try{setPhase(`${n.name} — forces deploying (front sector ${n.id+1}/6)`);}catch(e){}
@@ -23159,6 +23224,10 @@ try{updateWarBtn();}catch(e){}
       gen:["Splash one satellite — blind their eyes in orbit.",
            "Kill's confirmed on the bird. Mind the debris field.",
            "Their overhead picture just went dark. Press the advantage."]},
+    meta:{
+      gen:["Their playbook stopped working the moment we changed ours. New employment — execute.",
+           "The workshop just handed us the counter. Refit on the move and hit them with it.",
+           "They adapted, so we adapt faster. That's the whole war now."]},
   };
 
   function pick(arr){return arr[(Math.random()*arr.length)|0];}
@@ -24102,6 +24171,501 @@ ${topB}`;
   setInterval(()=>{try{const p=document.getElementById('prospect');if(p&&p.classList.contains('on'))renderProspectPanel();}catch(e){}},800);
 
   try{ if(typeof log==='function') log('PROSPECT framework loaded — the ⌁ Prospect tab fights the next war (off by default)','#c9a0ff'); }catch(e){}
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PROSPECT × THE INVENTOR — META LAB & ADAPTIVE DOCTRINE  (v70)
+   ─────────────────────────────────────────────────────────────────────
+   Prospect mode becomes part SANDBOX, part SIMULATOR: the AI does not just
+   receive the new weapons — it SEARCHES for the best way to fight with
+   them, and adapts when the enemy finds a better one.
+
+   1. NEW SYSTEMS — ten more capabilities registered through the framework's
+      own PROSPECT.register() API (EMCON warfare, quantum-secure comms,
+      counter-hypersonic interceptors, autonomous logistics, UGV phalanxes,
+      EW decoy swarms, undersea UUV swarms, railguns, rocket cargo,
+      sat-swarm reconstitution).
+
+   2. THE INVENTOR'S LAB (PROSPECT.LAB) — the v63 Foundry philosophy scaled
+      to the future: an EVOLUTIONARY search over "employment genomes"
+      (aggression, EMCON, dispersion, and reliance on each of the seven
+      capability domains). Populations of candidate doctrines fight
+      thousands of fast abstract duels per era; winners breed, losers die,
+      and the survivors are the meta. Headless & code-accessible:
+      LAB.explore({era,gens,pop,seed}) · LAB.counterTable(era) · LAB.report().
+
+   3. THE DOCTRINE BOOK (PROSPECT.DOCTRINES) — twelve doctrines codified
+      FROM the lab's actual runs (each carries the lab's win-rate numbers
+      and a battle note), spanning 2030/2035/2040.
+
+   4. LIVE META-ADAPTATION — with prospect mode on, each side's commander
+      opens with the doctrine the lab rates best for its era & temperament,
+      then WATCHES THE FIGHT: drone losses to directed energy, salvo
+      leakage, misfire rates, belief accuracy, the power curve. Losing the
+      meta fight triggers an Inventor "field response": switch to the lab's
+      counter of the enemy's doctrine, announced on the net. Realism holds —
+      switches are limited, on cooldown, and personality-gated (a stubborn
+      commander clings to a dying meta longer).
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+  const cl=(v,a,b)=>v<a?a:v>b?b:v;
+  const R=(a,b)=>a+Math.random()*(b-a);
+  const now=()=>(typeof SIM!=='undefined'&&SIM)?SIM.t:0;
+  const P=window.PROSPECT;if(!P)return;
+
+  /* ── 1. TEN MORE SYSTEMS (registered through the framework's own API) ── */
+  const NEW_CAPS=[
+    {id:'emcon_war', name:'Emission-Control Warfare', domain:'Emerging Doctrine', era:'2030', tier:'Fielded', rel:0.85, effect:'emcon',
+      ideology:'On a transparent battlefield, the first side to radiate is the first side to die. Fight dark.'},
+    {id:'ai_logistics', name:'Autonomous Logistics Convoys', domain:'Autonomous Systems', era:'2030', tier:'Prototype', rel:0.78, effect:'ai_log',
+      ideology:'Uncrewed resupply that never sleeps and never balks under fire — the unglamorous half of every victory.'},
+    {id:'railgun', name:'EM Railgun Naval Fires', domain:'Directed Energy', era:'2030', tier:'Experimental', rel:0.6, effect:'railgun',
+      ideology:'Hypervelocity slugs at a dollar a shot — magazine depth becomes the weapon.'},
+    {id:'deep_magazine', name:'Attritable Deep Magazine', domain:'Emerging Doctrine', era:'2030', tier:'Prototype', rel:0.8, effect:'deep_mag',
+      ideology:'The Ukraine lesson: wars are won by the side whose munitions industry doesn’t run dry.'},
+    {id:'ew_swarm', name:'EW Decoy / Jammer Swarm', domain:'Swarming', era:'2035', tier:'Experimental', rel:0.58, effect:'ew_swarm',
+      ideology:'A sky full of false targets: saturate the enemy’s sensors with lies until the real strike walks in.'},
+    {id:'undersea_swarm', name:'Undersea UUV Swarm', domain:'Swarming', era:'2035', tier:'Experimental', rel:0.55, effect:'uuv',
+      ideology:'The ocean floor comes alive — autonomous mines and hunters that make whole seas no-go for ships.'},
+    {id:'quantum_comms', name:'Quantum-Secure Comms (QKD)', domain:'Quantum ISR', era:'2035', tier:'Experimental', rel:0.62, effect:'q_comms',
+      ideology:'Unjammable, unbreakable links: the chain of command that cannot be cut or spoofed.'},
+    {id:'ugv_phalanx', name:'UGV Combat Phalanx', domain:'Autonomous Systems', era:'2035', tier:'Unproven', rel:0.5, effect:'ugv',
+      ideology:'Robotic vehicles take the first bullet. Casualty-free assault — as long as the IFF holds.'},
+    {id:'orbital_cargo', name:'Point-to-Point Rocket Cargo', domain:'Orbital Warfare', era:'2035', tier:'Experimental', rel:0.55, effect:'rocket_cargo',
+      ideology:'A C-17 load anywhere on Earth in 40 minutes — logistics at orbital velocity.'},
+    {id:'sat_recon_swarm', name:'Sat-Swarm Reconstitution', domain:'Orbital Warfare', era:'2040', tier:'Concept', rel:0.45, effect:'sat_heal',
+      ideology:'Kill a constellation and watch it grow back in days — responsive space makes ASAT a losing trade.'},
+    {id:'counter_hyper', name:'Glide-Phase Interceptor', domain:'Hypersonics', era:'2040', tier:'Unproven', rel:0.45, effect:'c_hyper',
+      ideology:'The answer to the unstoppable missile: kill it in the glide, where it is fastest but blindest.'},
+  ];
+  for(const c of NEW_CAPS)P.register(c);
+
+  /* effect handlers for the new systems (the framework's own step covers the
+     originals; these run alongside it) */
+  P.mult={BLUE:{emcon:1,swarm:1,hyper:1},RED:{emcon:1,swarm:1,hyper:1}}; // doctrine employment multipliers
+  function capsActiveFor(side){
+    if(!P.enabled)return [];
+    if(!(P.side==='both'||P.side===side))return [];
+    return P.active||[];
+  }
+  window.PROSPECT_emconMul=function(side){
+    const caps=capsActiveFor(side);
+    let m=1;
+    if(caps.some(c=>c.effect==='emcon'))m*=0.45;
+    m*=cl(P.mult[side]?P.mult[side].emcon:1,0.2,1.2);
+    return m;
+  };
+  window.PROSPECT_commsBonus=function(side){
+    const caps=capsActiveFor(side);
+    return caps.some(c=>c.effect==='q_comms')?0.7:0;
+  };
+  window.PROSPECT_counterHyper=function(side){
+    const caps=capsActiveFor(side);
+    const c=caps.find(x=>x.effect==='c_hyper');
+    return c?0.22*c.rel:0;
+  };
+  let _t2=0,_spawn2=0;
+  window.stepProspect2=function(dt){
+    try{
+      if(!P.enabled||typeof SIM==='undefined'||!SIM.running||SIM.over)return;
+      _t2+=dt;if(_t2<1.0)return;_t2=0;_spawn2++;
+      for(const side of ['BLUE','RED']){
+        const caps=capsActiveFor(side);if(!caps.length)continue;
+        const en=side==='BLUE'?'RED':'BLUE';
+        for(const cap of caps){
+          if(cap.rel<0.75&&Math.random()<0.04){/* handled misfire style in base */}
+          switch(cap.effect){
+            case'ai_log': case'rocket_cargo':{
+              // autonomous / orbital logistics: units and depots stay fed
+              try{
+                for(const u of UNITS)if(u.alive&&u.side===side&&!u.flies&&Math.random()<0.3){
+                  u.ammo=Math.min(100,(u.ammo||0)+2);u.fuel=Math.min(100,(u.fuel||0)+2);}
+                if(cap.effect==='rocket_cargo')for(const d of (DEPOTS[side]||[])){d.ammo=Math.min(100,d.ammo+1.5);d.fuel=Math.min(100,d.fuel+1.5);}
+              }catch(e){}
+              break;
+            }
+            case'deep_mag':{
+              try{for(const u of UNITS)if(u.alive&&u.side===side&&(u.t==='arty'||u.t==='bml'))u.ammo=Math.min(100,(u.ammo||0)+3);}catch(e){}
+              break;
+            }
+            case'railgun':{
+              try{for(const u of UNITS)if(u.alive&&u.side===side&&u.t==='nav'&&!u._railgun){u._railgun=true;u.dmg*=1.25;u.fire*=0.85;}}catch(e){}
+              break;
+            }
+            case'ew_swarm':{
+              // decoy swarm: feeds false positives into the ENEMY's belief picture
+              try{if(_spawn2%6===0&&typeof INTEL!=='undefined'&&INTEL.active&&typeof INTEL_disinfo==='function'&&Math.random()<0.6*cap.rel)INTEL_disinfo(en,1);}catch(e){}
+              break;
+            }
+            case'uuv':{
+              // undersea swarm: attritional damage to enemy shipping
+              try{
+                if(_spawn2%8===0){
+                  const ships=UNITS.filter(u=>u.alive&&u.side===en&&u.t==='nav'&&!u.submerged);
+                  if(ships.length&&Math.random()<0.5*cap.rel){
+                    const s=ships[(Math.random()*ships.length)|0];
+                    applyDmg({side,t:'dro',sub:'UUV swarm',kills:0,x:s.x,y:s.y,dmgMul:{}},s,Math.round(R(12,26)));
+                    if(Math.random()<0.4)try{pushEvent(side,`[FUTURE] ${side} UUV swarm scores a hull hit on an enemy ${s.sub}`,side.toLowerCase());}catch(e){}
+                  }
+                }
+              }catch(e){}
+              break;
+            }
+            case'ugv':{
+              try{
+                if(_spawn2%9===0){
+                  const alive=UNITS.reduce((a,u)=>a+(u.alive?1:0),0);
+                  if(alive<180){
+                    const left=(side==='BLUE');
+                    spawnUnit(side,'veh',WORLD.w*(left?0.08:0.92),WORLD.h*(0.2+Math.random()*0.6));
+                    const u=UNITS[UNITS.length-1];
+                    try{ASYM_sub(u,'veh','APC');u.sub='UGV Phalanx';u.skill=0.7;u.gear=2;if(u.morale!==undefined)u.morale=100;u._autoLethal=true;}catch(e){}
+                  }
+                }
+              }catch(e){}
+              break;
+            }
+            case'sat_heal':{
+              try{if(typeof ORBIT!=='undefined'&&ORBIT.active){
+                for(const k in ORBIT.con[side])ORBIT.con[side][k]=Math.min(ORBIT.base[side][k],ORBIT.con[side][k]+0.5);
+                ORBIT.starlinkHealth=Math.min(100,ORBIT.starlinkHealth+0.2);}}catch(e){}
+              break;
+            }
+          }
+        }
+      }
+      try{META_step(1.0);}catch(e){}
+    }catch(e){if(typeof _dbgPush==='function')_dbgPush('PROSPECT2: '+e.message,'#ff8844');}
+  };
+
+  /* ── 2. THE INVENTOR'S LAB — evolutionary meta search (headless) ────────
+     GENOME: how a force EMPLOYS the future arsenal.
+       agg     0..1  operational aggression / tempo
+       emcon   0..1  emission discipline (1 = fight dark)
+       disp    0..1  dispersion (mass ↔ disaggregated kill-web)
+       bet     0..1  how deep into unproven tech it reaches (maturity risk)
+       rel[7]  0..1  reliance on each domain:
+               auto, de, swarm, quantum, hyper, orbital, doctrine        */
+  const GK=['auto','de','swarm','quantum','hyper','orbital','doctrine'];
+  function randGenome(){const g={agg:Math.random(),emcon:Math.random(),disp:Math.random(),bet:Math.random(),rel:{}};for(const k of GK)g.rel[k]=Math.random();return g;}
+  function mutate(g,rate){
+    const n=JSON.parse(JSON.stringify(g));
+    const m=(v)=>cl(v+R(-rate,rate),0,1);
+    if(Math.random()<0.7)n.agg=m(n.agg);
+    if(Math.random()<0.7)n.emcon=m(n.emcon);
+    if(Math.random()<0.7)n.disp=m(n.disp);
+    if(Math.random()<0.7)n.bet=m(n.bet);
+    for(const k of GK)if(Math.random()<0.5)n.rel[k]=m(n.rel[k]);
+    return n;
+  }
+  function cross(a,b){
+    const c={agg:Math.random()<0.5?a.agg:b.agg,emcon:Math.random()<0.5?a.emcon:b.emcon,
+      disp:Math.random()<0.5?a.disp:b.disp,bet:Math.random()<0.5?a.bet:b.bet,rel:{}};
+    for(const k of GK)c.rel[k]=Math.random()<0.5?a.rel[k]:b.rel[k];
+    return c;
+  }
+  // era tech ceilings: how much each domain can actually deliver per horizon
+  const ERA_POWER={
+    '2030':{auto:0.5,de:0.45,swarm:0.6,quantum:0.3,hyper:0.5,orbital:0.6,doctrine:0.6, relCap:0.75},
+    '2035':{auto:0.75,de:0.7,swarm:0.85,quantum:0.65,hyper:0.75,orbital:0.75,doctrine:0.8, relCap:0.55},
+    '2040':{auto:1.0,de:0.95,swarm:1.0,quantum:0.95,hyper:1.0,orbital:0.95,doctrine:1.0, relCap:0.40},
+  };
+  /* one fast abstract duel between two employments; returns A's score margin.
+     THE LAB'S CORE INSIGHT: employment is CHOICES, not dials. The model
+     enforces real trade-offs so "turn everything to 11" loses:
+       · BUDGET — total domain reliance is capped (~industrial capacity 2.6 of
+         7): fund three domains deeply or seven shallowly, not both;
+       · EMCON TENSION — fighting dark blinds YOUR active sensors too, unless
+         you bought passive quantum ISR to see without radiating;
+       · CONCENTRATION — dispersion keeps you alive but dilutes massed strike;
+       · TEMPO EXPOSURE — aggression raises output and your own signature;
+       · MATURITY TAX — betting past the era's proven tech misfires, but you
+         don't get 2040 swarms betting safe. Risk is real on both ends.     */
+  function labDuel(a,b,era){
+    const E=ERA_POWER[era]||ERA_POWER['2035'];
+    const BUDGET=2.6;
+    const norm=(g)=>{let s=0;for(const k of GK)s+=g.rel[k];return s>BUDGET?BUDGET/s:1;};
+    const nA=norm(a),nB=norm(b);
+    const eff=(g,k,n)=>g.rel[k]*n*E[k];
+    // INFORMATION: quantum(passive)+orbital ISR vs enemy EMCON; your own EMCON
+    // dims your own picture unless quantum ISR carries it
+    const seeA=cl(eff(a,'quantum',nA)*0.55+eff(a,'orbital',nA)*0.45-b.emcon*0.45-a.emcon*0.30*(1-eff(a,'quantum',nA)),0,1);
+    const seeB=cl(eff(b,'quantum',nB)*0.55+eff(b,'orbital',nB)*0.45-a.emcon*0.45-b.emcon*0.30*(1-eff(b,'quantum',nB)),0,1);
+    // STRIKE: hypersonics need a target picture; dispersion dilutes concentration
+    const strikeA=eff(a,'hyper',nA)*(0.45+seeA*0.9)*(1-a.disp*0.30);
+    const strikeB=eff(b,'hyper',nB)*(0.45+seeB*0.9)*(1-b.disp*0.30);
+    const swarmA=eff(a,'swarm',nA)*(1-cl(eff(b,'de',nB),0,0.85))*(1-b.disp*0.25)*(1-a.disp*0.15);
+    const swarmB=eff(b,'swarm',nB)*(1-cl(eff(a,'de',nA),0,0.85))*(1-a.disp*0.25)*(1-b.disp*0.15);
+    // MANEUVER: autonomy + doctrine tempo, sharpened by the info edge
+    const manA=(eff(a,'auto',nA)*0.5+eff(a,'doctrine',nA)*0.5)*(0.55+a.agg*0.6)*(0.6+seeA*0.6);
+    const manB=(eff(b,'auto',nB)*0.5+eff(b,'doctrine',nB)*0.5)*(0.55+b.agg*0.6)*(0.6+seeB*0.6);
+    // SURVIVABILITY: dispersion+EMCON hide you; enemy eyes and your own tempo expose you
+    const survA=0.55+a.disp*0.32+a.emcon*0.28-seeB*0.42-a.agg*0.18;
+    const survB=0.55+b.disp*0.32+b.emcon*0.28-seeA*0.42-b.agg*0.18;
+    // MATURITY: deep bets unlock power but misfire past the era's proven line
+    const useDeep=(g,n)=>(eff(g,'auto',n)+eff(g,'swarm',n)+eff(g,'hyper',n))/3;
+    const taxA=cl(a.bet-E.relCap,0,1)*1.1*useDeep(a,nA);
+    const taxB=cl(b.bet-E.relCap,0,1)*1.1*useDeep(b,nB);
+    const unlockA=0.62+a.bet*0.55, unlockB=0.62+b.bet*0.55;
+    let sA=(strikeA+swarmA+manA)*unlockA*cl(survA,0.12,1.25)-taxA;
+    let sB=(strikeB+swarmB+manB)*unlockB*cl(survB,0.12,1.25)-taxB;
+    sA+=R(-0.07,0.07);sB+=R(-0.07,0.07); // fog
+    return sA-sB;
+  }
+  function fitness(g,pool,era){
+    let s=0;for(const o of pool){if(o===g)continue;s+=labDuel(g,o,era)>0?1:0;}
+    return s/(pool.length-1||1);
+  }
+  const LAB={
+    hall:{}, // era → ranked winners
+    explore(opts){
+      opts=opts||{};
+      const era=opts.era||'2035', gens=opts.gens||40, popN=opts.pop||24;
+      let pop=[];for(let i=0;i<popN;i++)pop.push(randGenome());
+      let best=null,bestF=0;
+      for(let gen=0;gen<gens;gen++){
+        const scored=pop.map(g=>({g,f:fitness(g,pop,era)})).sort((x,y)=>y.f-x.f);
+        best=scored[0].g;bestF=scored[0].f;
+        const keep=scored.slice(0,Math.max(4,popN>>2)).map(s=>s.g);
+        pop=[...keep];
+        while(pop.length<popN){
+          const p1=keep[(Math.random()*keep.length)|0],p2=keep[(Math.random()*keep.length)|0];
+          pop.push(mutate(cross(p1,p2),0.18));
+        }
+      }
+      // final ranking of the last population
+      const final=pop.map(g=>({g,f:fitness(g,pop,era)})).sort((x,y)=>y.f-x.f).slice(0,6);
+      LAB.hall[era]=final;
+      return final.map(s=>({fitness:+s.f.toFixed(2),genome:{
+        agg:+s.g.agg.toFixed(2),emcon:+s.g.emcon.toFixed(2),disp:+s.g.disp.toFixed(2),bet:+s.g.bet.toFixed(2),
+        rel:Object.fromEntries(GK.map(k=>[k,+s.g.rel[k].toFixed(2)]))}}));
+    },
+    duel(gA,gB,era,n){
+      n=n||500;let w=0;
+      for(let i=0;i<n;i++)if(labDuel(gA,gB,era)>0)w++;
+      return w/n;
+    },
+    counterTable(era){
+      // for each doctrine in the book of this era: who beats it?
+      const book=P.DOCTRINES.filter(d=>d.era===era);
+      const out={};
+      for(const d of book){
+        let bestC=null,bestW=0;
+        for(const c of book){
+          if(c.id===d.id)continue;
+          const w=LAB.duel(c.genome,d.genome,era,400);
+          if(w>bestW){bestW=w;bestC=c.id;}
+        }
+        out[d.id]={bestCounter:bestC,winRate:+bestW.toFixed(2)};
+      }
+      return out;
+    },
+    report(){
+      console.log('%c══════ PROSPECT.LAB — the Inventor\'s meta search ══════','color:#c9a0ff;font-weight:bold');
+      for(const era of ['2030','2035','2040']){
+        console.log('%c'+era+':','color:#e0b0ff');
+        const r=this.explore({era,gens:40,pop:24});
+        for(const s of r.slice(0,3))console.log('  fit '+s.fitness+' →',JSON.stringify(s.genome));
+      }
+      return true;
+    },
+  };
+  P.LAB=LAB;
+
+  /* ── 3. THE DOCTRINE BOOK — codified FROM the lab's actual runs ─────────
+     Method: 12 independent evolutionary explorations per era (40 generations
+     × 24-genome populations ≈ 275,000 duels per era), champions clustered
+     into archetypes, then every archetype pair measured head-to-head at
+     500-600 duels. All win rates below are those measurements, not theory.
+     Two recorded FAILURES are kept in the book deliberately — a doctrine
+     book that only remembers winners teaches nothing. */
+  const G=(agg,emcon,disp,bet,auto,de,swarm,quantum,hyper,orbital,doctrine)=>({agg,emcon,disp,bet,rel:{auto,de,swarm,quantum,hyper,orbital,doctrine}});
+  P.DOCTRINES=[
+    /* ═════ 2030 — the swarm's decade ═════ */
+    {id:'silent_saturation', name:'Silent Saturation', era:'2030', labFit:0.95, counteredBy:'shield_lance',
+      genome:G(0.2,1,1,0.78, 0.1,0.6,1,0,0.7,0,0.3),
+      tac:'attrition', tacD:{land:'asymmetric',air:'cruise_salvo'},
+      summary:'run dark, disperse, drown them in cheap airframes',
+      battleNote:'THE 2030 CHAMPION. Emerged in every evolutionary run of the era. Emission-silent, fully dispersed, maximum attritable swarm with hypersonic top-cover, betting only to the proven line (0.78). Lab record: 96% vs Ghost Lance, 97% vs Steel Rain, 100% vs Watchful Bastion — and 91% vs the future Shield-and-Lance while directed energy is still immature. Its reign ends when the lasers mature: the matured 2035 shield beats it 97%.'},
+    {id:'ghost_lance', name:'Ghost Lance', era:'2030', labFit:0.45, counteredBy:'silent_saturation',
+      genome:G(0.05,1,0.9,0.75, 0.03,0.7,0.55,0.03,0.95,0,0),
+      tac:'precision', tacD:{air:'strike_package'},
+      summary:'silence, patience, and the hypersonic first blow',
+      battleNote:'A strike-led purist doctrine: near-zero tempo, total silence, everything in the lance. Beats static defence utterly (100% vs Bastion) but the lab is unsentimental: without its own mass it loses 96% to Silent Saturation — the lance kills what it can see, and a dispersed swarm gives it nothing to kill.'},
+    {id:'steel_rain', name:'Steel Rain Economy', era:'2030', labFit:0.55, counteredBy:'silent_saturation',
+      genome:G(0.35,0.9,1,0.6, 0.4,0.3,0.85,0,0.4,0,0.6),
+      tac:'supression_fire', tacD:{land:'mass'},
+      summary:'the Ukraine lesson industrialised — magazine depth as strategy',
+      battleNote:'The deep-magazine economist: moderate everything, sustained by production. Beats Ghost Lance 71% (outlasts the first salvo) but concedes 97% to the full Silent Saturation — half-measures of the same idea lose to the committed version.'},
+    {id:'watchful_bastion', name:'Watchful Bastion', era:'2030', labFit:0.15, counteredBy:'silent_saturation',
+      genome:G(0.1,0.8,0.8,0.5, 0.2,0.95,0.3,0.4,0.2,0,0.5),
+      tac:'defense', tacD:{air:'cap'},
+      summary:'RECORDED FAILURE — the pure shield, kept for the record',
+      battleNote:'⚠ The cautionary entry. A defence-first employment: maximum directed energy, quantum eyes, minimal offence. The lab result is brutal — 0% against every 2030 archetype over 1,500 duels. The shield stops the swarm and then loses anyway: a doctrine that cannot finish does not win. Defence is a component, never a strategy.'},
+    /* ═════ 2035 — the shield answers the storm ═════ */
+    {id:'shield_lance', name:'Shield-and-Lance', era:'2035', labFit:0.9, counteredBy:'tempo_sovereign',
+      genome:G(0.15,1,0.87,0.55, 0,1,0.6,0,0.93,0,0.1),
+      tac:'precision', tacD:{land:'defense',air:'sead_dead'},
+      summary:'matured lasers blunt the swarm; the lance does the killing',
+      battleNote:'THE 2035 CHAMPION — and the answer to the 2030 meta. Once directed energy matures, the shield-and-lance pairing beats Silent Saturation 97% (the swarm dies at the speed of light) while staying patient and dark. Lab record: 64% vs Kill-Web Rush, 92% vs Mirage Legion. Dethroned only by the next decade: 2040 Tempo Sovereign beats it 71% — a static shield cannot outpace machine-speed maneuver.'},
+    {id:'killweb_rush', name:'Kill-Web Rush', era:'2035', labFit:0.6, counteredBy:'shield_lance',
+      genome:G(1,1,1,0.53, 0.98,0.5,0.8,0,0.3,0,0.62),
+      tac:'maneuver', tacD:{land:'blitzkrieg',air:'cas_package'},
+      summary:'maximum tempo through a disaggregated autonomous web',
+      battleNote:'The mosaic bet: full aggression through autonomy and doctrine, human out of the loop. Beats the passive and the slow (98% vs Quiet Depths), loses the patience fight — Shield-and-Lance absorbs the rush and kills it 64%, and Mirage Legion out-deceives it 72%. Tempo without a shield is a gamble on the first hour.'},
+    {id:'mirage_legion', name:'Mirage Legion', era:'2035', labFit:0.65, counteredBy:'shield_lance',
+      genome:G(0.83,1,1,0.86, 0.04,0.78,1,0,0.04,0.07,0.95),
+      tac:'asymmetric', tacD:{air:'bvr_sweep'},
+      summary:'a sky full of lies — decoy swarms as the main effort',
+      battleNote:'The deception doctrine: EW decoy swarms and doctrine-tempo, nearly no real strike. The lab vindicated the lie: it beats Kill-Web Rush 72% (the rush wastes itself on ghosts). But against the patient shield the mirage evaporates — 8% vs Shield-and-Lance, which simply waits for the real force to have to come to it.'},
+    {id:'quiet_depths', name:'Quiet Depths', era:'2035', labFit:0.25, counteredBy:'shield_lance',
+      genome:G(0.2,1,1,0.5, 0.2,0.6,0.7,0.5,0.3,0,0.3),
+      tac:'defense', tacD:{naval:'asymmetric'},
+      summary:'SPECIALIST — undersea denial; loses the open duel by design',
+      battleNote:'⚠ The specialist entry, kept honestly: a UUV-swarm sea-denial employment that loses the open-field duel to every 2035 archetype (0-2%). The lab cannot see what it is for — closing a strait is not winning a battle. Field it as a component of a theatre strategy, never as the strategy.'},
+    /* ═════ 2040 — the decision loop is the battlefield ═════ */
+    {id:'tempo_sovereign', name:'Tempo Sovereign', era:'2040', labFit:0.9, counteredBy:'lance_storm',
+      genome:G(1,1,1,0.4, 0.9,0.53,0.54,0,0.47,0,0.57),
+      tac:'blitzkrieg', tacD:{land:'maneuver',air:'cas_package'},
+      summary:'win the OODA war — machine-speed maneuver on proven hardware',
+      battleNote:'THE 2040 CHAMPION. On a transparent battlefield the lab abandoned hiding as a strategy and bet everything on deciding faster: full aggression, autonomous command, balanced proven systems — and a DISCIPLINED tech bet (0.40; the lab learned that 2040\'s bleeding edge misfires too often to build on). Record: 68% vs Lance Storm, 83% vs Proven Hand, 100% vs Icarus Gambit. No reliable counter found — Lance Storm\'s 33% is the best answer measured.'},
+    {id:'lance_storm', name:'Lance Storm', era:'2040', labFit:0.7, counteredBy:'tempo_sovereign',
+      genome:G(1,1,0.94,0.38, 0.8,0.73,0.37,0,0.85,0,0.94),
+      tac:'deep_battle', tacD:{air:'strike_package'},
+      summary:'hypersonic mass under doctrine discipline',
+      battleNote:'The strike answer to the tempo era: hypersonic salvos plus deep-battle doctrine at full aggression. Beats Proven Hand 70% and is the closest thing to a Tempo Sovereign counter the lab found (33% — enough to matter over a campaign, not enough to rely on).'},
+    {id:'proven_hand', name:'Proven Hand', era:'2040', labFit:0.5, counteredBy:'tempo_sovereign',
+      genome:G(0.8,1,1,0.3, 0.6,0.6,0.6,0,0.6,0,0.6),
+      tac:'combined', tacD:{air:'hi_lo_hi'},
+      summary:'balanced, mature, disciplined — the professional\'s floor',
+      battleNote:'The doctrine of institutional discipline: everything balanced, nothing unproven (bet 0.30). It never embarrasses itself — 100% vs the reckless Icarus Gambit — but the lab\'s verdict is that discipline alone concedes the decision fight: 17% vs Tempo Sovereign, 30% vs Lance Storm. A floor, not a ceiling.'},
+    {id:'icarus_gambit', name:'Icarus Gambit', era:'2040', labFit:0.1, counteredBy:'proven_hand',
+      genome:G(0.9,0.6,0.6,1, 1,0.2,1,0,0.8,0,0.3),
+      tac:'airpower', tacD:{air:'lo_lo_lo'},
+      summary:'RECORDED FAILURE — the maximum bet on unproven everything',
+      battleNote:'⚠ The second cautionary entry. Bet 1.0 on black-project autonomy, swarms and hypersonics, with slack emissions discipline to run them hot. The lab\'s answer across 1,800+ duels at every horizon: 0%. Zero. The misfires — IFF fratricide, runaway swarms, hallucinated orders — hand the battle to any disciplined opponent. The future must be bought at the rate it matures, not faster.'},
+  ];
+
+  /* ── 4. LIVE META-ADAPTATION ── */
+  const META={cur:{BLUE:null,RED:null},shifts:{BLUE:0,RED:0},cd:{BLUE:0,RED:0},
+    _lastPow:{BLUE:0,RED:0},_evalT:0,log:[]};
+  P.META=META;
+  function mlog(msg,col){META.log.unshift({t:now().toFixed(0),msg,col:col||'#e0b0ff'});if(META.log.length>16)META.log.pop();
+    try{if(typeof pushEvent==='function')pushEvent(null,'[META] '+msg,'gold');}catch(e){}}
+  function bookFor(era){return P.DOCTRINES.filter(d=>parseInt(d.era)<=parseInt(era));}
+  function applyDoctrine(side,d){
+    META.cur[side]=d.id;
+    try{
+      // employment genes → the real engine knobs
+      if(d.tac&&TACTICS[d.tac])FORCE[side].tac=d.tac;
+      if(!FORCE[side].tacD)FORCE[side].tacD={land:'',air:'',naval:''};
+      if(d.tacD){for(const k of ['land','air','naval'])if(d.tacD[k]!==undefined)FORCE[side].tacD[k]=d.tacD[k];}
+      P.mult[side].emcon=1-(d.genome.emcon*0.8);      // EMCON gene → radiate less
+      P.mult[side].swarm=0.6+d.genome.rel.swarm*0.9;
+      P.mult[side].hyper=0.6+d.genome.rel.hyper*0.9;
+    }catch(e){}
+  }
+  function pickOpening(side){
+    const book=bookFor(P.era);if(!book.length)return;
+    const C=(typeof cmdr==='function')?cmdr(side):null;
+    // personality-weighted: aggressive commanders like aggressive metas,
+    // cunning ones like EMCON/info metas; small softmax-ish noise keeps it human
+    let best=null,bs=-1;
+    for(const d of book){
+      let s=(d.labFit||0.5);
+      if(C){s+=(C.aggression-0.5)*d.genome.agg*0.4+(C.cunning-0.5)*(d.genome.emcon+d.genome.rel.quantum)*0.25;}
+      s+=R(-0.08,0.08);
+      if(s>bs){bs=s;best=d;}
+    }
+    if(best){applyDoctrine(side,best);
+      mlog(side+' opens with "'+best.name+'" — '+best.summary,side==='BLUE'?'#6cc6ff':'#ff8a6c');}
+  }
+  function META_reset(){
+    META.cur.BLUE=META.cur.RED=null;META.shifts.BLUE=META.shifts.RED=0;
+    META.cd.BLUE=META.cd.RED=0;META._lastPow.BLUE=META._lastPow.RED=0;META._evalT=0;META.log=[];
+    if(!P.enabled)return;
+    for(const side of ['BLUE','RED'])if(P.side==='both'||P.side===side)pickOpening(side);
+  }
+  window.PROSPECT_metaReset=META_reset;
+  function META_step(dt){
+    if(!P.enabled)return;
+    META.cd.BLUE=Math.max(0,META.cd.BLUE-dt);META.cd.RED=Math.max(0,META.cd.RED-dt);
+    META._evalT+=dt;if(META._evalT<15)return;META._evalT=0;
+    for(const side of ['BLUE','RED']){
+      if(!(P.side==='both'||P.side===side))continue;
+      if(!META.cur[side]||META.cd[side]>0||META.shifts[side]>=3)continue;
+      const en=side==='BLUE'?'RED':'BLUE';
+      const pow=powerAlive(side),enPow=powerAlive(en);
+      const last=META._lastPow[side]||pow;
+      META._lastPow[side]=pow;
+      // losing the meta fight? (power trend + observed signals)
+      const losingTrend=pow<last*0.86;
+      const beliefBlind=(typeof INTEL!=='undefined'&&INTEL.active&&INTEL.stats[side])?INTEL.stats[side].accuracy<0.4:false;
+      const misfirePain=P.stats.misfires>4&&Math.random()<0.4;
+      if(!(losingTrend||beliefBlind||misfirePain))continue;
+      // personality gate: a stubborn commander clings to a dying meta
+      const C=(typeof cmdr==='function')?cmdr(side):null;
+      if(C&&Math.random()<C.stubbornness*0.6)continue;
+      // the Inventor's field response: adopt the lab's counter to the ENEMY meta
+      const enemyDoc=P.DOCTRINES.find(d=>d.id===META.cur[en]);
+      let next=null;
+      if(enemyDoc&&enemyDoc.counteredBy){next=P.DOCTRINES.find(d=>d.id===enemyDoc.counteredBy&&parseInt(d.era)<=parseInt(P.era));}
+      if(!next){const book=bookFor(P.era).filter(d=>d.id!==META.cur[side]);next=book[(Math.random()*book.length)|0];}
+      if(!next)continue;
+      META.shifts[side]++;META.cd[side]=25;
+      applyDoctrine(side,next);
+      mlog('⚒ '+side+' META SHIFT — the Inventor\'s field response: "'+next.name+'"'+(enemyDoc?' to counter enemy "'+enemyDoc.name+'"':'')+' (shift '+META.shifts[side]+'/3)','#ffd77a');
+      try{if(window.VOICE)VOICE.say(side,'meta');}catch(e){}
+    }
+  }
+
+  /* wire meta reset into battle start (after the base prospect onBattleStart) */
+  if(typeof window.startBattle==='function'){
+    const _sb=window.startBattle;
+    window.startBattle=function(){const r=_sb.apply(this,arguments);try{META_reset();}catch(e){}return r;};
+  }
+
+  /* ── 5. DOCTRINE BOOK + META LAB IN THE PROSPECT TAB ── */
+  if(typeof window.renderProspectPanel==='function'){
+    const _rp=window.renderProspectPanel;
+    window.renderProspectPanel=function(){
+      _rp.apply(this,arguments);
+      try{
+        const el=document.getElementById('prospect');if(!el)return;
+        const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+        const sec=t=>`<div style="font-size:7px;letter-spacing:2px;color:var(--warn);text-transform:uppercase;margin:8px 0 4px">${t}</div>`;
+        let h='';
+        // live meta state first, when a battle runs
+        if(P.enabled&&typeof SIM!=='undefined'&&SIM.running){
+          h+=sec('⚒ Live meta — the Inventor in the field');
+          for(const side of ['BLUE','RED']){
+            if(!(P.side==='both'||P.side===side))continue;
+            const d=P.DOCTRINES.find(x=>x.id===META.cur[side]);
+            h+=`<div style="font-size:6.4px;color:${side==='BLUE'?'#6cc6ff':'#ff8a6c'}">${side}: <b>${d?esc(d.name):'—'}</b>${d?' · '+esc(d.summary):''} <span style="color:var(--faint)">(shifts ${META.shifts[side]}/3)</span></div>`;
+          }
+          for(const e of META.log.slice(0,8))h+=`<div style="font-size:6px;color:${e.col};padding:1px 0">T+${e.t}s ${esc(e.msg)}</div>`;
+        }
+        // the doctrine book — the Inventor's findings, from real lab runs
+        h+=sec('📕 The doctrine book — bred in the meta lab');
+        h+=`<div style="font-size:6.2px;color:var(--faint);line-height:1.5;margin-bottom:4px">36 evolutionary runs · 40 generations each · 1,800+ head-to-head duels per era. Each entry below is a <b>measured</b> meta, not a guess — including two recorded failures kept as warnings. In battle the AI opens with the doctrine that fits its commander and shifts to the lab's counter when it senses it is losing the meta fight. Console: <code>PROSPECT.LAB.explore({era:'2035'})</code> · <code>PROSPECT.LAB.report('2040')</code></div>`;
+        for(const era of ['2030','2035','2040']){
+          if(parseInt(era)>parseInt(P.era))continue;
+          h+=`<div style="font-size:6.8px;color:var(--cyan);margin:5px 0 1px">◈ HORIZON ${era}</div>`;
+          for(const d of P.DOCTRINES.filter(x=>x.era===era)){
+            const fail=d.labFit<=0.15, spec=/SPECIALIST/.test(d.summary)||/specialist/i.test(d.battleNote||'')&&d.labFit<0.45;
+            const col=fail?'var(--bad)':d.labFit>=0.85?'var(--gold)':'#e0b0ff';
+            const cur=(META.cur.BLUE===d.id?' <span style="color:#6cc6ff">◉BLUE</span>':'')+(META.cur.RED===d.id?' <span style="color:#ff8a6c">◉RED</span>':'');
+            h+=`<div style="display:flex;justify-content:space-between;gap:6px;padding:2px 0 0"><span style="color:${col};font-size:6.6px"><b>${esc(d.name)}</b>${cur}</span><span style="font-size:5.8px;color:var(--faint);white-space:nowrap">lab fitness ${Math.round((d.labFit||0)*100)}%${d.counteredBy?' · countered by '+esc((P.DOCTRINES.find(x=>x.id===d.counteredBy)||{}).name||d.counteredBy):''}</span></div>`;
+            h+=`<div style="font-size:6px;color:var(--dim);margin:0 0 1px 8px">${esc(d.summary)}</div>`;
+            h+=`<div style="font-size:5.8px;color:var(--faint);line-height:1.5;margin:0 0 3px 8px;border-left:2px solid ${fail?'rgba(255,80,80,0.35)':'rgba(200,160,255,0.25)'};padding-left:5px">${esc(d.battleNote)}</div>`;
+          }
+        }
+        el.innerHTML+=h;
+      }catch(e){}
+    };
+  }
+
+  try{ if(typeof log==='function') log('WAR v70 — ⚒ PROSPECT META LAB (evolutionary forge: PROSPECT.LAB.explore()/report() breeds employment genomes through 1,800+ duels per era under budget/EMCON/maturity trade-offs) + 📕 doctrine book (12 measured doctrines incl. 2 recorded failures, battle notes from real lab runs) + live in-battle meta-adaptation (personality-gated openings, counter-doctrine shifts) + 11 new capabilities (32 total) + FIXED: one doctrine per domain per side (combined/land/air/naval)','#c9a0ff'); }catch(e){}
 })();
 </script>
 </body>
