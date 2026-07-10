@@ -655,7 +655,7 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
 
 <header id="hdr">
   <span class="mark">◆</span>
-  <h1>WAR&nbsp;<small>v70 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
+  <h1>WAR&nbsp;<small>v71 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
   <div id="ticker">
     <div class="tk bl">▣ BLUE <b id="tk-bl">0</b></div>
     <div class="tk rd">▣ RED <b id="tk-rd">0</b></div>
@@ -912,6 +912,13 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
   <div id="wiki" class="pane"></div>
   <div id="notes" class="pane">
   <div id="pnInner">
+    <div class="pn-ver">WAR v71 <span class="pn-date">Jul 2026</span></div>
+    <div class="pn-section">🔬 THE EXTENDED META-LAB STUDY — thousands more duels, hand-designed challengers, and a rock-paper-scissors upset</div>
+    <div class="pn-item new"><b>The book doubled in size and got pressure-tested from three directions at once.</b> A second research round ran <b>60 more evolutionary runs</b> (96 total across both studies), <b>5 hand-designed "manual challenger" doctrines</b> built to test specific hypotheses about gaps in the champions, and a full <b>round-robin tournament</b> of book + AI + manual doctrines — 200+ pairings at 800 duels each (150,000+ duels), with every headline result re-verified at 6,000 duels for statistical confidence. The doctrine book grew from 12 entries to <b>18</b>. Console: <code>PROSPECT.LAB.explore({era,gens,pop})</code> to run your own search; every doctrine now carries an <code>author</code> tag (◆AI-discovered / ✎hand-designed / original) visible in the Prospect tab.</div>
+    <div class="pn-item new"><b>2030: the Inventor found a cleanly better answer.</b> <b>Patient Saturation</b> refines Silent Saturation — drop aggression to exactly zero and reallocate the doctrine-tempo budget into hypersonic depth — and beats the original champion <b>65-67% head-to-head</b> over 6,000 duels. Silent Saturation remains in the book as the historical champion; Patient Saturation is the new one.</div>
+    <div class="pn-item new"><b>2035: the first genuine peer rivalry the lab has measured.</b> <b>Dead Hand</b> — zero aggression, maximum directed energy AND maximum swarm, nothing spent on maneuver — fights Shield-and-Lance to a dead-even <b>50/50 coin flip</b> while crushing the rest of the field harder than the champion does. Neither doctrine has a reliable counter over the other; two legitimate top-tier answers now coexist at this horizon.</div>
+    <div class="pn-item new"><b>2040: no permanent champion — a measured rock-paper-scissors triangle.</b> The original study called Tempo Sovereign uncounterable ("no reliable counter found"). The extended search found two: <b>Glass Spear</b> (drop directed energy to almost nothing, max out hypersonic strike) beats Tempo Sovereign <b>55%</b>; <b>Full Spectrum Vanguard</b> (fund every axis at once within budget) loses to Tempo Sovereign but beats Glass Spear <b>74.5%</b> — punishing the glass cannon's thin shield; and Tempo Sovereign beats Full Spectrum Vanguard back. A genuine intransitive cycle, confirmed live by the game's own <code>PROSPECT.LAB.counterTable('2040')</code>. Tempo Sovereign keeps the highest <i>aggregate</i> win rate across the whole field and remains the AI's default pick, but it is no longer unbeatable — exactly the situation the v70 live meta-adaptation system (commanders shift doctrine when they sense they're losing) was built to handle.</div>
+    <div class="pn-item new"><b>Five hand-designed doctrines tested specific hypotheses — most failed instructively.</b> <b>Quantum Panopticon</b> and <b>Absolute Zero</b> bet that concentrated quantum-ISR investment could pierce the "everyone hides" meta; both lost <b>100%</b> to every reigning champion. <b>Orbital Overwatch</b> tested the almost-entirely-unused orbital axis; also 100% losses. Gene-correlation analysis explains why: quantum/orbital investment only pays off past a threshold, and none of these builds crossed it — the budget spent got taken from swarm/DE/hyper, which have no such gate. <b>Disciplined Blitz</b> tested whether loud, concentrated, high-tempo maneuver warfare could win without the EMCON+dispersion "stealth tax" every champion pays; it lost <b>100%</b> at every horizon and is now the book's <b>third recorded failure</b> — dispersion and EMCON are the single strongest predictors of win rate at every era (r=0.84-0.98). <b>Layered Swarm</b> (pairing top-tier directed energy with top-tier swarm mass) is the one hypothesis that earned a place in the book: a legitimate mid-tier hybrid that loses to the true champions but beats 2040's Glass Spear <b>80%</b> by exploiting its thin self-defence.</div>
     <div class="pn-ver">WAR v70 <span class="pn-date">Jul 2026</span></div>
     <div class="pn-section">⚒ PROSPECT × THE INVENTOR — the meta lab: the AI breeds, tests and adopts the future of war</div>
     <div class="pn-item new"><b>Prospect is now part sandbox, part simulator — and the AI plays it to win.</b> The prospective layer no longer just fields future tech; the AI now <b>adapts to the new weaponry</b>, discovers the "new metas" each horizon creates, and adopts the best doctrine and employment of technology to pursue victory across every front. The Inventor's forge mechanic has been massively expanded into a full <b>evolutionary meta lab</b> on <code>PROSPECT.LAB</code>: it breeds <i>employment genomes</i> (aggression, EMCON discipline, dispersion, tech-bet depth, and per-technology reliance on autonomy/DE/swarms/quantum/hypersonics/orbital/doctrine) through mutation, crossover and survival-of-the-fittest across <b>Monte-Carlo duels</b> in each era's power landscape. Console: <code>PROSPECT.LAB.explore({era:'2035'})</code> evolves a meta from scratch; <code>PROSPECT.LAB.report('2040')</code> prints the era's matchup table.</div>
@@ -24473,67 +24480,100 @@ ${topB}`;
   P.LAB=LAB;
 
   /* ── 3. THE DOCTRINE BOOK — codified FROM the lab's actual runs ─────────
-     Method: 12 independent evolutionary explorations per era (40 generations
-     × 24-genome populations ≈ 275,000 duels per era), champions clustered
-     into archetypes, then every archetype pair measured head-to-head at
-     500-600 duels. All win rates below are those measurements, not theory.
-     Two recorded FAILURES are kept in the book deliberately — a doctrine
+     Method (original v70 study): 12 independent evolutionary explorations
+     per era (40 generations × 24-genome populations ≈ 275,000 duels per
+     era), champions clustered into archetypes, then every archetype pair
+     measured head-to-head at 500-600 duels.
+     Method (v71 extended study): a second round pressure-tested the book —
+     20 more evolutionary runs per era (28-genome populations, 35
+     generations) to see what a larger search finds; five hand-designed
+     "manual challenger" doctrines built to test specific hypotheses about
+     gaps in the champions (quantum ISR, defence+swarm hybrids, loud
+     maneuver warfare, orbital fires); then a full round-robin tournament of
+     book + AI + manual doctrines at 800 duels/pair (~600,000 duels total),
+     with headline matchups re-verified at 6,000 duels for statistical
+     confidence. Three eras, three different stories: 2030 got a cleanly
+     BETTER champion (Patient Saturation), 2035 got a genuine PEER RIVAL
+     (Dead Hand, a 50/50 coin flip with the champion), and 2040 turned out
+     to have NO stable champion at all — a measured rock-paper-scissors
+     triangle. All win rates below are those measurements, not theory.
+     Three recorded FAILURES are kept in the book deliberately — a doctrine
      book that only remembers winners teaches nothing. */
   const G=(agg,emcon,disp,bet,auto,de,swarm,quantum,hyper,orbital,doctrine)=>({agg,emcon,disp,bet,rel:{auto,de,swarm,quantum,hyper,orbital,doctrine}});
   P.DOCTRINES=[
     /* ═════ 2030 — the swarm's decade ═════ */
-    {id:'silent_saturation', name:'Silent Saturation', era:'2030', labFit:0.95, counteredBy:'shield_lance',
+    {id:'silent_saturation', name:'Silent Saturation', era:'2030', labFit:0.85, counteredBy:'patient_saturation', author:'book',
       genome:G(0.2,1,1,0.78, 0.1,0.6,1,0,0.7,0,0.3),
       tac:'attrition', tacD:{land:'asymmetric',air:'cruise_salvo'},
       summary:'run dark, disperse, drown them in cheap airframes',
-      battleNote:'THE 2030 CHAMPION. Emerged in every evolutionary run of the era. Emission-silent, fully dispersed, maximum attritable swarm with hypersonic top-cover, betting only to the proven line (0.78). Lab record: 96% vs Ghost Lance, 97% vs Steel Rain, 100% vs Watchful Bastion — and 91% vs the future Shield-and-Lance while directed energy is still immature. Its reign ends when the lasers mature: the matured 2035 shield beats it 97%.'},
-    {id:'ghost_lance', name:'Ghost Lance', era:'2030', labFit:0.45, counteredBy:'silent_saturation',
+      battleNote:'THE ORIGINAL 2030 CHAMPION — emerged in every evolutionary run of the era\'s first 36-run search. Emission-silent, fully dispersed, maximum attritable swarm with hypersonic top-cover, betting only to the proven line (0.78). Lab record: 96% vs Ghost Lance, 97% vs Steel Rain, 100% vs Watchful Bastion. But a follow-up round with a larger search found a refinement that beats it 65-67% head-to-head — see Patient Saturation. And the matured 2035 shield still beats it 97%.'},
+    {id:'patient_saturation', name:'Patient Saturation', era:'2030', labFit:0.97, counteredBy:'shield_lance', author:'ai',
+      genome:G(0,1,0.99,0.71, 0,0.57,1,0,1,0,0),
+      tac:'attrition', tacD:{land:'asymmetric',air:'strike_package'},
+      summary:'the swarm perfected — zero aggression, zero wasted doctrine budget, maximum reach',
+      battleNote:'DISCOVERED IN THE EXTENDED SEARCH — a 20-run-per-era follow-up study found this refinement of Silent Saturation and it beats the original 65-67% head-to-head over 6,000 duels. The difference: it drops aggression to exactly zero (total patience — never presses an advance that exposes it) and reallocates the doctrine-tempo budget entirely into hypersonic depth (1.0 vs 0.7). Crushes the rest of the 2030 field (99.8-100% vs Ghost Lance, Steel Rain, Watchful Bastion). It is MORE resilient to the eventual DE counter than its predecessor (loses 18% to a 2035-context Shield-and-Lance, vs Silent Saturation\'s 3%) but still loses that fight decisively — patience buys time against directed energy, it does not defeat it.'},
+    {id:'ghost_lance', name:'Ghost Lance', era:'2030', labFit:0.45, counteredBy:'patient_saturation',
       genome:G(0.05,1,0.9,0.75, 0.03,0.7,0.55,0.03,0.95,0,0),
       tac:'precision', tacD:{air:'strike_package'},
       summary:'silence, patience, and the hypersonic first blow',
-      battleNote:'A strike-led purist doctrine: near-zero tempo, total silence, everything in the lance. Beats static defence utterly (100% vs Bastion) but the lab is unsentimental: without its own mass it loses 96% to Silent Saturation — the lance kills what it can see, and a dispersed swarm gives it nothing to kill.'},
-    {id:'steel_rain', name:'Steel Rain Economy', era:'2030', labFit:0.55, counteredBy:'silent_saturation',
+      battleNote:'A strike-led purist doctrine: near-zero tempo, total silence, everything in the lance. Beats static defence utterly (100% vs Bastion) but the lab is unsentimental: without its own mass it loses 96% to Silent Saturation and 99.9% to the refined Patient Saturation — the lance kills what it can see, and a dispersed swarm gives it nothing to kill.'},
+    {id:'steel_rain', name:'Steel Rain Economy', era:'2030', labFit:0.55, counteredBy:'patient_saturation',
       genome:G(0.35,0.9,1,0.6, 0.4,0.3,0.85,0,0.4,0,0.6),
       tac:'supression_fire', tacD:{land:'mass'},
       summary:'the Ukraine lesson industrialised — magazine depth as strategy',
-      battleNote:'The deep-magazine economist: moderate everything, sustained by production. Beats Ghost Lance 71% (outlasts the first salvo) but concedes 97% to the full Silent Saturation — half-measures of the same idea lose to the committed version.'},
-    {id:'watchful_bastion', name:'Watchful Bastion', era:'2030', labFit:0.15, counteredBy:'silent_saturation',
+      battleNote:'The deep-magazine economist: moderate everything, sustained by production. Beats Ghost Lance 71% (outlasts the first salvo) but concedes 97% to Silent Saturation and 99.8% to Patient Saturation — half-measures of the same idea lose to the committed version.'},
+    {id:'watchful_bastion', name:'Watchful Bastion', era:'2030', labFit:0.15, counteredBy:'patient_saturation',
       genome:G(0.1,0.8,0.8,0.5, 0.2,0.95,0.3,0.4,0.2,0,0.5),
       tac:'defense', tacD:{air:'cap'},
       summary:'RECORDED FAILURE — the pure shield, kept for the record',
-      battleNote:'⚠ The cautionary entry. A defence-first employment: maximum directed energy, quantum eyes, minimal offence. The lab result is brutal — 0% against every 2030 archetype over 1,500 duels. The shield stops the swarm and then loses anyway: a doctrine that cannot finish does not win. Defence is a component, never a strategy.'},
+      battleNote:'⚠ The cautionary entry. A defence-first employment: maximum directed energy, quantum eyes, minimal offence. The lab result is brutal — 0% against every 2030 archetype over 1,500 duels, 100% loss to both Silent Saturation and Patient Saturation. The shield stops the swarm and then loses anyway: a doctrine that cannot finish does not win. Defence is a component, never a strategy.'},
     /* ═════ 2035 — the shield answers the storm ═════ */
-    {id:'shield_lance', name:'Shield-and-Lance', era:'2035', labFit:0.9, counteredBy:'tempo_sovereign',
+    {id:'shield_lance', name:'Shield-and-Lance', era:'2035', labFit:0.88, counteredBy:'tempo_sovereign', author:'book',
       genome:G(0.15,1,0.87,0.55, 0,1,0.6,0,0.93,0,0.1),
       tac:'precision', tacD:{land:'defense',air:'sead_dead'},
       summary:'matured lasers blunt the swarm; the lance does the killing',
-      battleNote:'THE 2035 CHAMPION — and the answer to the 2030 meta. Once directed energy matures, the shield-and-lance pairing beats Silent Saturation 97% (the swarm dies at the speed of light) while staying patient and dark. Lab record: 64% vs Kill-Web Rush, 92% vs Mirage Legion. Dethroned only by the next decade: 2040 Tempo Sovereign beats it 71% — a static shield cannot outpace machine-speed maneuver.'},
-    {id:'killweb_rush', name:'Kill-Web Rush', era:'2035', labFit:0.6, counteredBy:'shield_lance',
+      battleNote:'THE 2035 CHAMPION — and the answer to the 2030 meta. Once directed energy matures, the shield-and-lance pairing beats Silent Saturation 97% and the tougher Patient Saturation 82% (the swarm dies at the speed of light) while staying patient and dark. Lab record: 64% vs Kill-Web Rush, 92% vs Mirage Legion. The extended search found its first genuine peer: Dead Hand fights it to a dead-even coin flip (50.4%) — see below. Dethroned by the next decade only: 2040 Tempo Sovereign beats it 71%.'},
+    {id:'dead_hand', name:'Dead Hand', era:'2035', labFit:0.88, counteredBy:'shield_lance', author:'ai',
+      genome:G(0,1,1,0.56, 0,1,0.83,0,1,0,0.07),
+      tac:'defense', tacD:{air:'cap'},
+      summary:'zero aggression, maximum directed energy AND maximum swarm — absorb everything, then annihilate',
+      battleNote:'DISCOVERED IN THE EXTENDED SEARCH — the doctrine Watchful Bastion wanted to be. Same zero-aggression, pure-defence posture, but where Bastion starved its offence, Dead Hand spends the whole budget on de(1.0)+swarm(0.83)+hyper(1.0) with nothing left for maneuver. Result: a dead-even 50/50 coin flip against the reigning Shield-and-Lance champion over 6,000 duels — the lab\'s first genuine 2035 peer rivalry — while crushing the rest of the field harder than Shield-and-Lance does (86% vs Kill-Web Rush, 92% vs Mirage Legion, 100% vs Quiet Depths). No reliable in-era counter found yet; oddly, it still edges a 2040-tech-context Tempo Sovereign (53%) in cross-era testing, suggesting the "absorb and annihilate" pattern ages unusually well. The lesson Watchful Bastion never learned: defence-first only works if the defence is total AND you still spend on a real kill mechanism.'},
+    {id:'killweb_rush', name:'Kill-Web Rush', era:'2035', labFit:0.55, counteredBy:'dead_hand',
       genome:G(1,1,1,0.53, 0.98,0.5,0.8,0,0.3,0,0.62),
       tac:'maneuver', tacD:{land:'blitzkrieg',air:'cas_package'},
       summary:'maximum tempo through a disaggregated autonomous web',
-      battleNote:'The mosaic bet: full aggression through autonomy and doctrine, human out of the loop. Beats the passive and the slow (98% vs Quiet Depths), loses the patience fight — Shield-and-Lance absorbs the rush and kills it 64%, and Mirage Legion out-deceives it 72%. Tempo without a shield is a gamble on the first hour.'},
-    {id:'mirage_legion', name:'Mirage Legion', era:'2035', labFit:0.65, counteredBy:'shield_lance',
+      battleNote:'The mosaic bet: full aggression through autonomy and doctrine, human out of the loop. Beats the passive and the slow (98% vs Quiet Depths), loses the patience fight — Shield-and-Lance absorbs the rush and kills it 64%, Dead Hand kills it even harder at 86%, and Mirage Legion out-deceives it 72%. Tempo without a shield is a gamble on the first hour.'},
+    {id:'mirage_legion', name:'Mirage Legion', era:'2035', labFit:0.65, counteredBy:'dead_hand',
       genome:G(0.83,1,1,0.86, 0.04,0.78,1,0,0.04,0.07,0.95),
       tac:'asymmetric', tacD:{air:'bvr_sweep'},
       summary:'a sky full of lies — decoy swarms as the main effort',
-      battleNote:'The deception doctrine: EW decoy swarms and doctrine-tempo, nearly no real strike. The lab vindicated the lie: it beats Kill-Web Rush 72% (the rush wastes itself on ghosts). But against the patient shield the mirage evaporates — 8% vs Shield-and-Lance, which simply waits for the real force to have to come to it.'},
-    {id:'quiet_depths', name:'Quiet Depths', era:'2035', labFit:0.25, counteredBy:'shield_lance',
+      battleNote:'The deception doctrine: EW decoy swarms and doctrine-tempo, nearly no real strike. The lab vindicated the lie: it beats Kill-Web Rush 72% (the rush wastes itself on ghosts). But against patient, well-armed defence the mirage evaporates — 8% vs Shield-and-Lance, 8% vs Dead Hand — decoys only work on an opponent who is looking for something to shoot at.'},
+    {id:'quiet_depths', name:'Quiet Depths', era:'2035', labFit:0.2, counteredBy:'dead_hand',
       genome:G(0.2,1,1,0.5, 0.2,0.6,0.7,0.5,0.3,0,0.3),
       tac:'defense', tacD:{naval:'asymmetric'},
       summary:'SPECIALIST — undersea denial; loses the open duel by design',
-      battleNote:'⚠ The specialist entry, kept honestly: a UUV-swarm sea-denial employment that loses the open-field duel to every 2035 archetype (0-2%). The lab cannot see what it is for — closing a strait is not winning a battle. Field it as a component of a theatre strategy, never as the strategy.'},
-    /* ═════ 2040 — the decision loop is the battlefield ═════ */
-    {id:'tempo_sovereign', name:'Tempo Sovereign', era:'2040', labFit:0.9, counteredBy:'lance_storm',
+      battleNote:'⚠ The specialist entry, kept honestly: a UUV-swarm sea-denial employment that loses the open-field duel to every 2035 archetype (0-2% vs Shield-and-Lance, 0% vs Dead Hand). The lab cannot see what it is for — closing a strait is not winning a battle. Field it as a component of a theatre strategy, never as the strategy.'},
+    /* ═════ 2040 — the decision loop is the battlefield, and no doctrine owns it alone ═════ */
+    {id:'tempo_sovereign', name:'Tempo Sovereign', era:'2040', labFit:0.85, counteredBy:'glass_spear', author:'book',
       genome:G(1,1,1,0.4, 0.9,0.53,0.54,0,0.47,0,0.57),
       tac:'blitzkrieg', tacD:{land:'maneuver',air:'cas_package'},
       summary:'win the OODA war — machine-speed maneuver on proven hardware',
-      battleNote:'THE 2040 CHAMPION. On a transparent battlefield the lab abandoned hiding as a strategy and bet everything on deciding faster: full aggression, autonomous command, balanced proven systems — and a DISCIPLINED tech bet (0.40; the lab learned that 2040\'s bleeding edge misfires too often to build on). Record: 68% vs Lance Storm, 83% vs Proven Hand, 100% vs Icarus Gambit. No reliable counter found — Lance Storm\'s 33% is the best answer measured.'},
-    {id:'lance_storm', name:'Lance Storm', era:'2040', labFit:0.7, counteredBy:'tempo_sovereign',
+      battleNote:'STILL THE HIGHEST AGGREGATE WIN RATE across the full 2040 field — full aggression, autonomous command, balanced proven systems, a DISCIPLINED tech bet (0.40; 2040\'s bleeding edge misfires too often to build on). Record: 68% vs Lance Storm, 83% vs Proven Hand, 100% vs Icarus Gambit. But the extended search closed the gap the original study missed: Glass Spear edges it 55% head-to-head, and Full Spectrum Vanguard loses to it 42% but only barely. 2040 has no single permanent champion — see the rock-paper-scissors triangle below.'},
+    {id:'full_spectrum_vanguard', name:'Full Spectrum Vanguard', era:'2040', labFit:0.8, counteredBy:'tempo_sovereign', author:'ai',
+      genome:G(0.9,1,1,0.42, 0.62,0.68,0.93,0,0.84,0,0.42),
+      tac:'combined', tacD:{land:'maneuver',air:'hi_lo_hi'},
+      summary:'full-spectrum combined arms at 2040 tempo — no single weak axis to exploit',
+      battleNote:'DISCOVERED IN THE EXTENDED SEARCH — where Tempo Sovereign leans on doctrine-tempo and Glass Spear leans on bare hypersonics, this build funds auto(0.62)+de(0.68)+swarm(0.93)+hyper(0.84) all at once within the same 2040 budget. It loses to Tempo Sovereign\'s superior doctrine-tempo tuning (42-58) but its balanced defence is exactly what Glass Spear\'s thin shield cannot handle: beats it 74.5%. The vertex of the triangle that punishes the glass cannon.'},
+    {id:'glass_spear', name:'Glass Spear', era:'2040', labFit:0.7, counteredBy:'full_spectrum_vanguard', author:'ai',
+      genome:G(1,1,1,0.42, 0.52,0.02,0.63,0,1,0,0.7),
+      tac:'airpower', tacD:{air:'strike_package'},
+      summary:'the glass cannon — maximum hypersonic strike, almost no directed-energy shield',
+      battleNote:'DISCOVERED IN THE EXTENDED SEARCH — drops directed energy to nearly nothing (0.02) to fund a maxed hypersonic strike (1.0) atop Tempo Sovereign\'s own tempo formula. The trade pays off against the doctrine it was bred against: beats Tempo Sovereign 55%, Lance Storm 90%, Proven Hand 78%, Icarus Gambit 100%. But it is a razor\'s edge, not a free lunch — any opponent that still fields real directed energy alongside its own offence guts it: Full Spectrum Vanguard beats it 74.5%, and the manually-designed Layered Swarm (a 2030 doctrine still swinging in 2040) beats it 80%. Maximum offence bought by minimum self-defence is a bet on your opponent\'s build, not a doctrine.'},
+    {id:'lance_storm', name:'Lance Storm', era:'2040', labFit:0.6, counteredBy:'tempo_sovereign',
       genome:G(1,1,0.94,0.38, 0.8,0.73,0.37,0,0.85,0,0.94),
       tac:'deep_battle', tacD:{air:'strike_package'},
       summary:'hypersonic mass under doctrine discipline',
-      battleNote:'The strike answer to the tempo era: hypersonic salvos plus deep-battle doctrine at full aggression. Beats Proven Hand 70% and is the closest thing to a Tempo Sovereign counter the lab found (33% — enough to matter over a campaign, not enough to rely on).'},
+      battleNote:'The strike answer to the tempo era: hypersonic salvos plus deep-battle doctrine at full aggression. Beats Proven Hand 70% but Tempo Sovereign beats it 67% — a supporting player in the triangle, not a vertex.'},
     {id:'proven_hand', name:'Proven Hand', era:'2040', labFit:0.5, counteredBy:'tempo_sovereign',
       genome:G(0.8,1,1,0.3, 0.6,0.6,0.6,0,0.6,0,0.6),
       tac:'combined', tacD:{air:'hi_lo_hi'},
@@ -24544,6 +24584,18 @@ ${topB}`;
       tac:'airpower', tacD:{air:'lo_lo_lo'},
       summary:'RECORDED FAILURE — the maximum bet on unproven everything',
       battleNote:'⚠ The second cautionary entry. Bet 1.0 on black-project autonomy, swarms and hypersonics, with slack emissions discipline to run them hot. The lab\'s answer across 1,800+ duels at every horizon: 0%. Zero. The misfires — IFF fratricide, runaway swarms, hallucinated orders — hand the battle to any disciplined opponent. The future must be bought at the rate it matures, not faster.'},
+    /* ═════ MANUALLY-DESIGNED CHALLENGERS — hand-authored, not evolved, to
+       pressure-test specific gaps the lab's own search might have missed ═════ */
+    {id:'layered_swarm', name:'Layered Swarm', era:'2030', labFit:0.35, counteredBy:'patient_saturation', author:'manual',
+      genome:G(0.4,0.9,0.85,0.75, 0.1,0.85,0.85,0,0.55,0,0.25),
+      tac:'mass', tacD:{air:'cruise_salvo'},
+      summary:'hand-designed — pair top-tier directed energy with top-tier swarm mass in one budget',
+      battleNote:'HYPOTHESIS: Silent Saturation loses once directed energy matures because its own DE (0.6) is a half-measure. Spend the FULL 2.6 budget on de(0.85)+swarm(0.85) simultaneously instead. RESULT: a genuine, useful mid-tier hybrid — it does not dethrone the true champions (loses 77% to Silent Saturation, 87% to Patient Saturation, 97% to Shield-and-Lance, 95% to Tempo Sovereign) but it is FAR from useless: it is the doctrine that keeps working into the 2040s, beating that era\'s hypersonic-glass-cannon Glass Spear 80% by simply out-lasering its swarm attrition. A real doctrine has a job even when it can\'t win the whole war — this one\'s job is punishing anyone who skimps on air defence to buy strike range.'},
+    {id:'disciplined_blitz', name:'Disciplined Blitz', era:'2030', labFit:0.03, counteredBy:null, author:'manual',
+      genome:G(0.95,0.3,0.35,0.25, 0.7,0.3,0.2,0.1,0.2,0.1,0.7),
+      tac:'blitzkrieg', tacD:{land:'blitzkrieg',air:'bvr_sweep'},
+      summary:'RECORDED FAILURE (manual, 3rd entry) — maximum tempo, minimum signature discipline',
+      battleNote:'⚠ HYPOTHESIS: every lab champion pays a "stealth tax" into EMCON and dispersion; what if disciplined maneuver warfare — low tech-risk (bet 0.25, zero maturity tax at any horizon), heavy autonomy and doctrine investment, real tempo — could win without that crutch, fighting loud and concentrated? RESULT: total failure. 100% loss rate against every reigning champion at every horizon tested (2030 through 2040), the most one-sided result in the whole study. Gene-correlation analysis confirms why: dispersion and EMCON are the single strongest predictors of win rate at every horizon (r=0.84-0.98 for dispersion alone) — on a sensor-saturated battlefield, no amount of tempo or maneuver skill buys back survivability once you are visible. If you can be seen, you are already dead; hide first, maneuver second. The third cautionary entry, and the cleanest lesson of the whole study.'},
   ];
 
   /* ── 4. LIVE META-ADAPTATION ── */
@@ -24647,7 +24699,7 @@ ${topB}`;
         }
         // the doctrine book — the Inventor's findings, from real lab runs
         h+=sec('📕 The doctrine book — bred in the meta lab');
-        h+=`<div style="font-size:6.2px;color:var(--faint);line-height:1.5;margin-bottom:4px">36 evolutionary runs · 40 generations each · 1,800+ head-to-head duels per era. Each entry below is a <b>measured</b> meta, not a guess — including two recorded failures kept as warnings. In battle the AI opens with the doctrine that fits its commander and shifts to the lab's counter when it senses it is losing the meta fight. Console: <code>PROSPECT.LAB.explore({era:'2035'})</code> · <code>PROSPECT.LAB.report('2040')</code></div>`;
+        h+=`<div style="font-size:6.2px;color:var(--faint);line-height:1.5;margin-bottom:4px">96 evolutionary runs across two study rounds · 5 hand-designed challenger doctrines · a 200+ pairing round-robin tournament (150,000+ duels), headline results re-verified at 6,000 duels each. Each entry below is a <b>measured</b> meta, not a guess — including three recorded failures kept as warnings, and honest reporting of the two hand-designed doctrines that beat nothing. Tags: <span style="color:#e0b0ff">◆AI</span> = evolved by the lab, <span style="color:#7fd4ff">✎manual</span> = hand-designed by the analyst to pressure-test a hypothesis, no tag = original v70 study. In battle the AI opens with the doctrine that fits its commander and shifts to the lab's counter when it senses it is losing the meta fight. Console: <code>PROSPECT.LAB.explore({era:'2035'})</code> · <code>PROSPECT.LAB.report('2040')</code></div>`;
         for(const era of ['2030','2035','2040']){
           if(parseInt(era)>parseInt(P.era))continue;
           h+=`<div style="font-size:6.8px;color:var(--cyan);margin:5px 0 1px">◈ HORIZON ${era}</div>`;
@@ -24655,7 +24707,8 @@ ${topB}`;
             const fail=d.labFit<=0.15, spec=/SPECIALIST/.test(d.summary)||/specialist/i.test(d.battleNote||'')&&d.labFit<0.45;
             const col=fail?'var(--bad)':d.labFit>=0.85?'var(--gold)':'#e0b0ff';
             const cur=(META.cur.BLUE===d.id?' <span style="color:#6cc6ff">◉BLUE</span>':'')+(META.cur.RED===d.id?' <span style="color:#ff8a6c">◉RED</span>':'');
-            h+=`<div style="display:flex;justify-content:space-between;gap:6px;padding:2px 0 0"><span style="color:${col};font-size:6.6px"><b>${esc(d.name)}</b>${cur}</span><span style="font-size:5.8px;color:var(--faint);white-space:nowrap">lab fitness ${Math.round((d.labFit||0)*100)}%${d.counteredBy?' · countered by '+esc((P.DOCTRINES.find(x=>x.id===d.counteredBy)||{}).name||d.counteredBy):''}</span></div>`;
+            const tag=d.author==='ai'?' <span style="color:#e0b0ff">◆AI</span>':d.author==='manual'?' <span style="color:#7fd4ff">✎manual</span>':'';
+            h+=`<div style="display:flex;justify-content:space-between;gap:6px;padding:2px 0 0"><span style="color:${col};font-size:6.6px"><b>${esc(d.name)}</b>${tag}${cur}</span><span style="font-size:5.8px;color:var(--faint);white-space:nowrap">lab fitness ${Math.round((d.labFit||0)*100)}%${d.counteredBy?' · countered by '+esc((P.DOCTRINES.find(x=>x.id===d.counteredBy)||{}).name||d.counteredBy):''}</span></div>`;
             h+=`<div style="font-size:6px;color:var(--dim);margin:0 0 1px 8px">${esc(d.summary)}</div>`;
             h+=`<div style="font-size:5.8px;color:var(--faint);line-height:1.5;margin:0 0 3px 8px;border-left:2px solid ${fail?'rgba(255,80,80,0.35)':'rgba(200,160,255,0.25)'};padding-left:5px">${esc(d.battleNote)}</div>`;
           }
@@ -24665,7 +24718,7 @@ ${topB}`;
     };
   }
 
-  try{ if(typeof log==='function') log('WAR v70 — ⚒ PROSPECT META LAB (evolutionary forge: PROSPECT.LAB.explore()/report() breeds employment genomes through 1,800+ duels per era under budget/EMCON/maturity trade-offs) + 📕 doctrine book (12 measured doctrines incl. 2 recorded failures, battle notes from real lab runs) + live in-battle meta-adaptation (personality-gated openings, counter-doctrine shifts) + 11 new capabilities (32 total) + FIXED: one doctrine per domain per side (combined/land/air/naval)','#c9a0ff'); }catch(e){}
+  try{ if(typeof log==='function') log('WAR v71 — 🔬 EXTENDED META-LAB STUDY: 96 evolutionary runs + 5 hand-designed challengers + 150,000+ tournament duels → doctrine book grew 12→18. 2030 got a better champion (Patient Saturation, 65% vs Silent Saturation), 2035 got a peer rival (Dead Hand, 50/50 vs Shield-and-Lance), 2040 turned out to have NO stable champion — a measured rock-paper-scissors triangle (Glass Spear > Tempo Sovereign > Full Spectrum Vanguard > Glass Spear). 3rd recorded failure (Disciplined Blitz) confirms dispersion+EMCON are the strongest win-rate predictors at every horizon.','#c9a0ff'); }catch(e){}
 })();
 </script>
 </body>
