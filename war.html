@@ -655,7 +655,7 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
 
 <header id="hdr">
   <span class="mark">◆</span>
-  <h1>WAR&nbsp;<small>v73 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
+  <h1>WAR&nbsp;<small>v74 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
   <div id="ticker">
     <div class="tk bl">▣ BLUE <b id="tk-bl">0</b></div>
     <div class="tk rd">▣ RED <b id="tk-rd">0</b></div>
@@ -912,6 +912,13 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
   <div id="wiki" class="pane"></div>
   <div id="notes" class="pane">
   <div id="pnInner">
+    <div class="pn-ver">WAR v74 <span class="pn-date">Jul 2026</span></div>
+    <div class="pn-section">★ THE GENERAL STAFF — the theatre learns to think: strategy, memory, politics, and the fallible human commander</div>
+    <div class="pn-item new"><b>♟ Strategic reasoning — campaign-level intent and operational planning.</b> Each side now has a general staff that forms a real campaign plan: a phase machine (<b>SHAPE → PENETRATE → EXPLOIT</b> for the side that believes it is winning; <b>CONTEST</b>, <b>DEFEND</b>, and <b>HUSBAND</b> — economise, hold, negotiate — for the sides that don't), a designated main effort chosen by perceived local force ratios (with a preference for cutting the enemy's MSR corridor and for terrain the army knows), theatre posture set to match the phase, and a SHAPE-phase deep strike against enemy production — politically gated. The plan is <b>spoken</b>: every phase change logs a plain-language commander's intent ("penetrate at Central Heights — supporting sectors fix, reserves feed the breach"), and the staff re-plans when a sector falls. RED's staff drives RED by default — the theatre AI finally has campaign-level intent instead of just reinforcing the weakest sector; BLUE's staff advises only, unless you hand it command in the new <b>★ GENERAL STAFF</b> pane. A designated main effort now also draws a genuine +25% reinforcement priority share.</div>
+    <div class="pn-item new"><b>📚 Persistent organizational learning — across battles AND across wars.</b> Every resolved sector files a lesson: per-terrain proficiency (+0.15 for a win in that terrain, −0.08 for a loss), staff experience, and command quality all update — and persist in <b>localStorage between wars</b>. An army that has fought three mountain campaigns enters the fourth one knowing mountains: familiarity steadies theatre morale (cohesion), staff XP raises starting command quality (capped) and industrial coordination, and the campaign planner prefers axes through terrain the force has mastered. Defeat teaches too, at half rate — exactly as real institutions learn. Wipe the institutional memory any time from the staff pane.</div>
+    <div class="pn-item new"><b>🏛 Political and industrial warfare.</b> Each side now runs a home front INSIDE the theatre loop: <b>mobilization</b> ramps with time and losses, <b>factories trickle replacements</b> into theatre reserve in the force's own composition — throttled by surviving depot/airbase integrity, so the existing Strike Package mechanic now genuinely attacks enemy production — and <b>political will</b> rises with victories and bleeds with losses, frozen fronts, and lost corridors. Will has teeth: below 40% the reinforcement pipeline thins (×0.7), below 20% it nearly stops (×0.35), and at 15% the government <b>seeks terms</b> — morale collapses and the war ends politically rather than militarily. Rare political events land throughout: allied aid packages, war-production acts, biting sanctions, casualty scandals, and legislatures that <b>restrict deep strikes for 60 seconds</b> — political limits on escalation, modelled.</div>
+    <div class="pn-item new"><b>🧠 Human command psychology — two commanders read the same intelligence differently.</b> Every commander now has a psychological lens derived from their historical personality profile: <b>optimism</b> (resolve vs caution — discounts or inflates the perceived enemy), <b>open-mindedness</b> (experience and cunning — how fast beliefs update; its inverse is confirmation bias), and experience-scaled <b>assessment noise</b>. The campaign plan is computed from the commander's <i>perceived</i> enemy strength, not ground truth — so an optimist attacks into more than he thinks is there, and a stubborn commander keeps believing last week's picture. When the commander's belief diverges hard from the (nearly honest) G-2 staff estimate, <b>the argument happens out loud</b> in the staff log: "G-2 briefs enemy strength at Central Heights as ~128; the commander reads the same picture lighter — optimism discounts the threat (~95)."</div>
+    <div class="pn-item fix"><b>Fixes &amp; performance.</b> The war pane no longer re-renders the DOM while the browser tab is hidden (the war keeps ticking; the paint doesn't — a real saving on long background wars). Main-effort designation now materially prioritises reinforcement flow rather than relying on posture alone. All four staff systems are layered and guarded — every hook is try/caught and the base game is untouched if anything throws.</div>
     <div class="pn-ver">WAR v73 <span class="pn-date">Jul 2026</span></div>
     <div class="pn-section">🎖 STUDY IV — tactics played out: three budgets, four real-world scenarios, and the insurgent's answer</div>
     <div class="pn-item new"><b>The lab now models national wealth asymmetry, not just national wealth.</b> <code>PROSPECT.LAB.duel(a,b,era,n,{budgetA,budgetB,scenario})</code> gives each side an independent R&amp;D budget — a great power and an underdog now design their forces to their <i>own</i> constraint, fully backward-compatible with every prior study. Four scenario modifiers (<code>defensive</code>, <code>naval</code>, <code>limited</code>, <code>total</code>) tune the same duel formula for operational context — a defender's terrain/fortification, open water's premium on missile mass over maneuver, a total-mobilisation crash-fielding allowance — rather than inventing new sub-physics.</div>
@@ -18094,6 +18101,7 @@ function resolveNode(n,winner){
   if(n.corridor===loser)WAR.morale[loser]=wcl(WAR.morale[loser]-0.06,-1,1);
   recomputeLines();
   warEvent(`${winner} takes ${n.name}${n.corridor?` — ${n.corridor} MSR corridor ${n.corridor===winner?'secured':'CUT'}`:''}`,winner==='BLUE'?SIDECOL.BLUE:SIDECOL.RED);
+  try{if(window.STAFF_onResolve)STAFF_onResolve(n,winner,{forcePow,WKEYS,warEvent});}catch(e){} // v74: learning + politics + replan
   checkWarEnd();
 }
 
@@ -18120,8 +18128,12 @@ function stepReinforce(dt){
       if(!worst||wr>1.1)continue;
       target=worst;
     }
-    // send up to 8% of reserves, throttled by supply-line throughput
-    const flow=0.08*target.munMul[side]*(postureMul(side).off>1?1.3:1);
+    // send up to 8% of reserves, throttled by supply-line throughput.
+    // v74: a designated main effort draws a genuine priority share, and the
+    // political/industrial layer can throttle the whole pipeline (a government
+    // losing its stomach for the war stops feeding it).
+    let flow=0.08*target.munMul[side]*(postureMul(side).off>1?1.3:1)*(isMainEffort?1.25:1);
+    try{if(window.STAFF_flowMul)flow*=STAFF_flowMul(side);}catch(e){}
     let sent=0;
     for(const k of WKEYS){
       const amt=WAR.reserves[side][k]*flow;
@@ -18501,6 +18513,7 @@ let _wLast=0;
   try{stepAbstract(dt);}catch(e){}
   try{stepReinforce(dt);}catch(e){}
   try{stepCounterattack(dt);}catch(e){}
+  try{if(window.STAFF_step)STAFF_step(dt,{forcePow,WKEYS,setPosture,warEvent,postureMul});}catch(e){} // v74: general staff layer
   // rendered battle: keep enforcing supply throughput on depots + sync control preview
   if(WAR.focus!=null&&SIM.running&&!SIM.over){
     const n=WAR.nodes[WAR.focus];
@@ -18527,10 +18540,11 @@ let _wLast=0;
   if(((WAR.t*10)|0)%40===0)recomputeLines();
   WAR._frozenT=WAR.nodes.some(n=>n.status==='active')?0:((WAR._frozenT||0)+dt);
   if(((WAR.t*10)|0)%20===0)try{checkWarEnd();}catch(e){}
-  // refresh war pane while open
+  // refresh war pane while open (v74 perf: skip DOM re-render when the
+  // browser tab is hidden — the war state keeps ticking, the paint doesn't)
   try{
     const pane=document.getElementById('war');
-    if(pane&&pane.classList.contains('on')&&((WAR.t*10)|0)%12===0)renderWarPaneSafe();
+    if(pane&&pane.classList.contains('on')&&!document.hidden&&((WAR.t*10)|0)%12===0)renderWarPaneSafe();
   }catch(e){}
 })();
 
@@ -18895,10 +18909,11 @@ function renderWarPane_(){
     ${btn(WAR.paneView==='front',"tcPaneView('front')",'◆ FRONT')}
     ${btn(WAR.paneView==='command',"tcPaneView('command')",'⚙ DEEP COMMAND')}
     ${btn(WAR.paneView==='strategic',"tcPaneView('strategic')",'⚡ STRATEGIC')}
+    ${btn(WAR.paneView==='staff',"tcPaneView('staff')",'★ GENERAL STAFF')}
     ${btn(WAR.paneView==='log',"tcPaneView('log')",'☰ LOG')}
   </div>`;
 
-  if(WAR.paneView==='front'||!['front','command','strategic','log'].includes(WAR.paneView)){
+  if(WAR.paneView==='front'||!['front','command','strategic','staff','log'].includes(WAR.paneView)){
     for(const n of WAR.nodes){
       const pB=Math.round(forcePow(n.forces.BLUE,'BLUE')),pR=Math.round(forcePow(n.forces.RED,'RED'));
       const tot=Math.max(1,pB+pR);
@@ -19015,6 +19030,10 @@ function renderWarPane_(){
   }else if(WAR.paneView==='strategic'){
     try{ h+=window.STRAT_PANE({sec:sec,btn:btn,sel:sel,sideCol:sideCol,esc:esc}); }
     catch(e){ h+=sec('◆ Strategic instruments')+'<div style="font-size:6.8px;color:var(--faint)">Strategic layer unavailable.</div>'; }
+
+  }else if(WAR.paneView==='staff'){
+    try{ h+=window.STAFF_PANE({sec:sec,btn:btn,sel:sel,sideCol:sideCol,esc:esc}); }
+    catch(e){ h+=sec('★ General Staff')+'<div style="font-size:6.8px;color:var(--faint)">Staff layer unavailable.</div>'; }
 
   }else if(WAR.paneView==='log'){
     h+=sec('War log');
@@ -25122,6 +25141,278 @@ ${topB}`;
   }
 
   try{ if(typeof log==='function') log('WAR v73 — 🎖 STUDY IV: independent per-side R&D budgets + 4 scenario modifiers (defensive/naval/limited/total) → 12 regime×scenario cells fought, 2 resolved at 25,000 duels. FLAGSHIP: the underdog\'s evolved scarcity+terrain doctrine IS the insurgency signature — 0% engagement win rate but survivability EXCEEDS the great power\'s own on land; the gap vanishes at sea and in total war. New doctrine: The Insurgent\'s Answer. + 10 new WAR theatres (Taiwan Strait, Baltic, Sahel, South China Sea, Himalaya), 12 new PROSPECT capabilities (Strategic Weapons domain: automated deterrent, tac-nuke, orbital kinetic bombardment; deepened space frontier; dedicated Electronic Warfare domain) — 54 capabilities total.','#c9a0ff'); }catch(e){}
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   v74 — THE GENERAL STAFF: four systems that make the theatre think
+   ═══════════════════════════════════════════════════════════════════════
+   1. CAMPAIGN — strategic reasoning: each side's staff forms a campaign
+      plan (phase machine: SHAPE → PENETRATE → EXPLOIT / CONTEST / DEFEND /
+      HUSBAND) from its PERCEIVED force ratios, states its intent in plain
+      language, designates the main effort, sets theatre posture, and
+      re-plans on triggers (sector falls, culmination, political shock).
+   2. LEGACY — persistent organizational learning: battle outcomes update
+      per-terrain proficiency, staff experience, and command quality —
+      persisted in localStorage ACROSS wars. Armies remember.
+   3. POLIND — political & industrial warfare: mobilization ramps, factories
+      trickle replacements into theatre reserve (throttled by depot damage —
+      deep strikes now hit production), political will rises and falls with
+      the front, and a government whose will collapses throttles the
+      reinforcement pipeline and finally seeks terms.
+   4. PSYCH — human command psychology: each commander reads the SAME
+      intelligence through a personal lens (optimism, openness/confirmation
+      bias, experience-scaled noise). Campaign decisions use the commander's
+      perceived picture, not ground truth — and the G-2 staff estimate is
+      logged when it diverges from what the commander chooses to believe.
+   Layered & guarded: hooks are try/caught; the base game is untouched if
+   anything here throws. RED's staff drives RED by default (the theatre AI
+   finally has campaign-level intent); BLUE's staff advises unless given
+   control in the ★ GENERAL STAFF pane.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+  const cl=(v,a,b)=>v<a?a:v>b?b:v;
+  const R=(a,b)=>a+Math.random()*(b-a);
+  if(typeof WAR==='undefined'||!window.WAR)return;
+
+  const STAFF={
+    control:{BLUE:false,RED:true},
+    campaign:{BLUE:null,RED:null},
+    psych:{BLUE:null,RED:null},
+    polind:{BLUE:null,RED:null},
+    legacy:null,
+    log:[],
+    _warInit:false,_H:null,_planT:99,_psyT:99,_prodT:0,_disT:0,_evtT:0,
+  };
+  window.STAFF=STAFF;
+  const WK=()=>Object.keys((WAR.reserves&&WAR.reserves.BLUE)||{});
+  function slog(msg,col){STAFF.log.unshift({t:(WAR.t||0).toFixed(0),msg,col:col||'#d6c48f'});if(STAFF.log.length>18)STAFF.log.pop();}
+
+  /* ── LEGACY: load/save institutional memory ── */
+  function blankLegacy(){return{battles:0,wins:0,terrain:{},staffXP:0};}
+  function legacyLoad(){try{const raw=localStorage.getItem('WAR_LEGACY_v74');if(raw){const o=JSON.parse(raw);if(o&&o.BLUE&&o.RED)return o;}}catch(e){}return{wars:0,BLUE:blankLegacy(),RED:blankLegacy()};}
+  function legacySave(){try{localStorage.setItem('WAR_LEGACY_v74',JSON.stringify(STAFF.legacy));}catch(e){}}
+  STAFF.legacy=legacyLoad();
+
+  function captureMix(side){
+    const mix={};let tot=0;
+    for(const k of WK()){let v=WAR.reserves[side][k]||0;for(const n of WAR.nodes)v+=(n.forces[side][k]||0);mix[k]=v;tot+=v;}
+    if(tot>0)for(const k of WK())mix[k]/=tot;
+    return{mix,tot};
+  }
+
+  function warInit(){
+    STAFF._warInit=true;STAFF.log=[];STAFF._planT=99;STAFF._psyT=99;STAFF._prodT=0;STAFF._disT=0;STAFF._evtT=0;
+    for(const side of ['BLUE','RED']){
+      const C=(typeof cmdr==='function')?cmdr(side):{aggression:0.5,caution:0.4,cunning:0.5,resolve:0.6,experience:0.6,name:side+' commander'};
+      STAFF.psych[side]={
+        name:C.name||side+' commander',
+        optimism:cl(0.5+((C.resolve||0.6)-(C.caution||0.4))*0.5+R(-0.08,0.08),0.15,0.9),
+        openness:cl(0.35+(C.experience||0.6)*0.4+(C.cunning||0.5)*0.15+R(-0.05,0.05),0.2,0.9),
+        jitter:cl(0.35-(C.experience||0.6)*0.25+R(0,0.06),0.05,0.4),
+        assess:{},disagreements:0,lastNote:'',
+      };
+      STAFF.campaign[side]={phase:'SHAPE',intent:'staff forming the campaign plan…',me:null,since:0,replans:0,struck:false};
+      const cm=captureMix(side);
+      STAFF.polind[side]={mobil:0.35,will:70,produced:0,mix:cm.mix,tot0:cm.tot,restricted:0,sued:false};
+      const L=STAFF.legacy[side];
+      WAR.cmdrQ[side]=cl((WAR.cmdrQ[side]||0.6)+Math.min(0.12,(L.staffXP||0)*0.01),0.3,0.95);
+    }
+    STAFF.legacy.wars=(STAFF.legacy.wars||0)+1;legacySave();
+    slog('General staffs stand up — institutional memory: '+(STAFF.legacy.wars-1)+' prior war'+((STAFF.legacy.wars-1)===1?'':'s'),'#9fd6a8');
+  }
+
+  /* ── PSYCH: each commander reads the same intelligence differently ── */
+  function psychStep(H){
+    for(const side of ['BLUE','RED']){
+      const P=STAFF.psych[side],en=side==='BLUE'?'RED':'BLUE';
+      for(const n of WAR.nodes){
+        if(n.status!=='active'){delete P.assess[n.id];continue;}
+        const truth=H.forcePow(n.forces[en],side)+1;
+        // one raw sensor reading, then the commander's lens: optimism discounts
+        // the threat, pessimism inflates it; confirmation bias (low openness)
+        // means the belief only slowly follows changing reality
+        const reading=truth*(1+R(-P.jitter,P.jitter))*(1.18-P.optimism*0.36);
+        const prev=P.assess[n.id]!=null?P.assess[n.id]:reading;
+        P.assess[n.id]=prev+(reading-prev)*(0.25+P.openness*0.5);
+      }
+      // the G-2 staff estimate is nearly honest; when the commander's belief
+      // diverges hard, that argument happens out loud (throttled)
+      if(STAFF._disT<=0){
+        const act=WAR.nodes.filter(n=>n.status==='active');
+        if(act.length){
+          const n=act[(Math.random()*act.length)|0];
+          const truth=H.forcePow(n.forces[side==='BLUE'?'RED':'BLUE'],side)+1;
+          const g2=truth*(1+R(-0.08,0.08));
+          const mine=P.assess[n.id]||g2;
+          if(Math.abs(mine-g2)/g2>0.22){
+            P.disagreements++;STAFF._disT=22;
+            const dir=mine<g2?'reads the same picture lighter — optimism discounts the threat':'reads the same picture heavier — caution inflates it';
+            P.lastNote='G-2 briefs enemy strength at '+n.name+' as ~'+Math.round(g2)+'; '+P.name+' '+dir+' (~'+Math.round(mine)+')';
+            slog(side+': '+P.lastNote,side==='BLUE'?'#6cc6ff':'#ff8a6c');
+          }
+        }
+      }
+    }
+    if(STAFF._disT>0)STAFF._disT-=6;
+  }
+
+  /* ── CAMPAIGN: plan from the PERCEIVED picture, not ground truth ── */
+  function planSide(side,H){
+    const C=STAFF.campaign[side],P=STAFF.psych[side],pol=STAFF.polind[side];
+    const en=side==='BLUE'?'RED':'BLUE';
+    const act=WAR.nodes.filter(n=>n.status==='active');
+    if(!act.length)return;
+    let mine=H.forcePow(WAR.reserves[side],side)*0.5, believed=1;
+    for(const n of act){mine+=H.forcePow(n.forces[side],side);believed+=(P.assess[n.id]!=null?P.assess[n.id]:H.forcePow(n.forces[en],side));}
+    const Rr=mine/believed;
+    const old=C.phase;
+    if(pol.will<32)C.phase='HUSBAND';
+    else if(Rr>1.25)C.phase=(C.phase==='PENETRATE'||C.phase==='EXPLOIT')?C.phase:(C.since>45?'PENETRATE':'SHAPE');
+    else if(Rr<0.75)C.phase='DEFEND';
+    else C.phase='CONTEST';
+    // main effort selection per phase (uses perceived local ratios)
+    const ratio=n=>(H.forcePow(n.forces[side],side)+1)/((P.assess[n.id]!=null?P.assess[n.id]:H.forcePow(n.forces[en],side))+1);
+    let me=null;
+    if(C.phase==='PENETRATE'||C.phase==='EXPLOIT'||C.phase==='SHAPE'){
+      let best=-1;for(const n of act){let s=ratio(n)+(n.corridor===en?0.35:0)+((STAFF.legacy[side].terrain[n.terrain.id]||0)*0.2);if(s>best){best=s;me=n;}}
+    }else if(C.phase==='DEFEND'||C.phase==='HUSBAND'){
+      let worst=1e9;for(const n of act){let s=ratio(n)-(n.corridor===side?0.4:0);if(s<worst){worst=s;me=n;}}
+    }else{ let best=-1;for(const n of act){const s=ratio(n);if(s>1&&s>best){best=s;me=n;}} if(!me)me=act[0]; }
+    C.me=me?me.id:null;
+    const meName=me?me.name:'—';
+    const INTENTS={
+      SHAPE:side+' intent: shape the deep fight — thin the enemy\'s supply and air before committing the main effort toward '+meName+'.',
+      PENETRATE:side+' intent: penetrate at '+meName+(me&&me.corridor===en?' to cut the enemy MSR':'')+' — supporting sectors fix, reserves feed the breach.',
+      EXPLOIT:side+' intent: exploit the breakthrough — pour reserves through '+meName+' before the enemy re-forms a line.',
+      CONTEST:side+' intent: bite and hold — take '+meName+' where the ratio favours us, concede nothing elsewhere.',
+      DEFEND:side+' intent: defend in depth — hold '+meName+', trade ground for time elsewhere, husband the reserve for the counterblow.',
+      HUSBAND:side+' intent: political will is failing — economise everywhere, minimal casualties, hold '+meName+' and negotiate from an unbroken line.',
+    };
+    C.intent=INTENTS[C.phase]||'';
+    if(STAFF.control[side]){
+      WAR.mainEffort[side]=C.me;
+      const want=C.phase==='PENETRATE'||C.phase==='EXPLOIT'?'aggressive':(C.phase==='DEFEND'||C.phase==='HUSBAND')?'defensive':'balanced';
+      if(WAR.posture[side]!==want)try{H.setPosture(side,want);}catch(e){}
+      // SHAPE-phase deep strike (once per phase, politically gated)
+      if(C.phase==='SHAPE'&&!C.struck&&pol.will>=50&&pol.restricted<=0&&WAR.deepOps[side].strikeCd<=0&&typeof window.tcStrike==='function'){
+        const tgt=(WAR.bases[en]||[]).filter(b=>!b.wrecked&&b.type!=='hq')[0];
+        if(tgt){C.struck=true;try{window.tcStrike(side,tgt.id);}catch(e){}}
+      }
+    }
+    if(C.phase!==old){
+      C.since=0;C.replans++;C.struck=false;
+      try{H.warEvent('★ '+side+' campaign phase → '+C.phase+' — '+C.intent,side==='BLUE'?'#6cc6ff':'#ff8a6c');}catch(e){}
+      slog(C.intent,side==='BLUE'?'#6cc6ff':'#ff8a6c');
+    }
+  }
+
+  /* ── POLIND: mobilization, production, political will ── */
+  function polindStep(H,dtc){
+    for(const side of ['BLUE','RED']){
+      const pol=STAFF.polind[side];
+      if(pol.restricted>0)pol.restricted-=dtc;
+      // mobilization ramps with time and with how much of the force is gone
+      const cm=captureMix(side);
+      const lossFrac=pol.tot0>0?cl(1-cm.tot/pol.tot0,0,1):0;
+      pol.mobil=cl(pol.mobil+dtc*(0.0018+lossFrac*0.004),0.35,1);
+      // industrial capacity = surviving depot/airbase integrity (deep strikes now hit production)
+      let integ=0,nb=0;for(const b of (WAR.bases[side]||[]))if(b.type!=='hq'){integ+=(b.integrity||0);nb++;}
+      const capacity=cl((nb?integ/nb:100)/100,0.2,1)*(1+Math.min(0.08,(STAFF.legacy[side].staffXP||0)*0.006));
+      // production trickle into theatre reserve, in the force's own mix
+      const units=pol.tot0*0.00075*pol.mobil*capacity*dtc;
+      if(units>0){for(const k of WK())WAR.reserves[side][k]+=(pol.mix[k]||0)*units;pol.produced+=units;}
+      pol.capacity=capacity;
+      // political will: grinding fronts and lost corridors bleed it; recovery is slow
+      pol.will=cl(pol.will+dtc*(-0.028-(WAR._frozenT>60?0.02:0)+(WAR.morale[side]>0.2?0.05:0)),0,100);
+      if(pol.will<15&&!pol.sued){
+        pol.sued=true;
+        try{H.warEvent('☮ '+side+' government seeks terms — political will is exhausted; the front is being starved of reinforcement','#ffce5a');}catch(e){}
+        WAR.morale[side]=-1;
+        if(STAFF.control[side])try{H.setPosture(side,'defensive');}catch(e){}
+      }
+    }
+    // rare political events (~1 per 90s theatre time)
+    STAFF._evtT-=dtc;
+    if(STAFF._evtT<=0){
+      STAFF._evtT=R(70,120);
+      const side=Math.random()<0.5?'BLUE':'RED';const pol=STAFF.polind[side];
+      const roll=Math.random();
+      if(roll<0.25){pol.will=cl(pol.will+8,0,100);try{H.warEvent('🤝 Allied aid package arrives for '+side+' — political will firms up','#9fd6a8');}catch(e){}}
+      else if(roll<0.45){pol.mobil=cl(pol.mobil+0.12,0,1);try{H.warEvent('🏭 '+side+' passes a war-production act — mobilization surges','#9fd6a8');}catch(e){}}
+      else if(roll<0.65){for(const b of WAR.bases[side])if(b.type==='depot')b.integrity=Math.max(20,b.integrity-12);try{H.warEvent('📉 Sanctions bite '+side+' — industrial throughput degraded','#ff8f5a');}catch(e){}}
+      else if(roll<0.85){pol.restricted=60;try{H.warEvent('🏛 '+side+' legislature restricts deep strikes for 60s — political limits on escalation','#ffce5a');}catch(e){}}
+      else {pol.will=cl(pol.will-6,0,100);try{H.warEvent('📰 Casualty scandal shakes '+side+' home front — political will slips','#ff8f5a');}catch(e){}}
+    }
+  }
+
+  /* ── hooks called from the war engine ── */
+  window.STAFF_flowMul=function(side){
+    const pol=STAFF.polind[side];if(!pol)return 1;
+    return pol.will<20?0.35:pol.will<40?0.7:1;
+  };
+  window.STAFF_onResolve=function(n,winner,H){
+    if(!STAFF._warInit)return;
+    const loser=winner==='BLUE'?'RED':'BLUE';
+    const tid=(n.terrain&&n.terrain.id)||'open';
+    const LW=STAFF.legacy[winner],LL=STAFF.legacy[loser];
+    LW.battles++;LW.wins++;LW.terrain[tid]=cl((LW.terrain[tid]||0)+0.15,-1,1);LW.staffXP=Math.min(20,(LW.staffXP||0)+1);
+    LL.battles++;LL.terrain[tid]=cl((LL.terrain[tid]||0)-0.08,-1,1);LL.staffXP=Math.min(20,(LL.staffXP||0)+0.4);
+    WAR.cmdrQ[winner]=cl(WAR.cmdrQ[winner]+0.006,0.3,0.95);
+    WAR.cmdrQ[loser]=cl(WAR.cmdrQ[loser]+0.003,0.3,0.95); // defeat teaches too
+    legacySave();
+    const pw=STAFF.polind[winner],pl=STAFF.polind[loser];
+    if(pw)pw.will=cl(pw.will+3,0,100);
+    if(pl)pl.will=cl(pl.will-(n.corridor===loser?10:6),0,100);
+    STAFF._planT=99; // force both staffs to re-plan on a sector falling
+    slog('Lessons filed: '+winner+' logs a win in '+tid+' terrain ('+(LW.terrain[tid]>0?'+':'')+LW.terrain[tid].toFixed(2)+' proficiency)','#9fd6a8');
+  };
+  window.STAFF_step=function(dt,H){
+    STAFF._H=H;
+    if(!WAR.active||WAR.over){STAFF._warInit=false;return;}
+    if(!STAFF._warInit)warInit();
+    for(const side of ['BLUE','RED'])STAFF.campaign[side].since+=dt;
+    // institutional confidence: fighting on familiar ground steadies cohesion
+    for(const side of ['BLUE','RED']){
+      const fam=WAR.nodes.filter(n=>n.status==='active').reduce((a,n)=>a+Math.max(0,STAFF.legacy[side].terrain[n.terrain.id]||0),0);
+      if(fam>0.3&&WAR.morale[side]<fam*0.06)WAR.morale[side]=cl(WAR.morale[side]+0.002*dt,-1,fam*0.06);
+    }
+    STAFF._psyT+=dt;if(STAFF._psyT>=6){STAFF._psyT=0;try{psychStep(H);}catch(e){}}
+    STAFF._planT+=dt;if(STAFF._planT>=20){STAFF._planT=0;try{planSide('BLUE',H);planSide('RED',H);}catch(e){}}
+    STAFF._prodT+=dt;if(STAFF._prodT>=12){const c=STAFF._prodT;STAFF._prodT=0;try{polindStep(H,c);}catch(e){}}
+  };
+
+  /* ── the ★ GENERAL STAFF pane ── */
+  window.tcStaffControl=function(side){STAFF.control[side]=!STAFF.control[side];try{if(typeof renderWarPaneSafe==='function')renderWarPaneSafe();}catch(e){}};
+  window.tcStaffWipe=function(){STAFF.legacy={wars:0,BLUE:blankLegacy(),RED:blankLegacy()};legacySave();try{if(typeof renderWarPaneSafe==='function')renderWarPaneSafe();}catch(e){}};
+  window.STAFF_PANE=function(U){
+    const{sec,btn,sideCol,esc}=U;
+    let h=sec('★ General Staff — campaign intent · learning · politics · psychology');
+    h+=`<div style="font-size:6.6px;color:var(--faint);line-height:1.5;margin-bottom:5px">Each side's staff plans the campaign from its commander's <i>perceived</i> picture (not ground truth), learns across battles and wars, and answers to a home front. RED's staff drives RED by default; give BLUE's staff control or keep command yourself.</div>`;
+    if(!WAR.active){return h+'<div class="empty" style="padding:6px"><span class="g">★</span>Begin a war to stand up the staffs.</div>';}
+    for(const side of ['BLUE','RED']){
+      const C=STAFF.campaign[side],P=STAFF.psych[side],pol=STAFF.polind[side],L=STAFF.legacy[side];
+      if(!C||!P||!pol)continue;
+      const meName=C.me!=null&&WAR.nodes[C.me]?WAR.nodes[C.me].name:'—';
+      h+=`<div style="border:1px solid var(--line2);border-radius:5px;padding:5px 7px;margin:5px 0">`;
+      h+=`<div style="display:flex;align-items:center;gap:6px;font-size:7.2px;color:${sideCol(side)}"><b>${side}</b>
+        <span style="color:#e0b0ff">phase ${esc(C.phase)}</span>
+        ${btn(STAFF.control[side],`tcStaffControl('${side}')`,STAFF.control[side]?'◉ staff has command':'○ staff advises only','#d6c48f')}</div>`;
+      h+=`<div style="font-size:6.4px;color:var(--dim);line-height:1.5;margin:2px 0">✦ ${esc(C.intent)} <span style="color:var(--faint)">(main effort: ${esc(meName)} · replans ${C.replans})</span></div>`;
+      h+=`<div style="font-size:6.2px;color:#d6c48f;margin:2px 0">🧠 ${esc(P.name)} — optimism ${(P.optimism*100)|0}% · open-mindedness ${(P.openness*100)|0}% · staff disagreements ${P.disagreements}</div>`;
+      if(P.lastNote)h+=`<div style="font-size:6px;color:var(--faint);margin:0 0 2px 8px;font-style:italic">${esc(P.lastNote)}</div>`;
+      h+=`<div style="font-size:6.2px;color:var(--dim)">🏛 political will <b style="color:${pol.will>50?'var(--good)':pol.will>30?'var(--gold)':'var(--bad)'}">${pol.will|0}%</b> · mobilization ${(pol.mobil*100)|0}% · industry ${((pol.capacity||1)*100)|0}% · produced ${pol.produced|0} units${pol.restricted>0?' · <span style="color:var(--gold)">strike-restricted</span>':''}${pol.sued?' · <span style="color:var(--bad)">SEEKING TERMS</span>':''}</div>`;
+      const famTop=Object.entries(L.terrain||{}).filter(([,v])=>v>0.05).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>k+' +'+v.toFixed(2)).join(' · ');
+      h+=`<div style="font-size:6.2px;color:var(--dim)">📚 institutional memory: ${L.battles|0} battles / ${L.wins|0} wins across ${STAFF.legacy.wars} war${STAFF.legacy.wars===1?'':'s'} · staff XP ${(L.staffXP||0).toFixed(1)} · command quality ${(WAR.cmdrQ[side]*100)|0}%${famTop?' · knows: '+famTop:''}</div>`;
+      h+='</div>';
+    }
+    h+=sec('Staff log');
+    if(!STAFF.log.length)h+='<div class="empty" style="padding:4px"><span class="g">☰</span>Quiet so far.</div>';
+    for(const e of STAFF.log)h+=`<div style="font-size:6.2px;color:${e.col};padding:1px 0">T+${e.t}s ${esc(e.msg)}</div>`;
+    h+=`<div style="margin-top:5px">${btn(false,'tcStaffWipe()','⌫ wipe institutional memory (all wars)','#ff8f5a')}</div>`;
+    return h;
+  };
+
+  try{ if(typeof log==='function') log('WAR v74 — ★ THE GENERAL STAFF: campaign-level strategic reasoning (phase plans, spoken intent, main-effort designation from the commander\'s PERCEIVED picture), persistent organizational learning across battles AND wars (localStorage), political & industrial warfare (mobilization, production tied to depot damage, political will that can seek terms), and human command psychology (optimism/confirmation-bias lenses — two commanders read the same intelligence differently, and the G-2\'s dissent is logged). New ★ GENERAL STAFF pane in the War tab. Perf: war pane no longer re-renders in hidden tabs.','#d6c48f'); }catch(e){}
 })();
 </script>
 </body>
