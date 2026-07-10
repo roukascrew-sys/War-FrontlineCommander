@@ -655,7 +655,7 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
 
 <header id="hdr">
   <span class="mark">◆</span>
-  <h1>WAR&nbsp;<small>v72 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
+  <h1>WAR&nbsp;<small>v73 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
   <div id="ticker">
     <div class="tk bl">▣ BLUE <b id="tk-bl">0</b></div>
     <div class="tk rd">▣ RED <b id="tk-rd">0</b></div>
@@ -912,6 +912,17 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
   <div id="wiki" class="pane"></div>
   <div id="notes" class="pane">
   <div id="pnInner">
+    <div class="pn-ver">WAR v73 <span class="pn-date">Jul 2026</span></div>
+    <div class="pn-section">🎖 STUDY IV — tactics played out: three budgets, four real-world scenarios, and the insurgent's answer</div>
+    <div class="pn-item new"><b>The lab now models national wealth asymmetry, not just national wealth.</b> <code>PROSPECT.LAB.duel(a,b,era,n,{budgetA,budgetB,scenario})</code> gives each side an independent R&amp;D budget — a great power and an underdog now design their forces to their <i>own</i> constraint, fully backward-compatible with every prior study. Four scenario modifiers (<code>defensive</code>, <code>naval</code>, <code>limited</code>, <code>total</code>) tune the same duel formula for operational context — a defender's terrain/fortification, open water's premium on missile mass over maneuver, a total-mobilisation crash-fielding allowance — rather than inventing new sub-physics.</div>
+    <div class="pn-item new"><b>Twelve cells: three budget regimes (balanced / unbalanced / unlimited) × four real-world scenario types</b> (defensive war, naval war, limited/counter-insurgency war, total war), each evolved fresh and fought at 3,000+ duels, with the two closest results re-verified at <b>25,000 duels</b> for genuine statistical confidence (limited-war balanced: 59.8% ± 0.6pp; total-war balanced: 68.9% ± 0.6pp — no more coin tosses).</div>
+    <div class="pn-item new"><b>⚔ FLAGSHIP FINDING: the underdog's evolved doctrine under scarcity + home terrain IS the insurgency signature — and it works exactly where real insurgencies work.</b> Facing a great power at ~4× the R&amp;D budget, the poor defender's own evolutionary search strips every axis that costs real money (autonomy, quantum, orbital, cyber, hypersonics) to nearly zero and dumps everything into cheap swarm mass, maximum EMCON and maximum dispersion — with zero human design input, this is what the model calls "optimal" under those constraints, and it is recognisably an insurgency. It never wins a single engagement (0% at every budget regime) — but on defensive and limited-war terrain its <b>survivability score actually exceeds the great power's own</b> (1.22 vs 0.99 in the defensive case). It cannot win the war; it becomes nearly impossible to finish. That gap disappears at sea and evaporates in total war — insurgency-style resistance is a <i>land, terrain-enabled, limited-stakes</i> phenomenon in this model, exactly as it has been in real history.</div>
+    <div class="pn-item new"><b>Deliberate maximal concealment is NOT always better than what evolution found.</b> A hand-designed "pure insurgent" (zero offence, maximum hiding) scores <i>worse</i> than the evolved answer on land (0.127 vs 0.225) — some retained offence beats total passivity once terrain is already giving you concealment for free. At sea, where there is no terrain to hide behind, the hand-designed version wins instead (0.257 vs 0.166) — active EW must substitute for the jungle. New doctrine: <b>The Insurgent's Answer</b>, in the Prospect tab, with the honest caveat that it has no era-standard rating — it isn't built to win a fair fight.</div>
+    <div class="pn-section">🎖 TEN NEW BATTLES + STRATEGIC ENDGAME + THE SPACE FRONTIER + DEEPER ELECTRONIC WARFARE</div>
+    <div class="pn-item new"><b>Five new real-world WAR-mode theatres</b> (10 total, up from 5) chosen to cover ground the original five couldn't: <b>🌊 Taiwan Strait</b> (island defender, amphibious lodgement vs. layered coastal defence), <b>🛡 Baltic Frontier</b> (a tripwire state with no room to trade space for time), <b>☀ Sahel Stabilisation</b> (no front line — a limited-aims counter-insurgency), <b>⚓ South China Sea</b> (a sovereignty dispute fought entirely over water and reefs), and <b>⛰ Himalayan Frontier</b> (the world's highest disputed border, where the supply line is the front line). A new Island Chain terrain type supports the maritime fronts.</div>
+    <div class="pn-item new"><b>☢ Strategic endgame weaponry joins the Prospect capability tree</b> (distinct from the base game's existing DEFCON/nuclear-catastrophe system on the WORLD tab) — a new <b>Strategic Weapons</b> domain: Automated Strategic Deterrent (a Perimeter/Dead Hand-class system that only arms when its own side is losing badly — named for the doctrine it embodies), Low-Yield Precision Strike, Orbital Kinetic Bombardment ("Rods from God"), and Boost-Phase Missile Defence. All Black Project/Unproven tier, heavily gated, rare and catastrophic by design — never routine firepower.</div>
+    <div class="pn-item new"><b>🛰 The space frontier expands</b> with Cislunar Domain Awareness, In-Orbit Manufacturing &amp; Refuelling, a Deep-Space Early-Warning Constellation, and a Constellation-Killer ASAT Swarm (a Kessler price measured in decades, not dollars).</div>
+    <div class="pn-item new"><b>📡 Electronic warfare gets its own domain</b> (previously folded into Swarming/Emerging Doctrine) with four dedicated systems: GaN Wideband Jammer Arrays (fielded — the 2020s already proved this), Cognitive/AI-Adaptive Jamming (learns the enemy's waveform and answers it), a Networked Decoy &amp; Deception Grid, and Multi-Domain Spectrum Dominance as an EW-led doctrine in its own right. 54 capabilities total, up from 42.</div>
     <div class="pn-ver">WAR v72 <span class="pn-date">Jul 2026</span></div>
     <div class="pn-section">💰 THE R&amp;D BUDGET STUDY — what military wealth actually buys, and the collapse of the meta cycle</div>
     <div class="pn-item new"><b>The R&amp;D budget is now a real, experimentable parameter.</b> The lab's force-design budget is no longer a hard-coded scarcity constant (2.6): each era now has a realistic growing budget (2030: 3.0 → 2035: 3.4 → 2040: 3.8, reflecting an expanding tech-industrial base), and every lab function accepts an override — <code>PROSPECT.LAB.explore({era,budget})</code>, <code>duel(a,b,era,n,{budget})</code>. A 210-run budget sweep from 2.0 to 10.0 measured what a rational force buys with each marginal dollar.</div>
@@ -17582,6 +17593,7 @@ const TERRAIN_TYPES_BY_ID={
   mountain:{id:'mountain',name:'Mountain Pass', glyph:'⛰', grind:0.62},
   desert:  {id:'desert',  name:'Open Desert',   glyph:'░', grind:1.20},
   marsh:   {id:'marsh',   name:'Marshland',     glyph:'฿', grind:0.65},
+  island:  {id:'island',  name:'Island Chain',  glyph:'○', grind:0.90},
 };
 const TERRAIN_TYPES=Object.values(TERRAIN_TYPES_BY_ID);
 function pickTerrain(seed){return TERRAIN_TYPES[seed%TERRAIN_TYPES.length];}
@@ -17642,6 +17654,61 @@ const THEATERS=[
      {name:'Imjin River',        terrain:'river'},
      {name:'Iron Triangle',      terrain:'mountain'},
      {name:'Yalu River Approach',terrain:'forest'},
+   ]},
+  /* v73: four more real-world-inspired fronts, chosen to cover the goal/terrain/
+     scale space a generic "two armies on a plain" front can't — a strait a
+     defender must hold with the sea at its back, a tripwire state that cannot
+     trade space for time, a stabilisation fight with no front line at all, and
+     a high-altitude frontier where logistics is the real enemy. */
+  {id:'taiwanstrait',name:'Taiwan Strait',icon:'🌊',goal:'naval',defenderSide:'BLUE',
+   blurb:'An island defender with the sea at its back — amphibious lodgement vs. layered coastal defence. Every sector here is decided by who owns the strait, not who owns the beach.',
+   sectors:[
+     {name:'Penghu Strait Approach',  terrain:'island'},
+     {name:'Kaohsiung Landing Zone',  terrain:'coastal'},
+     {name:'Central Mountain Spine',  terrain:'mountain'},
+     {name:'Taipei Basin Corridor',   terrain:'urban'},
+     {name:'Hsinchu Littoral',        terrain:'coastal'},
+     {name:'Offshore Island Screen',  terrain:'island'},
+   ]},
+  {id:'baltic',name:'Baltic Frontier',icon:'🛡',goal:'defensive',defenderSide:'BLUE',
+   blurb:'The Suwałki Gap problem: a tripwire state a hundred kilometres deep with no room to trade space for time. The defender wins by never losing a sector long enough for it to matter.',
+   sectors:[
+     {name:'Suwałki Gap',            terrain:'forest'},
+     {name:'Narva Crossing',         terrain:'river'},
+     {name:'Kaliningrad Approach',   terrain:'coastal'},
+     {name:'Vilnius Rail Corridor',  terrain:'urban'},
+     {name:'Daugava Line',           terrain:'river'},
+     {name:'Baltic Coast Screen',    terrain:'marsh'},
+   ]},
+  {id:'sahel',name:'Sahel Stabilisation',icon:'☀',goal:'limited',defenderSide:'RED',
+   blurb:'No front line, no capital to take — a limited-aims counter-insurgency where the intervening force wins by making the region ungovernable for the enemy, not by holding ground.',
+   sectors:[
+     {name:'Gao Corridor',           terrain:'desert'},
+     {name:'Timbuktu Approaches',    terrain:'desert'},
+     {name:'Niger River Crossing',   terrain:'river'},
+     {name:'Market Town Cluster',    terrain:'urban'},
+     {name:'Aïr Massif',             terrain:'mountain'},
+     {name:'Sahel Scrub Belt',       terrain:'forest'},
+   ]},
+  {id:'scs',name:'South China Sea',icon:'⚓',goal:'naval',defenderSide:'RED',
+   blurb:'A sovereignty dispute fought entirely over water and reefs — no population centres change hands, only maritime control. Naval and air power decide every sector; land forces are almost incidental.',
+   sectors:[
+     {name:'Scarborough Shoal',      terrain:'island'},
+     {name:'Spratly Reef Cluster',   terrain:'island'},
+     {name:'Luzon Strait',           terrain:'coastal'},
+     {name:'Paracel Approach',       terrain:'island'},
+     {name:'Hainan Littoral',        terrain:'coastal'},
+     {name:'Malacca Chokepoint',     terrain:'coastal'},
+   ]},
+  {id:'himalaya',name:'Himalayan Frontier',icon:'⛰',goal:'defensive',defenderSide:'BLUE',
+   blurb:'The world\'s highest disputed border — a total-war-scale frontage fought at total-war-scale altitude, where the supply line is the real front line and combat power is whatever survives the climb.',
+   sectors:[
+     {name:'Ladakh Plateau',         terrain:'mountain'},
+     {name:'Aksai Chin Approach',    terrain:'mountain'},
+     {name:'Tawang Salient',         terrain:'mountain'},
+     {name:'Siachen Glacier',        terrain:'mountain'},
+     {name:'Doklam Plateau',         terrain:'hills'},
+     {name:'Brahmaputra Valley',     terrain:'river'},
    ]},
 ];
 /* v52: starting formation archetypes — reweight a sector's committed unit-type
@@ -23887,8 +23954,8 @@ ${topB}`;
   const cl=(v,a,b)=>v<a?a:v>b?b:v;
   const now=()=>(typeof SIM!=='undefined'&&SIM)?SIM.t:0;
   const TIER_ORDER=['Fielded','Prototype','Experimental','Unproven','Concept','Black Project'];
-  const DOMAINS=['Autonomous Systems','Directed Energy','Swarming','Quantum ISR','Hypersonics','Orbital Warfare','Emerging Doctrine'];
-  const DOM_GLYPH={'Autonomous Systems':'🤖','Directed Energy':'⚡','Swarming':'🐝','Quantum ISR':'⚛','Hypersonics':'🚀','Orbital Warfare':'🛰','Emerging Doctrine':'📖'};
+  const DOMAINS=['Autonomous Systems','Directed Energy','Swarming','Quantum ISR','Hypersonics','Orbital Warfare','Emerging Doctrine','Electronic Warfare','Strategic Weapons'];
+  const DOM_GLYPH={'Autonomous Systems':'🤖','Directed Energy':'⚡','Swarming':'🐝','Quantum ISR':'⚛','Hypersonics':'🚀','Orbital Warfare':'🛰','Emerging Doctrine':'📖','Electronic Warfare':'📡','Strategic Weapons':'☢'};
 
   // era doctrine/ideology profiles — the "way of war" of each horizon
   const ERA_DOCTRINE={
@@ -24277,6 +24344,37 @@ ${topB}`;
       ideology:'GPS dies on day one. The force that can still navigate and time-sync in the dark keeps shooting straight.'},
     {id:'ngad_penetrator', name:'6th-Gen Penetrating Fighter (NGAD-class)', domain:'Autonomous Systems', era:'2040', tier:'Concept', rel:0.5, effect:'ngad',
       ideology:'A sensor-shooter node built to live inside the densest air defence on Earth — the quarterback of the autonomous air wing.'},
+    /* ── v73: NUCLEAR & STRATEGIC ENDGAME WEAPONRY — distinct from the base
+       game's DEFCON/nuclear-catastrophe system (WORLD tab): these are the
+       PROSPECT-tier delivery and deterrence systems of the next war, gated
+       hard by tier and rel so they stay rare, catastrophic options rather
+       than routine firepower. */
+    {id:'autonomous_deterrent', name:'Automated Strategic Deterrent (Perimeter/Dead Hand-class)', domain:'Strategic Weapons', era:'2040', tier:'Black Project', rel:0.35, effect:'dead_hand_switch',
+      ideology:'A launch authority that survives the death of its own command — the ultimate expression of "zero aggression, guaranteed retaliation." Named for what it is: the doctrine, made into a machine.'},
+    {id:'precision_tac_nuke', name:'Low-Yield Precision Strike (W76-2-class)', domain:'Strategic Weapons', era:'2040', tier:'Unproven', rel:0.4, effect:'tac_nuke',
+      ideology:'The escalation ladder grows a rung nobody wants: a "small" nuclear option built precisely so it might get used. Deterrence theorists call this stabilising. History is not so sure.'},
+    {id:'kinetic_bombardment', name:'Orbital Kinetic Bombardment (Rods from God)', domain:'Orbital Warfare', era:'2040', tier:'Black Project', rel:0.3, effect:'kinetic_rod',
+      ideology:'No warhead, no treaty violation, no fallout — just a tungsten pole falling from orbit at Mach 10. The physics of the strike is the whole deterrent.'},
+    {id:'boost_phase_intercept', name:'Boost-Phase Missile Defence', domain:'Hypersonics', era:'2040', tier:'Unproven', rel:0.45, effect:'boost_intercept',
+      ideology:'Kill it in the first sixty seconds, over the launcher\'s own territory, before decoys deploy and the warhead disappears into countermeasures. The only phase where missile defence has ever really worked.'},
+    /* ── v73: SPACE FRONTIER EXPANSION ── */
+    {id:'cislunar_domain', name:'Cislunar Domain Awareness', domain:'Orbital Warfare', era:'2035', tier:'Concept', rel:0.4, effect:'cislunar',
+      ideology:'The high ground above the high ground: whoever tracks and holds the Earth-Moon Lagrange points owns the ultimate over-the-horizon vantage on everyone else\'s satellites.'},
+    {id:'space_manufacturing', name:'In-Orbit Manufacturing & Refuelling', domain:'Orbital Warfare', era:'2040', tier:'Concept', rel:0.5, effect:'space_mfg',
+      ideology:'A constellation that repairs, refuels and rearms itself in orbit never has to come home — logistics without a supply line, if you can build the factory first.'},
+    {id:'deep_space_ew', name:'Deep-Space Early-Warning Constellation', domain:'Orbital Warfare', era:'2035', tier:'Experimental', rel:0.55, effect:'deep_ew',
+      ideology:'Push the warning line past geostationary orbit and a first strike stops being a surprise — the picket line moves from the horizon to the edge of the gravity well.'},
+    {id:'asat_constellation_kill', name:'Constellation-Killer ASAT Swarm', domain:'Orbital Warfare', era:'2040', tier:'Black Project', rel:0.35, effect:'asat_swarm',
+      ideology:'Not one satellite — the whole constellation, in one campaign. The Kessler price of doing this is measured in decades, not dollars.'},
+    /* ── v73: ELECTRONIC WARFARE, DEEPENED ── */
+    {id:'gan_jammer', name:'GaN Wideband Jammer Arrays', domain:'Electronic Warfare', era:'2030', tier:'Fielded', rel:0.78, effect:'gan_jam',
+      ideology:'Gallium-nitride amplifiers finally gave jamming the power and bandwidth to matter across an entire theatre at once, not just one frequency at a time.'},
+    {id:'cognitive_jam', name:'Cognitive / AI-Adaptive Jamming', domain:'Electronic Warfare', era:'2035', tier:'Experimental', rel:0.62, effect:'cognitive_jam',
+      ideology:'A jammer that listens first: it learns the enemy\'s waveform in milliseconds and answers it, rather than blasting noise and hoping. The spectrum fight becomes its own arms race.'},
+    {id:'decoy_networks', name:'Networked Decoy & Deception Grid', domain:'Electronic Warfare', era:'2030', tier:'Prototype', rel:0.68, effect:'decoy_net',
+      ideology:'Cheap emitters that lie in chorus: a theatre-wide false order of battle broadcast on every frequency the enemy is listening to.'},
+    {id:'spectrum_dominance', name:'Multi-Domain Spectrum Dominance', domain:'Electronic Warfare', era:'2040', tier:'Concept', rel:0.5, effect:'spectrum_dom',
+      ideology:'EW stops being a supporting arm and becomes a doctrine of its own — every domain\'s sensors and shooters coordinated through one spectrum-management cell.'},
   ];
   for(const c of NEW_CAPS)P.register(c);
 
@@ -24449,6 +24547,63 @@ ${topB}`;
               }catch(e){}
               break;
             }
+            /* ── v73 handlers: strategic endgame, space frontier, EW ── */
+            case'tac_nuke': case'dead_hand_switch': case'kinetic_rod':{
+              // rare, catastrophic, heavily gated area strike — never routine.
+              // dead_hand_switch only arms if this side is losing badly (its own
+              // "death" triggers the guaranteed-retaliation logic it's named for).
+              try{
+                const armed = cap.effect!=='dead_hand_switch' || powerAlive(side) < powerAlive(en)*0.4;
+                if(armed && Math.random()<0.008*cap.rel){
+                  const cluster=UNITS.filter(u=>u.alive&&u.side===en);
+                  if(cluster.length>4){
+                    const c=cluster[(Math.random()*cluster.length)|0];
+                    const targets=cluster.filter(u=>Math.hypot(u.x-c.x,u.y-c.y)<70);
+                    for(const t of targets)applyDmg({side,t:'bml',sub:cap.name,kills:0,x:c.x,y:c.y,dmgMul:{}},t,Math.round(R(45,90)));
+                    try{pushEvent(side,`☢ [FUTURE] ${side} employs ${cap.name} — catastrophic losses across a ${targets.length}-unit cluster`,'#ff3030');}catch(e){}
+                  }
+                }
+              }catch(e){}
+              break;
+            }
+            case'boost_intercept':{
+              // thins incoming hypersonic/BML leakage on top of counter_hyper (v70)
+              try{
+                if(_spawn2%4===0){
+                  const inc=UNITS.filter(u=>u.alive&&u.side===en&&u.t==='bml');
+                  if(inc.length&&Math.random()<0.35*cap.rel){
+                    const t=inc[(Math.random()*inc.length)|0];
+                    applyDmg({side,t:'veh',sub:'boost-phase interceptor',kills:0,x:t.x,y:t.y,dmgMul:{}},t,Math.round(R(20,40)));
+                  }
+                }
+              }catch(e){}
+              break;
+            }
+            case'asat_swarm':{
+              // constellation-killer: broad, slow attrition across every enemy constellation type
+              try{if(typeof ORBIT!=='undefined'&&ORBIT.active&&_spawn2%12===0&&Math.random()<0.5*cap.rel){
+                for(const k in ORBIT.con[en])ORBIT.con[en][k]=Math.max(5,ORBIT.con[en][k]-R(3,7));
+                ORBIT.kessler=Math.min(100,(ORBIT.kessler||0)+1.5);
+                try{pushEvent(side,`☄ [FUTURE] ${side} constellation-killer ASAT swarm degrades the enemy's entire orbital order of battle`,'#ffce5a');}catch(e){}
+              }}catch(e){}
+              break;
+            }
+            case'deep_ew':{
+              try{if(typeof ORBIT!=='undefined'&&ORBIT.active&&ORBIT.sda&&ORBIT.sda[side]!==undefined)ORBIT.sda[side]=Math.min(1,ORBIT.sda[side]+0.006);}catch(e){}
+              break;
+            }
+            case'space_mfg':{
+              try{if(typeof ORBIT!=='undefined'&&ORBIT.active&&_spawn2%10===0){
+                for(const k in ORBIT.con[side])ORBIT.con[side][k]=Math.min(ORBIT.base[side][k],ORBIT.con[side][k]+0.35);
+              }}catch(e){}
+              break;
+            }
+            case'gan_jam': case'cognitive_jam': case'decoy_net':{
+              // deepened EW: feeds false tracks into the enemy belief picture, harder
+              // to filter than the v70 ew_swarm case (cognitive variant scales with rel)
+              try{if(_spawn2%5===0&&typeof INTEL!=='undefined'&&INTEL.active&&typeof INTEL_disinfo==='function'&&Math.random()<0.5*cap.rel)INTEL_disinfo(en,cap.effect==='cognitive_jam'?2:1);}catch(e){}
+              break;
+            }
           }
         }
       }
@@ -24507,11 +24662,38 @@ ${topB}`;
        · TEMPO EXPOSURE — aggression raises output and your own signature;
        · MATURITY TAX — betting past the era's proven tech misfires, but you
          don't get 2040 swarms betting safe. Risk is real on both ends.     */
+  /* v73: SCENARIO MODIFIERS — the same duel formula, tuned for an operational
+     context rather than an invented sub-physics. Convention: when a scenario
+     cares which side is which, A is the attacker/challenger and B is the
+     home defender.
+       defensive — home terrain/fortification hardens the defender's
+         survivability; the attacker's extended supply lines blunt maneuver.
+       naval     — open water makes maneuver less decisive than the missile-
+         mass-vs-point-defence exchange; swarm and directed energy dominate.
+       limited   — no formula change; a limited war is scored differently at
+         the analysis layer (a modest score margin counts as achieving the
+         limited aim — total destruction of the enemy was never the goal).
+       total     — full mobilisation eases, but does not erase, the maturity
+         tax: crash-fielding under total war gets unready systems to the
+         front faster than peacetime doctrine allows.                     */
+  const SCENARIO_MOD={
+    defensive:{survBmul:1.18, manAmul:0.85},
+    naval:{manMul:0.70, swarmMul:1.15, deMul:1.15},
+    limited:{},
+    total:{taxRelief:0.25},
+  };
   function labDuel(a,b,era,opts){
     const E=ERA_POWER[era]||ERA_POWER['2035'];
-    const BUDGET=(opts&&opts.budget)||E.budget||2.6;
-    const norm=(g)=>{let s=0;for(const k of GK)s+=(g.rel[k]||0);return s>BUDGET?BUDGET/s:1;};
-    const nA=norm(a),nB=norm(b);
+    // v73: independent per-side budgets (budgetA/budgetB) model a genuine
+    // national wealth asymmetry — a great power and an underdog each design
+    // their force to their OWN constraint, not a shared one. Falls back to
+    // the symmetric `budget` (or era default) when unset — fully backward
+    // compatible with every Study I-III result.
+    const BUDGET_A=(opts&&(opts.budgetA||opts.budget))||E.budget||2.6;
+    const BUDGET_B=(opts&&(opts.budgetB||opts.budget))||E.budget||2.6;
+    const SM=(opts&&opts.scenario&&SCENARIO_MOD[opts.scenario])||{};
+    const norm=(g,BUDGET)=>{let s=0;for(const k of GK)s+=(g.rel[k]||0);return s>BUDGET?BUDGET/s:1;};
+    const nA=norm(a,BUDGET_A),nB=norm(b,BUDGET_B);
     const eff=(g,k,n)=>(g.rel[k]||0)*n*E[k];
     // INFORMATION: quantum(passive)+orbital ISR vs enemy EMCON; your own EMCON
     // dims your own picture unless quantum ISR carries it.
@@ -24527,23 +24709,31 @@ ${topB}`;
     const cybB=eff(b,'cyber',nB)*(1-cl(eff(a,'quantum',nA)*0.5,0,0.5));
     const strikeA=eff(a,'hyper',nA)*(0.45+seeA*0.9)*(1-a.disp*0.30)*(1-eff(b,'ew',nB)*0.25)*(1-cybB*0.15);
     const strikeB=eff(b,'hyper',nB)*(0.45+seeB*0.9)*(1-b.disp*0.30)*(1-eff(a,'ew',nA)*0.25)*(1-cybA*0.15);
-    // SWARM: directed energy burns it down; v72: enemy jamming breaks the mesh links
-    const swarmA=eff(a,'swarm',nA)*(1-cl(eff(b,'de',nB),0,0.85))*(1-eff(b,'ew',nB)*0.30)*(1-b.disp*0.25)*(1-a.disp*0.15);
-    const swarmB=eff(b,'swarm',nB)*(1-cl(eff(a,'de',nA),0,0.85))*(1-eff(a,'ew',nA)*0.30)*(1-a.disp*0.25)*(1-b.disp*0.15);
+    // SWARM: directed energy burns it down (v73: naval scenario amplifies DE's
+    // point-defence bite); v72: enemy jamming breaks the mesh links
+    const deEffA=eff(a,'de',nA)*(SM.deMul||1), deEffB=eff(b,'de',nB)*(SM.deMul||1);
+    let swarmA=eff(a,'swarm',nA)*(1-cl(deEffB,0,0.85))*(1-eff(b,'ew',nB)*0.30)*(1-b.disp*0.25)*(1-a.disp*0.15);
+    let swarmB=eff(b,'swarm',nB)*(1-cl(deEffA,0,0.85))*(1-eff(a,'ew',nA)*0.30)*(1-a.disp*0.25)*(1-b.disp*0.15);
     // MANEUVER: autonomy + doctrine tempo, sharpened by the info edge.
     // v72: enemy cyber inside your C2 slows the decision loop.
-    const manA=(eff(a,'auto',nA)*0.5+eff(a,'doctrine',nA)*0.5)*(0.55+a.agg*0.6)*(0.6+seeA*0.6)*(1-cybB*0.28);
-    const manB=(eff(b,'auto',nB)*0.5+eff(b,'doctrine',nB)*0.5)*(0.55+b.agg*0.6)*(0.6+seeB*0.6)*(1-cybA*0.28);
+    let manA=(eff(a,'auto',nA)*0.5+eff(a,'doctrine',nA)*0.5)*(0.55+a.agg*0.6)*(0.6+seeA*0.6)*(1-cybB*0.28);
+    let manB=(eff(b,'auto',nB)*0.5+eff(b,'doctrine',nB)*0.5)*(0.55+b.agg*0.6)*(0.6+seeB*0.6)*(1-cybA*0.28);
     // SURVIVABILITY: dispersion+EMCON hide you; enemy eyes and your own tempo expose you
-    const survA=0.55+a.disp*0.32+a.emcon*0.28-seeB*0.42-a.agg*0.18;
-    const survB=0.55+b.disp*0.32+b.emcon*0.28-seeA*0.42-b.agg*0.18;
+    let survA=0.55+a.disp*0.32+a.emcon*0.28-seeB*0.42-a.agg*0.18;
+    let survB=0.55+b.disp*0.32+b.emcon*0.28-seeA*0.42-b.agg*0.18;
+    // v73 scenario application
+    if(SM.manMul){manA*=SM.manMul;manB*=SM.manMul;}
+    if(SM.swarmMul){swarmA*=SM.swarmMul;swarmB*=SM.swarmMul;}
+    if(SM.survBmul)survB*=SM.survBmul;
+    if(SM.manAmul)manA*=SM.manAmul;
     // SUSTAINMENT (v72): magazine depth & autonomous logistics multiply output —
     // a battle is short, a war is long. The axis with no counter, only a cost.
     const sustA=0.75+eff(a,'log',nA)*0.45, sustB=0.75+eff(b,'log',nB)*0.45;
     // MATURITY: deep bets unlock power but misfire past the era's proven line
     const useDeep=(g,n)=>(eff(g,'auto',n)+eff(g,'swarm',n)+eff(g,'hyper',n))/3;
-    const taxA=cl(a.bet-E.relCap,0,1)*1.1*useDeep(a,nA);
-    const taxB=cl(b.bet-E.relCap,0,1)*1.1*useDeep(b,nB);
+    const relCap=E.relCap+(SM.taxRelief||0);
+    const taxA=cl(a.bet-relCap,0,1)*1.1*useDeep(a,nA);
+    const taxB=cl(b.bet-relCap,0,1)*1.1*useDeep(b,nB);
     const unlockA=0.62+a.bet*0.55, unlockB=0.62+b.bet*0.55;
     let sA=(strikeA+swarmA+manA)*unlockA*cl(survA,0.12,1.25)*sustA-taxA;
     let sB=(strikeB+swarmB+manB)*unlockB*cl(survB,0.12,1.25)*sustB-taxB;
@@ -24563,7 +24753,7 @@ ${topB}`;
     explore(opts){
       opts=opts||{};
       const era=opts.era||'2035', gens=opts.gens||40, popN=opts.pop||24;
-      const dopts=opts.budget?{budget:opts.budget}:undefined; // v72: R&D budget override
+      const dopts=(opts.budget||opts.scenario)?{budget:opts.budget,scenario:opts.scenario}:undefined; // v72/v73: budget + scenario override
       let pop=[];for(let i=0;i<popN;i++)pop.push(randGenome());
       let best=null,bestF=0;
       for(let gen=0;gen<gens;gen++){
@@ -24786,6 +24976,13 @@ ${topB}`;
       battleNote:'⚠ The second cautionary entry. Bet 1.0 on black-project autonomy, swarms and hypersonics, with slack emissions discipline to run them hot. The lab\'s answer across 1,800+ duels at every horizon: 0%. Zero. The misfires — IFF fratricide, runaway swarms, hallucinated orders — hand the battle to any disciplined opponent. The future must be bought at the rate it matures, not faster.'},
     /* ═════ MANUALLY-DESIGNED CHALLENGERS — hand-authored, not evolved, to
        pressure-test specific gaps the lab's own search might have missed ═════ */
+    {id:'insurgents_answer', name:"The Insurgent's Answer", era:'2030', labFit:0.4, counteredBy:null, author:'ai',
+      genome:G(0.53,0.96,0.98,0.58, 0.08,0,1,0,0,0,0.4, 0,0,0.07),
+      tac:'asymmetric', tacD:{land:'asymmetric'},
+      summary:"SPECIALIST — the evolved answer to a great-power invader on your own ground; not built to win a symmetric-budget duel, built to never finish losing an asymmetric one",
+      plain:'When you cannot afford radar, satellites or precision missiles, you buy none of them. You buy a lot of cheap drones, you never stand still long enough to be hit, and you make the war cost the other side more than they budgeted for.',
+      commander:'Intent: no decisive engagement, ever. Disperse below the enemy targeting threshold, sustain a continuous cheap-mass harassment fire, decline every set-piece battle. Victory is not defeating the invader\'s army — it is outlasting the invader\'s will to keep paying for the occupation.',
+      battleNote:'DISCOVERED IN STUDY IV (v73) — evolved specifically for a poor defender fighting a rich invader on home terrain (budget ≈0.45× the great power\'s, plus the defensive-terrain survivability bonus). It never wins the abstract duel — 0% at every regime tested — but that is the wrong scorecard: its measured combat score (0.225) is not zero, almost entirely from swarm attrition (0.18) since it cannot afford strike or maneuver at all, and its SURVIVABILITY (1.22) actually EXCEEDS the great power\'s own (0.99). It cannot win engagements; it is nearly impossible to finish off. A hand-designed "purer" version that drops ALL offence for maximum concealment scores WORSE (0.127) — on land, where terrain already hides you for free, some retained offence beats total passivity. At sea, where there is no terrain to hide behind, the opposite is true (see Study IV). This is the book\'s only entry with no era-standard rating: pit it against a symmetric-budget opponent and it likely loses badly. Its whole point is that nobody fighting it gets to choose a symmetric budget.'},
     {id:'layered_swarm', name:'Layered Swarm', era:'2030', labFit:0.35, counteredBy:'patient_saturation', author:'manual',
       genome:G(0.4,0.9,0.85,0.75, 0.1,0.85,0.85,0,0.55,0,0.25),
       tac:'mass', tacD:{air:'cruise_salvo'},
@@ -24924,7 +25121,7 @@ ${topB}`;
     };
   }
 
-  try{ if(typeof log==='function') log('WAR v72 — 💰 R&D BUDGET STUDY: budget is now a real lab parameter (era defaults 3.0/3.4/3.8, sweep 2.0→10 across 210 more evolutionary runs). FLAGSHIP: the 2040 rock-paper-scissors cycle collapses under abundance — meta cycles are a SCARCITY phenomenon. 🧬 genome grew to 10 axes (EW/cyber/logistics) + 10 real systems (42 total). 📕 LOGISTICS REVOLUTION: every era champion dethroned by its own supplied twin — Arsenal Patience, Marching Shield (97.8% vs Shield-and-Lance), Enduring Tempo (100% vs Tempo Sovereign; wins while LOSING the maneuver fight). All 21 doctrines now carry plain-language + commander-intent descriptions. LAB.anatomy() decomposes any battle.','#c9a0ff'); }catch(e){}
+  try{ if(typeof log==='function') log('WAR v73 — 🎖 STUDY IV: independent per-side R&D budgets + 4 scenario modifiers (defensive/naval/limited/total) → 12 regime×scenario cells fought, 2 resolved at 25,000 duels. FLAGSHIP: the underdog\'s evolved scarcity+terrain doctrine IS the insurgency signature — 0% engagement win rate but survivability EXCEEDS the great power\'s own on land; the gap vanishes at sea and in total war. New doctrine: The Insurgent\'s Answer. + 10 new WAR theatres (Taiwan Strait, Baltic, Sahel, South China Sea, Himalaya), 12 new PROSPECT capabilities (Strategic Weapons domain: automated deterrent, tac-nuke, orbital kinetic bombardment; deepened space frontier; dedicated Electronic Warfare domain) — 54 capabilities total.','#c9a0ff'); }catch(e){}
 })();
 </script>
 </body>
