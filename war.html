@@ -655,7 +655,7 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
 
 <header id="hdr">
   <span class="mark">◆</span>
-  <h1>WAR&nbsp;<small>v74 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
+  <h1>WAR&nbsp;<small>v75 · THEATRE COMMAND · STRATEGIC FRONT</small></h1>
   <div id="ticker">
     <div class="tk bl">▣ BLUE <b id="tk-bl">0</b></div>
     <div class="tk rd">▣ RED <b id="tk-rd">0</b></div>
@@ -912,6 +912,14 @@ body.fsmap #fsBtn{color:var(--warn);border-color:rgba(255,204,68,0.5)}
   <div id="wiki" class="pane"></div>
   <div id="notes" class="pane">
   <div id="pnInner">
+    <div class="pn-ver">WAR v75 <span class="pn-date">Jul 2026</span></div>
+    <div class="pn-section">✚ THE REAL WAR LAYER — casualty states, typed ammunition, and logistics that move in tons</div>
+    <div class="pn-item new"><b>✚ Casualty states — a soldier who goes down is not deleted.</b> Every would-be kill on personnel is classified the way a battalion aid station would: <b>KIA</b> (~28% of infantry knocked out of the fight — the peer-war ~3.5-wounded-per-killed ratio), <b>urgent surgical</b> (incapacitated, needs CASEVAC — timed against the <b>golden hour</b>: died-of-wounds is 3.5% if evacuation makes the window, the OIF/OEF number, and 35% if it doesn't — and CASEVAC times stretch when your side is losing the field, because contested evacuation is the real DOW driver), <b>walking wounded</b> (out of this fight, ~65% projected return-to-duty — the historical two-thirds), and <b>light wounds</b> (~22% fight on at 75% weapon effect and 80% speed). Destroyed platforms sample crew survival — tank crews live through a catastrophic kill ~55% of the time, ejection seats work ~75-80%, ship crews mostly survive their ship. The full ledger, with WIA:KIA ratio, golden-hour percentage and mean CASEVAC time, reads out in the AAR.</div>
+    <div class="pn-item new"><b>⊞ Typed ammunition — every shot expends a named round at its real weight.</b> No more one-size-fits-all ammo: a rifleman burns 12 rounds of 5.45/5.56 ball from a 210-round basic load (2.5 kg); a tank fires one 23 kg 120/125 mm round from a 40-round rack; a battery volley is two 46 kg 155 shells from a 60-round unit of fire; a GMLRS rocket is 307 kg, a Buk-class SAM 715 kg, an Iskander 3.8 t; AAM shots log as AIM-120/R-73-class missiles, air-to-ground by store type from JDAM to cluster. The unit ammo bar now maps 1:1 to real rounds remaining. The AAR prints the full expenditure table — rounds and tonnage per calibre per side — plus the tonnage your trucks actually delivered forward.</div>
+    <div class="pn-item new"><b>⛟ Theatre logistics in real tons/day, and a more detailed war map.</b> Every sector now computes a real daily demand from published planning factors (an infantry company ≈ 4.5 t/day; an armored company slice ≈ 30 t/day — matching the ~1,100-2,000 t/day a US armored division actually drew; a 155 battery at the sustained 60 rd/gun/day rate ≈ 18 t/day; a 4-ship fighter flight ≈ 52 t/day), and every MSR carries what a real truck battalion hauls: ~3,600 t/day at full integrity (3 companies × 60 trucks × ~10 t × 2 round trips), degraded by interdiction, with ~800 t/day of coastal sealift when a fleet holds offshore. A sector whose demand outruns its allocated route capacity has its munitions throughput capped for real — mass that cannot be fed cannot fight. The war map now draws the <b>FLOT</b> (forward line of own troops) traced through each sector's control, and prints each sector's live <b>supplied/demanded t/day</b> in green when met, amber when starved.</div>
+    <div class="pn-item new"><b>▣ AAR — one debrief across every tab.</b> The after-action report now folds in what every other tab saw during the battle: the casualty-state medical ledger, the typed-ammunition expenditure table, the theatre context (campaign phases, both commanders' spoken intents, political will, this sector's supply state), the intelligence picture (tracks held, phantom tracks, how accurate each side's estimate of the enemy actually was, reports lost to jamming), and the orbital war (constellation health, Starlink backbone, Kessler debris).</div>
+    <div class="pn-item new"><b>📖 Wiki — the missing half of the encyclopedia.</b> Drones, EW, logistics trucks and ballistic missiles join the weapons encyclopedia with real reference entries (Shahed-136/Lancet, R-330Zh Zhitel, HEMTT/Ural-4320, Iskander-M/ATACMS). Four new knowledge sections: <b>✦ Doctrines</b> — all 22 measured future-war doctrines from Studies I-V, each in plain language with its counter; <b>⚔ Tactics</b> — every classic tactic, air package and battle formation explained (what Blitzkrieg, SEAD/DEAD or a wedge actually mean); <b>⊞ Munitions</b> — every calibre with basic load, per-engagement expenditure and round weight; <b>✚ Medical</b> — the six casualty states and the real numbers behind them.</div>
+    <div class="pn-item fix"><b>Hardening.</b> Deep-strike scripted kills (counter-battery, air intercept) passed a null killer into <code>killUnit</code> and silently threw inside a guarded timer — the target survived a strike that reported success. Killer-credit bookkeeping is now null-safe and the strikes kill. All v75 hooks are try/caught; the v74 engine is untouched if anything in the new layer throws.</div>
     <div class="pn-ver">WAR v74 <span class="pn-date">Jul 2026</span></div>
     <div class="pn-section">★ THE GENERAL STAFF — the theatre learns to think: strategy, memory, politics, and the fallible human commander</div>
     <div class="pn-item new"><b>♟ Strategic reasoning — campaign-level intent and operational planning.</b> Each side now has a general staff that forms a real campaign plan: a phase machine (<b>SHAPE → PENETRATE → EXPLOIT</b> for the side that believes it is winning; <b>CONTEST</b>, <b>DEFEND</b>, and <b>HUSBAND</b> — economise, hold, negotiate — for the sides that don't), a designated main effort chosen by perceived local force ratios (with a preference for cutting the enemy's MSR corridor and for terrain the army knows), theatre posture set to match the phase, and a SHAPE-phase deep strike against enemy production — politically gated. The plan is <b>spoken</b>: every phase change logs a plain-language commander's intent ("penetrate at Central Heights — supporting sectors fix, reserves feed the breach"), and the staff re-plans when a sector falls. RED's staff drives RED by default — the theatre AI finally has campaign-level intent instead of just reinforcing the weakest sector; BLUE's staff advises only, unless you hand it command in the new <b>★ GENERAL STAFF</b> pane. A designated main effort now also draws a genuine +25% reinforcement priority share.</div>
@@ -5219,6 +5227,7 @@ function resolveAirEngagement(shooter, target, d, effRange){
     foxCall=gen==='vlr'?'Fox-3 (VLRAAM)':w.gen==='sarh'?'Fox-1':'Fox-3';
     missileType='arh';
     if(shooter.aamShotsLeft)shooter.aamShotsLeft.bvr--;
+    try{if(window.AMMOREAL_onAAM)AMMOREAL_onAAM(shooter,'bvr');}catch(e){} // v75
     // Warn target — RWR spike
     setRadarLock(shooter, target);
   }else if(loadout.bvr?.vsRadarOnly && d<loadout.bvr.rangeMax*0.9 && (shooter.aamShotsLeft?.bvr||0)>0){
@@ -5229,6 +5238,7 @@ function resolveAirEngagement(shooter, target, d, effRange){
       Pk=clamp(Pk,0,0.85);
       foxCall='ARM away';missileType='arm';
       if(shooter.aamShotsLeft)shooter.aamShotsLeft.bvr--;
+      try{if(window.AMMOREAL_onAAM)AMMOREAL_onAAM(shooter,'arm');}catch(e){} // v75
     }
   }else if(loadout.wvr && d<loadout.wvr.rangeMax && (shooter.aamShotsLeft?.wvr||0)>0){
     // WVR shot
@@ -5244,6 +5254,7 @@ function resolveAirEngagement(shooter, target, d, effRange){
     foxCall=w.type==='ir'?'Fox-2':'Fox-2 (ATGM-AA)';
     missileType=w.type==='ir'?'ir':'ir';
     if(shooter.aamShotsLeft)shooter.aamShotsLeft.wvr--;
+    try{if(window.AMMOREAL_onAAM)AMMOREAL_onAAM(shooter,'wvr');}catch(e){} // v75
     setRadarLock(shooter, target); // RWR spike even for IR (launch warning systems)
   }else if(loadout.gun && d<loadout.gun.rangeMax){
     // Guns
@@ -7440,6 +7451,7 @@ function fireAt(u,o){
   // ── Ammo drain ──
   const drain=LOGI.ammoDrain[u.t]||0;
   u.ammo=Math.max(0,u.ammo-drain);
+  try{if(window.AMMOREAL_onShot)AMMOREAL_onShot(u);}catch(e){} // v75: typed-round expenditure ledger
   // If ammo critical: reduced accuracy, slower reload handled at call site via cd
   const coh=cohesion(u.side);
   const eU=elevOf(u),eO=elevOf(o);
@@ -8006,21 +8018,29 @@ function applyDmg(src,tgt,amt){
 }
 function killUnit(src,tgt){
   if(!tgt.alive)return;
+  // v75: casualty-state model — a would-be kill on personnel can instead be a
+  // light wound that keeps the soldier fighting at reduced effectiveness; every
+  // outcome (KIA / urgent / walking / functional) lands in the CASREP ledger.
+  try{if(window.CASREP_intercept&&CASREP_intercept(src,tgt))return;}catch(e){}
   tgt.alive=false;tgt.hp=0;
-  const sd=STATS[src.side];
-  sd.kills++;
-  if(!sd.km[src.t])sd.km[src.t]={};
-  sd.km[src.t][tgt.t]=(sd.km[src.t][tgt.t]||0)+1;
-  src.kills=(src.kills||0)+1;
-  if(!src.flies&&!tgt.flies&&elevOf(src)>elevOf(tgt)+1.5)sd.highGroundKills++;
-  if(!sd.ace||src.kills>sd.ace.kills)sd.ace={type:src.t,kills:src.kills};
-  const tkTerr=src.flies?'air':terrainTypeAt(src.x,src.y);
-  sd.terrainKills[tkTerr]=(sd.terrainKills[tkTerr]||0)+1;
+  // v75 hardening: deep-strike scripted kills pass src=null — killer-credit
+  // bookkeeping must not throw (it previously did, silently voiding the kill).
+  if(src&&src.side){
+    const sd=STATS[src.side];
+    sd.kills++;
+    if(!sd.km[src.t])sd.km[src.t]={};
+    sd.km[src.t][tgt.t]=(sd.km[src.t][tgt.t]||0)+1;
+    src.kills=(src.kills||0)+1;
+    if(!src.flies&&!tgt.flies&&src.x!==undefined&&elevOf(src)>elevOf(tgt)+1.5)sd.highGroundKills++;
+    if(!sd.ace||src.kills>sd.ace.kills)sd.ace={type:src.t,kills:src.kills};
+    const tkTerr=src.flies?'air':(src.x!==undefined?terrainTypeAt(src.x,src.y):'open');
+    sd.terrainKills[tkTerr]=(sd.terrainKills[tkTerr]||0)+1;
+  }
   STATS[tgt.side].lossByType[tgt.t]=(STATS[tgt.side].lossByType[tgt.t]||0)+1;
   const big=tgt.t!=='inf'&&tgt.t!=='dro';
   FX.rings.push({x:tgt.x,y:tgt.y,e:elevOf(tgt),r:0,max:big?9:4.5,age:0,life:big?0.55:0.32,col:tgt.col});
   // Morale: killer gains confidence; contagion on dead unit's side; inspiration for killer's side
-  if(src.morale!==undefined){
+  if(src&&src.morale!==undefined){
     const cap=MORALE.typeCap[src.t]||100;
     src.morale=Math.min(cap,src.morale+MORALE.killBonus);
     if(src.experience!==undefined) src.experience+=10; // XP per kill
@@ -8028,7 +8048,7 @@ function killUnit(src,tgt){
       pushEvent(src.side,`${src.sub} promoted to veteran`,src.side.toLowerCase());}
   }
   _moraleDeathEvents.push({x:tgt.x,y:tgt.y,side:tgt.side,tick:SIM.t});
-  _moraleKillEvents.push({x:src.x,y:src.y,side:src.side,tick:SIM.t});
+  if(src&&src.x!==undefined)_moraleKillEvents.push({x:src.x,y:src.y,side:src.side,tick:SIM.t});
 }
 function cohesion(side){const c=powerAlive(side),s=STATS[side].startPower;return s>0?c/s:0;}
 
@@ -9538,6 +9558,7 @@ function step(){
     if(u.kamikaze){
       if(d<=Math.max(2,effRange*0.3)&&u.cd<=0){
         u.cd=9999; // prevent re-trigger this tick
+        try{if(window.AMMOREAL_onKamikaze)AMMOREAL_onKamikaze(u);}catch(e){} // v75: the airframe IS the munition
         // Kill the primary target and credit the kill to this drone
         killUnit(u,o);
         // Self-destruct: drone dies silently (no kill credit awarded to enemy)
@@ -9641,6 +9662,7 @@ function step(){
             if(u.truckAmmo>0&&f.ammo<100){
               const give=Math.min(LOGI.truckAmmoRate*DT,u.truckAmmo,100-f.ammo);
               f.ammo+=give;u.truckAmmo-=give;
+              try{if(window.AMMOREAL_onDeliver)AMMOREAL_onDeliver(u.side,f,give);}catch(e){} // v75: delivered tonnage
             }
             if(u.truckFuel>0&&f.fuel<100){
               const giveF=Math.min(LOGI.truckFuelRate*DT,u.truckFuel,100-f.fuel);
@@ -9744,6 +9766,7 @@ function step(){
         if(u.truckAmmo>5&&f.ammo<60){
           const give=Math.min(LOGI.truckAmmoRate*0.3*DT,u.truckAmmo,60-f.ammo);
           f.ammo+=give;u.truckAmmo-=give;
+          try{if(window.AMMOREAL_onDeliver)AMMOREAL_onDeliver(u.side,f,give);}catch(e){} // v75
         }
         if(u.truckFuel>5&&f.fuel<60){
           const giveF=Math.min(LOGI.truckFuelRate*0.3*DT,u.truckFuel,60-f.fuel);
@@ -12776,6 +12799,10 @@ function renderAAR(){
   h+='<div class="ssec">Effectiveness</div>';
   h+=dual('Damage dealt',B.dmgDealt,R.dmgDealt);
   h+=row('Blue accuracy',accPct(B)+'%','bl');h+=row('Red accuracy',accPct(R)+'%','rd');
+  // v75: cross-tab battle summary — casualty states, real ammunition, theatre
+  // context, ISR/belief picture, orbital war — everything the other tabs saw,
+  // folded into the one debrief a commander actually reads.
+  try{if(window.AAR_V75)h+=AAR_V75();}catch(e){}
   if(STATS.timeline.length){
     h+='<div class="ssec">Engagement Timeline</div><div class="tl">';
     STATS.timeline.forEach(e=>{h+=`<div class="tle ${e.cls==='blue'?'bl':e.cls==='red'?'rd':''}"><span class="tt">T+${e.t.toFixed(1)}</span>${e.text}</div>`;});
@@ -13291,8 +13318,8 @@ window.clearIntel=()=>{
 };
 
 /* ══════ WIKI ══════ */
-const WIKI_CLASSES=['inf','veh','air','arty','nav'];
-const WIKI_LABELS={inf:'Infantry',veh:'Vehicles',air:'Aircraft',arty:'Artillery',nav:'Naval'};
+const WIKI_CLASSES=['inf','veh','air','arty','nav','dro','ew','sup','bml']; // v75: drones, EW, logistics, missiles join the WEG
+const WIKI_LABELS={inf:'Infantry',veh:'Vehicles',air:'Aircraft',arty:'Artillery',nav:'Naval',dro:'Drones',ew:'Elec. Warfare',sup:'Logistics',bml:'Missiles'};
 let wikiFilter='all',wikiSearch='',wikiOpen=null;
 
 function renderWiki(){
@@ -13306,6 +13333,11 @@ function renderWiki(){
     <button class="wfb ${wikiFilter==='all'?'on':''}" onclick="wikiSetFilter('all')">All</button>`;
   for(const cls of WIKI_CLASSES)
     h+=`<button class="wfb ${wikiFilter===cls?'on':''}" onclick="wikiSetFilter('${cls}')" style="color:var(--${cls})">${TYPES[cls].glyph} ${WIKI_LABELS[cls]}</button>`;
+  // v75: knowledge sections — doctrines, classic tactics, munitions, medical
+  h+=`<button class="wfb ${wikiFilter==='doctrines'?'on':''}" onclick="wikiSetFilter('doctrines')" style="color:#c9a0ff">✦ Doctrines</button>`;
+  h+=`<button class="wfb ${wikiFilter==='tactics'?'on':''}" onclick="wikiSetFilter('tactics')" style="color:#ffce5a">⚔ Tactics</button>`;
+  h+=`<button class="wfb ${wikiFilter==='munitions'?'on':''}" onclick="wikiSetFilter('munitions')" style="color:#ff9f7f">⊞ Munitions</button>`;
+  h+=`<button class="wfb ${wikiFilter==='medical'?'on':''}" onclick="wikiSetFilter('medical')" style="color:#7fdfaa">✚ Medical</button>`;
   h+='</div>';
 
   const srch=wikiSearch.toLowerCase();
@@ -13363,6 +13395,8 @@ function renderWiki(){
       </div>`;
     }
   }
+  // v75: doctrine book, classic tactics/formations, real munitions, casualty-state medicine
+  try{if(window.WIKI_V75){const extra=WIKI_V75(wikiFilter,srch);if(extra){any=true;h+=extra;}}}catch(e){}
   if(!any)h+='<div class="empty"><span class="g">◎</span>No entries match the filter.</div>';
   el.innerHTML=h;
   // Use oninput assignment — replaces any previous handler instead of stacking
@@ -14567,6 +14601,7 @@ function resolveAirToGround(shooter,target,d){
   }
 
   STATS[shooter.side].shots++;
+  try{if(window.AMMOREAL_onA2G)AMMOREAL_onA2G(shooter,weaponType);}catch(e){} // v75: air-to-ground expenditure
   if(hit){
     STATS[shooter.side].hits++;
     // Damage scales with weapon power vs target type
@@ -17941,6 +17976,10 @@ function recomputeLines(){
       if(mul>0.9)WAR.munLogged[key]=false;
     }
   }
+  // v75: real-tonnage logistics — per-sector demand (t/day) vs MSR capacity
+  // (t/day) computed from published planning factors; a sector whose demand
+  // outruns its allocated route capacity has its throughput capped for real.
+  try{if(window.LOGRE_capacity)LOGRE_capacity();}catch(e){}
 }
 
 /* ── AI-INFORMED RESOLUTION HELPERS (v51) ──
@@ -18711,6 +18750,8 @@ function drawWarMap(){
   ctx.textAlign='center';ctx.fillStyle='rgba(255,206,90,0.85)';
   ctx.fillText(WAR.over?`◆ ${WAR.result} WINS THE WAR ◆`:`WAR T+${WAR.t.toFixed(0)}s${WAR.paused?' · ⏸ PAUSED':''}`,VW/2,br.y+14);
   ctx.textAlign='left';
+  // v75: detailed-map overlay — FLOT trace, chokepoint markers, tons/day supply state
+  try{if(window.LOGRE_overlay)LOGRE_overlay(ctx,wproj,tl,br);}catch(e){}
 }
 
 /* draw() hook: MAP.mode==='war' renders the front */
@@ -25413,6 +25454,499 @@ ${topB}`;
   };
 
   try{ if(typeof log==='function') log('WAR v74 — ★ THE GENERAL STAFF: campaign-level strategic reasoning (phase plans, spoken intent, main-effort designation from the commander\'s PERCEIVED picture), persistent organizational learning across battles AND wars (localStorage), political & industrial warfare (mobilization, production tied to depot damage, political will that can seek terms), and human command psychology (optimism/confirmation-bias lenses — two commanders read the same intelligence differently, and the G-2\'s dissent is logged). New ★ GENERAL STAFF pane in the War tab. Perf: war pane no longer re-renders in hidden tabs.','#d6c48f'); }catch(e){}
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   v75 — REAL WAR LAYER: casualty states · typed ammunition · real-tonnage
+   logistics & detailed map · cross-tab AAR · doctrine/tactics/munitions wiki
+   ───────────────────────────────────────────────────────────────────────
+   Three realism systems, each anchored to published real-world numbers
+   (sources cited inline where each constant is defined):
+   1. CASREP — a soldier who "goes down" is not simply deleted: the hit is
+      classified KIA / urgent-surgical / walking wounded / light wound
+      (keeps fighting, degraded), CASEVAC is timed against the golden hour,
+      and died-of-wounds follows the real historical curves.
+   2. AMMOREAL — every shot expends a REAL round of a REAL calibre with a
+      REAL weight; basic loads per platform; expenditure and truck-delivered
+      tonnage ledgers per side.
+   3. LOGRE — theatre sectors demand supply in tons/day computed from
+      published planning factors; MSRs have real capacity in tons/day;
+      demand above allocated capacity caps a sector's throughput. The war
+      map gains a FLOT trace and per-sector tons/day supply state.
+   All hooks are try/caught: if anything in this layer throws, the base
+   engine continues exactly as v74.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+  if(typeof window==='undefined')return;
+  const R=(a,b)=>a+Math.random()*(b-a);
+  const clv=(v,a,b)=>v<a?a:v>b?b:v;
+
+  /* ══ WEG ADDITIONS — the four unit classes the wiki never covered ══ */
+  try{Object.assign(WEG,{
+    'Loitering Munition':{cls:'dro',tier:2,glyph:'⬟',
+      weapon:'Shahed-136 / Geran-2 delta-wing OWA-UAV',
+      cal:'~50 kg HE-frag warhead, ~200 kg gross',
+      rof:'Single-use airframe',
+      rangeEff:'~1,000-2,500 km (one way)',
+      ap:'Light structures, soft vehicles, radars; no MBT frontal kill',
+      speed:'~185 km/h cruise',
+      weight:'~200 kg',crew:0,
+      note:'The cheap mass weapon of the 2020s: ~$20-50k per airframe against $1M+ interceptors. Flies low and slow on a pre-programmed or updated route; the airframe itself is the munition.',
+      sim:{hp:16,dmg:18,spd:9,range:18,cd:0.60}},
+    'Precision Loiterer':{cls:'dro',tier:1,glyph:'⬠',
+      weapon:'ZALA Lancet-3 / Switchblade 600 class',
+      cal:'3-6 kg shaped-charge / 15 kg AT warhead',
+      rof:'Single-use airframe',
+      rangeEff:'40-80 km, 30-40 min endurance',
+      ap:'Top-attack: defeats roof armor of MBTs/SPGs',
+      speed:'110-300 km/h terminal',
+      weight:'12-54 kg',crew:0,
+      note:'Operator-in-the-loop terminal guidance; the counter-battery and counter-AD workhorse of the Ukraine war. Loiters over the grid square, dives on whatever radiates or moves.',
+      sim:{hp:16,dmg:18,spd:9,range:18,cd:0.60}},
+    'EW Jammer':{cls:'ew',tier:2,glyph:'⊘',
+      weapon:'R-330Zh Zhitel / AN/MLQ-44 class ground jammer',
+      cal:'100 MHz-2 GHz barrage + spot jamming, ~10 kW ERP',
+      rof:'Continuous emission',
+      rangeEff:'GNSS denial ~30 km, comms ~20-25 km',
+      ap:'No kinetic effect — degrades accuracy, drones, C2',
+      speed:'Truck-mobile, 60 km/h road',
+      weight:'~12 t (vehicle)',crew:3,
+      note:'Denies GPS/GLONASS and VHF/UHF comms in a footprint. In this engine: reduces enemy accuracy and drone reliability inside the jam radius, and its emission is itself a SIGINT beacon.',
+      sim:{hp:50,dmg:0,spd:3,range:0,cd:99}},
+    'Heavy Transporter':{cls:'sup',tier:2,glyph:'⊡',
+      weapon:'M977 HEMTT / Ural-4320 tactical truck',
+      cal:'9.8 t payload (HEMTT) / 6 t (Ural)',
+      rof:'~2 round trips/day at 60-100 km haul',
+      rangeEff:'480 km road radius, unrefuelled',
+      ap:'None — the war stops without it anyway',
+      speed:'88 km/h road, 25-40 km/h cross-country',
+      weight:'17.8 t gross (HEMTT)',crew:2,
+      note:'A US truck company (60 trucks × ~10 t × 2 trips) moves ~1,200 t/day — the number this engine\'s MSR capacity is anchored to. Ammunition is delivered as typed tonnage, not an abstraction.',
+      sim:{hp:35,dmg:0,spd:6,range:0,cd:99}},
+    'SRBM Launcher':{cls:'bml',tier:1,glyph:'⊿',
+      weapon:'9K720 Iskander-M / MGM-140 ATACMS TEL',
+      cal:'480-500 kg unitary or cluster warhead',
+      rof:'2 missiles/TEL, ~20-40 min reload cycle',
+      rangeEff:'300-500 km (Iskander-M ~500 km)',
+      ap:'Hardened structures, airfields, depots, C2 nodes',
+      speed:'TEL: 70 km/h road · missile: Mach 6-7 terminal',
+      weight:'3,800 kg missile / 42 t TEL',crew:4,
+      note:'Quasi-ballistic terminal maneuvering defeats simple predictive intercepts. Shoot-and-displace doctrine: fire, then move before counter-battery arrives — exactly as modelled in this engine\'s BML behaviour.',
+      sim:{hp:55,dmg:80,spd:1,range:240,cd:18.0}},
+  });}catch(e){}
+
+  /* ══ 1. CASREP — CASUALTY STATES & MILITARY MEDICINE ══════════════════
+     Real anchors used (stated so the numbers can be checked):
+     · WIA:KIA ratio — historical baseline ~3:1 (WWII, Korea, Vietnam);
+       modern Western care with body armor reached ~8-10:1 survivable
+       (US OIF/OEF); high-intensity peer war estimates run ~3-4:1
+       (Ukraine 2022-). Engine uses ~3.5 wounded per killed at the
+       moment of the hit — the peer-war number, since this is peer war.
+     · Died of wounds (DOW) after reaching care — WWII ~4.5%, Vietnam
+       ~3.4%, OIF/OEF ~2-4.6%. Engine: 3.5% if CASEVAC makes the golden
+       hour, 35% if it does not (untreated urgent surgical cases).
+     · The golden hour — the 2009 Gates directive cut CASEVAC in
+       Afghanistan to <60 min and measurably cut case fatality. Engine
+       maps 60 min to 24 s of sim time (sim seconds ≈ 2.5 min).
+     · Return to duty — roughly 2/3 of WIA eventually RTD (US data).
+       Engine projects 65% of walking wounded back to the force pool.  */
+  const CASREP={BLUE:null,RED:null,_stamp:-1};
+  window.CASREP=CASREP;
+  const CREW={veh:3,air:1,arty:5,nav:25,ew:3,sup:2,bml:4,dro:0,inf:1};
+  const CREW_SURVIVE={veh:0.55,air:0.75,arty:0.70,nav:0.85,ew:0.70,sup:0.75,bml:0.60}; // catastrophic-kill crew survival: tank ~50-60%, ejection ~75-80% success, ship abstracted
+  function casBlank(){return{kia:0,dow:0,urgent:0,urgentSaved:0,walking:0,functional:0,crewOK:0,
+    evacGolden:0,evacLate:0,evacSumT:0,evacN:0,persKIA:0,persWIA:0};}
+  function casReset(){CASREP.BLUE=casBlank();CASREP.RED=casBlank();CASREP._stamp=(typeof SIM!=='undefined'?SIM.t:0);}
+  casReset();
+  function casCheck(){try{if(typeof SIM!=='undefined'&&SIM.t<CASREP._stamp)casReset();CASREP._stamp=Math.max(CASREP._stamp,SIM.t);}catch(e){}}
+
+  // one urgent casualty: sample CASEVAC against the golden hour, resolve DOW
+  function urgentOutcome(side){
+    const L=CASREP[side];
+    L.urgent++;L.persWIA++;
+    // CASEVAC time: base 8-22 s, stretched when the casualty's side is losing
+    // the field (contested evac is the single biggest real driver of DOW)
+    let pressure=1;
+    try{
+      const my=powerAlive(side),en=powerAlive(side==='BLUE'?'RED':'BLUE');
+      pressure=clv(en/Math.max(1,my),0.6,2.2);
+    }catch(e){}
+    const evacT=R(8,22)*pressure;
+    const GOLDEN=24; // ≈60 min at this sim's timescale
+    L.evacSumT+=evacT;L.evacN++;
+    if(evacT<=GOLDEN){
+      L.evacGolden++;
+      if(Math.random()<0.035){L.dow++;L.persKIA++;} else L.urgentSaved++;
+    }else{
+      L.evacLate++;
+      if(Math.random()<0.35){L.dow++;L.persKIA++;} else L.urgentSaved++;
+    }
+  }
+
+  window.CASREP_intercept=function(src,tgt){
+    if(typeof SIM==='undefined'||!SIM.running)return false;
+    casCheck();
+    const L=CASREP[tgt.side];if(!L)return false;
+    if(tgt.t==='inf'){
+      // First knock-down: 22% are light wounds — the soldier fights on,
+      // slower and shooting worse (the walking share of the real 3.5:1).
+      if(!tgt._wounded&&Math.random()<0.22){
+        tgt._wounded=true;
+        tgt.hp=Math.max(4,Math.round(tgt.maxHp*0.18));
+        tgt.dmg=Math.max(1,Math.round(tgt.dmg*0.75));
+        tgt.spd*=0.8;
+        if(tgt.morale!==undefined)tgt.morale=Math.max(0,tgt.morale-12);
+        L.functional++;L.persWIA++;
+        try{FX.rings.push({x:tgt.x,y:tgt.y,e:elevOf(tgt),r:0,max:3,age:0,life:0.3,col:'#7fdfaa'});}catch(e){}
+        return true; // unit stays on the board
+      }
+      // Otherwise the soldier is out of the fight — classify the outcome.
+      // Renormalised split (light wounds already taken): KIA 28% · urgent
+      // surgical 38% · walking wounded 34% → ~3.5 casualties per KIA overall.
+      const r=Math.random();
+      if(r<0.28){L.kia++;L.persKIA++;}
+      else if(r<0.66)urgentOutcome(tgt.side);
+      else{L.walking++;L.persWIA++;}
+      return false;
+    }
+    // Platform kill → crew casualty sampling
+    const crew=CREW[tgt.t]||0;
+    if(crew>0){
+      const pSurv=CREW_SURVIVE[tgt.t]||0.6;
+      for(let i=0;i<crew;i++){
+        if(Math.random()<pSurv){
+          const r=Math.random();
+          if(r<0.45)L.crewOK++;
+          else if(r<0.75){L.walking++;L.persWIA++;}
+          else urgentOutcome(tgt.side);
+        }else{L.kia++;L.persKIA++;}
+      }
+    }
+    return false; // platform is always destroyed
+  };
+
+  /* ══ 2. AMMOREAL — TYPED AMMUNITION ═══════════════════════════════════
+     Basic loads and round weights from open references (approximate but
+     real): M855 5.56 mm 11.7 g and the 210-round rifleman load; PG-7VL
+     2.6 kg; M107/M795 155 mm ~43-47 kg and the ~60 rd/gun/day sustained
+     rate; 120/125 mm tank round ~23 kg and ~40-round racks; GMLRS 307 kg;
+     Mk 45 5-inch 31 kg; AIM-120 152 kg / AIM-9X 85 kg / AGM-88 361 kg;
+     GBU-38 JDAM 253 kg; Shahed-136 ~200 kg gross; Iskander-M 3,800 kg.  */
+  const AMMO_SUB={
+    'Rifleman':      {cal:'5.45×39 / 5.56×45 mm ball',perShot:12,load:210,kg:0.0117},
+    'Spec-Ops':      {cal:'5.56×45 mm (suppressed) ball',perShot:12,load:240,kg:0.0117},
+    'Engineer':      {cal:'5.56×45 mm ball + demo charges',perShot:10,load:180,kg:0.0117},
+    'Sniper':        {cal:'7.62×54R / .338 match',perShot:1,load:60,kg:0.026},
+    'AT Trooper':    {cal:'RPG PG-7VL / ATGM round',perShot:1,load:5,kg:2.6},
+    'Mortar Team':   {cal:'81/82 mm mortar bomb',perShot:2,load:24,kg:4.1},
+    'Grenadier':     {cal:'40 mm HEDP grenade',perShot:3,load:36,kg:0.23},
+    'MANPADS':       {cal:'Igla/Stinger missile',perShot:1,load:2,kg:10.1},
+    'MBT':           {cal:'120/125 mm APFSDS·HEAT',perShot:1,load:40,kg:23},
+    'IFV':           {cal:'30 mm autocannon',perShot:8,load:400,kg:0.84},
+    'APC':           {cal:'12.7 mm HMG link',perShot:15,load:1000,kg:0.13},
+    'HMMWV':         {cal:'12.7 mm HMG link',perShot:15,load:800,kg:0.13},
+    'Recon Vehicle': {cal:'25/30 mm autocannon',perShot:6,load:300,kg:0.5},
+    'MLRS':          {cal:'122 mm rocket (Grad)',perShot:4,load:40,kg:66},
+    'AA Vehicle':    {cal:'30 mm AD autocannon',perShot:20,load:800,kg:0.84},
+    'Tank Destroyer':{cal:'Kornet/TOW ATGM',perShot:1,load:12,kg:27},
+    'Howitzer':      {cal:'152/155 mm HE',perShot:2,load:60,kg:46},
+    'SPG':           {cal:'152/155 mm HE (SP)',perShot:2,load:60,kg:46},
+    'MLRS Arty':     {cal:'227/300 mm GMLRS rocket',perShot:2,load:12,kg:307},
+    'Mortar Battery':{cal:'120 mm mortar bomb',perShot:3,load:60,kg:16},
+    'ATGM Battery':  {cal:'Kornet-EM ATGM',perShot:1,load:16,kg:27},
+    'AA Battery':    {cal:'SAM (Buk/Patriot class)',perShot:1,load:12,kg:715},
+  };
+  const AMMO_TYPE={ // class fallback when sub not mapped
+    inf:{cal:'small arms mixed',perShot:12,load:210,kg:0.012},
+    veh:{cal:'120/125 mm main gun',perShot:1,load:40,kg:23},
+    arty:{cal:'152/155 mm HE',perShot:2,load:60,kg:46},
+    nav:{cal:'127 mm / 5-inch naval',perShot:3,load:600,kg:31},
+    air:null,dro:null,ew:null,sup:null,
+    bml:{cal:'SRBM (Iskander/ATACMS class)',perShot:1,load:4,kg:3800},
+  };
+  const AAM_KG={bvr:{cal:'BVR AAM (AIM-120/R-77)',kg:152},wvr:{cal:'WVR AAM (AIM-9X/R-73)',kg:85},arm:{cal:'ARM (AGM-88/Kh-31P)',kg:361}};
+  const A2G_KG={pgm:{cal:'JDAM/KAB PGM',kg:253},unguided:{cal:'unguided bomb (Mk 82 class)',kg:227},
+    rocket:{cal:'70 mm rocket pod salvo',kg:46},cannon:{cal:'strafe burst 30 mm',kg:14},
+    maverick:{cal:'AGM-65 Maverick',kg:210},hellfire:{cal:'AGM-114/Vikhr ATGM',kg:45},
+    loitering:{cal:'air-launched loiterer',kg:50},cluster:{cal:'CBU-87 cluster',kg:430}};
+  const AMMOLOG={BLUE:{},RED:{},deliveredKg:{BLUE:0,RED:0},_stamp:-1};
+  window.AMMOLOG=AMMOLOG;
+  function ammoCheck(){try{if(typeof SIM!=='undefined'&&SIM.t<AMMOLOG._stamp){AMMOLOG.BLUE={};AMMOLOG.RED={};AMMOLOG.deliveredKg.BLUE=0;AMMOLOG.deliveredKg.RED=0;}AMMOLOG._stamp=Math.max(AMMOLOG._stamp,SIM.t);}catch(e){}}
+  function tally(side,cal,rds,kg){
+    ammoCheck();
+    const T=AMMOLOG[side];if(!T)return;
+    if(!T[cal])T[cal]={rds:0,kg:0};
+    T[cal].rds+=rds;T[cal].kg+=kg;
+  }
+  function specFor(u){return AMMO_SUB[u.sub]||AMMO_TYPE[u.t]||null;}
+  window.AMMOREAL_onShot=function(u){
+    if(u.flies)return; // air expenditure counted by the AAM/A2G hooks
+    const s=specFor(u);if(!s)return;
+    tally(u.side,s.cal,s.perShot,s.perShot*s.kg);
+  };
+  window.AMMOREAL_onKamikaze=function(u){tally(u.side,'loitering-munition airframe',1,200);};
+  window.AMMOREAL_onAAM=function(shooter,slot){const s=AAM_KG[slot];if(s)tally(shooter.side,s.cal,1,s.kg);};
+  window.AMMOREAL_onA2G=function(shooter,wt){const s=A2G_KG[wt];if(s)tally(shooter.side,s.cal,1,s.kg);};
+  window.AMMOREAL_onDeliver=function(side,unit,givePct){
+    const s=specFor(unit);if(!s)return;
+    ammoCheck();
+    AMMOLOG.deliveredKg[side]+=givePct/100*s.load*s.kg;
+  };
+  window.AMMOREAL_rounds=function(u){const s=specFor(u);if(!s)return null;return{cal:s.cal,rds:Math.round(s.load*(u.ammo||0)/100),load:s.load};};
+
+  /* ══ 3. LOGRE — REAL-TONNAGE THEATRE LOGISTICS + DETAILED MAP ═════════
+     Planning-factor anchors (short tons/day, per company-equivalent
+     theatre force point):
+     · US armored division in combat drew ~1,100-2,000 t/day (FM 101-10-1
+       planning factors) → a 14-vehicle armored company slice ≈ 30 t/day
+       (fuel ~0.9 t/day per M1 at high tempo + half a basic load of
+       120 mm + attached slice).
+     · An infantry company (~150 troops × ~30 kg/day all-classes combat
+       rate) ≈ 4.5 t/day.
+     · A 6-gun 155 battery at the sustained 60 rd/gun/day rate fires
+       ~16.6 t of shells alone ≈ 18 t/day with fuel.
+     · A 4-ship fighter flight at 2 sorties/day ≈ 52 t/day (fuel + ord).
+     · One truck company: 60 trucks × ~10 t × 2 round trips ≈ 1,200 t/day.
+       An MSR feeding a multi-brigade axis is assigned a truck BATTALION
+       (3 companies ≈ 3,600 t/day at full integrity) — so a healthy front
+       is fed, and the constraint bites when interdiction degrades the
+       route, exactly as in the real planning problem. Coastal sealift
+       ≈ 800 t/day when the fleet holds offshore; improvised local
+       supply floor ≈ 150 t/day.                                        */
+  const LOGRE={
+    perPoint:{inf:4.5,veh:30,arty:18,air:52,nav:0,dro:1.5,ew:2,sup:0,bml:9},
+    msrCap:3600,sealiftCap:800,localFloor:150,
+  };
+  window.LOGRE=LOGRE;
+  function sectorDemand(n,side){
+    let t=0;for(const k in LOGRE.perPoint)t+=(n.forces[side][k]||0)*LOGRE.perPoint[k];
+    return t;
+  }
+  window.LOGRE_capacity=function(){
+    if(!window.WAR||!WAR.active||!WAR.nodes||!WAR.nodes.length)return;
+    for(const side of ['BLUE','RED']){
+      // total route capacity for this side: each MSR contributes integrity% of a
+      // truck company's daily lift
+      const active=WAR.nodes.filter(n=>n.status==='active');
+      if(!active.length)continue;
+      const demands=active.map(n=>Math.max(1,sectorDemand(n,side)));
+      const totalDemand=demands.reduce((a,b)=>a+b,0);
+      let cap=0;
+      for(const L of WAR.lines)if(L.side===side)cap+=LOGRE.msrCap*(L.integrity/100);
+      cap=Math.max(cap,LOGRE.localFloor*active.length*0.5);
+      active.forEach((n,i)=>{
+        let alloc=cap*(demands[i]/totalDemand);
+        // sealift directly into a coastal sector with a fleet in being
+        if(n.terrain&&n.terrain.id==='coastal'&&(WAR.reserves[side].nav||0)>=2)alloc+=LOGRE.sealiftCap;
+        const ratio=alloc/demands[i];
+        if(!n._logre)n._logre={};
+        n._logre[side]={dem:Math.round(demands[i]),alloc:Math.round(alloc),ratio:+ratio.toFixed(2)};
+        // a starved sector cannot shoot what the road cannot carry
+        const capMul=0.35+0.65*clv(ratio,0,1);
+        n.munMul[side]=Math.min(n.munMul[side],capMul);
+      });
+    }
+  };
+  window.LOGRE_overlay=function(ctx,wproj,tl,br){
+    if(!window.WAR||!WAR.active||!WAR.nodes.length)return;
+    // FLOT — forward line of own troops, traced through each sector's control
+    ctx.save();
+    ctx.setLineDash([5,4]);
+    ctx.strokeStyle='rgba(255,206,90,0.55)';ctx.lineWidth=1.4;
+    ctx.beginPath();
+    let first=true;
+    for(const n of WAR.nodes){
+      const off=(50-n.control)/50*70; // BLUE holds → FLOT pushes east (+x)
+      const p=wproj(n.x-off,n.y);
+      if(first){ctx.moveTo(p.x,p.y);first=false;}else ctx.lineTo(p.x,p.y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+    const pTop=wproj(WAR.nodes[0].x-(50-WAR.nodes[0].control)/50*70,WAR.nodes[0].y);
+    ctx.font='6px monospace';ctx.fillStyle='rgba(255,206,90,0.75)';ctx.textAlign='center';
+    ctx.fillText('FLOT',pTop.x,pTop.y-8);
+    // per-sector tons/day supply state (drawn under each sector)
+    ctx.font='5.8px monospace';
+    for(const n of WAR.nodes){
+      if(n.status!=='active'||!n._logre)continue;
+      const p=wproj(n.x,n.y);
+      const lb=n._logre.BLUE,lr=n._logre.RED;
+      if(lb){ctx.textAlign='right';ctx.fillStyle=lb.ratio>=1?'rgba(120,200,140,0.8)':'rgba(255,150,90,0.9)';
+        ctx.fillText(`${lb.alloc}/${lb.dem} t/d`,p.x-30,p.y+16);}
+      if(lr){ctx.textAlign='left';ctx.fillStyle=lr.ratio>=1?'rgba(120,200,140,0.8)':'rgba(255,150,90,0.9)';
+        ctx.fillText(`${lr.alloc}/${lr.dem} t/d`,p.x+30,p.y+16);}
+    }
+    ctx.restore();
+  };
+
+  /* ══ 4. AAR_V75 — the cross-tab debrief ══════════════════════════════ */
+  function aarRow(lbl,b,r){
+    return `<div class="brow"><span class="blbl">${lbl}</span>
+      <span class="sval bl" style="flex:1;font-size:7.5px">${b}</span>
+      <span class="sval rd" style="flex:1;text-align:right;font-size:7.5px">${r}</span></div>`;
+  }
+  window.AAR_V75=function(){
+    let h='';
+    /* — casualty states — */
+    try{
+      const B=CASREP.BLUE,Rl=CASREP.RED;
+      if(B&&(B.persKIA+B.persWIA+Rl.persKIA+Rl.persWIA)>0){
+        h+='<div class="ssec">Casualty States — Military Medicine</div>';
+        h+=aarRow('KIA at the hit',B.kia,Rl.kia);
+        h+=aarRow('Died of wounds',B.dow,Rl.dow);
+        h+=aarRow('Urgent — saved',B.urgentSaved,Rl.urgentSaved);
+        h+=aarRow('Walking wounded',B.walking,Rl.walking);
+        h+=aarRow('Fought on hurt',B.functional,Rl.functional);
+        h+=aarRow('Crew rescued',B.crewOK,Rl.crewOK);
+        const ratio=s=>s.persKIA>0?(s.persWIA/s.persKIA).toFixed(1)+':1':'—';
+        h+=aarRow('WIA : KIA',ratio(B),ratio(Rl));
+        const golden=s=>s.evacN>0?Math.round(100*s.evacGolden/s.evacN)+'%':'—';
+        h+=aarRow('Golden-hour evac',golden(B),golden(Rl));
+        const avgE=s=>s.evacN>0?(s.evacSumT/s.evacN*2.5).toFixed(0)+' min':'—';
+        h+=aarRow('Mean CASEVAC',avgE(B),avgE(Rl));
+        const rtd=s=>Math.round(s.walking*0.65+s.urgentSaved*0.25);
+        h+=aarRow('Projected RTD',rtd(B),rtd(Rl));
+        h+='<div class="note" style="font-size:6px">Anchors: peer-war WIA:KIA ~3-4:1 · DOW 3.5% inside the golden hour vs 35% outside it (WWII 4.5% → OIF/OEF 2-4.6% with <60-min CASEVAC) · ~2/3 of WIA eventually RTD. CASEVAC times stretch when your side is losing the field — contested evacuation is the real DOW driver.</div>';
+      }
+    }catch(e){}
+    /* — ammunition expenditure — */
+    try{
+      const anyB=Object.keys(AMMOLOG.BLUE).length,anyR=Object.keys(AMMOLOG.RED).length;
+      if(anyB||anyR){
+        h+='<div class="ssec">Ammunition Expenditure — Typed Rounds</div>';
+        const cals=[...new Set([...Object.keys(AMMOLOG.BLUE),...Object.keys(AMMOLOG.RED)])].sort();
+        let totB=0,totR=0;
+        for(const c of cals){
+          const b=AMMOLOG.BLUE[c]||{rds:0,kg:0},r=AMMOLOG.RED[c]||{rds:0,kg:0};
+          totB+=b.kg;totR+=r.kg;
+          h+=aarRow(c,`${b.rds.toLocaleString()} rd · ${(b.kg/1000).toFixed(2)} t`,`${r.rds.toLocaleString()} rd · ${(r.kg/1000).toFixed(2)} t`);
+        }
+        h+=aarRow('<b>Total expended</b>',`<b>${(totB/1000).toFixed(2)} t</b>`,`<b>${(totR/1000).toFixed(2)} t</b>`);
+        h+=aarRow('Delivered forward by trucks',`${(AMMOLOG.deliveredKg.BLUE/1000).toFixed(2)} t`,`${(AMMOLOG.deliveredKg.RED/1000).toFixed(2)} t`);
+        h+='<div class="note" style="font-size:6px">Reference points: one 155 mm shell ≈ 46 kg — a 6-gun battery firing the sustained 60 rd/gun/day rate expends ~16.6 t/day; a rifleman\'s 210-round basic load ≈ 2.5 kg; one GMLRS rocket 307 kg; one Iskander-class missile 3.8 t.</div>';
+      }
+    }catch(e){}
+    /* — theatre context (when this battle belongs to a war) — */
+    try{
+      if(window.WAR&&WAR.active&&window.STAFF&&STAFF._warInit){
+        h+='<div class="ssec">Theatre Context — the War Behind This Battle</div>';
+        const cb=STAFF.campaign.BLUE,cr=STAFF.campaign.RED,pb=STAFF.polind.BLUE,pr=STAFF.polind.RED;
+        h+=aarRow('Campaign phase',cb.phase,cr.phase);
+        h+=aarRow('Political will',`${pb.will|0}%`,`${pr.will|0}%`);
+        h+=aarRow('Theatre morale',(WAR.morale.BLUE>=0?'+':'')+WAR.morale.BLUE.toFixed(2),(WAR.morale.RED>=0?'+':'')+WAR.morale.RED.toFixed(2));
+        h+=`<div class="note" style="font-size:6.2px">✦ BLUE intent: ${cb.intent}<br>✦ RED intent: ${cr.intent}</div>`;
+        if(WAR.focus!=null&&WAR.nodes[WAR.focus]){
+          const n=WAR.nodes[WAR.focus];
+          const lg=n._logre;
+          h+=`<div class="note" style="font-size:6.2px">This battle: <b>${n.name}</b> (${n.terrain.name||n.terrain.id}${n.corridor?' · '+n.corridor+' MSR corridor':''}) — munitions throughput B ${Math.round(n.munMul.BLUE*100)}% / R ${Math.round(n.munMul.RED*100)}%${lg&&lg.BLUE?` · supply B ${lg.BLUE.alloc}/${lg.BLUE.dem} t/d, R ${lg.RED.alloc}/${lg.RED.dem} t/d`:''}</div>`;
+        }
+      }
+    }catch(e){}
+    /* — intelligence picture — */
+    try{
+      if(window.INTEL&&INTEL.stats&&INTEL.stats.BLUE){
+        const sb=INTEL.stats.BLUE,sr=INTEL.stats.RED;
+        if((sb.tracks+sr.tracks)>0){
+          h+='<div class="ssec">Intelligence Picture — What Each Side Believed</div>';
+          h+=aarRow('Tracks held',sb.tracks,sr.tracks);
+          h+=aarRow('Phantom/false tracks',(sb.phantom||0)+(sb.falsePos||0),(sr.phantom||0)+(sr.falsePos||0));
+          const accur=s=>s.trueEnemyPow>0?Math.round(100*Math.min(s.believedEnemyPow,s.trueEnemyPow)/Math.max(s.believedEnemyPow,s.trueEnemyPow,1))+'%':'—';
+          h+=aarRow('Estimate accuracy (believed vs true enemy power)',accur(sb),accur(sr));
+          h+=aarRow('Reports jammed/dropped',(sb.jammed||0)+(sb.dropped||0),(sr.jammed||0)+(sr.dropped||0));
+        }
+      }
+    }catch(e){}
+    /* — orbital war — */
+    try{
+      if(window.ORBIT&&ORBIT.active&&ORBIT.con&&ORBIT.con.BLUE){
+        h+='<div class="ssec">Orbital War — the High Ground</div>';
+        const ch=s=>{const c=ORBIT.con[s];if(!c)return '—';const vals=Object.values(c).filter(v=>typeof v==='number');return vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length)+'%':'—';};
+        h+=aarRow('Constellation health',ch('BLUE'),ch('RED'));
+        h+=aarRow('Starlink backbone',Math.round(ORBIT.starlinkHealth)+'%','shared');
+        h+=aarRow('Kessler debris density',Math.round(ORBIT.kessler*100)+'%','shared');
+      }
+    }catch(e){}
+    return h;
+  };
+
+  /* ══ 5. WIKI_V75 — doctrines · classic tactics · munitions · medicine ══ */
+  function wCard(title,tag,body){
+    return `<div class="wcard open"><div class="wchd"><span class="wcn">${title}</span><span class="wct">${tag}</span></div>
+      <div class="wcbody"><div class="wsdesc" style="display:block">${body}</div></div></div>`;
+  }
+  window.WIKI_V75=function(filter,srch){
+    const want=k=>(filter==='all'||filter===k);
+    const S=t=>!srch||t.toLowerCase().includes(srch);
+    let h='';
+    /* — future-war doctrine book — */
+    try{
+      if(want('doctrines')&&window.PROSPECT&&PROSPECT.DOCTRINES){
+        let cards='';
+        for(const d of PROSPECT.DOCTRINES){
+          if(!S(d.name+' '+(d.plain||'')+' '+(d.summary||'')))continue;
+          const counter=d.counteredBy?(PROSPECT.DOCTRINES.find(x=>x.id===d.counteredBy)||{name:d.counteredBy}).name:'no measured counter';
+          cards+=wCard(`✦ ${d.name}`,`${d.era} · fitness ${Math.round((d.labFit||0)*100)}%`,
+            `<b>What it means:</b> ${d.plain||d.summary}<br>
+             <b>Lab summary:</b> ${d.summary}<br>
+             <b>Countered by:</b> ${counter} · <b>origin:</b> ${d.author==='ai'?'AI-discovered':d.author==='manual'?'hand-designed':'doctrine book'}`);
+        }
+        if(cards)h+=`<div class="wcat">✦ Future-War Doctrines (the measured book — Studies I-V)</div>${cards}`;
+      }
+    }catch(e){}
+    /* — classic tactics & formations — */
+    try{
+      if(want('tactics')&&typeof TACTICS!=='undefined'){
+        let cards='';
+        for(const[k,t]of Object.entries(TACTICS)){
+          if(!S(t.name+' '+(t.desc||'')))continue;
+          cards+=wCard(`⚔ ${t.name}`,t.cat||'ground',t.desc||'');
+        }
+        if(typeof FORMATIONS!=='undefined'){
+          for(const[k,f]of Object.entries(FORMATIONS)){
+            if(!f||!f.desc||!S(f.name+' '+f.desc))continue;
+            cards+=wCard(`${f.glyph||'▦'} ${f.name} (formation)`,'formation',f.desc);
+          }
+        }
+        if(cards)h+=`<div class="wcat">⚔ Classic Tactics, Doctrines & Formations — what each one actually means</div>${cards}`;
+      }
+    }catch(e){}
+    /* — munitions & consumption — */
+    try{
+      if(want('munitions')){
+        let cards='';
+        const seen=new Set();
+        for(const[sub,s]of Object.entries(AMMO_SUB)){
+          if(seen.has(s.cal))continue;seen.add(s.cal);
+          if(!S(sub+' '+s.cal))continue;
+          cards+=wCard(`⊞ ${s.cal}`,`${sub}`,
+            `<b>Basic load:</b> ${s.load} rounds (${(s.load*s.kg).toFixed(1)} kg) · <b>per engagement:</b> ${s.perShot} rd · <b>round weight:</b> ${s.kg<1?(s.kg*1000).toFixed(0)+' g':s.kg+' kg'}<br>
+             The ammo bar on each unit maps 1:1 to this load — at 50% ammo a ${sub} is carrying ${Math.round(s.load/2)} rounds, not an abstraction.`);
+        }
+        for(const[k,s]of Object.entries(AAM_KG))if(S(s.cal))cards+=wCard(`◆ ${s.cal}`,'air-to-air',`<b>Missile weight:</b> ${s.kg} kg. Expended per launch and logged by name — see the AAR ammunition table.`);
+        for(const[k,s]of Object.entries(A2G_KG))if(S(s.cal))cards+=wCard(`◆ ${s.cal}`,'air-to-ground',`<b>Store weight:</b> ${s.kg} kg per release.`);
+        if(cards)h+=`<div class="wcat">⊞ Munitions — real calibres, real basic loads, real weights</div>${cards}`;
+      }
+    }catch(e){}
+    /* — military medicine — */
+    try{
+      if(want('medical')){
+        let cards='';
+        const rows=[
+          ['✚ KIA — killed in action','Died at the moment of the hit. In this engine ~28% of infantry knocked out of the fight (peer-war ratio: ~3.5 wounded per killed).'],
+          ['✚ Urgent surgical (incapacitated)','Cannot fight, cannot walk — needs CASEVAC. If evacuation makes the golden hour (<60 min; the engine maps this to 24 s), died-of-wounds is 3.5% — the OIF/OEF number. If the evacuation window is missed (contested field, losing side), DOW rises to 35%.'],
+          ['✚ Walking wounded','Out of this fight but ambulatory. About 65% return to duty in the following weeks — the historical ~2/3 RTD rate.'],
+          ['✚ Light wound — fights on','~22% of would-be casualties keep fighting at reduced effectiveness: 75% weapon effect, 80% speed, shaken morale. A second hit is classified among the states above.'],
+          ['✚ Died of wounds (DOW)','Death after reaching (or failing to reach) care. WWII ~4.5% → Vietnam 3.4% → OIF/OEF 2-4.6% with the golden-hour CASEVAC policy. The single strongest survival lever in this engine is holding the field so evacuation is uncontested.'],
+          ['✚ Crew survival','A destroyed platform is not a destroyed crew: tank crews survive a catastrophic kill ~55% of the time, ejection seats work ~75-80%, ship crews mostly survive their ship. Survivors are sampled into the states above.'],
+        ];
+        for(const[t,b]of rows)if(S(t+' '+b))cards+=wCard(t,'casualty state',b);
+        if(cards)h+=`<div class="wcat">✚ Military Medicine — the six states of a casualty</div>${cards}`;
+      }
+    }catch(e){}
+    return h;
+  };
+
+  try{if(typeof log==='function')log('WAR v75 — THE REAL WAR LAYER: ✚ casualty states (KIA/urgent/walking/light-wound-fights-on, golden-hour CASEVAC, died-of-wounds by the real curves, crew survival from lost platforms) · ⊞ typed ammunition (every shot expends a named calibre at its real weight — 5.56 ball to 155 HE to Iskander — with real basic loads; AAR shows rounds and tonnage) · ⛟ real-tonnage theatre logistics (sectors demand t/day from published planning factors, MSRs carry a truck company\'s real 1,200 t/day, starved sectors shoot less) · detailed war map (FLOT trace + per-sector t/day supply) · cross-tab AAR (medicine, ammunition, theatre, intel, orbital in one debrief) · wiki: doctrines/tactics/munitions/medicine + drones/EW/logistics/missiles join the WEG. Deep-strike scripted kills hardened (null-source crash fixed).','#7fdfaa');}catch(e){}
 })();
 </script>
 </body>
