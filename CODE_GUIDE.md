@@ -158,6 +158,24 @@ somewhere (`unitCost`, `unitCD`, or `spawn`).
 
 **Add a sound:** add a function to the `SND` object (~line 351) using `beep()`.
 
+**The narrator ("Iron Marshal")** lives in its own block (search `NARRATOR —`).
+Two voice paths, picked automatically by `narrSpeakNow()`:
+- **Offline** (default, free): `narrSpeakOffline()` splits a line into clauses
+  (`splitClauses`), speaks each as a separate `SpeechSynthesisUtterance` with
+  drifting pitch/rate so it doesn't read flat, over a WebAudio static/click bed
+  (`radioStart`/`radioStop`/`radioClick`). `narrPickVoice()` scores the
+  browser's available voices and picks the best-sounding one it can find.
+- **Premium** (opt-in): if `SAVE.ttsKey` is set, `narrSpeakPremium()` calls the
+  ElevenLabs TTS API, caches the resulting audio per line text (`NARR.cache`),
+  and plays it through an `<audio>` element. Any failure (no key, offline, bad
+  request) falls through to the offline path automatically — the game never
+  blocks on this. The key lives only in `localStorage` on the player's machine
+  and is sent only to `api.elevenlabs.io`. Managed from the "🔑 Voice" topbar
+  button → `#voicemodal`.
+Add a new line: put it in `NARR_LINES` (event → mood + line pool + optional
+cooldown), then call `narr('eventName')` from wherever that moment happens.
+For a one-off custom line, call `say(text, mood, priority)` directly.
+
 **Add a medal:** add to `MEDALS`, then a check in `checkMedals()`.
 
 ## Known rough edges (good first fixes)

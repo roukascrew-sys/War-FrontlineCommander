@@ -187,11 +187,13 @@
   .camp-btn .cn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .camp-btn .cs{color:var(--gold);font-size:13px;white-space:nowrap;}
   /* ── first-run prompt ── */
-  #firstrun{position:absolute;inset:0;z-index:40;background:#080b11e0;display:none;align-items:center;justify-content:center;padding:24px;}
-  #firstrun.show{display:flex;}
+  #firstrun,#voicemodal{position:absolute;inset:0;z-index:40;background:#080b11e0;display:none;align-items:center;justify-content:center;padding:24px;}
+  #firstrun.show,#voicemodal.show{display:flex;}
   .fr-card{background:var(--panel);border:1px solid var(--cyan);border-radius:16px;padding:26px 30px;max-width:460px;text-align:center;box-shadow:0 20px 60px #000b;}
   .fr-h{font-size:22px;font-weight:900;color:var(--gold);margin-bottom:10px;}
   .fr-p{font-size:14px;color:var(--dim);line-height:1.6;margin-bottom:18px;}
+  .vm-voice{padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:12px;font-weight:600;color:var(--dim);}
+  .vm-voice.sel{background:var(--gold);color:var(--bg);border-color:var(--gold);}
   /* pause */
   #pauseScreen{background:#080b11ee;}
   @media (max-width:720px){
@@ -211,6 +213,7 @@
   <div class="spacer"></div>
   <button class="tb-btn" id="btn-stream">📺 Streamer Mode</button>
   <button class="tb-btn" id="btn-narr">🎙 Narrator</button>
+  <button class="tb-btn" id="btn-voice">🔑 Voice</button>
   <button class="tb-btn" id="btn-sound">🔊 Sound</button>
   <button class="tb-btn hidden" id="btn-pause">⏸ Pause</button>
   <button class="tb-btn" id="btn-menu">☰ Menu</button>
@@ -312,6 +315,29 @@
       </div>
     </div>
   </div>
+
+  <!-- VOICE SETTINGS MODAL -->
+  <div id="voicemodal">
+    <div class="fr-card" style="max-width:480px;text-align:left">
+      <div class="fr-h" style="text-align:center">🎙 Narrator Voice</div>
+      <div class="fr-p" style="text-align:center">Free by default: a styled browser voice over a radio-static bed. Optionally plug in an ElevenLabs API key for a real neural voice — your key stays in this browser and is only ever sent to elevenlabs.io.</div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px">ELEVENLABS API KEY (optional)</label>
+        <input id="vm-key" type="password" placeholder="sk_..." autocomplete="off" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-family:var(--mono);font-size:13px">
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px">VOICE</label>
+        <div class="opt" id="vm-voices"></div>
+      </div>
+      <div id="vm-status" style="font-size:12px;color:var(--dim);min-height:18px;margin-bottom:10px"></div>
+      <div class="btn-row" style="justify-content:center">
+        <button class="sbtn prim" id="vm-test">▶ Test Voice</button>
+        <button class="sbtn" id="vm-save">💾 Save</button>
+        <button class="sbtn" id="vm-clear">🗑 Clear Key</button>
+        <button class="sbtn" id="vm-close">✕ Close</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -337,7 +363,7 @@ const dist=(a,b,c,d)=>Math.hypot(a-c,b-d);
 const SAVE_KEY='FRONTLINE_SAVE_v1';
 const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0,
   unlocked:['blitzkrieg','mass'],medals:{},sound:true,narrator:true,streamOn:false,seenTut:false,
-  campaignDone:-1,campaignStars:{},daily:{}};
+  campaignDone:-1,campaignStars:{},daily:{},ttsKey:'',ttsVoice:'arnold'};
 let SAVE=load();
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
 function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(SAVE));}catch(e){}}
@@ -491,29 +517,50 @@ const SND={
 
 /* ═══════════════════════════════════════════════════════════════════════
    NARRATOR — "THE IRON MARSHAL"
-   A gravel-voiced, sardonic war-room announcer. Speaks through the browser's
-   SpeechSynthesis with a distinct per-mood pitch/rate PLUS random jitter, so
-   he never falls into a monotone. Every spoken line is mirrored as an on-screen
-   subtitle so he still has presence when audio is muted or unsupported.
+   A gravel-voiced, sardonic war-room announcer. Two voice paths:
+     1) OFFLINE (always available, zero setup): browser SpeechSynthesis, but
+        dressed up — best-available-voice picking, lines are split into
+        clauses spoken as separate utterances with per-clause pitch/rate
+        drift (so delivery breathes instead of reading flat), and a WebAudio
+        "command-net radio" bed (static crackle + key-click) plays under him
+        to sell the character even though the underlying voice is synthetic.
+     2) PREMIUM (opt-in): a real neural TTS voice via the ElevenLabs API.
+        Needs the player's own API key (stored only in their browser's
+        localStorage, sent only to ElevenLabs). Lines are cached by text so
+        repeats don't re-spend quota. Falls back to the offline path
+        automatically on any failure — missing key, offline, bad request.
+   Every spoken line is mirrored as an on-screen subtitle regardless of path.
    ═══════════════════════════════════════════════════════════════════════ */
 const NARR={
   voice:null, speaking:false, queue:[], persona:'IRON MARSHAL', cool:{},
-  // mood → base rate (r) & pitch (p). Jittered on every utterance.
+  audioEl:null, cache:{}, // text -> object URL, for premium voice
+  // mood → base rate (r) & pitch (p). Jittered per clause.
   moods:{
     grim:{r:0.90,p:0.70}, deadpan:{r:0.98,p:0.80}, hype:{r:1.13,p:1.00},
     alarm:{r:1.20,p:1.08}, mock:{r:1.02,p:0.82},   brief:{r:0.95,p:0.76},
     proud:{r:1.05,p:0.92},
   },
 };
+/* rank browser voices — favour ones a platform tags as premium/neural, then
+   known deep male voices, before falling back to whatever is first. */
 function narrPickVoice(){
   try{
     const ss=window.speechSynthesis; if(!ss)return;
     const vs=ss.getVoices(); if(!vs||!vs.length)return;
     const en=vs.filter(v=>/en[-_]?/i.test(v.lang)||/english/i.test(v.name));
     const pool=en.length?en:vs;
-    const pref=['Daniel','David','George','Fred','Arthur','Google UK English Male','Microsoft David','Rishi','Male'];
-    for(const nm of pref){const m=pool.find(v=>v.name.indexOf(nm)>=0);if(m){NARR.voice=m;return;}}
-    NARR.voice=pool[0];
+    const score=v=>{
+      let s=0; const n=v.name;
+      if(/neural|natural|enhanced|premium|studio/i.test(n))s+=50;
+      if(/Daniel|Arthur|George|Rishi|Ryan|Guy|Eric/i.test(n))s+=12;
+      if(/Google UK English Male|Microsoft (Guy|Ryan|Christopher)/i.test(n))s+=10;
+      if(/David|Fred|Male/i.test(n))s+=5;
+      if(v.localService===false)s+=3; // often better cloud voices
+      return s;
+    };
+    let best=pool[0],bestS=-1;
+    for(const v of pool){const s=score(v); if(s>bestS){bestS=s;best=v;}}
+    NARR.voice=best;
   }catch(e){}
 }
 if(window.speechSynthesis){ narrPickVoice(); try{window.speechSynthesis.onvoiceschanged=narrPickVoice;}catch(e){} }
@@ -527,34 +574,131 @@ function showNarr(text){
   const ms=Math.max(2400,Math.min(7000,text.length*58));
   narrHideT=setTimeout(()=>el.classList.remove('show'),ms);
 }
+
+/* ── "command-net radio" SFX bed (WebAudio) — plays under every offline line ── */
+let RADIO={ctx:null,noise:null,filt:null,gain:null,running:false};
+function radioCtx(){ if(!RADIO.ctx){try{RADIO.ctx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}} return RADIO.ctx; }
+function radioClick(open){
+  const c=radioCtx(); if(!c)return;
+  try{
+    const o=c.createOscillator(),g=c.createGain(),f=c.createBiquadFilter();
+    f.type='bandpass'; f.frequency.value=open?1400:900; f.Q.value=4;
+    o.type='square'; o.frequency.value=open?180:110;
+    g.gain.value=0.05;
+    o.connect(f); f.connect(g); g.connect(c.destination);
+    o.start(); g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.05); o.stop(c.currentTime+0.06);
+  }catch(e){}
+}
+function radioStart(){
+  const c=radioCtx(); if(!c||RADIO.running)return;
+  try{
+    const bufSize=2*c.sampleRate;
+    const buf=c.createBuffer(1,bufSize,c.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<bufSize;i++)d[i]=(Math.random()*2-1);
+    const src=c.createBufferSource(); src.buffer=buf; src.loop=true;
+    const filt=c.createBiquadFilter(); filt.type='bandpass'; filt.frequency.value=2200; filt.Q.value=0.7;
+    const gain=c.createGain(); gain.gain.value=0.012;
+    src.connect(filt); filt.connect(gain); gain.connect(c.destination);
+    src.start();
+    RADIO.noise=src; RADIO.filt=filt; RADIO.gain=gain; RADIO.running=true;
+    radioClick(true);
+  }catch(e){}
+}
+function radioStop(){
+  if(!RADIO.running)return;
+  try{ radioClick(false); RADIO.gain.gain.exponentialRampToValueAtTime(0.0001,radioCtx().currentTime+0.15);
+    const src=RADIO.noise; setTimeout(()=>{try{src.stop();}catch(e){}},200); }catch(e){}
+  RADIO.running=false;
+}
+
+/* split a line into speakable clauses so pitch/rate can drift line-to-line */
+function splitClauses(text){
+  const parts=text.split(/(?<=[,;—-])\s+|(?<=\.\.\.)\s+/).map(s=>s.trim()).filter(Boolean);
+  return parts.length?parts:[text];
+}
+function narrSpeakOffline(text,mood){
+  const ss=window.speechSynthesis;
+  if(!ss){NARR.speaking=false;drainNarr();return;}
+  const clauses=splitClauses(text);
+  const m=NARR.moods[mood]||NARR.moods.deadpan;
+  radioStart();
+  let i=0;
+  const speakNext=()=>{
+    if(i>=clauses.length){ radioStop(); NARR.speaking=false; drainNarr(); return; }
+    const clause=clauses[i++];
+    try{
+      const u=new SpeechSynthesisUtterance(clause);
+      // drift pitch/rate per clause — first clause a touch higher (the "hook"), trailing clauses settle lower
+      const drift=(i===1?0.03:0)-(i>2?0.02*(i-2):0);
+      u.rate=clamp(m.r+drift+rnd(-0.05,0.05),0.55,1.7);
+      u.pitch=clamp(m.p+drift*1.4+rnd(-0.06,0.06),0.35,1.5);
+      u.volume=0.95;
+      if(NARR.voice)u.voice=NARR.voice;
+      u.onend=speakNext; u.onerror=speakNext;
+      ss.speak(u);
+    }catch(e){speakNext();}
+  };
+  NARR.speaking=true;
+  speakNext();
+}
+/* ── premium path: ElevenLabs neural TTS, cached per line, auto-fallback ── */
+const ELEVEN_VOICES={
+  arnold:{id:'VR6AewLTigWG4xSOukaG',name:'Arnold — deep & commanding'},
+  adam:{id:'pNInz6obpgDQGcFmaJgB',name:'Adam — resonant & clear'},
+  josh:{id:'TxGEqnHWrfWFTfGW9XjX',name:'Josh — young & sharp'},
+  antoni:{id:'ErXwobaYiN019PkySvjV',name:'Antoni — warm & steady'},
+};
+async function narrSpeakPremium(text,mood){
+  try{
+    const key=SAVE.ttsKey, voiceId=(ELEVEN_VOICES[SAVE.ttsVoice]||ELEVEN_VOICES.arnold).id;
+    if(!key)throw new Error('no key');
+    let url=NARR.cache[text];
+    if(!url){
+      const resp=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+voiceId,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','xi-api-key':key,'Accept':'audio/mpeg'},
+        body:JSON.stringify({text,model_id:'eleven_turbo_v2_5',
+          voice_settings:{stability:0.42,similarity_boost:0.8,style:0.35,use_speaker_boost:true}}),
+      });
+      if(!resp.ok)throw new Error('tts http '+resp.status);
+      const blob=await resp.blob();
+      url=URL.createObjectURL(blob);
+      NARR.cache[text]=url;
+    }
+    if(!NARR.audioEl){NARR.audioEl=new Audio();}
+    const a=NARR.audioEl;
+    a.src=url; a.volume=1;
+    a.onended=()=>{NARR.speaking=false;drainNarr();};
+    a.onerror=()=>{NARR.speaking=false;narrSpeakOffline(text,mood);};
+    NARR.speaking=true;
+    await a.play();
+  }catch(e){
+    NARR.speaking=false;
+    narrSpeakOffline(text,mood); // graceful fallback — never breaks the game
+  }
+}
 function narrSpeakNow(text,mood){
   showNarr(text);
   if(!SAVE.narrator){NARR.speaking=false;drainNarr();return;}
-  const ss=window.speechSynthesis;
-  if(!ss){NARR.speaking=false;return;}
-  try{
-    const u=new SpeechSynthesisUtterance(text);
-    const m=NARR.moods[mood]||NARR.moods.deadpan;
-    u.rate=clamp(m.r+rnd(-0.06,0.06),0.6,1.7);
-    u.pitch=clamp(m.p+rnd(-0.07,0.07),0.4,1.5);
-    u.volume=0.95;
-    if(NARR.voice)u.voice=NARR.voice;
-    u.onend=()=>{NARR.speaking=false;drainNarr();};
-    u.onerror=()=>{NARR.speaking=false;drainNarr();};
-    NARR.speaking=true;
-    ss.speak(u);
-  }catch(e){NARR.speaking=false;drainNarr();}
+  if(SAVE.ttsKey){ narrSpeakPremium(text,mood); return; }
+  narrSpeakOffline(text,mood);
 }
 function drainNarr(){ if(NARR.speaking||!NARR.queue.length)return; const it=NARR.queue.shift(); narrSpeakNow(it.text,it.mood); }
 // prio: 2 = interrupt everything (victory/HQ alarm), 1 = important, 0 = flavour (drop if busy)
 function say(text,mood,prio){
   prio=prio||0;
-  if(prio>=2){ try{window.speechSynthesis&&window.speechSynthesis.cancel();}catch(e){} NARR.queue.length=0; NARR.speaking=false; NARR.queue.push({text,mood}); drainNarr(); return; }
+  if(prio>=2){ narrStop(); NARR.queue.push({text,mood}); drainNarr(); return; }
   if(prio===0 && (NARR.speaking||NARR.queue.length>0))return;
   if(NARR.queue.length>2)NARR.queue.length=2;
   NARR.queue.push({text,mood}); drainNarr();
 }
-function narrStop(){ try{window.speechSynthesis&&window.speechSynthesis.cancel();}catch(e){} NARR.queue.length=0; NARR.speaking=false; }
+function narrStop(){
+  try{window.speechSynthesis&&window.speechSynthesis.cancel();}catch(e){}
+  try{if(NARR.audioEl){NARR.audioEl.pause();NARR.audioEl.currentTime=0;}}catch(e){}
+  radioStop();
+  NARR.queue.length=0; NARR.speaking=false;
+}
 
 /* line banks — the Marshal's personality lives here. cool = seconds between repeats. */
 const NARR_LINES={
@@ -1581,6 +1725,41 @@ document.getElementById('btn-sound').onclick=()=>{SAVE.sound=!SAVE.sound;persist
 document.getElementById('btn-narr').onclick=()=>{SAVE.narrator=!SAVE.narrator;persist();refreshTopbar();
   if(SAVE.narrator)say("Iron Marshal, back on the net. Let's win something.",'deadpan',2); else narrStop();};
 document.getElementById('btn-menu').onclick=()=>{ if(G&&!G.over){ if(!confirm('Abandon the current battle and return to menu?'))return; } openMenu(); };
+
+/* ═══ VOICE SETTINGS MODAL ═══ */
+function buildVoiceModal(){
+  const vv=document.getElementById('vm-voices'); vv.innerHTML='';
+  for(const k in ELEVEN_VOICES){
+    const b=document.createElement('button'); b.className='vm-voice'+(SAVE.ttsVoice===k?' sel':'');
+    b.textContent=ELEVEN_VOICES[k].name;
+    b.onclick=()=>{SAVE.ttsVoice=k;buildVoiceModal();};
+    vv.appendChild(b);
+  }
+  document.getElementById('vm-key').value=SAVE.ttsKey||'';
+  document.getElementById('vm-status').textContent=SAVE.ttsKey?
+    'Premium voice active — lines are cached per phrase to save quota.':
+    'No key set — using the free styled radio voice.';
+}
+function openVoiceModal(){ buildVoiceModal(); document.getElementById('voicemodal').classList.add('show'); }
+function closeVoiceModal(){ document.getElementById('voicemodal').classList.remove('show'); }
+document.getElementById('btn-voice').onclick=openVoiceModal;
+document.getElementById('vm-close').onclick=closeVoiceModal;
+document.getElementById('vm-save').onclick=()=>{
+  SAVE.ttsKey=document.getElementById('vm-key').value.trim(); persist(); buildVoiceModal();
+  document.getElementById('vm-status').textContent='Saved.'+(SAVE.ttsKey?' Premium voice will be used from now on.':'');
+};
+document.getElementById('vm-clear').onclick=()=>{
+  SAVE.ttsKey=''; NARR.cache={}; persist(); buildVoiceModal();
+};
+document.getElementById('vm-test').onclick=()=>{
+  SAVE.ttsKey=document.getElementById('vm-key').value.trim();
+  document.getElementById('vm-status').textContent='Testing...';
+  narrStop();
+  say("This is the Iron Marshal, reporting for duty. Let's see how I sound.",'deadpan',2);
+  setTimeout(()=>{document.getElementById('vm-status').textContent=SAVE.ttsKey?
+    'If you heard a natural voice, the key works — hit Save to keep it.':
+    'That was the free styled voice. Add a key above for a neural voice.';},2200);
+};
 document.getElementById('btn-pause').onclick=togglePause;
 document.getElementById('btn-play').onclick=()=>{LAUNCH=null;start();};
 document.getElementById('btn-daily').onclick=()=>launchDaily();
