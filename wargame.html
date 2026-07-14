@@ -166,6 +166,13 @@
   #narrator.show{opacity:1;transform:translateX(-50%) translateY(0);}
   #narrator .np{color:var(--gold);font-weight:800;font-size:11px;letter-spacing:1px;margin-right:8px;white-space:nowrap;}
   #narrator .nt{color:var(--ink);}
+  /* ── rival enemy general subtitle ── */
+  #rivalbox{position:absolute;top:54px;left:14px;max-width:250px;background:linear-gradient(180deg,#1c1014ee,#0b0708ee);
+    border:1px solid var(--red2);border-left:3px solid var(--red);border-radius:8px;padding:6px 10px;
+    opacity:0;transform:translateY(-6px);pointer-events:none;transition:.2s;z-index:11;font-size:11.5px;line-height:1.4;}
+  #rivalbox.show{opacity:1;transform:translateY(0);}
+  #rivalbox .rp{display:block;color:var(--red);font-weight:800;font-size:10px;letter-spacing:.5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #rivalbox .rt{color:var(--ink);}
   /* ── tutorial coach mark ── */
   #tutbox{position:absolute;left:50%;top:20%;transform:translateX(-50%) scale(.98);
     max-width:min(560px,90vw);background:linear-gradient(180deg,#141d2c,#0c1119);border:1.5px solid var(--cyan);
@@ -226,6 +233,7 @@
   <!-- HUD -->
   <div id="hud" class="hidden">
     <div id="scoreboard"></div>
+    <div id="rivalbox"><span class="rp">📡 <span id="rival-name"></span></span><span class="rt"></span></div>
     <div id="objbar"></div>
     <div id="basebars">
       <div class="bhp blue"><div class="lbl">YOUR HQ</div><div class="track"><div class="fill" id="hpB"></div></div></div>
@@ -433,6 +441,53 @@ const UNITS={
 };
 const HOTBAR=['rifle','atgm','sniper','tank','ifv','arty','mlrs','aa','heli','drone','medic','jammer'];
 
+/* ── VETERANCY — units that rack up kills mid-battle grow stronger, on both sides ── */
+const VET_RANKS=[
+  {kills:0,  name:'',         chev:0, hpMul:1,    dmgMul:1   },
+  {kills:3,  name:'Seasoned', chev:1, hpMul:1.12, dmgMul:1.12},
+  {kills:7,  name:'Veteran',  chev:2, hpMul:1.28, dmgMul:1.28},
+  {kills:14, name:'Elite',    chev:3, hpMul:1.50, dmgMul:1.55},
+];
+
+/* ── LANE TERRAIN — each match randomises a tactical modifier per lane ── */
+const TERRAINS={
+  open:  {name:'Open Field', glyph:'▬', desc:'No cover — faster advances, no bonuses.',
+    rngMul:1.00, spdMul:1.10, catDmgMul:{}},
+  forest:{name:'Forest',     glyph:'♣', desc:'Thick cover — infantry ambush harder, vehicles slow down.',
+    rngMul:0.85, spdMul:0.82, catDmgMul:{inf:1.18}},
+  hill:  {name:'Hilltop',    glyph:'▲', desc:'High ground — gunners & artillery see and hit further.',
+    rngMul:1.25, spdMul:0.92, catDmgMul:{arty:1.15,veh:1.08}},
+};
+const TERRAIN_KEYS=Object.keys(TERRAINS);
+
+/* ── RIVAL ENEMY GENERALS — a named opposing commander per battle, flavor + AI bias ── */
+const GENERALS=[
+  {name:'Gen. Korvinov "Steel Fist"',glyph:'★',col:'#ff9f40',bias:'tank',
+    intro:"Korvinov here. Let's see how your line holds against real steel.",
+    taunts:["Armour doesn't ask permission.","You call that a defense?","Fall back — while you still can."],
+    lose:["...Impossible.","This isn't over.","Regroup — we push again."]},
+  {name:'Col. Reyes "Ghost Wing"',glyph:'✦',col:'#ffdf7f',bias:'drone',
+    intro:"Reyes. You won't hear us coming until it's too late.",
+    taunts:["Count the blips. There's more where those came from.","Cheap, fast, and there's a hundred of them.","Swat one, ten replace it."],
+    lose:["Ground the fleet. Fall back to base.","...Recalculating.","Not the outcome I modeled."]},
+  {name:'Marshal Dubois "Long Reach"',glyph:'⊞',col:'#ff9f7f',bias:'arty',
+    intro:"Dubois. Artillery wins wars — infantry just holds the ground after.",
+    taunts:["Walk the guns forward.","Feel free to duck. It won't help.","Range is a decision, not a limit."],
+    lose:["Guns... silent. Unacceptable.","Reposition the batteries.","We'll range you better next time."]},
+  {name:'Col. Voss "Rolling Thunder"',glyph:'▤',col:'#ff8f6f',bias:'mlrs',
+    intro:"Voss. When I fire, I don't fire once.",
+    taunts:["Saturate the sector.","One salvo, whole lane gone.","Reload, repeat."],
+    lose:["Rockets... spent. Regroup.","Recalculate the barrage.","This isn't the last salvo."]},
+  {name:'Air Marshal Bakr "Sky Reaper"',glyph:'⬡',col:'#d49bff',bias:'heli',
+    intro:"Bakr. The sky belongs to whoever's willing to use it.",
+    taunts:["Nowhere to hide from above.","Vertical envelopment. Deal with it.","Air superiority isn't a theory."],
+    lose:["Birds down. Fall back to base.","...Reassess the airspace.","Ground crews, rearm — now."]},
+];
+const GENERAL_DEFAULT={name:'Unknown Commander',glyph:'☭',col:'#ff5a4a',
+  intro:"No time for introductions. Let's fight.",
+  taunts:["You'll regret that push.","Hold... hold... now!","Not bad. Not good enough."],
+  lose:["...Unacceptable.","We'll be back.","This isn't finished."]};
+
 /* ── MODES & DIFFICULTY ── */
 const MODES={
   skirmish:{name:'Skirmish',desc:'Standard battle. Destroy the enemy HQ before they destroy yours. The main event.'},
@@ -564,6 +619,18 @@ function narrPickVoice(){
   }catch(e){}
 }
 if(window.speechSynthesis){ narrPickVoice(); try{window.speechSynthesis.onvoiceschanged=narrPickVoice;}catch(e){} }
+
+let rivalHideT=null;
+function showRival(text){
+  if(!G||!G.general)return;
+  const el=document.getElementById('rivalbox'); if(!el)return;
+  document.getElementById('rival-name').textContent=G.general.name;
+  el.querySelector('.rt').textContent=text;
+  el.classList.add('show');
+  clearTimeout(rivalHideT);
+  const ms=Math.max(2600,Math.min(6500,text.length*62));
+  rivalHideT=setTimeout(()=>el.classList.remove('show'),ms);
+}
 
 let narrHideT=null;
 function showNarr(text){
@@ -752,6 +819,14 @@ const NARR_LINES={
     "Defeat. We'll speak of this... never.",
     "The line broke. Learn from it, or don't — the graveyard's patient.",
     "They took the field. Regroup. Rethink. Return."]},
+  recon:{mood:'deadpan',prio:0,cool:8,lines:[
+    "Flare's up — I can see their whole lane now.",
+    "Recon's in the air. Nothing's hiding down there.",
+    "Eyes on. Use it before it fades."]},
+  emp:{mood:'hype',prio:0,cool:8,lines:[
+    "Their whole lane just went dark. Push it!",
+    "EMP's away — that lane is dead weight now.",
+    "Scratch one lane's worth of electronics."]},
 };
 function narr(ev,data){
   const b=NARR_LINES[ev]; if(!b)return;
@@ -790,6 +865,7 @@ function newGame(){
     cdMul:(L&&L.cdMul)||1,
     t:0, over:false, result:null, paused:false,
     laneY, laneCount:3,
+    laneTerrain:kind==='tutorial'?['open','open','open']:[pick(TERRAIN_KEYS),pick(TERRAIN_KEYS),pick(TERRAIN_KEYS)],
     units:[], projs:[], parts:[], floats:[], rings:[],
     cp:60, cpRate:9*(perk.cpMul||1), cpMax:280,
     ecp:70, ecpRate:11*diff.cpMul*ecpMul,
@@ -799,6 +875,8 @@ function newGame(){
     combo:0, comboT:0, bestCombo:0, firstBlood:false,
     cds:{},
     strikeCd:0, strikeCdMax:22*(perk.strikeCdMul||1),
+    reconCd:0, reconMax:20, flareLane:-1, flareT:0,
+    empCd:0, empMax:32, empLane:-1, empT:0,
     shake:0, flash:0, slowmo:0,
     selCard:HOTBAR[0],
     wave:0, waveT:0, waveInterval:30,
@@ -807,6 +885,10 @@ function newGame(){
     aiHold:kind==='tutorial', // AI frozen until tutorial releases it
     announceT:0, idleTauntT:20,
   };
+  // rival enemy general — flavor + drives the AI's unit-composition bias
+  if(G.enemyBias){ G.general=GENERALS.find(x=>x.bias===G.enemyBias)||GENERAL_DEFAULT; }
+  else { G.general=pick(GENERALS); G.enemyBias=G.general.bias; }
+  G.rivalTauntT=rnd(20,28);
   // daily mutators
   if(L&&L.type==='daily'&&L.mut&&L.mut.apply){try{L.mut.apply(G);}catch(e){}}
   for(const u of HOTBAR)G.cds[u]=0;
@@ -851,6 +933,7 @@ function spawn(side,key,lane){
   const x=side==='B'?rnd(40,70):W-rnd(40,70);
   G.units.push({id:_uid++,side,key,lane,x,y,
     hp,maxHp:hp,dmg,spd,rof:u.rof,rng:u.rng,cd:rnd(0,u.rof),
+    baseHp:hp,baseDmg:dmg,vetRank:0,vetKills:0,
     r:u.r,col:u.col,glyph:u.glyph,flies:!!u.flies,arc:!!u.arc,aa:!!u.aa,onlyAir:!!u.onlyAir,
     splash:u.splash,kamikaze:!!u.kamikaze,armor:!!u.armor,
     vsArmor:u.vsArmor||1,vsAir:u.vsAir||1,cat:u.cat,name:u.name,
@@ -890,6 +973,30 @@ function tryStrike(lane,x){
   announce('MISSILE STRIKE','danger close');
   return true;
 }
+/* ── COMMANDER POWERS: Recon Flare (free intel) & EMP Pulse (rank 3, jams a lane) ── */
+function tryRecon(lane){
+  if(!G||G.reconCd>0||G.over||G.paused)return false;
+  G.reconCd=G.reconMax;
+  G.flareLane=lane; G.flareT=6.5;
+  const y=G.laneY[lane]*H;
+  for(let i=0;i<10;i++)G.parts.push({x:W*0.55+rnd(-20,20),y:y+rnd(-16,16),vx:rnd(-30,30),vy:rnd(-40,-10),life:0.7,age:0,col:'#5ff0e0',sz:2.2});
+  explode(W*0.55,y,44,'B',8);
+  announce('RECON FLARE','lane exposed','#5ff0e0');
+  narr('recon');
+  return true;
+}
+function tryEmp(lane){
+  if(!G||G.empCd>0||G.over||G.paused||SAVE.lvl<3)return false;
+  G.empCd=G.empMax;
+  G.empLane=lane; G.empT=3.4;
+  const y=G.laneY[lane]*H;
+  for(const u of G.units){ if(u.side==='R'&&u.lane===lane&&u.alive)u.sup=1; }
+  explode(W*0.62,y,60,'B',22);
+  G.shake=Math.max(G.shake,8);
+  announce('EMP PULSE','lane jammed','#c9a0ff');
+  narr('emp');
+  return true;
+}
 
 /* ── COMBAT ── */
 function damage(u,dmg,src){
@@ -901,6 +1008,20 @@ function damage(u,dmg,src){
   if(src&&src.side==='B'){G.dmgDealt+=dmg;}
   if(u.hp<=0){ killUnit(u,src); }
 }
+/* veterancy — units that keep racking up kills mid-battle grow stronger, either side */
+function grantVetXP(u){
+  if(!u||!u.alive)return;
+  u.vetKills=(u.vetKills||0)+1;
+  let newRank=u.vetRank||0;
+  for(let i=VET_RANKS.length-1;i>=0;i--){ if(u.vetKills>=VET_RANKS[i].kills){ newRank=i; break; } }
+  if(newRank>u.vetRank){
+    const r=VET_RANKS[newRank], oldMax=u.maxHp;
+    u.maxHp=u.baseHp*r.hpMul; u.dmg=u.baseDmg*r.dmgMul;
+    u.hp=Math.min(u.maxHp,u.hp+(u.maxHp-oldMax)); // the promotion heals by the stat delta, not to full
+    u.vetRank=newRank;
+    if(u.side==='B'){ floatText(u.x,u.y-u.r-16,r.name.toUpperCase()+' ▲','#ffce5a'); SND.combo(2); }
+  }
+}
 function killUnit(u,src){
   if(!u.alive)return; u.alive=false;
   explode(u.x,u.y,u.r*2+6,u.side, u.cat==='veh'||u.cat==='arty'?26:12);
@@ -908,6 +1029,7 @@ function killUnit(u,src){
   // morale shock — watching a comrade die suppresses nearby friendlies
   for(const o of G.units){ if(o.alive&&o.side===u.side&&o!==u&&dist(o.x,o.y,u.x,u.y)<70){ o.sup=Math.min(1,(o.sup||0)+0.16); } }
   const killer=src&&src.side;
+  if(src&&src.alive)grantVetXP(src);
   if(killer==='B'){
     G.kills++;
     if(!G.firstBlood){G.firstBlood=true; if(G.t>1)narr('firstBlood');}
@@ -942,6 +1064,9 @@ function fire(u,tgt){
   // matchup multipliers (vsArmor/vsAir can now be <1 = penalty, e.g. sniper vs armour)
   if(tgt.armor&&u.vsArmor!==1)dmg*=u.vsArmor;
   if(tgt.flies&&u.vsAir!==1)dmg*=u.vsAir;
+  // lane terrain — hilltop favours ranged/arty, forest favours dug-in infantry
+  const lt=G.laneTerrain&&TERRAINS[G.laneTerrain[u.lane]];
+  if(lt&&lt.catDmgMul&&lt.catDmgMul[u.cat])dmg*=lt.catDmgMul[u.cat];
   // ambush — guerrilla units land a heavy opening blow
   if(!u.firedOnce){ if(u.ambush&&u.ambush>1)dmg*=u.ambush; u.firedOnce=true; }
   if(u.kamikaze){ u.diving=tgt; return; }
@@ -1002,6 +1127,10 @@ function step(dt){
   // cooldowns
   for(const k in G.cds)if(G.cds[k]>0)G.cds[k]=Math.max(0,G.cds[k]-dt);
   if(G.strikeCd>0)G.strikeCd=Math.max(0,G.strikeCd-dt);
+  if(G.reconCd>0)G.reconCd=Math.max(0,G.reconCd-dt);
+  if(G.empCd>0)G.empCd=Math.max(0,G.empCd-dt);
+  if(G.flareT>0)G.flareT=Math.max(0,G.flareT-dt);
+  if(G.empT>0)G.empT=Math.max(0,G.empT-dt);
   // economy
   G.cp=Math.min(G.cpMax,G.cp+G.cpRate*dt);
   // combo timer
@@ -1013,6 +1142,8 @@ function step(dt){
   if(G.mode==='survival'){ G.waveT+=dt; if(G.waveT>=G.waveInterval){G.waveT=0;G.wave++;G.aiThink=Math.max(0.5,G.aiThink*0.9);announce('WAVE '+(G.wave+1),'incoming','#ff5a4a');chatReact('wave',G.wave+1);narr('wave');} }
   // idle taunt when the player is sitting on empty coffers
   G.idleTauntT-=dt; if(G.idleTauntT<=0){ G.idleTauntT=18; if(G.cp<25&&G.t>18&&!G.tutorial)narr('lowCp'); }
+  // rival general periodic taunts
+  if(!G.tutorial&&G.general){ G.rivalTauntT-=dt; if(G.rivalTauntT<=0){ G.rivalTauntT=rnd(24,36); showRival(pick(G.general.taunts)); } }
   aiStep(dt);
   updateUnits(dt);
   if(!G.over)checkWin();
@@ -1041,6 +1172,7 @@ function computeSpotting(){
   const sr=G.spotBase*(G.wxSpot||1);
   for(const u of G.units){ if(!u.alive)continue;
     if(u.side==='B'){u.spotted=true;continue;}
+    if(G.flareT>0&&u.lane===G.flareLane){u.spotted=true;continue;} // recon flare exposes the whole lane
     if(u.x<W*0.52){u.spotted=true;continue;}      // anything in our half is seen
     let seen=false;
     for(const o of G.units){ if(o.alive&&o.side==='B'&&dist(o.x,o.y,u.x,u.y)<sr){seen=true;break;} }
@@ -1069,6 +1201,7 @@ function updateUnits(dt){
     if(!u.alive)continue;
     if(u.muzzle>0)u.muzzle-=dt; if(u.hitFlash>0)u.hitFlash-=dt*4;
     if(u.sup>0)u.sup=Math.max(0,u.sup-dt*0.34); // morale recovers over time
+    if(G.empT>0&&u.side==='R'&&u.lane===G.empLane)u.sup=Math.max(u.sup||0,0.95); // EMP pulse jams a lane
     u.bob+=dt*6;
     if(u.support)supportTick(u,dt);
     // kamikaze diving
@@ -1079,8 +1212,9 @@ function updateUnits(dt){
           u.alive=false; SND.boom(); G.shake=Math.max(G.shake,6); }
         continue; } }
     const supp=u.sup||0;
-    const spdMul=(G.wxSpd||1)*(1-supp*0.45);     // weather + suppression slow the advance
-    const rngEff=u.rng*(G.wxRng||1);              // weather shortens engagement range
+    const lt=G.laneTerrain&&TERRAINS[G.laneTerrain[u.lane]];
+    const spdMul=(G.wxSpd||1)*(lt?lt.spdMul:1)*(1-supp*0.45); // weather + terrain + suppression pace the advance
+    const rngEff=u.rng*(G.wxRng||1)*(lt?lt.rngMul:1);          // weather + terrain shape engagement range
     // rout — a pinned unit recoils toward home instead of pressing forward
     if(supp>=0.9 && !u.support){
       u.x-=dir(u.side)*u.spd*spdMul*0.6*dt;
@@ -1163,6 +1297,7 @@ function draw(){
     for(const p of G.projs)drawProj(p);
     for(const u of air)drawUnit(u);
     drawParts();
+    drawPowerFX();
     drawWeather();
   }
   cx.restore();
@@ -1198,6 +1333,16 @@ function drawField(){
   }
   // centre line
   cx.strokeStyle='rgba(255,255,255,0.04)';cx.lineWidth=2;cx.beginPath();cx.moveTo(W/2,H*0.24);cx.lineTo(W/2,H*0.86);cx.stroke();
+  // lane terrain badges
+  if(G&&G.laneTerrain)for(let i=0;i<3;i++){
+    const y=G.laneY[i]*H, t=TERRAINS[G.laneTerrain[i]]; if(!t)continue;
+    cx.font='11px var(--mono)';cx.textAlign='left';cx.fillStyle='rgba(200,220,255,0.4)';
+    cx.fillText(t.glyph+' '+t.name,78,y-22);
+  }
+}
+function drawPowerFX(){
+  if(G.flareT>0){ const y=G.laneY[G.flareLane]*H; cx.fillStyle='rgba(95,240,224,0.06)'; cx.fillRect(60,y-24,W-120,48); }
+  if(G.empT>0){ const y=G.laneY[G.empLane]*H; cx.fillStyle='rgba(201,160,255,0.09)'; cx.fillRect(60,y-24,W-120,48); }
 }
 function drawBases(){
   // player HQ (left), enemy HQ (right)
@@ -1250,6 +1395,14 @@ function drawUnit(u){
   // suppression / rout marker
   if((u.sup||0)>0.35){cx.fillStyle=(u.sup>=0.9)?'rgba(255,90,74,0.95)':'rgba(255,171,64,0.9)';
     cx.font='bold 11px var(--mono)';cx.textAlign='center';cx.fillText(u.sup>=0.9?'!!':'!',x,y-u.r-9);}
+  // veterancy chevrons
+  if(u.vetRank>0){
+    cx.strokeStyle='#ffce5a';cx.lineWidth=1.6;
+    for(let c=0;c<VET_RANKS[u.vetRank].chev;c++){
+      const cy0=y+u.r+8+c*5;
+      cx.beginPath();cx.moveTo(x-4,cy0+3);cx.lineTo(x,cy0);cx.lineTo(x+4,cy0+3);cx.stroke();
+    }
+  }
 }
 function drawProj(p){
   if(p.arc){cx.strokeStyle=p.col;cx.lineWidth=2;cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(p.x-p.vx*0.02,p.y-p.vy*0.02);cx.stroke();
@@ -1289,6 +1442,7 @@ function syncHUD(){
   else if(G.kind==='tutorial'){ob=`<div class="big">TRAINING</div>learn the ropes`;}
   else{ob=`<div class="big">SKIRMISH</div>${DIFFS[G.diff].name} · ${DOCTRINES[G.doc].name}`;}
   if(G.wx)ob+=`<div style="margin-top:3px;color:var(--cyan)">${G.wx.glyph} ${G.wx.name}</div>`;
+  if(G.general&&!G.tutorial)ob+=`<div style="margin-top:2px;color:${G.general.col}">⚔ vs ${G.general.name}</div>`;
   document.getElementById('objbar').innerHTML=ob;
   // hotbar cooldowns / affordability
   for(const key of HOTBAR){
@@ -1306,6 +1460,21 @@ function syncHUD(){
     if(G.strikeCd>0){cdEl.style.display='flex';cdEl.textContent=Math.ceil(G.strikeCd);stk.classList.add('cant');}
     else{cdEl.style.display='none';stk.classList.remove('cant');}
     stk.classList.toggle('sel',G.selCard==='strike');
+  }
+  // recon flare button
+  const rc=document.getElementById('card-recon');
+  if(rc){const cdEl=rc.querySelector('.cd');
+    if(G.reconCd>0){cdEl.style.display='flex';cdEl.textContent=Math.ceil(G.reconCd);rc.classList.add('cant');}
+    else{cdEl.style.display='none';rc.classList.remove('cant');}
+    rc.classList.toggle('sel',G.selCard==='recon');
+  }
+  // emp pulse button (rank-gated)
+  const ec=document.getElementById('card-emp');
+  if(ec){const cdEl=ec.querySelector('.cd'); const locked=SAVE.lvl<3;
+    if(locked){cdEl.style.display='none';ec.classList.add('cant');}
+    else if(G.empCd>0){cdEl.style.display='flex';cdEl.textContent=Math.ceil(G.empCd);ec.classList.add('cant');}
+    else{cdEl.style.display='none';ec.classList.remove('cant');}
+    ec.classList.toggle('sel',G.selCard==='emp');
   }
 }
 
@@ -1331,6 +1500,25 @@ function buildHotbar(){
     <div class="cd" style="display:none"></div>`;
   st.onclick=()=>{G.selCard='strike';showLaneHint();};
   hb.appendChild(st);
+  // recon flare — free, exposes a whole lane through the fog for a few seconds
+  const rc=document.createElement('div');
+  rc.className='card'; rc.id='card-recon'; rc.style.borderColor='var(--cyan)';
+  rc.innerHTML=`<span class="key">R</span><div class="glyph" style="color:var(--cyan)">📡</div>
+    <div class="nm">Recon Flare</div><div class="cost" style="color:var(--cyan)">FREE</div>
+    <div class="cd" style="display:none"></div>`;
+  rc.title='Reveals every enemy in a lane through fog/weather for a few seconds.';
+  rc.onclick=()=>{G.selCard='recon';showLaneHint();};
+  hb.appendChild(rc);
+  // emp pulse — rank 3, jams (near-fully suppresses) a whole lane briefly
+  const empLocked=SAVE.lvl<3;
+  const ec=document.createElement('div');
+  ec.className='card'+(empLocked?' cant':''); ec.id='card-emp'; ec.style.borderColor='var(--purple)';
+  ec.innerHTML=`<span class="key">F</span><div class="glyph" style="color:var(--purple)">${empLocked?'🔒':'⚡'}</div>
+    <div class="nm">EMP Pulse</div><div class="cost" style="color:var(--purple)">${empLocked?'Rank 3':'FREE'}</div>
+    <div class="cd" style="display:none"></div>`;
+  ec.title=empLocked?'Unlocks at Rank 3.':'Jams every enemy in a lane — they can barely fire or advance for a few seconds.';
+  ec.onclick=()=>{ if(empLocked)return; G.selCard='emp';showLaneHint();};
+  hb.appendChild(ec);
 }
 let laneHintT=0;
 function showLaneHint(){const el=document.getElementById('lanehint');el.style.opacity='1';laneHintT=1.4;}
@@ -1347,6 +1535,8 @@ cv.addEventListener('pointerdown',e=>{
   const x=e.clientX-r.left, y=e.clientY-r.top;
   const lane=laneFromY(y);
   if(G.selCard==='strike'){ tryStrike(lane,x); }
+  else if(G.selCard==='recon'){ tryRecon(lane); }
+  else if(G.selCard==='emp'){ tryEmp(lane); }
   else if(G.selCard){ tryDeploy(G.selCard,lane); }
 });
 
@@ -1414,6 +1604,7 @@ function endGame(winner,reason){
   const won=winner==='B';
   if(won)SND.win(); else SND.lose();
   narr(won?'victory':'defeat');
+  if(won&&G.general&&!G.tutorial)showRival(pick(G.general.lose));
   // tutorial never counts toward progression
   if(G.tutorial){ SAVE.seenTut=true; persist(); showResults(won,reason,0,0,false); return; }
   // scoring
@@ -1592,6 +1783,7 @@ function openMenu(){
   document.getElementById('results').classList.add('hidden');
   document.getElementById('tut-skip').classList.add('hidden');
   narrStop(); hideTut();
+  document.getElementById('rivalbox').classList.remove('show');
   G=null; window.G=null; LAUNCH=null;
   buildMenu(); refreshTopbar();
 }
@@ -1658,6 +1850,7 @@ function start(){
   document.getElementById('hud').classList.remove('hidden');
   document.getElementById('btn-pause').classList.remove('hidden');
   document.getElementById('tut-skip').classList.add('hidden');
+  document.getElementById('rivalbox').classList.remove('show');
   resize();
   narrStop();
   newGame();
@@ -1669,6 +1862,7 @@ function start(){
     if(G.kind==='campaign'&&G.mission)say(G.mission.brief,'brief',1);
     else if(G.kind==='daily'&&G.daily)say("Today's orders, Commander: "+G.daily.mut.name+". "+G.daily.mut.desc,'brief',1);
     else narr('battleStart');
+    if(G.general)setTimeout(()=>{ if(G&&!G.over&&!G.tutorial)showRival(G.general.intro); },1400);
   }
   if(SAVE.streamOn){document.getElementById('chatfeed').innerHTML='';chatReact('idle');}
 }
@@ -1694,6 +1888,9 @@ window.addEventListener('keydown',e=>{
     if(n===0){G.selCard='strike';showLaneHint();return;}
     if(n>=1&&n<=9&&n<=HOTBAR.length){G.selCard=HOTBAR[n-1];showLaneHint();return;}
   }
+  // R / F select the commander powers
+  if(k==='r'){G.selCard='recon';showLaneHint();return;}
+  if(k==='f'){ if(SAVE.lvl>=3){G.selCard='emp';showLaneHint();} return; }
   // Q/W/E quick-deploy selected card into a lane
   if(k==='q'){quickDeploy(0);}
   else if(k==='w'){quickDeploy(1);}
@@ -1701,6 +1898,8 @@ window.addEventListener('keydown',e=>{
 });
 function quickDeploy(lane){
   if(G.selCard==='strike')tryStrike(lane,W*0.6);
+  else if(G.selCard==='recon')tryRecon(lane);
+  else if(G.selCard==='emp')tryEmp(lane);
   else tryDeploy(G.selCard,lane);
 }
 function togglePause(){

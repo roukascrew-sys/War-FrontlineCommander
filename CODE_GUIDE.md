@@ -178,6 +178,39 @@ For a one-off custom line, call `say(text, mood, priority)` directly.
 
 **Add a medal:** add to `MEDALS`, then a check in `checkMedals()`.
 
+## Depth systems (added after the initial ship)
+
+**Veterancy** (`VET_RANKS`, `grantVetXP()`) — any unit, either side, that racks
+up kills mid-battle ranks up (Seasoned → Veteran → Elite) at 3/7/14 kills,
+gaining a permanent hp/dmg multiplier for the rest of that match and a
+chevron drawn under it in `drawUnit()`. `spawn()` stores `baseHp`/`baseDmg` so
+rank multipliers always apply to the unit's true base stats, not whatever it
+was last scaled to. Called from `killUnit()` on the killer, if it's still alive.
+
+**Lane terrain** (`TERRAINS`, `G.laneTerrain`) — each match randomises one of
+`open`/`forest`/`hill` per lane (fixed to `open` in the tutorial). Affects
+`spdMul`/`rngEff` in `updateUnits()` and a `catDmgMul` bonus applied in
+`fire()`. Badges are drawn in `drawField()`.
+
+**Commander Powers** — a second and third active ability beyond the missile
+strike, both selected the same way (`G.selCard`) and cast into a lane:
+- `tryRecon(lane)` — free, `R` key, exposes an entire lane through fog/weather
+  for ~6.5s (`G.flareLane`/`G.flareT`, read by `computeSpotting()`).
+- `tryEmp(lane)` — unlocks at Rank 3, `F` key, near-fully suppresses every
+  enemy in a lane for ~3.4s (`G.empLane`/`G.empT`, applied in `updateUnits()`).
+Both have their own cooldowns (`G.reconCd`/`G.empCd`) ticked in `step()`, cards
+built in `buildHotbar()`, cooldown UI in `syncHUD()`.
+
+**Rival enemy generals** (`GENERALS`) — each battle picks a named opposing
+commander whose `bias` field drives the AI's unit-composition weighting in
+`aiStep()` (reusing the existing `enemyBias` mechanism campaign/daily already
+used). Shows an intro line at battle start and periodic taunts
+(`showRival()`, the `#rivalbox` subtitle — deliberately separate from the
+Iron Marshal's box so the two don't read as the same character). If a
+mission/daily already fixed `enemyBias`, the matching general is picked so
+flavor and behavior stay consistent (e.g. the "Night Raid" mission's tank
+bias always pairs with Gen. Korvinov).
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass
