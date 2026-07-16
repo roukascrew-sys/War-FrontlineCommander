@@ -33,6 +33,22 @@
     font-size:12px;font-weight:600;color:var(--dim);transition:.12s;}
   .tb-btn:hover{color:var(--ink);border-color:var(--blue);}
   .tb-btn.on{color:var(--bg);background:var(--gold);border-color:var(--gold);}
+  /* topbar buttons colour-keyed to what they do */
+  #btn-stream:hover,#btn-twitch:hover{border-color:var(--purple);color:var(--purple);}
+  #btn-narr:hover,#btn-voice:hover{border-color:var(--gold);color:var(--gold);}
+  #btn-sound:hover{border-color:var(--cyan);color:var(--cyan);}
+  #btn-ai:hover{border-color:var(--good);color:var(--good);}
+  #btn-ai.on{background:var(--good);border-color:var(--good);}
+  #btn-pause:hover{border-color:var(--warn);color:var(--warn);}
+  #btn-menu:hover{border-color:var(--red);color:var(--red);}
+  /* AI thinking debug panel */
+  #aidebug{position:absolute;top:108px;right:14px;width:260px;background:#05080cf0;border:1px solid var(--good);
+    border-radius:8px;padding:8px 10px;display:none;pointer-events:none;z-index:12;font-family:var(--mono);}
+  #aidebug .ad-h{font-size:10px;font-weight:800;letter-spacing:1px;color:var(--good);margin-bottom:5px;display:flex;justify-content:space-between;}
+  #aidebug .ad-state{font-size:10.5px;color:var(--cyan);line-height:1.5;margin-bottom:5px;}
+  #aidebug .ad-state b{color:var(--ink);}
+  #aidebug .ad-log{font-size:9.5px;line-height:1.45;color:var(--dim);display:flex;flex-direction:column;gap:1px;max-height:150px;overflow:hidden;}
+  #aidebug .ad-log div:last-child{color:var(--good);}
 
   /* ── main stage ── */
   #stage{flex:1;position:relative;overflow:hidden;}
@@ -193,11 +209,31 @@
   .title-logo span{color:var(--ink);}
   @keyframes titlepulse{50%{text-shadow:0 0 60px rgba(255,206,90,0.3),0 6px 20px #000;}}
   .title-tag{color:var(--ink);font-size:15px;font-weight:600;letter-spacing:1px;opacity:.9;text-shadow:0 2px 8px #000;}
-  .title-btns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:10px;}
-  .t-btn{padding:13px 26px;font-size:15px;font-weight:800;letter-spacing:1px;border-radius:10px;
+  .title-btns{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:12px;}
+  .title-btns2{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;}
+  /* two headline mode buttons — each keyed to its own accent */
+  .hero-btn{display:flex;align-items:center;gap:14px;padding:16px 26px;border-radius:14px;min-width:250px;
+    text-align:left;border:2px solid;transition:.14s;background:#0e1622ee;}
+  .hero-btn .hb-ic{font-size:30px;line-height:1;}
+  .hero-btn .hb-tx{display:flex;flex-direction:column;}
+  .hero-btn .hb-tx b{font-size:21px;font-weight:900;letter-spacing:2px;line-height:1.05;}
+  .hero-btn .hb-tx small{font-size:11px;font-weight:600;color:var(--dim);letter-spacing:.3px;margin-top:2px;text-transform:none;}
+  .hero-btn:hover{transform:translateY(-3px);}
+  .hero-btn.play{border-color:var(--gold);box-shadow:0 8px 26px #0008,0 0 0 0 var(--gold);}
+  .hero-btn.play .hb-ic,.hero-btn.play .hb-tx b{color:var(--gold);}
+  .hero-btn.play:hover{box-shadow:0 10px 30px #0009,0 0 24px #ffce5a55;}
+  .hero-btn.evo{border-color:var(--purple);}
+  .hero-btn.evo .hb-ic,.hero-btn.evo .hb-tx b{color:var(--purple);}
+  .hero-btn.evo:hover{box-shadow:0 10px 30px #0009,0 0 24px #c9a0ff55;}
+  /* secondary buttons — colour-coded by function */
+  .t-btn{display:flex;flex-direction:column;align-items:center;gap:1px;padding:11px 24px;border-radius:10px;
     background:#121a28dd;border:1.5px solid var(--line);color:var(--ink);transition:.12s;}
-  .t-btn:hover{border-color:var(--gold);transform:translateY(-2px);}
-  .title-foot{font-size:12px;color:var(--dim);text-shadow:0 2px 6px #000;margin-top:6px;}
+  .t-btn b{font-size:15px;font-weight:800;letter-spacing:1px;}
+  .t-btn small{font-size:10px;color:var(--dim);letter-spacing:.3px;}
+  .t-btn:hover{transform:translateY(-2px);}
+  .t-btn.war{border-color:var(--blue);} .t-btn.war b{color:var(--blue);} .t-btn.war:hover{box-shadow:0 0 18px #4aa8ff44;}
+  .t-btn.tut{border-color:var(--good);} .t-btn.tut b{color:var(--good);} .t-btn.tut:hover{box-shadow:0 0 18px #3fd07a44;}
+  .title-foot{font-size:12px;color:var(--dim);text-shadow:0 2px 6px #000;margin-top:10px;}
   .title-foot b{color:var(--gold);}
 
   /* ── WAR MODE ── */
@@ -319,6 +355,7 @@
   <button class="tb-btn" id="btn-narr">🎙 Narrator</button>
   <button class="tb-btn" id="btn-voice">🔑 Voice</button>
   <button class="tb-btn" id="btn-sound">🔊 Sound</button>
+  <button class="tb-btn" id="btn-ai">🧠 AI Debug</button>
   <button class="tb-btn hidden" id="btn-pause">⏸ Pause</button>
   <button class="tb-btn" id="btn-menu">☰ Menu</button>
 </div>
@@ -360,6 +397,8 @@
       </div>
     </div>
     <div id="votebar"></div>
+    <!-- AI thinking debug readout -->
+    <div id="aidebug"></div>
     <!-- Age of War evolution panel -->
     <div id="agepanel">
       <div class="ap-h" id="ap-age">⚔ Trench Era</div>
@@ -430,11 +469,14 @@
       <div class="title-logo">⚔ <b>FRONTLINE</b><br><span>COMMANDER</span></div>
       <div class="title-tag" id="title-tag">Bank the points. Break the line. Take the war.</div>
       <div class="title-btns">
-        <button class="play-btn" id="t-play">▶ PLAY</button>
-        <button class="t-btn" id="t-war">🗺 War Mode</button>
-        <button class="t-btn" id="t-tut">🎓 Tutorial</button>
+        <button class="hero-btn play" id="t-play"><span class="hb-ic">▶</span><span class="hb-tx"><b>PLAY</b><small>quick battle · pick doctrine &amp; mode</small></span></button>
+        <button class="hero-btn evo" id="t-evo"><span class="hb-ic">🧬</span><span class="hb-tx"><b>EVOLUTION</b><small>Age of War · evolve through 5 ages</small></span></button>
       </div>
-      <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span> · press <b>PLAY</b> to choose a battle, or take the whole <b>War</b></div>
+      <div class="title-btns2">
+        <button class="t-btn war" id="t-war"><b>🗺 War Mode</b><small>conquer the map</small></button>
+        <button class="t-btn tut" id="t-tut"><b>🎓 Tutorial</b><small>learn the ropes</small></button>
+      </div>
+      <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span></div>
     </div>
   </div>
 
@@ -557,7 +599,7 @@ const SAVE_KEY='FRONTLINE_SAVE_v1';
 const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0,
   unlocked:['blitzkrieg','mass'],medals:{},sound:true,narrator:true,streamOn:false,seenTut:false,
   campaignDone:-1,campaignStars:{},daily:{},ttsKey:'',ttsVoice:'arnold',
-  speed:1,twitchChannel:'',war:null,warWins:0};
+  speed:1,twitchChannel:'',war:null,warWins:0,aiDebug:false};
 let SAVE=load();
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
 function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(SAVE));}catch(e){}}
@@ -1436,16 +1478,40 @@ function aiStep(dt){
   // banned units (daily mutators) never appear
   if(G.banned&&G.banned.length)choices=choices.filter(c=>G.banned.indexOf(c[0])<0);
   if(!choices.length)choices=[['rifle',1]];
+  // what's the AI most worried about? (drives the readout)
+  const threat = (pArmor>=pAir&&pArmor>=pInf&&pArmor>0)?'ARMOR' : (pAir>=pInf&&pAir>0)?'AIR' : (pInf>0)?'INFANTRY':'nothing yet';
   // spend budget on 1-3 units
   let spend=Math.min(budget, G.mode==='survival'?budget: rnd(0.5,1)*budget);
-  let guard=0;
+  let guard=0, built=[];
   while(spend>18&&guard++<6){
     const key=weightedPick(choices);
     const c=UNITS[key].cost*0.9;
     if(c>spend)break;
     spend-=c; G.ecp-=Math.min(G.ecp,UNITS[key].cost*0.9);
-    spawn('R',key,(Math.random()*3)|0);
+    spawn('R',key,(Math.random()*3)|0); built.push(key);
   }
+  recordAIThought({budget,pArmor,pAir,pInf,threat,built,choices});
+}
+/* ── AI DEBUG: record what the enemy commander is thinking each decision ── */
+function recordAIThought(o){
+  if(!G.aiThoughts)G.aiThoughts=[];
+  G.aiThreat=o.threat;
+  const top=o.choices.slice().sort((a,b)=>b[1]-a[1]).slice(0,3).map(c=>c[0]+'·'+c[1].toFixed(1)).join(' ');
+  const line=`${Math.round(G.t)}s  £${Math.round(o.budget)}  saw ${o.pArmor}▣/${o.pAir}✈/${o.pInf}i  → vs ${o.threat}  ⇒ ${o.built.length?o.built.join('+'):'save CP'}`;
+  G.aiThoughts.push(line); while(G.aiThoughts.length>7)G.aiThoughts.shift();
+  G.aiTopWeights=top;
+}
+function syncAIDebug(){
+  const el=document.getElementById('aidebug'); if(!el)return;
+  if(!SAVE.aiDebug||!G||G.attract){ el.style.display='none'; return; }
+  el.style.display='block';
+  const gen=G.general?G.general.name:'—';
+  const st=`Cmdr <b>${gen}</b><br>bias <b>${G.enemyBias||'balanced'}</b> · reacting to <b>${G.aiThreat||'—'}</b>`+
+    (G.ages?`<br>enemy age <b>${(G.enemyAge||0)+1}/5</b> · think ${G.aiThink.toFixed(2)}s`:`<br>think interval ${G.aiThink.toFixed(2)}s`)+
+    `<br>weights: ${G.aiTopWeights||'—'}`;
+  el.innerHTML=`<div class="ad-h"><span>🧠 ENEMY AI</span><span>ecp ${Math.round(G.ecp)}</span></div>`+
+    `<div class="ad-state">${st}</div>`+
+    `<div class="ad-log">${(G.aiThoughts||[]).map(l=>`<div>${l}</div>`).join('')||'<div>…thinking…</div>'}</div>`;
 }
 function weightedPick(arr){ let t=0;for(const[,w]of arr)t+=w; let r=Math.random()*t;
   for(const[k,w]of arr){r-=w;if(r<=0)return k;} return arr[0][0]; }
@@ -1896,6 +1962,7 @@ function syncHUD(){
     else cdEl.style.display='none';
   }
   syncAgeUI();
+  syncAIDebug();
   // chat vote bar (streamer)
   const vb=document.getElementById('votebar');
   if(vb){
@@ -2296,6 +2363,7 @@ function launchTutorial(){
   start();
   tutStart();
 }
+function launchEvolution(){ LAUNCH=null; sel.mode='evolution'; if(!DIFFS[sel.diff])sel.diff='veteran'; start(); }
 
 /* ═══ TUTORIAL — a narrated, gated first fight ═══ */
 function tutHasB(key){ for(const u of G.units)if(u.alive&&u.side==='B'&&u.key===key)return true; return false; }
@@ -2375,7 +2443,11 @@ function buildMenu(){
   document.getElementById('doc-desc').innerHTML=`<b style="color:${dd.col}">${dd.glyph} ${dd.name}</b> — ${dd.desc}`;
   // modes
   const mOpt=document.getElementById('mode-opts');mOpt.innerHTML='';
-  for(const k in MODES){const b=mkOpt(MODES[k].name,sel.mode===k);b.onclick=()=>{sel.mode=k;buildMenu();};mOpt.appendChild(b);}
+  const MODECOL={skirmish:'#ffce5a',evolution:'#c9a0ff',blitz:'#ffab40',survival:'#ff5a4a'};
+  for(const k in MODES){const b=mkOpt(MODES[k].name,sel.mode===k);
+    if(sel.mode===k&&MODECOL[k]){b.style.background=MODECOL[k];b.style.color='#0a0e14';b.style.borderColor=MODECOL[k];}
+    else if(MODECOL[k]){b.style.borderColor=MODECOL[k];b.style.color=MODECOL[k];}
+    b.onclick=()=>{sel.mode=k;buildMenu();};mOpt.appendChild(b);}
   document.getElementById('mode-desc').textContent=MODES[sel.mode].desc;
   // diff
   const fOpt=document.getElementById('diff-opts');fOpt.innerHTML='';
@@ -2417,6 +2489,8 @@ function announceLocked(d){document.getElementById('doc-desc').innerHTML=`<b sty
 /* ═══ START / LOOP ═══ */
 function start(){
   document.getElementById('menu').classList.add('hidden');
+  document.getElementById('title').classList.add('hidden');
+  document.getElementById('warmap').classList.add('hidden');
   document.getElementById('results').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   document.getElementById('btn-pause').classList.remove('hidden');
@@ -2477,6 +2551,8 @@ window.addEventListener('keydown',e=>{
   // V evolve · T build turret (Evolution mode)
   if(k==='v'){ if(G.ages)tryEvolve(); return; }
   if(k==='t'){ if(G.ages)tryBuildTurret(); return; }
+  // ` toggles the AI thinking debug readout
+  if(k==='`'){ SAVE.aiDebug=!SAVE.aiDebug; persist(); refreshTopbar(); return; }
   // Q/W/E quick-deploy selected card into a lane
   if(k==='q'){quickDeploy(0);}
   else if(k==='w'){quickDeploy(1);}
@@ -2530,7 +2606,9 @@ function refreshTopbar(){
   document.getElementById('btn-narr').classList.toggle('on',!!SAVE.narrator);
   document.getElementById('btn-narr').textContent=(SAVE.narrator?'🎙 Narrator':'🔇 Narrator');
   document.getElementById('btn-twitch').classList.toggle('on',!!CHATLINK.connected);
+  document.getElementById('btn-ai').classList.toggle('on',!!SAVE.aiDebug);
 }
+document.getElementById('btn-ai').onclick=()=>{SAVE.aiDebug=!SAVE.aiDebug;persist();refreshTopbar();};
 document.getElementById('btn-stream').onclick=()=>{SAVE.streamOn=!SAVE.streamOn;persist();refreshTopbar();
   if(SAVE.streamOn){document.getElementById('chatfeed').innerHTML='';chatReact('idle');}};
 document.getElementById('btn-sound').onclick=()=>{SAVE.sound=!SAVE.sound;persist();refreshTopbar();if(SAVE.sound){actx();beep(600,0.08,'square',0.06);}};
@@ -2581,6 +2659,7 @@ document.getElementById('fr-yes').onclick=()=>{document.getElementById('firstrun
 document.getElementById('fr-no').onclick=()=>{document.getElementById('firstrun').classList.remove('show');SAVE.seenTut=true;persist();};
 // title screen
 document.getElementById('t-play').onclick=()=>{leaveTitle();openMenu();};
+document.getElementById('t-evo').onclick=()=>{leaveTitle();launchEvolution();};
 document.getElementById('t-war').onclick=()=>{leaveTitle();showWarMap();};
 document.getElementById('t-tut').onclick=()=>{leaveTitle();launchTutorial();};
 document.getElementById('menu-back').onclick=()=>showTitle();

@@ -307,6 +307,24 @@ auto-firing emplacement on your HQ (the enemy builds its own at higher ages).
 Turrets acquire the nearest in-range enemy and fire real projectiles through the
 same pipeline, so the damage matrix applies to them too.
 
+## Title flow, buttons & AI debug
+
+- `start()` now hides **every** menu screen including `#title` and `#warmap`
+  before showing the HUD — the earlier War-Mode bug (battle rendering *behind*
+  the still-visible map) came from those two not being hidden.
+- The title screen leads with two headline buttons — **PLAY** (`t-play` → the
+  options menu) and **EVOLUTION** (`t-evo` → `launchEvolution()`, straight into
+  Age-of-War) — with War Mode / Tutorial as colour-coded secondaries. Buttons
+  are keyed to function by colour (gold = play, purple = evolution/age, blue =
+  conquest, green = learn); mode-select chips and topbar toggles follow the same
+  colour language.
+- **AI debug readout** (`#aidebug`, `recordAIThought`, `syncAIDebug`) — toggle
+  with the 🧠 topbar button or the `` ` `` key (`SAVE.aiDebug`). `aiStep()`
+  records each enemy decision — budget, the composition it counted
+  (armour/air/infantry), the threat it's countering, its top unit weights, and
+  what it actually built — into a rolling `G.aiThoughts` log shown live during
+  the battle. Reads like `12s £84 saw 3▣/1✈/5i → vs ARMOR ⇒ atgm+drone`.
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass
