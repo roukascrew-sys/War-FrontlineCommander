@@ -102,6 +102,21 @@
   .vb-track{flex:1;height:6px;background:#0008;border-radius:3px;overflow:hidden;}
   .vb-track i{display:block;height:100%;background:linear-gradient(90deg,#8a5cff,var(--purple));transition:width .3s;}
   .vb-boss{font-size:9px;font-weight:700;color:var(--red);margin-top:3px;letter-spacing:1px;}
+  /* Age-of-War evolution panel */
+  #agepanel{position:absolute;top:108px;left:14px;width:184px;background:#0b0f18e0;border:1px solid var(--line);
+    border-left:3px solid var(--gold);border-radius:8px;padding:8px 10px;display:none;pointer-events:auto;z-index:11;}
+  #agepanel .ap-h{font-size:12px;font-weight:800;letter-spacing:.5px;color:var(--gold);margin-bottom:6px;}
+  #agepanel .ap-evo{height:7px;background:#0008;border-radius:4px;overflow:hidden;border:1px solid var(--line);margin-bottom:8px;}
+  #agepanel .ap-evo i{display:block;height:100%;width:0;background:linear-gradient(90deg,#c98500,var(--gold));transition:width .2s;}
+  #agepanel .ap-btns{display:flex;gap:6px;}
+  #agepanel .ap-btns button{flex:1;padding:6px 4px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);
+    font-size:10.5px;font-weight:700;color:var(--dim);transition:.1s;}
+  #agepanel .ap-btns button b{font-family:var(--mono);color:var(--gold);}
+  #agepanel .ap-btns button:hover{color:var(--ink);border-color:var(--blue);}
+  #agepanel .ap-btns button:disabled{opacity:.4;cursor:not-allowed;}
+  #agepanel #ap-evolve.ready{background:var(--gold);color:var(--bg);border-color:var(--gold);animation:apready 1.3s infinite;}
+  #agepanel #ap-evolve.ready b{color:var(--bg);}
+  @keyframes apready{50%{box-shadow:0 0 12px var(--gold);}}
   #lanehint{position:absolute;bottom:118px;left:50%;transform:translateX(-50%);font-size:12px;
     color:var(--gold);font-weight:700;background:#000a;padding:4px 12px;border-radius:20px;opacity:0;transition:.2s;}
 
@@ -345,6 +360,15 @@
       </div>
     </div>
     <div id="votebar"></div>
+    <!-- Age of War evolution panel -->
+    <div id="agepanel">
+      <div class="ap-h" id="ap-age">⚔ Trench Era</div>
+      <div class="ap-evo"><i id="ap-evobar"></i></div>
+      <div class="ap-btns">
+        <button id="ap-evolve">⬆ EVOLVE <b>—</b></button>
+        <button id="ap-turret">⌖ TURRET <b>0/0</b></button>
+      </div>
+    </div>
     <div id="hotbar"></div>
     <!-- narrator subtitle -->
     <div id="narrator"><span class="np">🎙 IRON MARSHAL</span><span class="nt"></span></div>
@@ -609,6 +633,33 @@ const TIER_UNLOCK={1:0,2:60,3:130}; // CP paid once per battle to open a tier's 
 function unitTier(key){return UNIT_TIER[key]||1;}
 function tierUnlockCost(key){return TIER_UNLOCK[unitTier(key)]||0;}
 
+/* ── COMBAT DEPTH: damage types × armour classes ──
+   Every weapon has a damage type and every unit a body armour class; the
+   matrix decides how well one bites the other. This is the real counter web:
+   small-arms shred infantry but ping off tanks, AP kills armour, HE clears
+   groups and levels bases, AA owns the sky. */
+const DMG_MATRIX={           //  vs: inf   light  heavy  air    struct
+  sa:{inf:1.25,light:0.70,heavy:0.28,air:0.55,struct:0.35}, // small arms
+  ap:{inf:0.60,light:1.35,heavy:1.70,air:0.55,struct:0.85}, // armour-piercing
+  he:{inf:1.30,light:1.15,heavy:0.72,air:0.30,struct:1.45}, // high explosive
+  aa:{inf:0.35,light:0.50,heavy:0.30,air:2.40,struct:0.20}, // anti-air
+};
+const UNIT_DMGTYPE={rifle:'sa',atgm:'ap',sniper:'sa',tank:'ap',ifv:'sa',arty:'he',mlrs:'he',aa:'aa',heli:'ap',drone:'ap',medic:null,jammer:null};
+const UNIT_ARMORCLASS={rifle:'inf',atgm:'inf',sniper:'inf',medic:'inf',tank:'heavy',ifv:'light',arty:'light',mlrs:'light',aa:'light',jammer:'light',heli:'air',drone:'air'};
+const UNIT_CRIT={sniper:0.24}; // precision units land the occasional double-damage hit
+function dmgMul(dt,ac){ return (dt&&DMG_MATRIX[dt]&&DMG_MATRIX[dt][ac||'inf'])||1; }
+
+/* ── AGES (Age-of-War evolution) — advance to unlock units & scale everything ── */
+const AGES=[
+  {name:'Trench Era', glyph:'⚔', hqMul:1.00, unit:1.00, sup:1.0, evo:0,   slots:0, col:'#8a94a6'},
+  {name:'Blitz Era',  glyph:'▤', hqMul:1.35, unit:1.18, sup:1.3, evo:120, slots:1, col:'#ff9f40'},
+  {name:'Cold War',   glyph:'☢', hqMul:1.80, unit:1.40, sup:1.7, evo:300, slots:2, col:'#5ff0e0'},
+  {name:'Modern',     glyph:'✈', hqMul:2.40, unit:1.64, sup:2.2, evo:560, slots:3, col:'#4aa8ff'},
+  {name:'Future',     glyph:'⬢', hqMul:3.20, unit:1.95, sup:3.0, evo:960, slots:4, col:'#c9a0ff'},
+];
+// which age each unit becomes available in (Evolution mode gates the roster by age)
+const UNIT_MINAGE={rifle:0,ifv:0,medic:0, atgm:1,tank:1,aa:1, sniper:2,arty:2,jammer:2, mlrs:3,heli:3, drone:4};
+
 /* ── STANCES — on-the-fly posture. Changes BEHAVIOUR only, never stats. ── */
 const STANCES={
   assault:{name:'Assault',glyph:'⚔',key:'Z',col:'#ff9f40',
@@ -670,6 +721,7 @@ const GENERAL_DEFAULT={name:'Unknown Commander',glyph:'☭',col:'#ff5a4a',
 /* ── MODES & DIFFICULTY ── */
 const MODES={
   skirmish:{name:'Skirmish',desc:'Standard battle. Destroy the enemy HQ before they destroy yours. The main event.'},
+  evolution:{name:'Evolution',desc:'Age-of-War style. Kills earn Evolution points — advance through 5 ages to unlock new units, harden your HQ, and build base turrets. Out-tech them or die in the trenches.'},
   blitz:{name:'Blitz (2:00)',desc:'Two-minute clock. Whoever has dealt the most HQ damage when time runs out wins. Fast and aggressive.'},
   survival:{name:'Survival',desc:'Endless enemy waves that get harder every 30s. No enemy HQ to kill — just see how long your line holds.'},
 };
@@ -1073,10 +1125,16 @@ function newGame(){
   // troop stance (behaviour only) + game speed
   G.stance='assault';
   G.speed=SAVE.speed||1;
-  // in-battle tech unlocks — only the "normal" modes make you buy your way up the tree
+  // Age-of-War evolution state
+  G.ages=(kind==='evolution');
+  G.age=0; G.evo=0; G.enemyAge=0; G.enemyAgeT=28; G.turrets=[];
+  // in-battle tech unlocks — normal modes make you buy the tree; Evolution gates by age
   G.techMode=(kind==='skirmish'||kind==='blitz'||kind==='survival');
   G.unlocked={};
-  for(const key of HOTBAR){ G.unlocked[key]=G.techMode?(unitTier(key)===1):true; }
+  for(const key of HOTBAR){
+    if(G.ages) G.unlocked[key]=(UNIT_MINAGE[key]<=G.age);
+    else G.unlocked[key]=G.techMode?(unitTier(key)===1):true;
+  }
   // chat-vote state (streamer Phase 2)
   G.cvVotes={0:0,1:0,2:0}; G.cvVoters={}; G.cvT=CHATLINK.voteEvery; G.bossMeter=0; G.bossVoters={};
   // daily mutators
@@ -1115,9 +1173,11 @@ function spawn(side,key,lane){
     if(u.cat==='arty'&&p.artyDmgMul)dmg*=p.artyDmgMul;
     if(u.cat==='veh'&&p.vehSpdMul)spd*=p.vehSpdMul;
     if(p.toughMul)hp*=p.toughMul;
+    if(G.ages&&G.age>0){ const a=AGES[G.age]; hp*=a.unit; dmg*=a.unit; } // your army evolves each age
   } else {
     // enemy quality scales with difficulty
     hp*=diff.qualMul; dmg*=diff.qualMul;
+    if(G.ages&&G.enemyAge>0){ const a=AGES[G.enemyAge]; hp*=a.unit; dmg*=a.unit; }
   }
   const y=G.laneY[lane]*H+rnd(-10,10);
   const x=side==='B'?rnd(40,70):W-rnd(40,70);
@@ -1127,6 +1187,8 @@ function spawn(side,key,lane){
     r:u.r,col:u.col,glyph:u.glyph,flies:!!u.flies,arc:!!u.arc,aa:!!u.aa,onlyAir:!!u.onlyAir,
     splash:u.splash,kamikaze:!!u.kamikaze,armor:!!u.armor,
     vsArmor:u.vsArmor||1,vsAir:u.vsAir||1,cat:u.cat,name:u.name,
+    dmgType:UNIT_DMGTYPE[key]||'sa', armorClass:UNIT_ARMORCLASS[key]||'inf', crit:UNIT_CRIT[key]||0, cover:false,
+    age:(side==='B'?G.age:G.enemyAge)||0,
     heal:u.heal||0,healR:u.healR||0,salvo:u.salvo||0,jam:u.jam||0,jamR:u.jamR||0,
     support:!!u.support,sup:0,firedOnce:false,
     ambush:(side==='B'&&p.ambushDmg)?p.ambushDmg:1,
@@ -1163,15 +1225,16 @@ function tryStrike(lane,x){
   if(G.strikeCd>0||G.over||G.paused)return false;
   G.strikeCd=G.strikeCdMax;
   G.strikeUsedCount=(G.strikeUsedCount||0)+1;
+  const sup=(G.ages?AGES[G.age].sup:1);             // ultimate scales with your age
+  const rad=46*Math.sqrt(sup), dmg=70*sup, impacts=Math.min(6,3+Math.floor((sup-1)*2));
   const tx=clamp(x,W*0.35,W-40), ty=G.laneY[lane]*H;
-  // three impacts
-  for(let i=0;i<3;i++)setTimeout(()=>{ if(!G)return;
-    const ix=tx+rnd(-40,40),iy=ty+rnd(-30,30);
-    explode(ix,iy,46,'B',60);
-    for(const u of G.units){ if(u.side==='R'&&u.alive&&dist(u.x,u.y,ix,iy)<46){ damage(u,70,null); } }
+  for(let i=0;i<impacts;i++)setTimeout(()=>{ if(!G)return;
+    const ix=tx+rnd(-44,44),iy=ty+rnd(-32,32);
+    explode(ix,iy,rad,'B',60);
+    for(const u of G.units){ if(u.side==='R'&&u.alive&&dist(u.x,u.y,ix,iy)<rad){ damage(u,dmg,{side:'B',dmgType:'he'}); } }
     G.shake=Math.max(G.shake,14);
-  },i*130);
-  announce('MISSILE STRIKE','danger close');
+  },i*120);
+  announce(G.ages&&G.age>0?AGES[G.age].name.toUpperCase()+' STRIKE':'MISSILE STRIKE','danger close');
   return true;
 }
 /* ── COMMANDER POWERS: Recon Flare (free intel) & EMP Pulse (rank 3, jams a lane) ── */
@@ -1199,11 +1262,74 @@ function tryEmp(lane){
   return true;
 }
 
+/* ── AGE OF WAR: evolution, enemy aging, and base turrets ── */
+function ageTick(dt){
+  G.enemyAgeT-=dt;
+  if(G.enemyAgeT<=0 && G.enemyAge<AGES.length-1){
+    G.enemyAgeT=rnd(26,34); G.enemyAge++;
+    const oldMax=G.hqMax.R; G.hqMax.R=1000*AGES[G.enemyAge].hqMul; G.hq.R+=(G.hqMax.R-oldMax);
+    announce('ENEMY ADVANCES','now the '+AGES[G.enemyAge].name,'#ff5a4a');
+    if(G.general)showRival(pick(G.general.taunts));
+    if(G.enemyAge>=2)addTurret('R');
+  }
+}
+function tryEvolve(){
+  if(!G||!G.ages||G.over||G.paused)return false;
+  if(G.age>=AGES.length-1){ announce('MAX AGE','the future is now','#c9a0ff'); return false; }
+  const need=AGES[G.age+1].evo;
+  if(G.evo<need){ announce('NEED EVOLUTION',Math.ceil(need-G.evo)+' more — go kill','#ff5a4a'); return false; }
+  G.evo-=need; G.age++;
+  const a=AGES[G.age];
+  const oldMax=G.hqMax.B; G.hqMax.B=1000*(G.perk.hpMul||1)*a.hqMul; G.hq.B+=(G.hqMax.B-oldMax);
+  for(const key of HOTBAR)G.unlocked[key]=(UNIT_MINAGE[key]<=G.age); // new age unlocks new iron
+  buildHotbar();
+  announce('⬆ '+a.name.toUpperCase(),'your forces evolve',a.col);
+  SND.win(); G.shake=Math.max(G.shake,9);
+  say("We've reached the "+a.name+". New iron, new options — use them.",'proud',1);
+  syncAgeUI();
+  return true;
+}
+function addTurret(side){
+  const slot=G.turrets.filter(t=>t.side===side).length;
+  const age=(side==='B'?G.age:G.enemyAge)||0;
+  G.turrets.push({side,x:side==='B'?48:W-48,y:H*(0.36+0.14*slot),rng:215,dmg:16+age*7,rof:1.0,cd:rnd(0,1),
+    dmgType:'ap',muzzle:0});
+}
+function tryBuildTurret(){
+  if(!G||!G.ages||G.over||G.paused)return false;
+  const have=G.turrets.filter(t=>t.side==='B').length;
+  if(have>=AGES[G.age].slots){ announce('NO TURRET SLOTS','evolve for more','#ff5a4a'); return false; }
+  const cost=100+have*70;
+  if(G.cp<cost){ announce('NEED '+cost+' CP','',' #ff5a4a'.trim()); return false; }
+  G.cp-=cost; addTurret('B');
+  announce('TURRET ONLINE','base defence up','#3fd07a'); SND.deploy(); syncAgeUI();
+  return true;
+}
+function turretTick(dt){
+  if(!G.turrets||!G.turrets.length)return;
+  for(const t of G.turrets){
+    if(t.muzzle>0)t.muzzle-=dt;
+    if(t.cd>0){ t.cd-=dt; continue; }
+    let best=null,bd=t.rng;
+    for(const u of G.units){ if(!u.alive||u.side===t.side)continue; const d=dist(u.x,u.y,t.x,t.y); if(d<bd){bd=d;best=u;} }
+    if(best){ t.cd=t.rof; t.muzzle=0.12;
+      const ang=Math.atan2(best.y-t.y,best.x-t.x),spd=560;
+      G.projs.push({x:t.x,y:t.y,tx:best.x,ty:best.y,tgt:best,side:t.side,dmg:t.dmg,dmgType:t.dmgType,
+        vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,arc:false,splash:0,src:t,life:0.6,age:0,
+        col:t.side==='B'?'#bfe4ff':'#ffc0b0'});
+      SND.shot();
+    }
+  }
+}
+
 /* ── COMBAT ── */
 function damage(u,dmg,src){
   if(!u.alive)return;
-  // armour vs small arms
-  if(u.armor&&src&&src.vsArmor<=1&&src.cat==='inf'&&!src.kamikaze)dmg*=0.35;
+  if(src&&src.dmgType){
+    dmg*=dmgMul(src.dmgType,u.armorClass);          // damage type vs armour class
+    if(u.cover)dmg*=0.6;                             // dug-in / forest cover softens the hit
+    if(src.crit&&Math.random()<src.crit){ dmg*=2; floatText(u.x,u.y-u.r-6,'CRIT!','#ffce5a'); }
+  }
   u.hp-=dmg; u.hitFlash=1;
   u.sup=Math.min(1,(u.sup||0)+0.10); // taking fire suppresses
   if(src&&src.side==='B'){G.dmgDealt+=dmg;}
@@ -1231,10 +1357,17 @@ function killUnit(u,src){
   for(const o of G.units){ if(o.alive&&o.side===u.side&&o!==u&&dist(o.x,o.y,u.x,u.y)<70){ o.sup=Math.min(1,(o.sup||0)+0.16); } }
   const killer=src&&src.side;
   if(src&&src.alive)grantVetXP(src);
+  // kill bounty — combat feeds the economy (both sides), Age-of-War style
+  const bnt=Math.round(((UNITS[u.key]&&UNITS[u.key].cost)||20)*0.30);
   if(killer==='B'){
+    G.cp=Math.min(G.cpMax,G.cp+bnt); floatText(u.x,u.y-u.r-4,'+'+bnt,'#ffce5a');
+    if(G.ages)G.evo+=6;
     G.kills++;
     if(!G.firstBlood){G.firstBlood=true; if(G.t>1)narr('firstBlood');}
     addCombo();
+  } else if(killer==='R'){
+    G.ecp=Math.min(G.cpMax,G.ecp+bnt);
+    if(G.ages)G.enemyEvo=(G.enemyEvo||0)+6;
   }
   killfeed(src,u);
 }
@@ -1262,9 +1395,7 @@ function fire(u,tgt){
   u.muzzle=0.1; u.cd=u.rof;
   SND.shot();
   let dmg=u.dmg;
-  // matchup multipliers (vsArmor/vsAir can now be <1 = penalty, e.g. sniper vs armour)
-  if(tgt.armor&&u.vsArmor!==1)dmg*=u.vsArmor;
-  if(tgt.flies&&u.vsAir!==1)dmg*=u.vsAir;
+  // damage-type × armour-class is applied in damage(); here only the shooter-side modifiers
   // lane terrain — hilltop favours ranged/arty, forest favours dug-in infantry
   const lt=G.laneTerrain&&TERRAINS[G.laneTerrain[u.lane]];
   if(lt&&lt.catDmgMul&&lt.catDmgMul[u.cat])dmg*=lt.catDmgMul[u.cat];
@@ -1349,6 +1480,8 @@ function step(dt){
   if(!G.tutorial&&G.general){ G.rivalTauntT-=dt; if(G.rivalTauntT<=0){ G.rivalTauntT=rnd(24,36); showRival(pick(G.general.taunts)); } }
   // streamer Phase 2 — chat votes drive the enemy
   chatVoteTick(dt);
+  if(G.ages)ageTick(dt);      // Age-of-War: enemy evolves over time
+  turretTick(dt);             // base turrets fire
   aiStep(dt);
   updateUnits(dt);
   if(!G.over)checkWin();
@@ -1408,6 +1541,7 @@ function updateUnits(dt){
     if(u.sup>0)u.sup=Math.max(0,u.sup-dt*0.34); // morale recovers over time
     if(G.empT>0&&u.side==='R'&&u.lane===G.empLane)u.sup=Math.max(u.sup||0,0.95); // EMP pulse jams a lane
     u.bob+=dt*6;
+    u.cover=(u.cat==='inf' && G.laneTerrain && G.laneTerrain[u.lane]==='forest'); // infantry dig into the treeline
     if(u.support)supportTick(u,dt);
     // kamikaze diving
     if(u.diving){ const t=u.diving; if(!t.alive){u.diving=null;}
@@ -1453,7 +1587,8 @@ function updateUnits(dt){
       const foe=u.side==='B'?'R':'B';
       if(G.mode==='survival'&&foe==='R'){ /* no enemy HQ */ }
       else{
-        const hit=u.dmg*3+ (u.armor?40:12);
+        // siege damage scales with the unit's damage type vs structures (HE levels bases, rifles barely dent them)
+        const hit=(u.dmg*3+(u.armor?40:12))*(0.6+dmgMul(u.dmgType,'struct'));
         G.hq[foe]=Math.max(0,G.hq[foe]-hit);
         if(u.side==='B'){G.dmgDealt+=hit;} else {G.dmgTaken+=hit;}
         explode(hqX,u.y,30,u.side,18); u.alive=false;
@@ -1508,6 +1643,7 @@ function draw(){
   if(G){
     // lane guides
     drawBases();
+    drawTurrets();
     // sort: ground first, fliers on top
     const ground=[],air=[];
     for(const u of G.units){(u.flies?air:ground).push(u);}
@@ -1615,6 +1751,19 @@ function drawPowerFX(){
   if(G.flareT>0){ const y=G.laneY[G.flareLane]*H; cx.fillStyle='rgba(95,240,224,0.06)'; cx.fillRect(60,y-24,W-120,48); }
   if(G.empT>0){ const y=G.laneY[G.empLane]*H; cx.fillStyle='rgba(201,160,255,0.09)'; cx.fillRect(60,y-24,W-120,48); }
 }
+function drawTurrets(){
+  if(!G.turrets)return;
+  for(const t of G.turrets){
+    const col=t.side==='B'?'#4aa8ff':'#ff5a4a', dir=t.side==='B'?1:-1;
+    cx.fillStyle='rgba(0,0,0,0.3)';cx.beginPath();cx.ellipse(t.x,t.y+8,10,3,0,0,6.28);cx.fill();
+    cx.strokeStyle=shade(col,1.3);cx.lineWidth=3;cx.beginPath();cx.moveTo(t.x,t.y);cx.lineTo(t.x+dir*13,t.y);cx.stroke();
+    cx.beginPath();cx.arc(t.x,t.y,9,0,6.28);cx.fillStyle=shade(col,0.95);cx.fill();
+    cx.strokeStyle=shade(col,0.55);cx.lineWidth=1.5;cx.stroke();
+    cx.fillStyle='#0a0e14';cx.font='bold 10px var(--mono)';cx.textAlign='center';cx.textBaseline='middle';
+    cx.fillText('⌖',t.x,t.y);cx.textBaseline='alphabetic';
+    if(t.muzzle>0){cx.fillStyle='rgba(255,220,120,0.9)';cx.beginPath();cx.arc(t.x+dir*15,t.y,4,0,6.28);cx.fill();}
+  }
+}
 function drawBases(){
   // player HQ (left), enemy HQ (right)
   drawHQ(20,'B','#2a78d6');
@@ -1668,6 +1817,8 @@ function drawUnit(u){
   cx.lineWidth=1.5;cx.strokeStyle=u.side==='B'?'#0a3a6a':'#6a1a10';cx.stroke();
   // side ring
   cx.beginPath();cx.arc(x,y,u.r+2,0,6.28);cx.strokeStyle=u.side==='B'?'rgba(74,168,255,0.5)':'rgba(255,90,74,0.5)';cx.lineWidth=1;cx.stroke();
+  // age ring (Evolution mode) — colours a unit by the age it was built in
+  if(u.age>0&&AGES[u.age]){cx.beginPath();cx.arc(x,y,u.r+3.6,0,6.28);cx.strokeStyle=AGES[u.age].col;cx.lineWidth=1.4;cx.globalAlpha=0.8;cx.stroke();cx.globalAlpha=1;}
   // glyph
   cx.font='bold '+(u.r+3)+'px var(--mono)';cx.fillStyle='#0a0e14';cx.textAlign='center';cx.textBaseline='middle';
   cx.fillText(u.glyph,x,y+1);cx.textBaseline='alphabetic';
@@ -1726,6 +1877,7 @@ function syncHUD(){
   else if(G.kind==='campaign'&&G.mission){ob=`<div class="big">${G.mission.name}</div>★ ${G.mission.star}`;}
   else if(G.kind==='daily'){ob=`<div class="big">DAILY</div>${G.daily?G.daily.mut.name:''}`;}
   else if(G.kind==='tutorial'){ob=`<div class="big">TRAINING</div>learn the ropes`;}
+  else if(G.kind==='evolution'){ob=`<div class="big" style="color:${AGES[G.age].col}">${AGES[G.age].glyph} ${AGES[G.age].name.toUpperCase()}</div>age ${G.age+1}/5 · evolve to advance`;}
   else{ob=`<div class="big">SKIRMISH</div>${DIFFS[G.diff].name} · ${DOCTRINES[G.doc].name}`;}
   if(G.wx)ob+=`<div style="margin-top:3px;color:var(--cyan)">${G.wx.glyph} ${G.wx.name}</div>`;
   if(G.general&&!G.tutorial)ob+=`<div style="margin-top:2px;color:${G.general.col}">⚔ vs ${G.general.name}</div>`;
@@ -1743,6 +1895,7 @@ function syncHUD(){
     if(G.cds[key]>0){cdEl.style.display='flex';cdEl.textContent=G.cds[key].toFixed(1);}
     else cdEl.style.display='none';
   }
+  syncAgeUI();
   // chat vote bar (streamer)
   const vb=document.getElementById('votebar');
   if(vb){
@@ -1784,14 +1937,21 @@ function buildHotbar(){
     const u=UNITS[key];
     const el=document.createElement('div');
     el.className='card'; el.id='card-'+key;
-    const tier=unitTier(key), locked=G&&!G.unlocked[key];
+    const tier=unitTier(key), locked=G&&!G.unlocked[key], ageGate=G&&G.ages;
+    const lockInner = ageGate
+      ? `${AGES[UNIT_MINAGE[key]].glyph}<b>AGE&nbsp;${UNIT_MINAGE[key]+1}</b><span>EVOLVE</span>`
+      : `🔒<b>${tierUnlockCost(key)}</b><span>T${tier}</span>`;
     el.innerHTML=`<span class="key">${i<9?i+1:''}</span><div class="glyph" style="color:${u.col}">${u.glyph}</div>
       <div class="nm">${u.name}</div><div class="cost">${unitCost(key)}</div>
       <div class="cd" style="display:none"></div><div class="ready-flash"></div>
-      <div class="lockov">🔒<b>${tierUnlockCost(key)}</b><span>T${tier}</span></div>`;
+      <div class="lockov">${lockInner}</div>`;
     if(locked)el.classList.add('locked');
-    el.onclick=()=>{ if(!G.unlocked[key]){ if(tryUnlock(key))G.selCard=key; } else { G.selCard=key; } showLaneHint(); };
-    el.title=(locked?'Tier '+tier+' — pay '+tierUnlockCost(key)+' CP to unlock. ':'')+(u.desc||'');
+    el.onclick=()=>{
+      if(!G.unlocked[key]){ if(!G.ages && tryUnlock(key))G.selCard=key; else if(G.ages)announce('LOCKED','evolve to Age '+(UNIT_MINAGE[key]+1),'#ff5a4a'); }
+      else { G.selCard=key; }
+      showLaneHint();
+    };
+    el.title=(locked?(ageGate?'Unlocks in the '+AGES[UNIT_MINAGE[key]].name+'. ':'Tier '+tier+' — pay '+tierUnlockCost(key)+' CP to unlock. '):'')+(u.desc||'');
     hb.appendChild(el);
   });
   // missile strike special card
@@ -2061,6 +2221,7 @@ function kindLabel(){
   if(G.kind==='daily')return 'DAILY CHALLENGE';
   if(G.kind==='tutorial')return 'TRAINING';
   if(G.kind==='war')return 'WAR · '+(G.warName||'front');
+  if(G.kind==='evolution')return 'EVOLUTION · '+AGES[G.age].name;
   return MODES[G.mode].name;
 }
 function showResults(won,reason,score,xpGain,leveled){
@@ -2303,7 +2464,7 @@ window.addEventListener('keydown',e=>{
   if(!isNaN(n)){
     if(n===0){G.selCard='strike';showLaneHint();return;}
     if(n>=1&&n<=9&&n<=HOTBAR.length){ const key=HOTBAR[n-1];
-      if(!G.unlocked[key]){ if(tryUnlock(key))G.selCard=key; } else G.selCard=key;
+      if(!G.unlocked[key]){ if(!G.ages && tryUnlock(key))G.selCard=key; } else G.selCard=key;
       showLaneHint();return;}
   }
   // R / F select the commander powers
@@ -2313,11 +2474,30 @@ window.addEventListener('keydown',e=>{
   if(k==='z'){setStance('assault');return;}
   if(k==='x'){setStance('defend');return;}
   if(k==='c'){setStance('skirmish');return;}
+  // V evolve · T build turret (Evolution mode)
+  if(k==='v'){ if(G.ages)tryEvolve(); return; }
+  if(k==='t'){ if(G.ages)tryBuildTurret(); return; }
   // Q/W/E quick-deploy selected card into a lane
   if(k==='q'){quickDeploy(0);}
   else if(k==='w'){quickDeploy(1);}
   else if(k==='e'){quickDeploy(2);}
 });
+function syncAgeUI(){
+  const ap=document.getElementById('agepanel'); if(!ap)return;
+  if(!G||!G.ages){ ap.style.display='none'; return; }
+  ap.style.display='block';
+  const maxed=G.age>=AGES.length-1, need=maxed?1:AGES[G.age+1].evo;
+  document.getElementById('ap-age').innerHTML=`${AGES[G.age].glyph} ${AGES[G.age].name} <span style="color:var(--faint);font-weight:400">vs ${AGES[G.enemyAge].name}</span>`;
+  document.getElementById('ap-evobar').style.width=(maxed?100:clamp(G.evo/need*100,0,100))+'%';
+  const ev=document.getElementById('ap-evolve');
+  ev.querySelector('b').textContent=maxed?'MAX':Math.max(0,Math.ceil(need-G.evo));
+  ev.classList.toggle('ready',!maxed&&G.evo>=need);
+  ev.disabled=maxed;
+  const have=G.turrets.filter(t=>t.side==='B').length, slots=AGES[G.age].slots;
+  const tb=document.getElementById('ap-turret');
+  tb.querySelector('b').textContent=have+'/'+slots;
+  tb.disabled=(have>=slots);
+}
 function setStance(s){
   if(!G||G.over||!STANCES[s])return;
   if(G.stance===s)return;
@@ -2423,6 +2603,8 @@ function syncSpeedUI(){ const sp=G?G.speed:(SAVE.speed||1);
 document.getElementById('speed-0').onclick=()=>setSpeed(0.5);
 document.getElementById('speed-1').onclick=()=>setSpeed(1);
 document.getElementById('speed-2').onclick=()=>setSpeed(2);
+document.getElementById('ap-evolve').onclick=()=>tryEvolve();
+document.getElementById('ap-turret').onclick=()=>tryBuildTurret();
 
 /* twitch live chat modal */
 document.getElementById('btn-twitch').onclick=()=>{ document.getElementById('tw-channel').value=SAVE.twitchChannel||''; document.getElementById('twitchmodal').classList.add('show'); };

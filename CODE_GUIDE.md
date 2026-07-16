@@ -274,6 +274,39 @@ counter-attack and retake a forward node.** All of it persists to localStorage,
 so a war spans sessions. The results screen shows a "🗺 War Map" button for
 `G.kind==='war'`.
 
+## Deeper combat & Age-of-War mode
+
+**Damage types × armour classes** (`DMG_MATRIX`, `UNIT_DMGTYPE`,
+`UNIT_ARMORCLASS`) — the real counter web. Every weapon has a damage type
+(`sa`/`ap`/`he`/`aa`) and every unit a body class (`inf`/`light`/`heavy`/`air`/
+`struct`); `dmgMul(type,class)` decides how well one bites the other and is
+applied once, in `damage()`. Small arms shred infantry but ping off tanks, AP
+kills armour, HE clears groups and levels bases, AA owns the sky. `fire()` no
+longer holds matchup multipliers — only shooter-side modifiers (terrain,
+ambush). Precision units carry a `crit` chance (double damage). Infantry in a
+forest lane get a `cover` flag = 40% less incoming. HQ siege damage scales by
+the attacker's type-vs-`struct` value, so HE units are the real base-breakers.
+
+**Kill bounty** — in `killUnit()`, a kill grants the killer's side CP (~30% of
+the victim's cost) with a floating `+N`, so aggression pays and combat feeds the
+economy. Both sides earn it.
+
+**Age-of-War "Evolution" mode** (`AGES`, `UNIT_MINAGE`) — a fifth game mode. You
+start in the Trench Era with only tier-0 units; kills earn Evolution points
+(`G.evo`), and `tryEvolve()` advances you through five ages
+(Trench→Blitz→Cold War→Modern→Future), each unlocking new units
+(`buildHotbar()` re-gates by `UNIT_MINAGE`), hardening your HQ, scaling deployed
+units (`spawn()` applies `AGES[age].unit`), and powering up the missile-strike
+ultimate (`tryStrike` reads `AGES[age].sup`). The enemy auto-ages on a timer
+(`ageTick`). Age panel + Evolve/Turret buttons live in `#agepanel`
+(`syncAgeUI`), keys `V`/`T`.
+
+**Base turrets** (`G.turrets`, `turretTick`, `drawTurrets`) — in Evolution mode
+each age grants turret slots; `tryBuildTurret()` spends CP to place an
+auto-firing emplacement on your HQ (the enemy builds its own at higher ages).
+Turrets acquire the nearest in-range enemy and fire real projectiles through the
+same pipeline, so the damage matrix applies to them too.
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass
