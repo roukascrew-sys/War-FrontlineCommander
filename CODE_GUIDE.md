@@ -247,6 +247,33 @@ mounds for hills, small rocks + grass elsewhere — stored on `G.scenery`).
 `drawUnit()` adds ground shadows and a radial-gradient body via the `shade()`
 hex helper; `drawHQ()` got a glow, shading, and an antenna.
 
+## Boot flow, title/attract & War Mode
+
+**Boot sequence:** `runLoader()` (cosmetic progress bar + rotating `LOAD_TIPS`)
+→ `showTitle()` (dynamic title with `TITLE_TAGS`) → the player picks PLAY
+(`openMenu`), War Mode (`showWarMap`), or Tutorial. The old "menu is the first
+thing you see" flow is gone — `#menu` now boots hidden.
+
+**Attract mode** — the title's animated background. `startAttract()` builds a
+normal skirmish, flags `G.attract=true`, and `attractTick()` auto-deploys for
+the player while the AI plays the enemy. `narr()` is muted and the HUD hidden
+during attract; when an HQ falls, `loop()` just calls `startAttract()` again for
+an endless demo. `checkWin()` short-circuits for attract (no results screen).
+
+**War Mode (conquest)** — `SAVE.war` holds the persistent map: `nodes` (fixed
+`WAR_LAYOUT` positions, each with `owner`/`str`/`weather`/`bias`), `edges`
+(auto-connected between adjacent columns), and `momentum`. `showWarMap()` /
+`renderWarMap()` draw it (SVG edges + DOM `.wnode` buttons). A node is
+attackable (`warAttackable`) when it's enemy-held and borders one of yours;
+`warFight()` launches a battle via `LAUNCH={type:'war',…}` with difficulty
+derived from the node's `str` (`warDiffFor`). `endGame()` calls `warResolve()`:
+**a win captures the node and cuts `str` on every enemy neighbour** (the
+inter-battle effect), raises momentum, and wins the war if it was the enemy
+capital; **a loss reinforces the target and, at low momentum, lets the enemy
+counter-attack and retake a forward node.** All of it persists to localStorage,
+so a war spans sessions. The results screen shows a "🗺 War Map" button for
+`G.kind==='war'`.
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass

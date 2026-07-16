@@ -147,6 +147,63 @@
   .screen h1{font-size:40px;font-weight:900;letter-spacing:2px;margin-bottom:4px;text-align:center;}
   .screen h1 b{color:var(--gold);}
   .screen .tag{color:var(--dim);font-size:14px;margin-bottom:22px;text-align:center;max-width:560px;line-height:1.5;}
+  .back-btn{position:absolute;top:16px;left:18px;z-index:5;padding:7px 13px;border:1px solid var(--line);
+    border-radius:8px;background:#0b0f18cc;color:var(--dim);font-size:12px;font-weight:600;}
+  .back-btn:hover{color:var(--ink);border-color:var(--gold);}
+
+  /* ── LOADING SCREEN ── */
+  #loader{position:absolute;inset:0;z-index:60;background:radial-gradient(ellipse at 50% 40%,#101826,#05070c);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .5s;}
+  #loader.gone{opacity:0;pointer-events:none;}
+  .ld-logo{font-size:26px;font-weight:800;letter-spacing:2px;color:var(--ink);}
+  .ld-logo b{color:var(--gold);}
+  .ld-scene{position:relative;width:260px;height:34px;overflow:hidden;border-bottom:2px solid var(--line);}
+  .ld-tank{position:absolute;bottom:2px;left:-30px;font-size:22px;color:var(--gold);animation:ldroll 2.2s linear infinite;}
+  @keyframes ldroll{from{left:-30px;}to{left:270px;}}
+  .ld-dust{position:absolute;bottom:2px;left:0;width:100%;height:2px;
+    background:repeating-linear-gradient(90deg,#2a3550 0,transparent 6px,transparent 12px);}
+  .ld-barwrap{width:280px;height:10px;background:#0008;border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+  .ld-bar{height:100%;width:0;background:linear-gradient(90deg,#c98500,var(--gold));transition:width .2s;}
+  .ld-pct{font-family:var(--mono);font-size:13px;color:var(--gold);font-weight:700;}
+  .ld-tip{font-size:12.5px;color:var(--dim);max-width:440px;text-align:center;line-height:1.5;min-height:36px;padding:0 16px;}
+  .ld-tip b{color:var(--cyan);}
+
+  /* ── TITLE / ATTRACT ── */
+  #title{background:transparent;padding:0;}
+  #title-scrim{position:absolute;inset:0;background:linear-gradient(180deg,#070b12cc 0%,#070b1266 40%,#070b12cc 100%);}
+  #title-inner{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:24px;}
+  .title-logo{font-size:clamp(40px,8vw,74px);font-weight:900;letter-spacing:3px;line-height:0.95;
+    text-shadow:0 0 40px #000,0 6px 20px #000;animation:titlepulse 4s ease-in-out infinite;}
+  .title-logo b{color:var(--gold);}
+  .title-logo span{color:var(--ink);}
+  @keyframes titlepulse{50%{text-shadow:0 0 60px rgba(255,206,90,0.3),0 6px 20px #000;}}
+  .title-tag{color:var(--ink);font-size:15px;font-weight:600;letter-spacing:1px;opacity:.9;text-shadow:0 2px 8px #000;}
+  .title-btns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:10px;}
+  .t-btn{padding:13px 26px;font-size:15px;font-weight:800;letter-spacing:1px;border-radius:10px;
+    background:#121a28dd;border:1.5px solid var(--line);color:var(--ink);transition:.12s;}
+  .t-btn:hover{border-color:var(--gold);transform:translateY(-2px);}
+  .title-foot{font-size:12px;color:var(--dim);text-shadow:0 2px 6px #000;margin-top:6px;}
+  .title-foot b{color:var(--gold);}
+
+  /* ── WAR MODE ── */
+  #warmap{justify-content:flex-start;padding-top:52px;}
+  #war-board{position:relative;width:min(880px,94vw);height:min(440px,52vh);
+    background:radial-gradient(ellipse at 50% 45%,#0f1a26,#0a0e15);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  #war-edges{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+  #war-nodes{position:absolute;inset:0;}
+  .wnode{position:absolute;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;
+    border:2px solid var(--line);background:var(--panel2);display:flex;align-items:center;justify-content:center;
+    font-size:18px;cursor:pointer;transition:.12s;color:var(--ink);}
+  .wnode .wlbl{position:absolute;top:48px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:9.5px;color:var(--dim);font-weight:600;}
+  .wnode.you{border-color:var(--blue);background:#12283f;box-shadow:0 0 0 2px #2a78d655;}
+  .wnode.enemy{border-color:var(--red2);background:#2f1414;}
+  .wnode.cap{width:56px;height:56px;font-size:24px;}
+  .wnode.attackable{cursor:pointer;border-color:var(--gold);box-shadow:0 0 14px #ffce5a66;animation:wpulse 1.6s infinite;}
+  .wnode.locked{opacity:.4;cursor:not-allowed;}
+  .wnode.sel{box-shadow:0 0 0 3px var(--gold);}
+  @keyframes wpulse{50%{box-shadow:0 0 22px #ffce5aaa;}}
+  #war-info{margin-top:10px;font-size:13px;color:var(--dim);min-height:40px;max-width:640px;text-align:center;line-height:1.5;}
+  #war-info b{color:var(--ink);}
   .menu-cols{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;max-width:960px;}
   .mcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;width:280px;}
   .mcard h3{font-size:15px;margin-bottom:10px;color:var(--gold);letter-spacing:.5px;}
@@ -304,7 +361,8 @@
   </div>
 
   <!-- MAIN MENU -->
-  <div class="screen" id="menu">
+  <div class="screen hidden" id="menu">
+    <button class="back-btn" id="menu-back">◀ Title</button>
     <h1>⚔ <b>FRONTLINE</b> COMMANDER</h1>
     <div class="tag">Pick a doctrine, pick a fight. Bank Command Points, slam units into three lanes, and crack the enemy HQ before they crack yours. Fast, loud, and built to stream.</div>
     <div class="prog-row">
@@ -341,8 +399,45 @@
     <div class="hint">Deploy: click a card (or press 1–9) then a lane · 0 = missile strike · R = recon flare · F = EMP (Rank 3) · Q/W/E = quick-deploy to top/mid/bottom · Z/X/C = Assault/Defend/Skirmish stance · SPEED ½×–2× &amp; STANCE controls sit on the battlefield · In Skirmish/Blitz/Survival you buy your way up the tech tree mid-fight · 📡 Live Chat lets Twitch viewers command the enemy · SPACE = pause.</div>
   </div>
 
+  <!-- TITLE / ATTRACT SCREEN -->
+  <div class="screen hidden" id="title">
+    <div id="title-scrim"></div>
+    <div id="title-inner">
+      <div class="title-logo">⚔ <b>FRONTLINE</b><br><span>COMMANDER</span></div>
+      <div class="title-tag" id="title-tag">Bank the points. Break the line. Take the war.</div>
+      <div class="title-btns">
+        <button class="play-btn" id="t-play">▶ PLAY</button>
+        <button class="t-btn" id="t-war">🗺 War Mode</button>
+        <button class="t-btn" id="t-tut">🎓 Tutorial</button>
+      </div>
+      <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span> · press <b>PLAY</b> to choose a battle, or take the whole <b>War</b></div>
+    </div>
+  </div>
+
+  <!-- WAR MODE — conquest map -->
+  <div class="screen hidden" id="warmap">
+    <button class="back-btn" id="war-back">◀ Title</button>
+    <h1 style="font-size:26px;margin-bottom:2px">🗺 THEATER OF WAR</h1>
+    <div class="tag" id="war-sub" style="margin-bottom:10px">Every node is a battle. Take one and you cut supply to its neighbours; lose and the enemy pushes back. Win the map by taking the enemy capital.</div>
+    <div id="war-board"><svg id="war-edges"></svg><div id="war-nodes"></div></div>
+    <div id="war-info"></div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="sbtn" id="war-new">↻ New War</button>
+      <button class="sbtn" id="war-fight" disabled>⚔ Attack Selected</button>
+    </div>
+  </div>
+
   <!-- RESULTS -->
   <div class="screen hidden" id="results"></div>
+
+  <!-- LOADING SCREEN -->
+  <div id="loader">
+    <div class="ld-logo">⚔ <b>FRONTLINE</b> COMMANDER</div>
+    <div class="ld-scene"><div class="ld-tank">◼</div><div class="ld-dust"></div></div>
+    <div class="ld-barwrap"><div class="ld-bar" id="ld-bar"></div></div>
+    <div class="ld-pct" id="ld-pct">0%</div>
+    <div class="ld-tip" id="ld-tip"></div>
+  </div>
 
   <!-- PAUSE -->
   <div class="screen hidden" id="pauseScreen">
@@ -438,7 +533,7 @@ const SAVE_KEY='FRONTLINE_SAVE_v1';
 const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0,
   unlocked:['blitzkrieg','mass'],medals:{},sound:true,narrator:true,streamOn:false,seenTut:false,
   campaignDone:-1,campaignStars:{},daily:{},ttsKey:'',ttsVoice:'arnold',
-  speed:1,twitchChannel:''};
+  speed:1,twitchChannel:'',war:null,warWins:0};
 let SAVE=load();
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
 function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(SAVE));}catch(e){}}
@@ -913,6 +1008,7 @@ const NARR_LINES={
     "Scratch one lane's worth of electronics."]},
 };
 function narr(ev,data){
+  if(G&&G.attract)return; // attract-mode demo stays quiet
   const b=NARR_LINES[ev]; if(!b)return;
   if(b.cool!=null){ const now=performance.now(); if(NARR.cool[ev]&&now-NARR.cool[ev]<b.cool*1000)return; NARR.cool[ev]=now; }
   say(pick(b.lines), b.mood, b.prio||0);
@@ -941,6 +1037,7 @@ function newGame(){
     kind, mode, diff:diffKey, doc:sel.doctrine, perk, diffMul:diff,
     mission:(L&&L.type==='campaign')?L.mission:null,
     daily:(L&&L.type==='daily')?L.daily:null,
+    warName:(L&&L.type==='war')?L.warName:null, attract:false,
     tutorial:kind==='tutorial', tutStep:0, tutDone:false,
     wxKey, wx, wxRng:wx.rngMul, wxSpd:wx.spdMul, wxSpot:spotMul,
     spotBase:230, // px; scaled by weather+doctrine
@@ -1226,6 +1323,8 @@ function weightedPick(arr){ let t=0;for(const[,w]of arr)t+=w; let r=Math.random(
 function step(dt){
   if(G.paused||G.over)return;
   G.t+=dt;
+  // attract-mode auto-play (title background)
+  if(G.attract)attractTick(dt);
   // tutorial script
   if(G.tutorial&&!G.tutDone)tutTick(dt);
   // cooldowns
@@ -1394,6 +1493,7 @@ function updateFX(dt){
 }
 
 function checkWin(){
+  if(G.attract){ if(G.hq.B<=0||G.hq.R<=0)G.over=true; return; } // attract loop restarts in loop()
   if(G.mode==='survival'){ if(G.hq.B<=0)endGame('R','overrun'); return; }
   if(G.hq.R<=0)endGame('B','hq');
   else if(G.hq.B<=0)endGame('R','hq');
@@ -1927,6 +2027,8 @@ function endGame(winner,reason){
   }
   // daily best
   if(G.kind==='daily'){ const dk=todayKey(); if(!SAVE.daily[dk]||score>SAVE.daily[dk])SAVE.daily[dk]=score; }
+  // war-mode conquest resolution
+  if(G.kind==='war'){ try{warResolve(won);}catch(e){} }
   // unlock doctrines by level
   for(const k in DOCTRINES)if(SAVE.lvl>=DOCTRINES[k].unlock&&!SAVE.unlocked.includes(k))SAVE.unlocked.push(k);
   // medals
@@ -1958,6 +2060,7 @@ function kindLabel(){
   if(G.kind==='campaign'&&G.mission)return 'CAMPAIGN · '+G.mission.name;
   if(G.kind==='daily')return 'DAILY CHALLENGE';
   if(G.kind==='tutorial')return 'TRAINING';
+  if(G.kind==='war')return 'WAR · '+(G.warName||'front');
   return MODES[G.mode].name;
 }
 function showResults(won,reason,score,xpGain,leveled){
@@ -1987,13 +2090,16 @@ function showResults(won,reason,score,xpGain,leveled){
     ${isTut?'':`<div class="res-xp">+${xpGain} XP${leveled?`  ·  ⬆ RANK UP → ${SAVE.lvl}`:''}</div>`}
     ${campExtra}
     <div class="btn-row">
-      ${nextMission?`<button class="sbtn prim" id="r-next">▶ Next Mission</button>`:`<button class="sbtn prim" id="r-again">▶ ${isTut?'Play a Battle':'Rematch'}</button>`}
+      ${G.kind==='war'?`<button class="sbtn prim" id="r-war">🗺 War Map</button>`:
+        nextMission?`<button class="sbtn prim" id="r-next">▶ Next Mission</button>`:
+        `<button class="sbtn prim" id="r-again">▶ ${isTut?'Play a Battle':'Rematch'}</button>`}
       <button class="sbtn" id="r-menu">☰ Menu</button>
     </div>
     ${leveled?renderUnlockNote():''}
   `;
   r.classList.remove('hidden');
-  if(nextMission){ document.getElementById('r-next').onclick=()=>{r.classList.add('hidden');launchCampaign(nextMission.id);}; }
+  if(G.kind==='war'){ document.getElementById('r-war').onclick=()=>{r.classList.add('hidden');showWarMap();}; }
+  else if(nextMission){ document.getElementById('r-next').onclick=()=>{r.classList.add('hidden');launchCampaign(nextMission.id);}; }
   else { const ra=document.getElementById('r-again'); if(ra)ra.onclick=()=>{r.classList.add('hidden'); if(isTut){LAUNCH=null;openMenu();} else start();}; }
   document.getElementById('r-menu').onclick=()=>{r.classList.add('hidden');openMenu();};
   document.getElementById('hud').classList.add('hidden');
@@ -2080,6 +2186,8 @@ function hideTut(){ const el=document.getElementById('tutbox'); if(el)el.classLi
 /* ═══ MENU ═══ */
 function openMenu(){
   document.getElementById('menu').classList.remove('hidden');
+  document.getElementById('title').classList.add('hidden');
+  document.getElementById('warmap').classList.add('hidden');
   document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('results').classList.add('hidden');
@@ -2172,6 +2280,7 @@ function start(){
 let last=performance.now();
 function loop(now){
   const raw=Math.min(0.05,(now-last)/1000); last=now;
+  if(G&&G.attract&&G.over){ startAttract(); }           // endless attract loop behind the title
   if(G&&!G.paused&&!G.over){
     const sp=G.speed||1;
     if(sp>=2){ step(raw); if(!G.over)step(raw); }      // 2× = two capped sub-steps (no tunnelling)
@@ -2288,8 +2397,17 @@ document.getElementById('btn-play').onclick=()=>{LAUNCH=null;start();};
 document.getElementById('btn-daily').onclick=()=>launchDaily();
 document.getElementById('btn-tutorial').onclick=()=>launchTutorial();
 document.getElementById('tut-skip').onclick=()=>{ if(G&&G.tutorial)tutFinish(); };
-document.getElementById('fr-yes').onclick=()=>{document.getElementById('firstrun').classList.remove('show');launchTutorial();};
+document.getElementById('fr-yes').onclick=()=>{document.getElementById('firstrun').classList.remove('show');document.getElementById('title').classList.add('hidden');launchTutorial();};
 document.getElementById('fr-no').onclick=()=>{document.getElementById('firstrun').classList.remove('show');SAVE.seenTut=true;persist();};
+// title screen
+document.getElementById('t-play').onclick=()=>{leaveTitle();openMenu();};
+document.getElementById('t-war').onclick=()=>{leaveTitle();showWarMap();};
+document.getElementById('t-tut').onclick=()=>{leaveTitle();launchTutorial();};
+document.getElementById('menu-back').onclick=()=>showTitle();
+// war map
+document.getElementById('war-back').onclick=()=>showTitle();
+document.getElementById('war-new').onclick=()=>{ if(confirm('Abandon this war and generate a fresh map?')){genWar();warSel=null;renderWarMap();} };
+document.getElementById('war-fight').onclick=()=>warFight();
 document.getElementById('btn-resume').onclick=togglePause;
 document.getElementById('btn-quit').onclick=()=>{G.paused=false;document.getElementById('pauseScreen').classList.add('hidden');openMenu();};
 
@@ -2312,14 +2430,200 @@ document.getElementById('tw-close').onclick=()=>document.getElementById('twitchm
 document.getElementById('tw-connect').onclick=()=>chatConnect(document.getElementById('tw-channel').value);
 document.getElementById('tw-disconnect').onclick=()=>{ chatDisconnect(); chatStatus('Disconnected — simulated chat still runs in Streamer Mode.','var(--dim)'); };
 
+/* ═══════════════════════════════════════════════════════════════════════
+   LOADING SCREEN, DYNAMIC TITLE + ATTRACT MODE, and WAR MODE (conquest)
+   ═══════════════════════════════════════════════════════════════════════ */
+const LOAD_TIPS=[
+  "Tip: <b>armour</b> beats infantry, <b>AT teams</b> beat armour, infantry swarm the AT. Rock, paper, scissors — with guns.",
+  "Tip: hold <b>X</b> to Defend — your troops dig in behind the line and fire from cover.",
+  "Tip: keep a unit alive and it earns <b>chevrons</b> — veterans hit harder and last longer.",
+  "Tip: the <b>missile strike</b> and <b>recon flare</b> are free on a timer. Use them, don't hoard them.",
+  "Tip: in normal modes you <b>buy your way up the tech tree</b> mid-battle. Plan your build order.",
+  "Tip: weather is real — <b>fog</b> blinds you, <b>storms</b> bog down tracks. Adapt.",
+  "Tip: take a node in <b>War Mode</b> and you cut supply to everything next to it.",
+  "Tip: connect <b>Live Chat</b> and your viewers command the enemy. Chaos is content.",
+  "Did you know? The Iron Marshal has opinions. Loud ones.",
+  "Tip: try <b>½× speed</b> to read a messy fight, or <b>2×</b> to blitz a won one.",
+];
+const TITLE_TAGS=[
+  "Bank the points. Break the line. Take the war.",
+  "Three lanes. One HQ. No mercy.",
+  "Fast, loud, and built to stream.",
+  "Every general has a plan until the drones arrive.",
+  "Command the front. Conquer the map.",
+];
+function runLoader(){
+  const bar=document.getElementById('ld-bar'),pct=document.getElementById('ld-pct'),tip=document.getElementById('ld-tip');
+  tip.innerHTML=pick(LOAD_TIPS);
+  const tipIv=setInterval(()=>{tip.innerHTML=pick(LOAD_TIPS);},1500);
+  let p=0;
+  const iv=setInterval(()=>{
+    p=Math.min(100,p+rnd(7,20));
+    bar.style.width=p+'%'; pct.textContent=Math.floor(p)+'%';
+    if(p>=100){ clearInterval(iv); clearInterval(tipIv);
+      setTimeout(()=>{ document.getElementById('loader').classList.add('gone'); showTitle();
+        setTimeout(()=>{const l=document.getElementById('loader'); if(l)l.style.display='none';},600); },380);
+    }
+  },170);
+}
+
+/* ── ATTRACT MODE — an auto-playing skirmish behind the title ── */
+function startAttract(){
+  narrStop();
+  LAUNCH=null;
+  const docs=Object.keys(DOCTRINES).filter(k=>DOCTRINES[k].unlock<=2);
+  sel.mode='skirmish'; sel.doctrine=pick(docs); sel.diff='veteran';
+  resize(); newGame();
+  G.attract=true; G.techMode=false; for(const k of HOTBAR)G.unlocked[k]=true;
+  G.cpRate=16; G.ecpRate=16; G._atkT=0.4;
+  document.getElementById('hud').classList.add('hidden');
+}
+function attractTick(dt){
+  G._atkT-=dt;
+  if(G._atkT<=0){ G._atkT=rnd(0.45,0.95);
+    G.cp=240; tryDeploy(pick(HOTBAR),(Math.random()*3)|0);
+    if(Math.random()<0.12)tryStrike((Math.random()*3)|0,W*0.6);
+  }
+}
+
+/* ── TITLE SCREEN ── */
+function showTitle(){
+  ['menu','warmap','results','hud','pauseScreen'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('btn-pause').classList.add('hidden');
+  document.getElementById('title').classList.remove('hidden');
+  document.getElementById('t-rank').textContent='Rank '+SAVE.lvl;
+  document.getElementById('t-best').textContent='Best '+SAVE.best.toLocaleString();
+  document.getElementById('title-tag').textContent=pick(TITLE_TAGS);
+  startAttract();
+  if(!SAVE.seenTut){ setTimeout(()=>{ if(!document.getElementById('title').classList.contains('hidden'))
+    document.getElementById('firstrun').classList.add('show'); },600); }
+}
+function leaveTitle(){ document.getElementById('title').classList.add('hidden'); G=null; window.G=null; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   WAR MODE — a conquest map. Each node is a battle; taking one cuts supply
+   to its neighbours (they get weaker), losing reinforces the target and can
+   trigger an enemy counter-attack. Win by taking the enemy capital.
+   ═══════════════════════════════════════════════════════════════════════ */
+const WAR_NAMES=['Ridgeholm','Kessler Pass','Vardan','Ironford','Grey Harbor','Solenne','Blacksite 7','Dunmoor','Aldergate','Kirov Line','Sunder Reach','Halcyon','Torval','Mire Station'];
+const WAR_LAYOUT=[ // x,y in 0..1 within the board; col index
+  {x:0.08,y:0.50,col:0,cap:'you'},
+  {x:0.30,y:0.26,col:1},{x:0.30,y:0.74,col:1},
+  {x:0.50,y:0.16,col:2},{x:0.50,y:0.50,col:2},{x:0.50,y:0.84,col:2},
+  {x:0.70,y:0.26,col:3},{x:0.70,y:0.74,col:3},
+  {x:0.92,y:0.50,col:4,cap:'enemy'},
+];
+function genWar(){
+  const names=WAR_NAMES.slice().sort(()=>Math.random()-0.5);
+  const nodes=WAR_LAYOUT.map((n,i)=>({
+    id:i, x:n.x, y:n.y, col:n.col,
+    name: n.cap==='you'?'Home Command': n.cap==='enemy'?'Enemy Capital': names[i%names.length],
+    owner: n.cap==='you'?'you':'enemy',
+    cap: n.cap||null,
+    str: n.cap==='enemy'?90 : 35+n.col*11+((Math.random()*12)|0),
+    weather: pick(WEATHER_KEYS),
+    bias: pick(GENERALS).bias,
+  }));
+  // edges: connect each node to nodes in the adjacent column within a y window
+  const edges=[];
+  for(const a of nodes){ for(const b of nodes){ if(b.col===a.col+1 && Math.abs(a.y-b.y)<0.42){ edges.push([a.id,b.id]); } } }
+  const WAR={nodes,edges,momentum:50,done:null,turns:0};
+  SAVE.war=WAR; persist();
+  return WAR;
+}
+function warNeighbors(w,id){ const out=[]; for(const [a,b] of w.edges){ if(a===id)out.push(b); if(b===id)out.push(a);} return out; }
+function warAttackable(w,node){ return node.owner==='enemy' && warNeighbors(w,node.id).some(nid=>w.nodes[nid].owner==='you'); }
+function warDiffFor(str){ return str>=80?'legendary':str>=62?'elite':str>=44?'veteran':'recruit'; }
+let warSel=null;
+function showWarMap(){
+  ['title','menu','results','hud','pauseScreen'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('btn-pause').classList.add('hidden');
+  document.getElementById('warmap').classList.remove('hidden');
+  G=null; window.G=null; narrStop();
+  if(!SAVE.war) genWar();
+  warSel=null;
+  renderWarMap();
+}
+function renderWarMap(){
+  const w=SAVE.war; if(!w)return;
+  const board=document.getElementById('war-board');
+  const bw=board.clientWidth||820, bh=board.clientHeight||420;
+  const svg=document.getElementById('war-edges'); svg.setAttribute('viewBox',`0 0 ${bw} ${bh}`);
+  // edges
+  let e='';
+  for(const [a,b] of w.edges){ const na=w.nodes[a],nb=w.nodes[b];
+    const own = na.owner==='you'&&nb.owner==='you';
+    const col = own?'#2a78d6': (na.owner==='enemy'&&nb.owner==='enemy')?'#5a2a2a':'#5a6a86';
+    e+=`<line x1="${na.x*bw}" y1="${na.y*bh}" x2="${nb.x*bw}" y2="${nb.y*bh}" stroke="${col}" stroke-width="2" opacity="0.6"/>`;
+  }
+  svg.innerHTML=e;
+  // nodes
+  const host=document.getElementById('war-nodes'); host.innerHTML='';
+  for(const n of w.nodes){
+    const att=warAttackable(w,n);
+    const b=document.createElement('button');
+    b.className='wnode '+(n.owner)+(n.cap?' cap':'')+(att?' attackable':'')+(n.owner==='enemy'&&!att?' locked':'')+(warSel===n.id?' sel':'');
+    b.style.left=(n.x*100)+'%'; b.style.top=(n.y*100)+'%';
+    b.innerHTML=(n.cap==='you'?'★':n.cap==='enemy'?'☭':(n.owner==='you'?'✓':WEATHERS[n.weather].glyph))+
+      `<span class="wlbl">${n.name}${n.owner==='enemy'?' · '+n.str:''}</span>`;
+    b.onclick=()=>selectWarNode(n.id);
+    host.appendChild(b);
+  }
+  // status
+  const held=w.nodes.filter(n=>n.owner==='you').length, tot=w.nodes.length;
+  const sub=document.getElementById('war-sub');
+  if(w.done==='won')sub.innerHTML='<b style="color:var(--good)">★ WAR WON</b> — the enemy capital has fallen. Start a New War for a fresh map.';
+  else if(w.done==='lost')sub.innerHTML='<b style="color:var(--red)">WAR LOST</b> — Home Command was overrun. Start a New War.';
+  else sub.innerHTML=`Fronts held: <b>${held}/${tot}</b> · War momentum: <b>${Math.round(w.momentum)}</b> · Click a glowing node to attack it.`;
+  // info panel
+  const info=document.getElementById('war-info'), fight=document.getElementById('war-fight');
+  if(warSel!=null){ const n=w.nodes[warSel]; const att=warAttackable(w,n);
+    info.innerHTML=`<b>${n.name}</b> — ${n.owner==='you'?'yours':'enemy-held'} · ${WEATHERS[n.weather].glyph} ${WEATHERS[n.weather].name}`+
+      (n.owner==='enemy'?` · strength <b>${n.str}</b> → ${DIFFS[warDiffFor(n.str)].name}${att?'':' <span style="color:var(--warn)">(not on the front yet)</span>'}`:'');
+    fight.disabled=!att||!!w.done;
+  } else { info.innerHTML='Select a node to see the briefing.'; fight.disabled=true; }
+}
+function selectWarNode(id){ warSel=id; renderWarMap(); }
+function warFight(){
+  const w=SAVE.war; if(!w||w.done||warSel==null)return;
+  const n=w.nodes[warSel]; if(!warAttackable(w,n))return;
+  w.pending=n.id;
+  const str=n.str;
+  LAUNCH={type:'war', warName:n.name, diff:warDiffFor(str), weather:n.weather,
+    enemyBias:n.bias, ecpMul:0.8+str/100*0.8, openEnemy:n.cap==='enemy'?4:0};
+  start();
+}
+function warResolve(won){
+  const w=SAVE.war; if(!w||w.pending==null)return;
+  const n=w.nodes[w.pending];
+  if(won){
+    n.owner='you'; n.str=0;
+    w.momentum=Math.min(100,w.momentum+8);
+    // supply cut — every enemy neighbour weakens
+    for(const nid of warNeighbors(w,n.id)){ const m=w.nodes[nid]; if(m.owner==='enemy'&&!m.cap)m.str=Math.max(15,m.str-20); }
+    if(n.cap==='enemy'){ w.done='won'; SAVE.warWins=(SAVE.warWins||0)+1; }
+  } else {
+    n.str=Math.min(99,n.str+12);          // the target digs in
+    w.momentum=Math.max(0,w.momentum-10);
+    // counter-attack: if momentum is low, the enemy retakes a weak forward node
+    if(w.momentum<38){
+      const forward=w.nodes.filter(x=>x.owner==='you'&&!x.cap&&warNeighbors(w,x.id).some(k=>w.nodes[k].owner==='enemy'));
+      if(forward.length){ const t=pick(forward); t.owner='enemy'; t.str=40; }
+      else { // pushed all the way back — Home Command itself is threatened
+        const capThreat=w.nodes.find(x=>x.cap==='you')&&warNeighbors(w,0).every(k=>w.nodes[k].owner==='enemy');
+        if(capThreat && w.momentum<=0) w.done='lost';
+      }
+    }
+  }
+  w.turns++; w.pending=null; persist();
+}
+
 /* ═══ BOOT ═══ */
 // unlock by level on load
 for(const k in DOCTRINES)if(SAVE.lvl>=DOCTRINES[k].unlock&&!SAVE.unlocked.includes(k))SAVE.unlocked.push(k);
 resize(); refreshTopbar(); buildMenu();
 requestAnimationFrame(loop);
-// first-time players: offer the tutorial up front
-if(!SAVE.seenTut){ setTimeout(()=>{ if(!G && !document.getElementById('menu').classList.contains('hidden')){
-  document.getElementById('firstrun').classList.add('show'); } },400); }
+runLoader(); // loading screen → dynamic title (with attract battle) → menu / war
 </script>
 </body>
 </html>
