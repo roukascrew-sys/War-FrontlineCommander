@@ -78,6 +78,30 @@
     font-family:var(--mono);font-size:16px;font-weight:800;color:#fff;}
   .card .ready-flash{position:absolute;inset:0;background:var(--gold);opacity:0;pointer-events:none;}
 
+  /* tech-tier lock overlay on unit cards */
+  .card .lockov{position:absolute;inset:0;background:#080d16dd;display:none;flex-direction:column;
+    align-items:center;justify-content:center;gap:1px;font-size:15px;color:var(--gold);pointer-events:none;}
+  .card .lockov b{font-family:var(--mono);font-size:12px;color:var(--gold);}
+  .card .lockov span{font-size:8.5px;color:var(--dim);letter-spacing:1px;}
+  .card.locked .lockov{display:flex;}
+  .card.locked .glyph,.card.locked .nm,.card.locked .cost{opacity:0.25;}
+  /* stance + speed control cluster */
+  #ctrlbar{position:absolute;bottom:112px;left:14px;display:flex;flex-direction:column;gap:6px;pointer-events:auto;}
+  .ctrl-grp{display:flex;align-items:center;gap:4px;background:#0b0f18cc;border:1px solid var(--line);border-radius:8px;padding:3px 6px;}
+  .ctrl-lbl{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--faint);margin-right:2px;}
+  .ctrl-b{min-width:26px;height:24px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);
+    font-size:13px;font-weight:700;color:var(--dim);transition:.1s;}
+  .ctrl-b:hover{color:var(--ink);border-color:var(--blue);}
+  .ctrl-b.on{background:var(--gold);color:var(--bg);border-color:var(--gold);}
+  /* chat vote bar (streamer) */
+  #votebar{position:absolute;bottom:112px;right:14px;width:180px;background:#0b0f18d8;border:1px solid var(--purple);
+    border-radius:8px;padding:6px 9px;display:none;pointer-events:none;z-index:11;}
+  #votebar .vb-h{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--purple);margin-bottom:4px;display:flex;justify-content:space-between;}
+  .vb-row{display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);color:var(--dim);margin-bottom:2px;}
+  .vb-row span:first-child{width:26px;} .vb-row span:last-child{width:16px;text-align:right;color:var(--ink);}
+  .vb-track{flex:1;height:6px;background:#0008;border-radius:3px;overflow:hidden;}
+  .vb-track i{display:block;height:100%;background:linear-gradient(90deg,#8a5cff,var(--purple));transition:width .3s;}
+  .vb-boss{font-size:9px;font-weight:700;color:var(--red);margin-top:3px;letter-spacing:1px;}
   #lanehint{position:absolute;bottom:118px;left:50%;transform:translateX(-50%);font-size:12px;
     color:var(--gold);font-weight:700;background:#000a;padding:4px 12px;border-radius:20px;opacity:0;transition:.2s;}
 
@@ -194,8 +218,8 @@
   .camp-btn .cn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .camp-btn .cs{color:var(--gold);font-size:13px;white-space:nowrap;}
   /* ── first-run prompt ── */
-  #firstrun,#voicemodal{position:absolute;inset:0;z-index:40;background:#080b11e0;display:none;align-items:center;justify-content:center;padding:24px;}
-  #firstrun.show,#voicemodal.show{display:flex;}
+  #firstrun,#voicemodal,#twitchmodal{position:absolute;inset:0;z-index:40;background:#080b11e0;display:none;align-items:center;justify-content:center;padding:24px;}
+  #firstrun.show,#voicemodal.show,#twitchmodal.show{display:flex;}
   .fr-card{background:var(--panel);border:1px solid var(--cyan);border-radius:16px;padding:26px 30px;max-width:460px;text-align:center;box-shadow:0 20px 60px #000b;}
   .fr-h{font-size:22px;font-weight:900;color:var(--gold);margin-bottom:10px;}
   .fr-p{font-size:14px;color:var(--dim);line-height:1.6;margin-bottom:18px;}
@@ -219,6 +243,7 @@
   <div class="hstat">Best <b id="tb-best">0</b></div>
   <div class="spacer"></div>
   <button class="tb-btn" id="btn-stream">📺 Streamer Mode</button>
+  <button class="tb-btn" id="btn-twitch">📡 Live Chat</button>
   <button class="tb-btn" id="btn-narr">🎙 Narrator</button>
   <button class="tb-btn" id="btn-voice">🔑 Voice</button>
   <button class="tb-btn" id="btn-sound">🔊 Sound</button>
@@ -247,6 +272,22 @@
     <div id="killfeed"></div>
     <div id="announce"><div class="txt"></div><div class="sub"></div></div>
     <div id="lanehint">▲ click a lane to deploy</div>
+    <!-- stance + speed controls -->
+    <div id="ctrlbar">
+      <div class="ctrl-grp" id="stancebar">
+        <span class="ctrl-lbl">STANCE</span>
+        <button class="ctrl-b on" id="stance-assault" title="Assault (Z) — push for the enemy HQ">⚔</button>
+        <button class="ctrl-b" id="stance-defend" title="Defend (X) — hold behind the line, shields up">⛨</button>
+        <button class="ctrl-b" id="stance-skirmish" title="Skirmish (C) — poke from range, fall back">➹</button>
+      </div>
+      <div class="ctrl-grp" id="speedbar">
+        <span class="ctrl-lbl">SPEED</span>
+        <button class="ctrl-b" id="speed-0" title="0.5× slow-mo">½×</button>
+        <button class="ctrl-b on" id="speed-1" title="Normal speed">1×</button>
+        <button class="ctrl-b" id="speed-2" title="2× fast">2×</button>
+      </div>
+    </div>
+    <div id="votebar"></div>
     <div id="hotbar"></div>
     <!-- narrator subtitle -->
     <div id="narrator"><span class="np">🎙 IRON MARSHAL</span><span class="nt"></span></div>
@@ -297,7 +338,7 @@
     </div>
     <button class="play-btn" id="btn-play">▶ DEPLOY</button>
     <div class="medal-row" id="medal-row"></div>
-    <div class="hint">Deploy: click a card (or press 1–9) then click a lane · 0 = missile strike · Q/W/E = quick-deploy to top/mid/bottom lane · SPACE = pause · 🎙 the Iron Marshal calls the action — toggle him up top · Everything runs offline; progress saves to this browser.</div>
+    <div class="hint">Deploy: click a card (or press 1–9) then a lane · 0 = missile strike · R = recon flare · F = EMP (Rank 3) · Q/W/E = quick-deploy to top/mid/bottom · Z/X/C = Assault/Defend/Skirmish stance · SPEED ½×–2× &amp; STANCE controls sit on the battlefield · In Skirmish/Blitz/Survival you buy your way up the tech tree mid-fight · 📡 Live Chat lets Twitch viewers command the enemy · SPACE = pause.</div>
   </div>
 
   <!-- RESULTS -->
@@ -320,6 +361,27 @@
       <div class="btn-row" style="justify-content:center">
         <button class="sbtn prim" id="fr-yes">🎓 Start Tutorial</button>
         <button class="sbtn" id="fr-no">Skip — I know war</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TWITCH LIVE CHAT MODAL -->
+  <div id="twitchmodal">
+    <div class="fr-card" style="max-width:480px;text-align:left">
+      <div class="fr-h" style="text-align:center">📡 Live Stream Chat</div>
+      <div class="fr-p" style="text-align:center">Connect a Twitch channel and your viewers steer the <b>enemy</b>. It's read-only and anonymous — no login, no password. Type a channel below and hit Connect.</div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px">TWITCH CHANNEL</label>
+        <input id="tw-channel" type="text" placeholder="e.g. your_channel_name" autocomplete="off" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-family:var(--mono);font-size:13px">
+      </div>
+      <div id="tw-status" style="font-size:12px;color:var(--dim);min-height:18px;margin-bottom:10px">Not connected — simulated chat is active in Streamer Mode.</div>
+      <div style="font-size:11.5px;color:var(--faint);line-height:1.6;margin-bottom:14px">
+        Viewer commands:<br>• <b style="color:var(--ink)">top</b> / <b style="color:var(--ink)">mid</b> / <b style="color:var(--ink)">bot</b> — vote a lane; the winner gets an enemy surge on a timer.<br>• <b style="color:var(--ink)">boss</b> — enough votes summon a chat boss.
+      </div>
+      <div class="btn-row" style="justify-content:center">
+        <button class="sbtn prim" id="tw-connect">🔌 Connect</button>
+        <button class="sbtn" id="tw-disconnect">✕ Disconnect</button>
+        <button class="sbtn" id="tw-close">Close</button>
       </div>
     </div>
   </div>
@@ -366,12 +428,17 @@ const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const pick=a=>a[(Math.random()*a.length)|0];
 const dist=(a,b,c,d)=>Math.hypot(a-c,b-d);
+function shade(hex,mul){ let h=(hex||'#888').replace('#',''); if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  let r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+  if(isNaN(r))return hex; r=Math.min(255,r*mul)|0;g=Math.min(255,g*mul)|0;b=Math.min(255,b*mul)|0;
+  return 'rgb('+r+','+g+','+b+')'; }
 
 /* ── PROGRESSION (localStorage) ── */
 const SAVE_KEY='FRONTLINE_SAVE_v1';
 const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0,
   unlocked:['blitzkrieg','mass'],medals:{},sound:true,narrator:true,streamOn:false,seenTut:false,
-  campaignDone:-1,campaignStars:{},daily:{},ttsKey:'',ttsVoice:'arnold'};
+  campaignDone:-1,campaignStars:{},daily:{},ttsKey:'',ttsVoice:'arnold',
+  speed:1,twitchChannel:''};
 let SAVE=load();
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
 function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(SAVE));}catch(e){}}
@@ -440,6 +507,23 @@ const UNITS={
     aa:false,splash:0,r:10,jam:0.55,jamR:135,support:true,desc:'suppresses enemy fire in a radius — no weapon'},
 };
 const HOTBAR=['rifle','atgm','sniper','tank','ifv','arty','mlrs','aa','heli','drone','medic','jammer'];
+
+/* ── IN-BATTLE TECH TIERS — in normal modes you buy your way up the tree mid-fight ── */
+const UNIT_TIER={rifle:1,atgm:1,ifv:1, sniper:2,tank:2,aa:2,arty:2,drone:2,medic:2, heli:3,mlrs:3,jammer:3};
+const TIER_UNLOCK={1:0,2:60,3:130}; // CP paid once per battle to open a tier's units
+function unitTier(key){return UNIT_TIER[key]||1;}
+function tierUnlockCost(key){return TIER_UNLOCK[unitTier(key)]||0;}
+
+/* ── STANCES — on-the-fly posture. Changes BEHAVIOUR only, never stats. ── */
+const STANCES={
+  assault:{name:'Assault',glyph:'⚔',key:'Z',col:'#ff9f40',
+    desc:'Push hard for the enemy HQ — advance and engage as you go.'},
+  defend:{name:'Defend',glyph:'⛨',key:'X',col:'#3fd07a',
+    desc:'Hold behind the centre line. Move up slowly, dig in, and fire from cover with shields raised.'},
+  skirmish:{name:'Skirmish',glyph:'➹',key:'C',col:'#5ff0e0',
+    desc:'Keep your distance. Poke from max range and fall back when they close in.'},
+};
+const SPEEDS=[0.5,1,2];
 
 /* ── VETERANCY — units that rack up kills mid-battle grow stronger, on both sides ── */
 const VET_RANKS=[
@@ -889,6 +973,15 @@ function newGame(){
   if(G.enemyBias){ G.general=GENERALS.find(x=>x.bias===G.enemyBias)||GENERAL_DEFAULT; }
   else { G.general=pick(GENERALS); G.enemyBias=G.general.bias; }
   G.rivalTauntT=rnd(20,28);
+  // troop stance (behaviour only) + game speed
+  G.stance='assault';
+  G.speed=SAVE.speed||1;
+  // in-battle tech unlocks — only the "normal" modes make you buy your way up the tree
+  G.techMode=(kind==='skirmish'||kind==='blitz'||kind==='survival');
+  G.unlocked={};
+  for(const key of HOTBAR){ G.unlocked[key]=G.techMode?(unitTier(key)===1):true; }
+  // chat-vote state (streamer Phase 2)
+  G.cvVotes={0:0,1:0,2:0}; G.cvVoters={}; G.cvT=CHATLINK.voteEvery; G.bossMeter=0; G.bossVoters={};
   // daily mutators
   if(L&&L.type==='daily'&&L.mut&&L.mut.apply){try{L.mut.apply(G);}catch(e){}}
   for(const u of HOTBAR)G.cds[u]=0;
@@ -945,9 +1038,20 @@ function spawn(side,key,lane){
 }
 
 /* ── DEPLOY (player) ── */
+function tryUnlock(key){
+  if(!G||G.over||G.paused)return false;
+  if(G.unlocked[key])return true;
+  const c=tierUnlockCost(key);
+  if(G.cp<c){ flashCard(key,'cant'); return false; }
+  G.cp-=c; G.unlocked[key]=true;
+  SND.combo(3); announce('TECH UNLOCKED',UNITS[key].name,'#ffce5a');
+  buildHotbar();
+  return true;
+}
 function tryDeploy(key,lane){
   if(G.over||G.paused)return false;
   if(G.banned&&G.banned.indexOf(key)>=0){ flashCard(key,'cant'); return false; }
+  if(!G.unlocked[key]){ flashCard(key,'cant'); return false; } // must buy the tier first
   const cost=unitCost(key);
   if(G.cp<cost){ flashCard(key,'cant'); return false; }
   if(G.cds[key]>0){ return false; }
@@ -1144,6 +1248,8 @@ function step(dt){
   G.idleTauntT-=dt; if(G.idleTauntT<=0){ G.idleTauntT=18; if(G.cp<25&&G.t>18&&!G.tutorial)narr('lowCp'); }
   // rival general periodic taunts
   if(!G.tutorial&&G.general){ G.rivalTauntT-=dt; if(G.rivalTauntT<=0){ G.rivalTauntT=rnd(24,36); showRival(pick(G.general.taunts)); } }
+  // streamer Phase 2 — chat votes drive the enemy
+  chatVoteTick(dt);
   aiStep(dt);
   updateUnits(dt);
   if(!G.over)checkWin();
@@ -1221,12 +1327,24 @@ function updateUnits(dt){
       if(u.cd>0)u.cd-=dt; continue;
     }
     const {tgt,d}=nearestEnemy(u);
+    // player stance — posture is BEHAVIOUR only (pace + positioning), never stats
+    let stMul=1, holdLine=null, kite=false; u.shield=false;
+    if(u.side==='B'&&!u.support){
+      if(G.stance==='defend'){ stMul=0.5; holdLine=W*0.42; u.shield=true; }
+      else if(G.stance==='skirmish'){ stMul=0.75; kite=true; }
+    }
     // acquire & fire (support units never shoot)
     if(tgt&&d<=rngEff && !u.support){
       u.vx=0;
+      // skirmishers give ground when the enemy crowds inside their comfort range
+      if(kite && d<rngEff*0.55){ u.x-=dir(u.side)*u.spd*spdMul*0.9*dt; }
       if(u.cd<=0 && supp<0.85)fire(u,tgt);
     } else {
-      u.x+=dir(u.side)*u.spd*spdMul*dt;
+      const step=dir(u.side)*u.spd*spdMul*stMul*dt;
+      if(holdLine!=null && dir(u.side)>0){
+        if(u.x>holdLine) u.x=Math.max(holdLine,u.x-u.spd*spdMul*dt); // dug in ahead of the line? fall back to it
+        else u.x=Math.min(u.x+step,holdLine);                        // advance only up to the line
+      } else u.x+=step;
       if(u.flies)u.y+=Math.sin(u.bob)*0.3;
     }
     if(u.cd>0)u.cd-=dt;
@@ -1319,25 +1437,78 @@ function drawWeather(){
     if(G.wxKey==='storm'&&Math.random()<0.004){ cx.fillStyle='rgba(255,255,255,0.12)';cx.fillRect(0,0,W,H); }
   }
 }
+/* precompute static scenery for depth — distant hills + per-lane terrain props */
+function buildScenery(){
+  G.scenery={hillsFar:[],hillsNear:[],trees:[],rocks:[],grass:[]};
+  const night=G.wxKey==='night';
+  let hx=-40; while(hx<W+80){ const hw=rnd(140,260),hh=rnd(34,72); G.scenery.hillsFar.push({x:hx,w:hw,h:hh}); hx+=hw*0.62; }
+  hx=-40; while(hx<W+80){ const hw=rnd(100,190),hh=rnd(20,44); G.scenery.hillsNear.push({x:hx,w:hw,h:hh}); hx+=hw*0.7; }
+  for(let i=0;i<3;i++){ const t=G.laneTerrain[i], y=G.laneY[i]*H;
+    if(t==='forest'){ for(let k=0;k<16;k++)G.scenery.trees.push({x:rnd(78,W-78),y:y+rnd(-19,21),s:rnd(7,13)}); }
+    else if(t==='hill'){ for(let k=0;k<6;k++)G.scenery.rocks.push({x:rnd(110,W-110),y:y+rnd(-8,17),s:rnd(15,28),mound:true}); }
+    else { for(let k=0;k<5;k++)G.scenery.rocks.push({x:rnd(120,W-120),y:y+rnd(-4,15),s:rnd(4,9)}); }
+    for(let k=0;k<20;k++)G.scenery.grass.push({x:rnd(70,W-70),y:y+rnd(-20,22),s:rnd(3,7)});
+  }
+  G._sceneryNight=night;
+}
 function drawField(){
-  // sky gradient
+  const night=G&&G.wxKey==='night';
+  // sky gradient (darker at night)
   const g=cx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,'#0d1420');g.addColorStop(0.55,'#111a26');g.addColorStop(1,'#0a0e15');
+  if(night){ g.addColorStop(0,'#070b16');g.addColorStop(0.5,'#0a1020');g.addColorStop(1,'#070a12'); }
+  else { g.addColorStop(0,'#0d1420');g.addColorStop(0.5,'#132132');g.addColorStop(1,'#0a0e15'); }
   cx.fillStyle=g;cx.fillRect(0,0,W,H);
-  // ground band
-  cx.fillStyle='#0f1a14';cx.fillRect(0,H*0.24,W,H*0.62);
-  // lane stripes
-  if(G)for(let i=0;i<3;i++){ const y=G.laneY[i]*H;
-    cx.strokeStyle='rgba(120,160,120,0.06)';cx.lineWidth=44;cx.beginPath();cx.moveTo(60,y);cx.lineTo(W-60,y);cx.stroke();
-    cx.strokeStyle='rgba(140,180,220,0.05)';cx.lineWidth=1;cx.setLineDash([6,10]);cx.beginPath();cx.moveTo(70,y);cx.lineTo(W-70,y);cx.stroke();cx.setLineDash([]);
+  const horizon=H*0.30;
+  // horizon glow
+  const hg=cx.createLinearGradient(0,horizon-60,0,horizon+30);
+  hg.addColorStop(0,'rgba(0,0,0,0)');hg.addColorStop(1,night?'rgba(60,80,140,0.16)':'rgba(120,150,190,0.20)');
+  cx.fillStyle=hg;cx.fillRect(0,horizon-60,W,90);
+  if(G&&!G.scenery)buildScenery();
+  // distant + near hill silhouettes (layered depth)
+  if(G&&G.scenery){
+    cx.fillStyle=night?'#0c1424':'#131f30';
+    for(const h of G.scenery.hillsFar){ cx.beginPath();cx.moveTo(h.x,horizon);cx.quadraticCurveTo(h.x+h.w/2,horizon-h.h,h.x+h.w,horizon);cx.fill(); }
+    cx.fillStyle=night?'#0e1a2a':'#16273a';
+    for(const h of G.scenery.hillsNear){ cx.beginPath();cx.moveTo(h.x,horizon+6);cx.quadraticCurveTo(h.x+h.w/2,horizon+6-h.h,h.x+h.w,horizon+6);cx.fill(); }
+  }
+  // ground band with vertical depth gradient
+  const gg=cx.createLinearGradient(0,horizon,0,H);
+  gg.addColorStop(0,night?'#0c1512':'#12211a');gg.addColorStop(0.5,night?'#0a120f':'#0f1a14');gg.addColorStop(1,'#080d0a');
+  cx.fillStyle=gg;cx.fillRect(0,horizon,W,H-horizon);
+  // lane bands tinted by terrain
+  if(G)for(let i=0;i<3;i++){ const y=G.laneY[i]*H, t=G.laneTerrain&&G.laneTerrain[i];
+    const band= t==='forest'?'rgba(70,130,70,0.09)': t==='hill'?'rgba(150,130,90,0.08)':'rgba(120,160,150,0.05)';
+    cx.strokeStyle=band;cx.lineWidth=48;cx.beginPath();cx.moveTo(56,y);cx.lineTo(W-56,y);cx.stroke();
+    cx.strokeStyle='rgba(150,190,220,0.05)';cx.lineWidth=1;cx.setLineDash([6,10]);cx.beginPath();cx.moveTo(70,y);cx.lineTo(W-70,y);cx.stroke();cx.setLineDash([]);
+  }
+  // scenery props
+  if(G&&G.scenery){
+    // grass tufts
+    cx.strokeStyle=night?'rgba(90,120,90,0.18)':'rgba(110,150,100,0.22)';cx.lineWidth=1;
+    for(const gp of G.scenery.grass){ cx.beginPath();cx.moveTo(gp.x,gp.y);cx.lineTo(gp.x-1.5,gp.y-gp.s);cx.moveTo(gp.x,gp.y);cx.lineTo(gp.x+1.5,gp.y-gp.s);cx.stroke(); }
+    // rocks / hill mounds
+    for(const r of G.scenery.rocks){
+      if(r.mound){ cx.fillStyle=night?'rgba(80,70,55,0.5)':'rgba(120,105,78,0.5)'; cx.beginPath();cx.ellipse(r.x,r.y,r.s,r.s*0.5,0,Math.PI,0);cx.fill();
+        cx.fillStyle='rgba(255,255,255,0.05)';cx.beginPath();cx.ellipse(r.x-r.s*0.3,r.y-r.s*0.15,r.s*0.4,r.s*0.2,0,Math.PI,0);cx.fill(); }
+      else { cx.fillStyle=night?'rgba(70,80,90,0.5)':'rgba(110,120,130,0.5)'; cx.beginPath();cx.ellipse(r.x,r.y,r.s,r.s*0.6,0,0,6.28);cx.fill(); }
+    }
+    // trees (forest lanes)
+    for(const tr of G.scenery.trees){
+      cx.fillStyle=night?'#0a1a10':'#123018'; cx.beginPath();
+      cx.moveTo(tr.x-tr.s,tr.y);cx.lineTo(tr.x,tr.y-tr.s*1.8);cx.lineTo(tr.x+tr.s,tr.y);cx.closePath();cx.fill();
+      cx.fillStyle=night?'#0d2214':'#18401f'; cx.beginPath();
+      cx.moveTo(tr.x-tr.s*0.75,tr.y-tr.s*0.7);cx.lineTo(tr.x,tr.y-tr.s*2.3);cx.lineTo(tr.x+tr.s*0.75,tr.y-tr.s*0.7);cx.closePath();cx.fill();
+      cx.fillStyle='#3a2a18';cx.fillRect(tr.x-1.2,tr.y-1,2.4,4);
+    }
   }
   // centre line
-  cx.strokeStyle='rgba(255,255,255,0.04)';cx.lineWidth=2;cx.beginPath();cx.moveTo(W/2,H*0.24);cx.lineTo(W/2,H*0.86);cx.stroke();
+  cx.strokeStyle='rgba(255,255,255,0.05)';cx.lineWidth=2;cx.setLineDash([4,8]);
+  cx.beginPath();cx.moveTo(W/2,horizon);cx.lineTo(W/2,H*0.9);cx.stroke();cx.setLineDash([]);
   // lane terrain badges
   if(G&&G.laneTerrain)for(let i=0;i<3;i++){
     const y=G.laneY[i]*H, t=TERRAINS[G.laneTerrain[i]]; if(!t)continue;
     cx.font='11px var(--mono)';cx.textAlign='left';cx.fillStyle='rgba(200,220,255,0.4)';
-    cx.fillText(t.glyph+' '+t.name,78,y-22);
+    cx.fillText(t.glyph+' '+t.name,78,y-24);
   }
 }
 function drawPowerFX(){
@@ -1352,12 +1523,21 @@ function drawBases(){
 }
 function drawHQ(x,side,col){
   const cy=H*0.55, w=26, h=H*0.5;
-  cx.fillStyle=col;cx.globalAlpha=0.9;
-  cx.fillRect(side==='B'?x-4:x-w+4,cy-h/2,w,h);
-  cx.globalAlpha=1;
+  const bx=side==='B'?x-4:x-w+4;
+  // soft glow
+  const gl=cx.createRadialGradient(bx+w/2,cy,4,bx+w/2,cy,h*0.7);
+  gl.addColorStop(0,(side==='B'?'rgba(74,168,255,0.14)':'rgba(255,90,74,0.14)'));gl.addColorStop(1,'rgba(0,0,0,0)');
+  cx.fillStyle=gl;cx.fillRect(bx-40,cy-h*0.7,w+80,h*1.4);
+  // body with vertical shading
+  const bgr=cx.createLinearGradient(bx,0,bx+w,0);
+  bgr.addColorStop(0,shade(col,0.7));bgr.addColorStop(0.5,shade(col,1.15));bgr.addColorStop(1,shade(col,0.7));
+  cx.fillStyle=bgr;cx.fillRect(bx,cy-h/2,w,h);
   // crenellations
   cx.fillStyle=side==='B'?'#4aa8ff':'#ff5a4a';
   for(let i=0;i<5;i++){const yy=cy-h/2+i*(h/5)+3;cx.fillRect(side==='B'?x+18:x-w-4,yy,6,h/5-6);}
+  // antenna
+  cx.strokeStyle=shade(col,1.3);cx.lineWidth=2;cx.beginPath();cx.moveTo(bx+w/2,cy-h/2);cx.lineTo(bx+w/2,cy-h/2-14);cx.stroke();
+  cx.fillStyle=side==='B'?'#7fd0ff':'#ff9080';cx.beginPath();cx.arc(bx+w/2,cy-h/2-14,2.5,0,6.28);cx.fill();
   // flag glyph
   cx.font='bold 20px var(--mono)';cx.textAlign='center';cx.fillStyle='#fff';
   cx.fillText(side==='B'?'★':'☭',side==='B'?x+8:x-w+14,cy);
@@ -1374,11 +1554,17 @@ function drawUnit(u){
   // support aura (medic/jammer)
   if(u.support&&(u.healR||u.jamR)){cx.globalAlpha=0.09;cx.strokeStyle=u.heal>0?'#9fffce':'#b0a0ff';
     cx.lineWidth=1.5;cx.beginPath();cx.arc(x,y,(u.healR||u.jamR),0,6.28);cx.stroke();cx.globalAlpha=1;}
-  // shadow
-  if(u.flies){cx.fillStyle='rgba(0,0,0,0.3)';cx.beginPath();cx.ellipse(u.x,u.y+4,u.r*0.7,3,0,0,6.28);cx.fill();}
-  // body
-  cx.beginPath();cx.arc(x,y,u.r,0,6.28);
-  cx.fillStyle=u.hitFlash>0?'#fff':u.col;cx.fill();
+  // ground shadow (depth) — under the true ground position for fliers
+  cx.fillStyle='rgba(0,0,0,0.30)';cx.beginPath();
+  cx.ellipse(u.x,u.y+(u.flies?4:u.r*0.55),u.r*(u.flies?0.7:0.95),u.flies?3:u.r*0.34,0,0,6.28);cx.fill();
+  // shield (defend stance) — drawn behind the body, facing the enemy
+  if(u.shield){cx.strokeStyle='rgba(120,225,150,0.75)';cx.lineWidth=2.4;
+    cx.beginPath();cx.arc(x,y,u.r+4,-0.95,0.95);cx.stroke();}
+  // body with a little radial shading for volume
+  const base=u.hitFlash>0?'#ffffff':u.col;
+  const bg=cx.createRadialGradient(x-u.r*0.4,y-u.r*0.4,1,x,y,u.r+1);
+  bg.addColorStop(0,shade(base,1.4));bg.addColorStop(1,shade(base,0.72));
+  cx.beginPath();cx.arc(x,y,u.r,0,6.28);cx.fillStyle=bg;cx.fill();
   cx.lineWidth=1.5;cx.strokeStyle=u.side==='B'?'#0a3a6a':'#6a1a10';cx.stroke();
   // side ring
   cx.beginPath();cx.arc(x,y,u.r+2,0,6.28);cx.strokeStyle=u.side==='B'?'rgba(74,168,255,0.5)':'rgba(255,90,74,0.5)';cx.lineWidth=1;cx.stroke();
@@ -1447,12 +1633,25 @@ function syncHUD(){
   // hotbar cooldowns / affordability
   for(const key of HOTBAR){
     const el=document.getElementById('card-'+key); if(!el)continue;
+    const locked=!G.unlocked[key];
+    el.classList.toggle('locked',locked);
+    if(locked){ el.classList.toggle('cant',G.cp<tierUnlockCost(key)); el.classList.remove('sel'); continue; }
     const cost=unitCost(key);
     el.classList.toggle('cant',G.cp<cost);
     el.classList.toggle('sel',G.selCard===key);
     const cdEl=el.querySelector('.cd');
     if(G.cds[key]>0){cdEl.style.display='flex';cdEl.textContent=G.cds[key].toFixed(1);}
     else cdEl.style.display='none';
+  }
+  // chat vote bar (streamer)
+  const vb=document.getElementById('votebar');
+  if(vb){
+    if((SAVE.streamOn||CHATLINK.connected)&&!G.tutorial){ vb.style.display='block';
+      const tot=G.cvVotes[0]+G.cvVotes[1]+G.cvVotes[2];
+      vb.innerHTML=`<div class="vb-h">CHAT → ENEMY LANE <span style="color:var(--faint)">${Math.ceil(G.cvT)}s</span></div>`+
+        [0,1,2].map(i=>`<div class="vb-row"><span>${['TOP','MID','BOT'][i]}</span><div class="vb-track"><i style="width:${tot?Math.round(G.cvVotes[i]/tot*100):0}%"></i></div><span>${G.cvVotes[i]}</span></div>`).join('')+
+        `<div class="vb-boss">BOSS ${G.bossMeter}/${CHATLINK.bossThreshold}</div>`;
+    } else vb.style.display='none';
   }
   // strike button
   const stk=document.getElementById('card-strike');
@@ -1485,11 +1684,14 @@ function buildHotbar(){
     const u=UNITS[key];
     const el=document.createElement('div');
     el.className='card'; el.id='card-'+key;
+    const tier=unitTier(key), locked=G&&!G.unlocked[key];
     el.innerHTML=`<span class="key">${i<9?i+1:''}</span><div class="glyph" style="color:${u.col}">${u.glyph}</div>
       <div class="nm">${u.name}</div><div class="cost">${unitCost(key)}</div>
-      <div class="cd" style="display:none"></div><div class="ready-flash"></div>`;
-    el.onclick=()=>{G.selCard=key;showLaneHint();};
-    el.title=u.desc||'';
+      <div class="cd" style="display:none"></div><div class="ready-flash"></div>
+      <div class="lockov">🔒<b>${tierUnlockCost(key)}</b><span>T${tier}</span></div>`;
+    if(locked)el.classList.add('locked');
+    el.onclick=()=>{ if(!G.unlocked[key]){ if(tryUnlock(key))G.selCard=key; } else { G.selCard=key; } showLaneHint(); };
+    el.title=(locked?'Tier '+tier+' — pay '+tierUnlockCost(key)+' CP to unlock. ':'')+(u.desc||'');
     hb.appendChild(el);
   });
   // missile strike special card
@@ -1595,6 +1797,106 @@ function clipMoment(){
   const b=document.getElementById('clipbanner');
   b.animate([{opacity:0,transform:'translate(-50%,-50%) scale(0.6)'},{opacity:1,transform:'translate(-50%,-50%) scale(1.1)'},{opacity:1,transform:'translate(-50%,-50%) scale(1)'},{opacity:0,transform:'translate(-50%,-50%) scale(1.2)'}],{duration:1400});
   chatMsg('CLIP THAT!!','#c9a0ff');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PHASE 2 — LIVE STREAMER CHAT (real Twitch integration)
+   Connects anonymously (read-only) to a Twitch channel's chat over IRC-WS —
+   no login, no OAuth, no keys. Viewers steer the ENEMY: "top / mid / bot"
+   votes surge the winning lane on a timer, and "boss" votes summon a boss.
+   Falls back to the simulated chat when not connected, so it still demos
+   fully offline. All incoming text is HTML-escaped before display.
+   ═══════════════════════════════════════════════════════════════════════ */
+const CHATLINK={ ws:null, channel:'', connected:false, connecting:false,
+  voteEvery:14, bossThreshold:8 };
+function escapeHtml(s){return (''+s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function chatStatus(txt,col){ const el=document.getElementById('tw-status'); if(el){el.textContent=txt;el.style.color=col||'var(--dim)';} }
+function chatMsgRaw(user,txt,ucol){
+  if(!SAVE.streamOn)return;
+  const feed=document.getElementById('chatfeed'); if(!feed)return;
+  const el=document.createElement('div');el.className='cmsg';
+  el.innerHTML=`<span class="u" style="color:${ucol||pick(['#4aa8ff','#3fd07a','#ffce5a','#c9a0ff','#ff9f40'])}">${escapeHtml(user)}</span>: ${escapeHtml(txt)}`;
+  feed.appendChild(el);
+  while(feed.children.length>9)feed.removeChild(feed.firstChild);
+}
+function chatConnect(channel){
+  channel=(channel||'').trim().toLowerCase().replace(/^#/,'');
+  if(!channel){chatStatus('Type a Twitch channel name first.','var(--warn)');return;}
+  chatDisconnect();
+  CHATLINK.channel=channel; CHATLINK.connecting=true;
+  chatStatus('Connecting to #'+channel+' …');
+  let ws;
+  try{ ws=new WebSocket('wss://irc-ws.chat.twitch.tv:443'); }
+  catch(e){ chatStatus('WebSocket unavailable here — simulated chat stays on.','var(--warn)'); return; }
+  CHATLINK.ws=ws;
+  ws.onopen=()=>{ const nick='justinfan'+((Math.random()*99999)|0);
+    try{ ws.send('PASS SCHMOOPIIE'); ws.send('NICK '+nick); ws.send('JOIN #'+channel); }catch(e){}
+    CHATLINK.connected=true; CHATLINK.connecting=false;
+    chatStatus('● LIVE — reading #'+channel,'var(--good)');
+    SAVE.twitchChannel=channel; if(!SAVE.streamOn){SAVE.streamOn=true;refreshTopbar();} persist();
+    chatMsgRaw('FRONTLINE','Connected! Chat: type top / mid / bot to surge the enemy at a lane, or boss to summon a boss.','#5ff0e0');
+  };
+  ws.onmessage=ev=>handleIRC(ev.data);
+  ws.onerror=()=>{ chatStatus('Connection error — check the name / your network.','var(--red)'); CHATLINK.connecting=false; };
+  ws.onclose=()=>{ if(CHATLINK.connected)chatStatus('Disconnected.','var(--dim)'); CHATLINK.connected=false; CHATLINK.ws=null; };
+}
+function chatDisconnect(){ try{ if(CHATLINK.ws)CHATLINK.ws.close(); }catch(e){} CHATLINK.ws=null; CHATLINK.connected=false; }
+function handleIRC(data){
+  const lines=(''+data).split('\r\n');
+  for(const line of lines){ if(!line)continue;
+    if(line.indexOf('PING')===0){ try{CHATLINK.ws.send('PONG :tmi.twitch.tv');}catch(e){} continue; }
+    const m=line.match(/^:(\w+)!\w+@[\w.]+ PRIVMSG #\S+ :(.*)$/);
+    if(m)onChatMsg(m[1],m[2]);
+  }
+}
+function onChatMsg(user,text){
+  chatMsgRaw(user,text);
+  if(!G||G.over||G.tutorial)return;
+  const t=text.trim().toLowerCase().replace(/^!/,'');
+  let lane=null;
+  if(/^(top|t|1)$/.test(t))lane=0;
+  else if(/^(mid|middle|m|2)$/.test(t))lane=1;
+  else if(/^(bot|bottom|b|3)$/.test(t))lane=2;
+  if(lane!=null){
+    const old=G.cvVoters[user];
+    if(old==null){ G.cvVoters[user]=lane; G.cvVotes[lane]++; }
+    else if(old!==lane){ G.cvVotes[old]=Math.max(0,G.cvVotes[old]-1); G.cvVotes[lane]++; G.cvVoters[user]=lane; }
+    return;
+  }
+  if(/^boss$/.test(t)){ if(!G.bossVoters[user]){ G.bossVoters[user]=1; G.bossMeter++;
+    if(G.bossMeter>=CHATLINK.bossThreshold){ spawnBoss((Math.random()*3)|0); G.bossMeter=0; G.bossVoters={}; } } }
+}
+function spawnBoss(lane){
+  if(!G)return;
+  spawn('R','tank',lane);
+  const b=G.units[G.units.length-1];
+  b.name='CHAT BOSS'; b.boss=true;
+  b.maxHp=b.hp=b.baseHp=b.hp*6; b.dmg=b.baseDmg=b.dmg*2.2;
+  b.r=Math.round(b.r*1.7); b.spd*=0.7; b.col='#c9a0ff'; b.glyph='☠';
+  announce('⚠ CHAT BOSS','the '+['top','middle','bottom'][lane]+' lane','#c9a0ff');
+  chatMsgRaw('FRONTLINE','A BOSS has been summoned in the '+['top','mid','bot'][lane]+' lane!','#c9a0ff');
+  G.shake=Math.max(G.shake,12);
+}
+function chatVoteTick(dt){
+  if(!G||G.over||G.tutorial)return;
+  if(!SAVE.streamOn && !CHATLINK.connected)return;
+  // when not connected but streamer mode is on, simulate votes so the mechanic demos offline
+  if(!CHATLINK.connected){
+    if(Math.random()<dt*2.4){ G.cvVotes[(Math.random()*3)|0]++; }
+    if(Math.random()<dt*0.12){ G.bossMeter++; if(G.bossMeter>=CHATLINK.bossThreshold){ spawnBoss((Math.random()*3)|0); G.bossMeter=0; } }
+  }
+  G.cvT-=dt;
+  if(G.cvT<=0){
+    G.cvT=CHATLINK.voteEvery;
+    let best=-1,bl=1; for(let i=0;i<3;i++)if(G.cvVotes[i]>best){best=G.cvVotes[i];bl=i;}
+    if(best>0){
+      const n=Math.min(4,1+Math.floor(best/2));
+      for(let k=0;k<n;k++)spawn('R',pick(['rifle','tank','ifv','atgm','drone']),bl);
+      announce('CHAT SENDS THE '+['TOP','MIDDLE','BOTTOM'][bl]+' LANE','+'+n+' enemy','#c9a0ff');
+      chatMsgRaw('FRONTLINE','the '+['top','mid','bot'][bl]+' lane vote wins — incoming!','#c9a0ff');
+    }
+    G.cvVotes={0:0,1:0,2:0}; G.cvVoters={};
+  }
 }
 
 /* ═══ RESULTS / END ═══ */
@@ -1855,6 +2157,7 @@ function start(){
   narrStop();
   newGame();
   actx();
+  syncStanceUI(); syncSpeedUI();
   const big=(G.kind==='campaign'&&G.mission)?G.mission.name:((MODES[G.mode]&&MODES[G.mode].name)||G.kind);
   announce(String(big).toUpperCase(),DOCTRINES[G.doc].name+' · '+DIFFS[G.diff].name+' · '+G.wx.name,DOCTRINES[G.doc].col);
   if(!G.tutorial){
@@ -1868,9 +2171,13 @@ function start(){
 }
 let last=performance.now();
 function loop(now){
-  const dt=Math.min(0.05,(now-last)/1000); last=now;
-  if(G&&!G.paused&&!G.over)step(dt);
-  if(laneHintT>0){laneHintT-=dt;if(laneHintT<=0)document.getElementById('lanehint').style.opacity='0';}
+  const raw=Math.min(0.05,(now-last)/1000); last=now;
+  if(G&&!G.paused&&!G.over){
+    const sp=G.speed||1;
+    if(sp>=2){ step(raw); if(!G.over)step(raw); }      // 2× = two capped sub-steps (no tunnelling)
+    else step(raw*sp);                                  // 0.5× / 1× = scaled single step
+  }
+  if(laneHintT>0){laneHintT-=raw;if(laneHintT<=0)document.getElementById('lanehint').style.opacity='0';}
   draw();
   syncHUD();
   requestAnimationFrame(loop);
@@ -1886,16 +2193,32 @@ window.addEventListener('keydown',e=>{
   const n=parseInt(e.key,10);
   if(!isNaN(n)){
     if(n===0){G.selCard='strike';showLaneHint();return;}
-    if(n>=1&&n<=9&&n<=HOTBAR.length){G.selCard=HOTBAR[n-1];showLaneHint();return;}
+    if(n>=1&&n<=9&&n<=HOTBAR.length){ const key=HOTBAR[n-1];
+      if(!G.unlocked[key]){ if(tryUnlock(key))G.selCard=key; } else G.selCard=key;
+      showLaneHint();return;}
   }
   // R / F select the commander powers
   if(k==='r'){G.selCard='recon';showLaneHint();return;}
   if(k==='f'){ if(SAVE.lvl>=3){G.selCard='emp';showLaneHint();} return; }
+  // Z / X / C set troop stance on the fly (behaviour only)
+  if(k==='z'){setStance('assault');return;}
+  if(k==='x'){setStance('defend');return;}
+  if(k==='c'){setStance('skirmish');return;}
   // Q/W/E quick-deploy selected card into a lane
   if(k==='q'){quickDeploy(0);}
   else if(k==='w'){quickDeploy(1);}
   else if(k==='e'){quickDeploy(2);}
 });
+function setStance(s){
+  if(!G||G.over||!STANCES[s])return;
+  if(G.stance===s)return;
+  G.stance=s;
+  announce(STANCES[s].glyph+' '+STANCES[s].name.toUpperCase()+' STANCE','',STANCES[s].col);
+  syncStanceUI();
+}
+function syncStanceUI(){
+  for(const s in STANCES){ const b=document.getElementById('stance-'+s); if(b)b.classList.toggle('on',G&&G.stance===s); }
+}
 function quickDeploy(lane){
   if(G.selCard==='strike')tryStrike(lane,W*0.6);
   else if(G.selCard==='recon')tryRecon(lane);
@@ -1917,6 +2240,7 @@ function refreshTopbar(){
   document.getElementById('btn-sound').textContent=SAVE.sound?'🔊 Sound':'🔇 Muted';
   document.getElementById('btn-narr').classList.toggle('on',!!SAVE.narrator);
   document.getElementById('btn-narr').textContent=(SAVE.narrator?'🎙 Narrator':'🔇 Narrator');
+  document.getElementById('btn-twitch').classList.toggle('on',!!CHATLINK.connected);
 }
 document.getElementById('btn-stream').onclick=()=>{SAVE.streamOn=!SAVE.streamOn;persist();refreshTopbar();
   if(SAVE.streamOn){document.getElementById('chatfeed').innerHTML='';chatReact('idle');}};
@@ -1968,6 +2292,25 @@ document.getElementById('fr-yes').onclick=()=>{document.getElementById('firstrun
 document.getElementById('fr-no').onclick=()=>{document.getElementById('firstrun').classList.remove('show');SAVE.seenTut=true;persist();};
 document.getElementById('btn-resume').onclick=togglePause;
 document.getElementById('btn-quit').onclick=()=>{G.paused=false;document.getElementById('pauseScreen').classList.add('hidden');openMenu();};
+
+/* stance + speed controls */
+document.getElementById('stance-assault').onclick=()=>setStance('assault');
+document.getElementById('stance-defend').onclick=()=>setStance('defend');
+document.getElementById('stance-skirmish').onclick=()=>setStance('skirmish');
+function setSpeed(sp){ if(!G)return; G.speed=sp; SAVE.speed=sp; persist(); syncSpeedUI(); }
+function syncSpeedUI(){ const sp=G?G.speed:(SAVE.speed||1);
+  document.getElementById('speed-0').classList.toggle('on',sp===0.5);
+  document.getElementById('speed-1').classList.toggle('on',sp===1);
+  document.getElementById('speed-2').classList.toggle('on',sp>=2); }
+document.getElementById('speed-0').onclick=()=>setSpeed(0.5);
+document.getElementById('speed-1').onclick=()=>setSpeed(1);
+document.getElementById('speed-2').onclick=()=>setSpeed(2);
+
+/* twitch live chat modal */
+document.getElementById('btn-twitch').onclick=()=>{ document.getElementById('tw-channel').value=SAVE.twitchChannel||''; document.getElementById('twitchmodal').classList.add('show'); };
+document.getElementById('tw-close').onclick=()=>document.getElementById('twitchmodal').classList.remove('show');
+document.getElementById('tw-connect').onclick=()=>chatConnect(document.getElementById('tw-channel').value);
+document.getElementById('tw-disconnect').onclick=()=>{ chatDisconnect(); chatStatus('Disconnected — simulated chat still runs in Streamer Mode.','var(--dim)'); };
 
 /* ═══ BOOT ═══ */
 // unlock by level on load

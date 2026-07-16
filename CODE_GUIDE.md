@@ -211,6 +211,42 @@ mission/daily already fixed `enemyBias`, the matching general is picked so
 flavor and behavior stay consistent (e.g. the "Night Raid" mission's tank
 bias always pairs with Gen. Korvinov).
 
+## Later systems (speed / stances / tech tree / live chat / visuals)
+
+**Game speed** (`SPEEDS`, `G.speed`, `SAVE.speed`) — the `loop()` scales `dt`:
+0.5×/1× run one scaled step, 2× runs two capped sub-steps (avoids tunnelling).
+Controlled by the SPEED cluster in the HUD (`#speedbar`, `setSpeed`).
+
+**Troop stances** (`STANCES`, `G.stance`) — **behaviour only, never stats**.
+Applied in the movement branch of `updateUnits()` for player (side B) units:
+`defend` slows the advance and clamps units to a hold line (`W*0.42`, behind
+centre) with a shield drawn in `drawUnit()`; `skirmish` makes them give ground
+when an enemy crowds inside `range*0.55`. Nothing touches dmg/hp/rof. Set via
+the STANCE cluster or Z/X/C (`setStance`).
+
+**In-battle tech tree** (`UNIT_TIER`, `TIER_UNLOCK`, `G.unlocked`, `G.techMode`)
+— only the "normal" modes (skirmish/blitz/survival) start with just tier-1
+units; tiers 2–3 must be bought once per battle with CP (`tryUnlock`) before
+they can be deployed (`tryDeploy` gate). Locked cards show a cost overlay
+(`.lockov`); clicking one buys the unlock. Campaign/daily/tutorial unlock
+everything up front.
+
+**Live Twitch chat** (`CHATLINK`, Phase 2) — `chatConnect()` opens an anonymous
+read-only Twitch IRC WebSocket (`justinfan` nick, no OAuth). `handleIRC()`
+parses PRIVMSG lines; `onChatMsg()` reads `top/mid/bot` lane votes and `boss`
+votes. `chatVoteTick()` (called from `step()`) applies the winning lane as an
+enemy surge on a timer and summons a `spawnBoss()` at the boss threshold. When
+not connected but Streamer Mode is on, it simulates votes so the mechanic demos
+offline. All incoming chat text is `escapeHtml()`-escaped before display. UI is
+the `#twitchmodal` (topbar "📡 Live Chat") plus the `#votebar` tally.
+
+**Visual depth** — `drawField()` now layers a weather-aware sky, horizon glow,
+two rows of hill silhouettes, a depth-graded ground, terrain-tinted lane bands,
+and per-lane scenery (`buildScenery()` precomputes trees for forest lanes, rock
+mounds for hills, small rocks + grass elsewhere — stored on `G.scenery`).
+`drawUnit()` adds ground shadows and a radial-gradient body via the `shade()`
+hex helper; `drawHQ()` got a glow, shading, and an antenna.
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass
