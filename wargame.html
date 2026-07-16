@@ -439,6 +439,9 @@
         <h3>① DOCTRINE</h3>
         <div class="opt" id="doc-opts"></div>
         <div class="doc-desc" id="doc-desc"></div>
+        <h3 style="margin-top:16px">🌐 NATION</h3>
+        <div class="opt" id="country-opts"></div>
+        <div class="doc-desc" id="country-desc" style="min-height:0;margin-top:6px"></div>
       </div>
       <div class="mcard">
         <h3>② GAME MODE</h3>
@@ -702,6 +705,29 @@ const AGES=[
 // which age each unit becomes available in (Evolution mode gates the roster by age)
 const UNIT_MINAGE={rifle:0,ifv:0,medic:0, atgm:1,tank:1,aa:1, sniper:2,arty:2,jammer:2, mlrs:3,heli:3, drone:4};
 
+/* ── PRODUCTION SPAWNERS — expensive structures built just ahead of your HQ that
+   pump out a unit on a timer. A long-term economy investment. Capped per side. ── */
+const SPAWNERS={
+  barracks:{name:'Barracks',glyph:'⌂',unit:'rifle',cost:200,interval:3.0,col:'#8fd0ff',desc:'pumps out riflemen'},
+  motorpool:{name:'Motor Pool',glyph:'▣',unit:'ifv',cost:300,interval:5.2,col:'#ffc766',desc:'pumps out IFVs'},
+  dronebay:{name:'Drone Bay',glyph:'⬟',unit:'drone',cost:260,interval:4.4,col:'#ffdf7f',desc:'pumps out kamikaze drones'},
+};
+const SPAWNER_KEYS=Object.keys(SPAWNERS);
+const MAX_SPAWNERS=4;
+
+/* ── COUNTRIES — rename the roster to real national equipment (flavour only, no stat change) ── */
+const COUNTRIES={
+  generic:{name:'Generic',flag:'🏴',names:{}},
+  usa:{name:'United States',flag:'🇺🇸',names:{rifle:'Rifleman',atgm:'Javelin Team',sniper:'Marine Sniper',tank:'M1 Abrams',ifv:'M2 Bradley',arty:'M109 Paladin',mlrs:'HIMARS',aa:'M-SHORAD Avenger',heli:'AH-64 Apache',drone:'Switchblade',medic:'Corpsman',jammer:'EW Stryker'}},
+  russia:{name:'Russia',flag:'🇷🇺',names:{rifle:'Motor Rifles',atgm:'Kornet Team',sniper:'SVD Marksman',tank:'T-90M',ifv:'BMP-3',arty:'2S19 Msta-S',mlrs:'BM-30 Smerch',aa:'Pantsir-S1',heli:'Ka-52 Alligator',drone:'Lancet',medic:'Medic',jammer:'Krasukha EW'}},
+  china:{name:'China',flag:'🇨🇳',names:{rifle:'PLA Infantry',atgm:'HJ-12 Team',sniper:'QBU Marksman',tank:'Type 99A',ifv:'ZBD-04A',arty:'PLZ-05',mlrs:'PHL-03',aa:'HQ-17',heli:'Z-10',drone:'CH-901',medic:'Medic',jammer:'EW Vehicle'}},
+  uk:{name:'United Kingdom',flag:'🇬🇧',names:{rifle:'Riflemen',atgm:'NLAW Team',sniper:'Sharpshooter',tank:'Challenger 2',ifv:'Warrior',arty:'AS-90',mlrs:'MLRS',aa:'Stormer HVM',heli:'Apache AH1',drone:'Loitering Munition',medic:'Medic',jammer:'EW Variant'}},
+  germany:{name:'Germany',flag:'🇩🇪',names:{rifle:'Panzergrenadier',atgm:'MELLS Team',sniper:'G82 Marksman',tank:'Leopard 2A7',ifv:'Puma',arty:'PzH 2000',mlrs:'MARS II',aa:'Gepard',heli:'Tiger',drone:'HERON',medic:'Sanitäter',jammer:'EW Variant'}},
+  japan:{name:'Japan',flag:'🇯🇵',names:{rifle:'JGSDF Infantry',atgm:'Type 01 Team',sniper:'Marksman',tank:'Type 10',ifv:'Type 89',arty:'Type 99 SPH',mlrs:'MLRS',aa:'Type 11',heli:'AH-64DJ',drone:'Loitering Munition',medic:'Medic',jammer:'EW Variant'}},
+};
+const COUNTRY_KEYS=Object.keys(COUNTRIES);
+function unitName(key,country){ const c=COUNTRIES[country]; return (c&&c.names[key])||UNITS[key].name; }
+
 /* ── STANCES — on-the-fly posture. Changes BEHAVIOUR only, never stats. ── */
 const STANCES={
   assault:{name:'Assault',glyph:'⚔',key:'Z',col:'#ff9f40',
@@ -824,7 +850,7 @@ const CAMPAIGN=[
     starTest:g=>g.result==='B'},
 ];
 
-let sel={doctrine:'blitzkrieg',mode:'skirmish',diff:'veteran'};
+let sel={doctrine:'blitzkrieg',mode:'skirmish',diff:'veteran',country:'generic'};
 
 /* ── AUDIO (tiny WebAudio blips, no assets) ── */
 let AC=null;
@@ -1167,9 +1193,12 @@ function newGame(){
   // troop stance (behaviour only) + game speed
   G.stance='assault';
   G.speed=SAVE.speed||1;
+  // country flavour — player's chosen nation, enemy gets a different one
+  G.country=sel.country||'generic';
+  G.enemyCountry=pick(COUNTRY_KEYS.filter(c=>c!=='generic'&&c!==G.country))||'russia';
   // Age-of-War evolution state
   G.ages=(kind==='evolution');
-  G.age=0; G.evo=0; G.enemyAge=0; G.enemyAgeT=28; G.turrets=[];
+  G.age=0; G.evo=0; G.enemyAge=0; G.enemyAgeT=28; G.turrets=[]; G.spawners=[]; G.scorches=[];
   // in-battle tech unlocks — normal modes make you buy the tree; Evolution gates by age
   G.techMode=(kind==='skirmish'||kind==='blitz'||kind==='survival');
   G.unlocked={};
@@ -1204,7 +1233,7 @@ function unitCD(key){ const u=UNITS[key],p=G.perk; let cd=u.cd;
   if(u.cat==='dro')cd*=(p.droCdMul||1);
   return cd;
 }
-function spawn(side,key,lane){
+function spawn(side,key,lane,xOverride){
   const u=UNITS[key], p=G.perk, diff=G.diffMul;
   const SPD_SCALE=2.8; // battlefield is wide; keep the pace punchy
   let hp=u.hp, dmg=u.dmg, spd=u.spd*SPD_SCALE;
@@ -1222,13 +1251,14 @@ function spawn(side,key,lane){
     if(G.ages&&G.enemyAge>0){ const a=AGES[G.enemyAge]; hp*=a.unit; dmg*=a.unit; }
   }
   const y=G.laneY[lane]*H+rnd(-10,10);
-  const x=side==='B'?rnd(40,70):W-rnd(40,70);
+  const x=xOverride!=null?xOverride:(side==='B'?rnd(40,70):W-rnd(40,70));
   G.units.push({id:_uid++,side,key,lane,x,y,
     hp,maxHp:hp,dmg,spd,rof:u.rof,rng:u.rng,cd:rnd(0,u.rof),
     baseHp:hp,baseDmg:dmg,vetRank:0,vetKills:0,
     r:u.r,col:u.col,glyph:u.glyph,flies:!!u.flies,arc:!!u.arc,aa:!!u.aa,onlyAir:!!u.onlyAir,
     splash:u.splash,kamikaze:!!u.kamikaze,armor:!!u.armor,
-    vsArmor:u.vsArmor||1,vsAir:u.vsAir||1,cat:u.cat,name:u.name,
+    vsArmor:u.vsArmor||1,vsAir:u.vsAir||1,cat:u.cat,
+    name:unitName(key, side==='B'?G.country:G.enemyCountry),
     dmgType:UNIT_DMGTYPE[key]||'sa', armorClass:UNIT_ARMORCLASS[key]||'inf', crit:UNIT_CRIT[key]||0, cover:false,
     age:(side==='B'?G.age:G.enemyAge)||0,
     heal:u.heal||0,healR:u.healR||0,salvo:u.salvo||0,jam:u.jam||0,jamR:u.jamR||0,
@@ -1260,6 +1290,8 @@ function tryDeploy(key,lane){
   G.cds[key]=unitCD(key)*(G.cdMul||1);
   spawn('B',key,lane);
   SND.deploy();
+  // deploy ripple feedback
+  G.rings.push({x:58,y:G.laneY[lane]*H,r:2,max:24,life:0.4,age:0,col:'#7fd0ff'});
   if(G.tutorial&&window.tutOnAction)tutOnAction('deploy',key,lane);
   return true;
 }
@@ -1305,14 +1337,21 @@ function tryEmp(lane){
 }
 
 /* ── AGE OF WAR: evolution, enemy aging, and base turrets ── */
+const AGE_INTERVAL={recruit:58,veteran:44,elite:35,legendary:28};
 function ageTick(dt){
+  // passive research so the player always advances, even in a quiet, low-count game
+  G.evo += dt*4.2;
+  // the enemy evolves on a difficulty cadence — but can NEVER get more than one age ahead of you
   G.enemyAgeT-=dt;
-  if(G.enemyAgeT<=0 && G.enemyAge<AGES.length-1){
-    G.enemyAgeT=rnd(26,34); G.enemyAge++;
-    const oldMax=G.hqMax.R; G.hqMax.R=1000*AGES[G.enemyAge].hqMul; G.hq.R+=(G.hqMax.R-oldMax);
-    announce('ENEMY ADVANCES','now the '+AGES[G.enemyAge].name,'#ff5a4a');
-    if(G.general)showRival(pick(G.general.taunts));
-    if(G.enemyAge>=2)addTurret('R');
+  if(G.enemyAgeT<=0){
+    G.enemyAgeT=(AGE_INTERVAL[G.diff]||44)*rnd(0.9,1.12);
+    if(G.enemyAge<AGES.length-1 && G.enemyAge<G.age+1){
+      G.enemyAge++;
+      const oldMax=G.hqMax.R; G.hqMax.R=1000*AGES[G.enemyAge].hqMul; G.hq.R+=(G.hqMax.R-oldMax);
+      announce('ENEMY ADVANCES','now the '+AGES[G.enemyAge].name,'#ff5a4a');
+      if(G.general)showRival(pick(G.general.taunts));
+      if(G.enemyAge>=2 && G.turrets.filter(t=>t.side==='R').length<2)addTurret('R');
+    }
   }
 }
 function tryEvolve(){
@@ -1361,6 +1400,47 @@ function turretTick(dt){
         col:t.side==='B'?'#bfe4ff':'#ffc0b0'});
       SND.shot();
     }
+  }
+}
+
+/* ── PRODUCTION SPAWNERS ── */
+function tryBuildSpawner(type,lane){
+  if(!G||G.over||G.paused)return false;
+  const sp=SPAWNERS[type]; if(!sp)return false;
+  if(G.spawners.filter(s=>s.side==='B').length>=MAX_SPAWNERS){ announce('MAX FACTORIES','you\'re at the cap','#ff5a4a'); return false; }
+  if(G.cp<sp.cost){ announce('NEED '+sp.cost+' CP','build a factory','#ff5a4a'); return false; }
+  G.cp-=sp.cost;
+  G.spawners.push({side:'B',type,lane,x:W*0.135,y:G.laneY[lane]*H,t:sp.interval*0.5,pulse:0});
+  announce(sp.name.toUpperCase()+' BUILT','now producing','#3fd07a'); SND.deploy();
+  return true;
+}
+function spawnerTick(dt){
+  if(!G.spawners||!G.spawners.length)return;
+  for(const s of G.spawners){
+    if(s.pulse>0)s.pulse-=dt;
+    s.t-=dt;
+    if(s.t<=0){ const sp=SPAWNERS[s.type]; s.t=sp.interval; s.pulse=0.3;
+      spawn(s.side,sp.unit,s.lane, s.side==='B'?s.x+14:s.x-14);
+    }
+  }
+}
+function drawSpawners(){
+  if(!G.spawners)return;
+  for(const s of G.spawners){
+    const sp=SPAWNERS[s.type], col=sp.col;
+    cx.fillStyle='rgba(0,0,0,0.32)';cx.beginPath();cx.ellipse(s.x,s.y+12,15,4,0,0,6.28);cx.fill();
+    // building body
+    const w=24,h=22,bx=s.x-w/2,by=s.y-h/2;
+    cx.fillStyle=shade(col,0.55);cx.fillRect(bx,by,w,h);
+    cx.fillStyle=shade(col,0.8);cx.fillRect(bx,by,w,6);
+    cx.strokeStyle=shade(col,1.2);cx.lineWidth=1.5;cx.strokeRect(bx,by,w,h);
+    // roof pulse when producing
+    if(s.pulse>0){cx.fillStyle='rgba(255,220,120,'+clamp(s.pulse*2,0,0.8)+')';cx.fillRect(bx,by-3,w,3);}
+    cx.fillStyle='#0a0e14';cx.font='bold 13px var(--mono)';cx.textAlign='center';cx.textBaseline='middle';
+    cx.fillText(sp.glyph,s.x,s.y+1);cx.textBaseline='alphabetic';
+    // production timer pip
+    const sp2=SPAWNERS[s.type]; const frac=1-clamp(s.t/sp2.interval,0,1);
+    cx.strokeStyle=col;cx.lineWidth=2;cx.beginPath();cx.arc(s.x,s.y,w*0.7,-Math.PI/2,-Math.PI/2+frac*6.28);cx.stroke();
   }
 }
 
@@ -1431,6 +1511,10 @@ function explode(x,y,rad,side,n){
       col:pick(['#ffce5a','#ff9f40','#ff5a4a','#fff']),sz:rnd(1.4,3.4)});}
 }
 function floatText(x,y,txt,col){ G.floats.push({x,y,txt,col:col||'#fff',life:0.8,age:0}); }
+function scorch(x,y,r){ if(!G.scorches)G.scorches=[]; G.scorches.push({x,y,r:(r||20)*0.85,life:7,age:0});
+  while(G.scorches.length>44)G.scorches.shift();
+  // a little lingering smoke
+  for(let i=0;i<3;i++)G.parts.push({x:x+rnd(-8,8),y:y+rnd(-8,8),vx:rnd(-6,6),vy:-rnd(8,22),life:rnd(0.6,1.1),age:0,col:'rgba(60,60,66,0.6)',sz:rnd(3,6)});}
 
 /* ── PROJECTILES ── */
 function fire(u,tgt){
@@ -1444,16 +1528,25 @@ function fire(u,tgt){
   // ambush — guerrilla units land a heavy opening blow
   if(!u.firedOnce){ if(u.ambush&&u.ambush>1)dmg*=u.ambush; u.firedOnce=true; }
   if(u.kamikaze){ u.diving=tgt; return; }
-  const pspd=u.arc?260:520;
-  const shots=u.salvo>0?u.salvo:1;
-  for(let s=0;s<shots;s++){
-    const jx=u.salvo>0?rnd(-26,26):0, jy=u.salvo>0?rnd(-20,20):0;
-    const tx=tgt.x+jx, ty=tgt.y+jy;
-    const ang=Math.atan2(ty-u.y,tx-u.x);
-    G.projs.push({x:u.x,y:u.y,tx,ty,tgt:u.salvo>0?null:tgt,side:u.side,dmg,
-      vx:Math.cos(ang)*pspd,vy:Math.sin(ang)*pspd,arc:u.arc,splash:u.splash,src:u,
-      life:u.arc?1.3:0.6,age:0,col:u.side==='B'?'#bfe4ff':'#ffc0b0',trail:u.arc});
+  const col=u.side==='B'?'#bfe4ff':'#ffc0b0';
+  if(u.arc){
+    // ARTILLERY — a real lobbed shell that reliably lands where it's aimed, then splashes.
+    const shots=u.salvo>0?u.salvo:1;
+    for(let s=0;s<shots;s++){
+      const spread=u.salvo>0?34:12;
+      const ix=clamp(tgt.x+rnd(-spread,spread),18,W-18), iy=tgt.y+rnd(-spread*0.7,spread*0.7);
+      const d=dist(u.x,u.y,ix,iy);
+      const dur=0.65+d/1000;
+      G.projs.push({arc:true,sx:u.x,sy:u.y,ix,iy,x:u.x,y:u.y,arcT:0,arcDur:dur,arcH:70+d*0.14,
+        side:u.side,dmg,splash:u.splash||24,src:u,col,life:dur+0.2,age:0});
+    }
+    return;
   }
+  // direct-fire round
+  const ang=Math.atan2(tgt.y-u.y,tgt.x-u.x);
+  G.projs.push({x:u.x,y:u.y,tx:tgt.x,ty:tgt.y,tgt,side:u.side,dmg,
+    vx:Math.cos(ang)*520,vy:Math.sin(ang)*520,arc:false,splash:u.splash,src:u,
+    life:0.6,age:0,col});
 }
 
 /* ═══ AI (enemy) ═══ */
@@ -1548,6 +1641,7 @@ function step(dt){
   chatVoteTick(dt);
   if(G.ages)ageTick(dt);      // Age-of-War: enemy evolves over time
   turretTick(dt);             // base turrets fire
+  spawnerTick(dt);            // production structures emit units
   aiStep(dt);
   updateUnits(dt);
   if(!G.over)checkWin();
@@ -1670,7 +1764,23 @@ function updateUnits(dt){
 function updateProjs(dt){
   for(const p of G.projs){
     p.age+=dt;
-    if(p.arc){ p.vy+=380*dt; }
+    if(p.arc){
+      // parametric lob: interpolate launch→impact and add a parabolic hop; always lands at (ix,iy)
+      p.arcT+=dt;
+      const t=Math.min(1,p.arcT/p.arcDur);
+      p.px=p.x; p.py=p.y;
+      p.x=p.sx+(p.ix-p.sx)*t;
+      p.y=p.sy+(p.iy-p.sy)*t - p.arcH*Math.sin(Math.PI*t);
+      if(t>=1){
+        p.dead=true;
+        explode(p.ix,p.iy,p.splash,p.side,18); scorch(p.ix,p.iy,p.splash);
+        G.shake=Math.max(G.shake,5); if(p.side==='R')SND.boom(); else SND.boom();
+        for(const o of G.units){ if(o.alive&&o.side!==p.side){ const dd=dist(o.x,o.y,p.ix,p.iy);
+          if(dd<p.splash)damage(o,p.dmg*(dd<p.splash*0.5?1:0.6),p.src); } }
+      }
+      continue;
+    }
+    p.px=p.x; p.py=p.y;
     p.x+=p.vx*dt; p.y+=p.vy*dt;
     let hit=false;
     if(p.tgt&&p.tgt.alive&&dist(p.x,p.y,p.tgt.x,p.tgt.y)<p.tgt.r+3){ hit=true; }
@@ -1687,10 +1797,11 @@ function updateProjs(dt){
 function updateFX(dt){
   for(const r of G.rings){r.age+=dt;r.r=r.max*(r.age/r.life);}
   G.rings=G.rings.filter(r=>r.age<r.life);
-  for(const p of G.parts){p.age+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=120*dt;p.vx*=0.96;}
+  for(const p of G.parts){p.age+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=(p.sz>4?40:120)*dt;p.vx*=0.96;}
   G.parts=G.parts.filter(p=>p.age<p.life);
   for(const f of G.floats){f.age+=dt;f.y-=26*dt;}
   G.floats=G.floats.filter(f=>f.age<f.life);
+  if(G.scorches){ for(const s of G.scorches)s.age+=dt; G.scorches=G.scorches.filter(s=>s.age<s.life); }
 }
 
 function checkWin(){
@@ -1710,6 +1821,7 @@ function draw(){
     // lane guides
     drawBases();
     drawTurrets();
+    drawSpawners();
     // sort: ground first, fliers on top
     const ground=[],air=[];
     for(const u of G.units){(u.flies?air:ground).push(u);}
@@ -1721,6 +1833,10 @@ function draw(){
     drawWeather();
   }
   cx.restore();
+  // cinematic vignette (screen-space, unaffected by shake)
+  const vg=cx.createRadialGradient(W/2,H*0.52,H*0.32,W/2,H*0.52,H*0.82);
+  vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,0.34)');
+  cx.fillStyle=vg;cx.fillRect(0,0,W,H);
   // flash overlay handled via DOM
   const flashEl=document.getElementById('fx-flash');
   if(G&&G.flash>0){flashEl.style.opacity=G.flash*0.5;flashEl.style.background=G.hqFlashCol||'#ff3020';}
@@ -1803,6 +1919,14 @@ function drawField(){
       cx.fillStyle='#3a2a18';cx.fillRect(tr.x-1.2,tr.y-1,2.4,4);
     }
   }
+  // hovered-lane highlight (when a deploy card is selected)
+  if(G&&G.hoverLane>=0&&G.selCard&&!G.over){ const y=G.laneY[G.hoverLane]*H;
+    cx.fillStyle='rgba(120,180,255,0.05)';cx.fillRect(48,y-24,W*0.5-48,48);
+    cx.strokeStyle='rgba(120,180,255,0.18)';cx.lineWidth=1;cx.setLineDash([4,6]);
+    cx.strokeRect(48,y-24,W*0.5-48,48);cx.setLineDash([]); }
+  // scorch craters from explosions/artillery
+  if(G&&G.scorches)for(const s of G.scorches){ const a=clamp(1-s.age/s.life,0,1)*0.5;
+    cx.globalAlpha=a;cx.fillStyle='#0a0806';cx.beginPath();cx.ellipse(s.x,s.y,s.r,s.r*0.5,0,0,6.28);cx.fill();cx.globalAlpha=1; }
   // centre line
   cx.strokeStyle='rgba(255,255,255,0.05)';cx.lineWidth=2;cx.setLineDash([4,8]);
   cx.beginPath();cx.moveTo(W/2,horizon);cx.lineTo(W/2,H*0.9);cx.stroke();cx.setLineDash([]);
@@ -1908,9 +2032,22 @@ function drawUnit(u){
   }
 }
 function drawProj(p){
-  if(p.arc){cx.strokeStyle=p.col;cx.lineWidth=2;cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(p.x-p.vx*0.02,p.y-p.vy*0.02);cx.stroke();
-    cx.fillStyle=p.col;cx.beginPath();cx.arc(p.x,p.y,2.4,0,6.28);cx.fill();}
-  else{cx.strokeStyle=p.col;cx.lineWidth=2;cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(p.x-p.vx*0.012,p.y-p.vy*0.012);cx.stroke();}
+  cx.save();
+  cx.shadowColor=p.col; cx.shadowBlur=6;
+  if(p.arc){
+    // target marker on the ground where the shell will land
+    const t=Math.min(1,p.arcT/p.arcDur);
+    cx.globalAlpha=0.5*(1-t)+0.2; cx.strokeStyle=p.side==='B'?'#7fd0ff':'#ff9080'; cx.lineWidth=1;
+    cx.beginPath();cx.arc(p.ix,p.iy,p.splash*(0.4+0.6*t),0,6.28);cx.stroke();
+    cx.globalAlpha=1;
+    // the shell + short trail
+    cx.strokeStyle=p.col;cx.lineWidth=2;cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(p.px||p.x,p.py||p.y);cx.stroke();
+    cx.fillStyle='#fff';cx.beginPath();cx.arc(p.x,p.y,2.6,0,6.28);cx.fill();
+  } else {
+    cx.strokeStyle=p.col;cx.lineWidth=2;cx.beginPath();cx.moveTo(p.x,p.y);
+    cx.lineTo(p.px!=null?p.px:(p.x-p.vx*0.012),p.py!=null?p.py:(p.y-p.vy*0.012));cx.stroke();
+  }
+  cx.restore();
 }
 function drawParts(){
   for(const p of G.parts){cx.globalAlpha=clamp(1-p.age/p.life,0,1);cx.fillStyle=p.col;
@@ -1995,6 +2132,12 @@ function syncHUD(){
     else{cdEl.style.display='none';ec.classList.remove('cant');}
     ec.classList.toggle('sel',G.selCard==='emp');
   }
+  // spawner cards
+  const atCap=G.spawners&&G.spawners.filter(s=>s.side==='B').length>=MAX_SPAWNERS;
+  for(const type of SPAWNER_KEYS){ const el=document.getElementById('card-sp-'+type); if(!el)continue;
+    el.classList.toggle('cant',atCap||G.cp<SPAWNERS[type].cost);
+    el.classList.toggle('sel',G.selCard==='sp-'+type);
+  }
 }
 
 /* ═══ HOTBAR UI ═══ */
@@ -2008,8 +2151,9 @@ function buildHotbar(){
     const lockInner = ageGate
       ? `${AGES[UNIT_MINAGE[key]].glyph}<b>AGE&nbsp;${UNIT_MINAGE[key]+1}</b><span>EVOLVE</span>`
       : `🔒<b>${tierUnlockCost(key)}</b><span>T${tier}</span>`;
+    const dispName=unitName(key, G?G.country:'generic');
     el.innerHTML=`<span class="key">${i<9?i+1:''}</span><div class="glyph" style="color:${u.col}">${u.glyph}</div>
-      <div class="nm">${u.name}</div><div class="cost">${unitCost(key)}</div>
+      <div class="nm">${dispName}</div><div class="cost">${unitCost(key)}</div>
       <div class="cd" style="display:none"></div><div class="ready-flash"></div>
       <div class="lockov">${lockInner}</div>`;
     if(locked)el.classList.add('locked');
@@ -2048,6 +2192,17 @@ function buildHotbar(){
   ec.title=empLocked?'Unlocks at Rank 3.':'Jams every enemy in a lane — they can barely fire or advance for a few seconds.';
   ec.onclick=()=>{ if(empLocked)return; G.selCard='emp';showLaneHint();};
   hb.appendChild(ec);
+  // production spawners — high-cost factories placed just ahead of your HQ
+  for(const type of SPAWNER_KEYS){ const sp=SPAWNERS[type];
+    const el=document.createElement('div');
+    el.className='card spawner'; el.id='card-sp-'+type; el.style.borderColor=sp.col;
+    el.innerHTML=`<span class="key">🏭</span><div class="glyph" style="color:${sp.col}">${sp.glyph}</div>
+      <div class="nm">${sp.name}</div><div class="cost" style="color:${sp.col}">${sp.cost}</div>
+      <div class="cd" style="display:none"></div>`;
+    el.title=sp.desc+' — built just ahead of your HQ; produces a unit every '+sp.interval+'s.';
+    el.onclick=()=>{G.selCard='sp-'+type;showLaneHint();};
+    hb.appendChild(el);
+  }
 }
 let laneHintT=0;
 function showLaneHint(){const el=document.getElementById('lanehint');el.style.opacity='1';laneHintT=1.4;}
@@ -2057,6 +2212,11 @@ function flashCard(key,cls){const el=document.getElementById('card-'+key);if(!el
 /* click / tap to deploy in a lane */
 function laneFromY(y){ if(!G)return 1; let best=1,bd=1e9;
   for(let i=0;i<3;i++){const d=Math.abs(y-G.laneY[i]*H);if(d<bd){bd=d;best=i;}} return best; }
+cv.addEventListener('pointermove',e=>{
+  if(!G||G.over){ if(G)G.hoverLane=-1; return; }
+  const r=cv.getBoundingClientRect(); G.hoverLane=laneFromY(e.clientY-r.top);
+});
+cv.addEventListener('pointerleave',()=>{ if(G)G.hoverLane=-1; });
 cv.addEventListener('pointerdown',e=>{
   if(!G||G.over||G.paused)return;
   actx();
@@ -2066,6 +2226,7 @@ cv.addEventListener('pointerdown',e=>{
   if(G.selCard==='strike'){ tryStrike(lane,x); }
   else if(G.selCard==='recon'){ tryRecon(lane); }
   else if(G.selCard==='emp'){ tryEmp(lane); }
+  else if(G.selCard&&G.selCard.indexOf('sp-')===0){ tryBuildSpawner(G.selCard.slice(3),lane); }
   else if(G.selCard){ tryDeploy(G.selCard,lane); }
 });
 
@@ -2441,6 +2602,16 @@ function buildMenu(){
   }
   const dd=DOCTRINES[sel.doctrine];
   document.getElementById('doc-desc').innerHTML=`<b style="color:${dd.col}">${dd.glyph} ${dd.name}</b> — ${dd.desc}`;
+  // nation
+  const cOpt=document.getElementById('country-opts');
+  if(cOpt){ cOpt.innerHTML='';
+    for(const k of COUNTRY_KEYS){ const c=COUNTRIES[k]; const b=mkOpt(c.flag+' '+(k==='generic'?'Generic':c.name.split(' ')[0]),sel.country===k);
+      b.onclick=()=>{sel.country=k;buildMenu();}; cOpt.appendChild(b); }
+    const cc=COUNTRIES[sel.country];
+    document.getElementById('country-desc').innerHTML = sel.country==='generic'
+      ? 'Generic designations. Pick a nation to field its real hardware.'
+      : `Fielding <b style="color:var(--ink)">${cc.name}</b> equipment — e.g. ${cc.names.tank}, ${cc.names.ifv}, ${cc.names.mlrs}.`;
+  }
   // modes
   const mOpt=document.getElementById('mode-opts');mOpt.innerHTML='';
   const MODECOL={skirmish:'#ffce5a',evolution:'#c9a0ff',blitz:'#ffab40',survival:'#ff5a4a'};
@@ -2588,6 +2759,7 @@ function quickDeploy(lane){
   if(G.selCard==='strike')tryStrike(lane,W*0.6);
   else if(G.selCard==='recon')tryRecon(lane);
   else if(G.selCard==='emp')tryEmp(lane);
+  else if(G.selCard&&G.selCard.indexOf('sp-')===0)tryBuildSpawner(G.selCard.slice(3),lane);
   else tryDeploy(G.selCard,lane);
 }
 function togglePause(){

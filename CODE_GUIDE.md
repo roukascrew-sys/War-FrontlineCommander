@@ -325,6 +325,31 @@ same pipeline, so the damage matrix applies to them too.
   what it actually built — into a rolling `G.aiThoughts` log shown live during
   the battle. Reads like `12s £84 saw 3▣/1✈/5i → vs ARMOR ⇒ atgm+drone`.
 
+## Artillery, balance, spawners, countries, polish
+
+- **Artillery fix** — arc rounds no longer use straight-line velocity + gravity
+  (which made them undershoot). `fire()` gives an arc shell an impact point
+  `(ix,iy)`; `updateProjs()` interpolates launch→impact with a parabolic hop and
+  **always detonates at the aimed point** with splash. `drawProj()` shows a
+  ground target ring that tightens as the shell falls.
+- **Age-of-War balance** — `ageTick()` now (a) grants passive evo (`G.evo +=
+  dt*4.2`) so the player always advances even in a quiet, low-count game, (b)
+  scales the enemy's evolve cadence by difficulty (`AGE_INTERVAL`), and (c)
+  **caps the enemy to at most one age ahead of the player** (`G.enemyAge <
+  G.age+1`) — no more runaway tech on low difficulty.
+- **Production spawners** (`SPAWNERS`, `G.spawners`, `spawnerTick`,
+  `drawSpawners`) — high-cost factory cards (Barracks/Motor Pool/Drone Bay) built
+  just ahead of your HQ that emit a unit on a timer (`spawn()` gained an
+  `xOverride` so they emerge at the building). Capped at `MAX_SPAWNERS`.
+- **Countries** (`COUNTRIES`, `unitName()`) — pick a nation in the options menu
+  (`sel.country`); units are renamed to that nation's real hardware (US → M1
+  Abrams, RU → T-90M, …). Flavour only, no stat change. The enemy fields a
+  different nation. Applied in `spawn()`'s `name` and on the hotbar cards.
+- **Visual polish** — a screen-space vignette, projectile glow + tracers with a
+  `px,py` last-position trail, artillery scorch craters (`scorch()`, drawn in
+  `drawField`) with lingering smoke, a deploy ripple, and a hovered-lane
+  highlight (`G.hoverLane` from a canvas `pointermove`).
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass
