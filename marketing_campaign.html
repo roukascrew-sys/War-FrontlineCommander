@@ -1,0 +1,298 @@
+<title>FRONTLINE COMMANDER — Campaign Operations Order</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{
+    color-scheme:light dark;
+    --ink:#0b0f17; --paper:#e9ecf2; --card:#ffffff; --edge:#d3d8e2;
+    --bg:#eef1f6; --fg:#141a24; --muted:#5a6473; --faint:#8a93a2;
+    --gold:#b7841a; --gold-soft:#e8b23a; --blue:#2f6fd0; --red:#c8392a; --good:#2f9e5f;
+    --grid:rgba(20,30,50,0.05);
+    --disp:'Arial Narrow','Helvetica Neue',Helvetica,system-ui,sans-serif;
+    --body:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --wrap:940px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --card:#111725; --edge:#26324a; --bg:#0b0f17; --fg:#e8eef7; --muted:#93a1ba; --faint:#5d6a83;
+      --gold:#e8b23a; --gold-soft:#ffce5a; --blue:#4aa8ff; --red:#ff5a4a; --good:#3fd07a;
+      --grid:rgba(140,180,230,0.05);
+    }
+  }
+  :root[data-theme="light"]{
+    --card:#ffffff; --edge:#d3d8e2; --bg:#eef1f6; --fg:#141a24; --muted:#5a6473; --faint:#8a93a2;
+    --gold:#b7841a; --gold-soft:#e8b23a; --blue:#2f6fd0; --red:#c8392a; --good:#2f9e5f;
+    --grid:rgba(20,30,50,0.05);
+  }
+  :root[data-theme="dark"]{
+    --card:#111725; --edge:#26324a; --bg:#0b0f17; --fg:#e8eef7; --muted:#93a1ba; --faint:#5d6a83;
+    --gold:#e8b23a; --gold-soft:#ffce5a; --blue:#4aa8ff; --red:#ff5a4a; --good:#3fd07a;
+    --grid:rgba(140,180,230,0.05);
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);line-height:1.6;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:44px 44px;}
+  .wrap{max-width:var(--wrap);margin:0 auto;padding:0 22px;}
+  .lbl{font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--faint);}
+  .gold{color:var(--gold);} .blue{color:var(--blue);} .red{color:var(--red);}
+  h1,h2,h3{font-family:var(--disp);text-transform:uppercase;font-weight:800;line-height:1.02;
+    letter-spacing:1.5px;text-wrap:balance;margin:0;}
+  a{color:var(--blue);}
+
+  /* ── MASTHEAD ── */
+  header{border-bottom:2px solid var(--fg);padding:38px 0 22px;margin-bottom:4px;position:relative;}
+  .crest{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px;}
+  .crest .mark{font-size:26px;color:var(--gold);}
+  .crest .who{font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+  .crest .who b{color:var(--fg);}
+  .classif{margin-left:auto;font-family:var(--mono);font-size:10.5px;letter-spacing:2px;color:var(--gold);
+    border:1px solid var(--gold);border-radius:3px;padding:3px 9px;}
+  header h1{font-size:clamp(38px,7.5vw,74px);letter-spacing:2px;}
+  header h1 span{color:var(--gold);}
+  .subhead{font-size:clamp(15px,2.4vw,19px);color:var(--muted);max-width:60ch;margin-top:14px;line-height:1.5;
+    font-family:var(--body);text-transform:none;letter-spacing:0;font-weight:400;}
+  .metarow{display:flex;flex-wrap:wrap;gap:8px 28px;margin-top:20px;font-family:var(--mono);font-size:11px;
+    letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
+  .metarow b{color:var(--fg);}
+
+  section{padding:34px 0;border-bottom:1px solid var(--edge);}
+  .eyebrow{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;}
+  .eyebrow .op{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:1px;color:var(--gold);
+    border:1px solid var(--gold);border-radius:3px;padding:2px 8px;white-space:nowrap;}
+  .eyebrow h2{font-size:clamp(21px,3.6vw,30px);}
+  .lede{font-size:16px;color:var(--muted);max-width:66ch;margin:0 0 20px;}
+  .lede strong{color:var(--fg);}
+
+  /* front-line divider */
+  .frontline{height:14px;margin:2px 0 24px;
+    background:
+      radial-gradient(circle at 6px 7px,var(--gold) 2.4px,transparent 3px) 0 0/26px 14px repeat-x,
+      linear-gradient(90deg,var(--edge),var(--edge)) 0 6px/100% 2px no-repeat;}
+
+  .grid{display:grid;gap:14px;}
+  @media(min-width:680px){ .g3{grid-template-columns:repeat(3,1fr);} .g2{grid-template-columns:repeat(2,1fr);} }
+  .card{background:var(--card);border:1px solid var(--edge);border-radius:10px;padding:18px 18px 16px;
+    position:relative;}
+  .card h3{font-size:15px;letter-spacing:1px;margin-bottom:7px;}
+  .card p{margin:0;font-size:14px;color:var(--muted);}
+  .card .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:1px;color:var(--faint);text-transform:uppercase;
+    display:block;margin-bottom:9px;}
+  .card.axis{border-top:3px solid var(--blue);}
+  .card.risk{border-top:3px solid var(--red);}
+  .num{font-family:var(--mono);color:var(--gold);font-weight:700;}
+
+  /* the wedge callout */
+  .wedge{background:var(--card);border:1px solid var(--edge);border-left:4px solid var(--gold);
+    border-radius:10px;padding:22px 24px;}
+  .wedge .big{font-family:var(--disp);text-transform:uppercase;font-weight:800;letter-spacing:1px;
+    font-size:clamp(20px,3.4vw,27px);line-height:1.1;margin-bottom:10px;}
+  .wedge p{margin:0;color:var(--muted);max-width:70ch;}
+
+  /* taglines */
+  .taglines{display:grid;gap:10px;}
+  .tl{display:flex;gap:14px;align-items:baseline;background:var(--card);border:1px solid var(--edge);
+    border-radius:8px;padding:12px 16px;}
+  .tl .k{font-family:var(--mono);font-size:11px;letter-spacing:1px;color:var(--faint);white-space:nowrap;min-width:74px;text-transform:uppercase;}
+  .tl .v{font-family:var(--disp);text-transform:uppercase;font-weight:800;letter-spacing:1px;font-size:clamp(16px,2.6vw,21px);}
+  .tl.lead{border-color:var(--gold);}
+  .tl.lead .v{color:var(--gold);}
+
+  /* funnel */
+  .funnel{display:grid;gap:10px;}
+  @media(min-width:760px){ .funnel{grid-template-columns:repeat(5,1fr);align-items:stretch;} }
+  .stage{background:var(--card);border:1px solid var(--edge);border-radius:9px;padding:14px;position:relative;}
+  .stage .s{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--gold);text-transform:uppercase;}
+  .stage h3{font-size:14px;margin:5px 0 6px;letter-spacing:.5px;}
+  .stage p{margin:0;font-size:12.5px;color:var(--muted);}
+  .stage .goal{margin-top:9px;font-family:var(--mono);font-size:11px;color:var(--fg);border-top:1px dashed var(--edge);padding-top:7px;}
+
+  /* channel matrix */
+  .tablewrap{overflow-x:auto;border:1px solid var(--edge);border-radius:10px;}
+  table{border-collapse:collapse;width:100%;min-width:640px;font-size:13.5px;}
+  thead th{background:var(--card);text-align:left;font-family:var(--mono);font-size:10.5px;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--faint);padding:11px 14px;border-bottom:2px solid var(--edge);font-weight:700;}
+  tbody td{padding:12px 14px;border-bottom:1px solid var(--edge);vertical-align:top;color:var(--muted);}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody td:first-child{color:var(--fg);font-weight:600;}
+  tbody td .kpi{font-family:var(--mono);font-size:11.5px;color:var(--gold);white-space:nowrap;}
+  .prio{font-family:var(--mono);font-size:10px;letter-spacing:1px;padding:2px 7px;border-radius:20px;border:1px solid;display:inline-block;text-transform:uppercase;}
+  .prio.p1{color:var(--gold);border-color:var(--gold);}
+  .prio.p2{color:var(--blue);border-color:var(--blue);}
+
+  /* timeline */
+  .tl-rows{display:grid;gap:8px;}
+  .tl-row{display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:center;}
+  .tl-row .wk{font-family:var(--mono);font-size:11px;letter-spacing:1px;color:var(--gold);text-transform:uppercase;text-align:right;}
+  .bar{background:var(--card);border:1px solid var(--edge);border-radius:6px;padding:9px 14px;position:relative;overflow:hidden;}
+  .bar b{font-size:13.5px;letter-spacing:.3px;}
+  .bar span{display:block;font-size:12.5px;color:var(--muted);margin-top:1px;}
+  .bar.hot{border-color:var(--gold);}
+  .bar.hot::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold);}
+
+  /* KPI readouts */
+  .kpis{display:grid;gap:12px;}
+  @media(min-width:640px){ .kpis{grid-template-columns:repeat(4,1fr);} }
+  .kpi-tile{background:var(--card);border:1px solid var(--edge);border-radius:10px;padding:16px;}
+  .kpi-tile .v{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums;line-height:1;}
+  .kpi-tile .k{font-size:12.5px;color:var(--muted);margin-top:7px;}
+  .kpi-tile .n{font-family:var(--mono);font-size:10.5px;letter-spacing:1px;color:var(--faint);text-transform:uppercase;margin-bottom:9px;}
+
+  ul.clean{list-style:none;padding:0;margin:0;display:grid;gap:9px;}
+  ul.clean li{padding-left:22px;position:relative;font-size:14px;color:var(--muted);}
+  ul.clean li::before{content:"▸";position:absolute;left:2px;color:var(--gold);}
+  ul.clean li b{color:var(--fg);}
+
+  footer{padding:30px 0 60px;color:var(--faint);font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;}
+  footer b{color:var(--muted);}
+  @media (prefers-reduced-motion:no-preference){
+    .bar.hot::before{animation:pulse 2.6s ease-in-out infinite;}
+    @keyframes pulse{50%{opacity:.4;}}
+  }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="crest">
+    <span class="mark">⚔</span>
+    <span class="who"><b>FRONTLINE COMMANDER</b><br>Go-to-Market · Campaign Operations Order</span>
+    <span class="classif">OPORD · GTM-01</span>
+  </div>
+  <h1>TAKE THE <span>FRONT.</span><br>OWN THE FEED.</h1>
+  <p class="subhead">A streamlined launch campaign for a fast, loud lane-war strategy game — built around the one thing no competitor has nailed: the audience is a weapon.</p>
+  <div class="metarow">
+    <span>Objective <b>Wishlists → Reviews</b></span>
+    <span>Horizon <b>6 weeks + launch</b></span>
+    <span>Budget posture <b>Near-zero spend</b></span>
+    <span>Main effort <b>Streamer-native reach</b></span>
+  </div>
+</header>
+
+<section>
+  <div class="eyebrow"><span class="op">1 · SITUATION</span><h2>The wedge</h2></div>
+  <div class="wedge">
+    <div class="big">Most strategy games are played. This one is <span class="gold">performed.</span></div>
+    <p>The market for small strategy games is a red ocean — you don't out-spend it, you out-angle it. FRONTLINE COMMANDER's built-in Live Chat lets a streamer's viewers command the enemy in real time: vote a lane, summon a boss, break the run. That turns every broadcast into playable content and every viewer into a lead. The whole campaign points one direction: <strong>put the game in front of streamers, let the clips do the selling.</strong></p>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow"><span class="op">2 · WHO WE'RE FOR</span><h2>Three audiences, one funnel</h2></div>
+  <p class="lede">Ranked by how cheaply they convert. Everything downstream is built to serve the first two.</p>
+  <div class="grid g3">
+    <div class="card">
+      <span class="tag">Primary · the amplifiers</span>
+      <h3 class="blue">Streamers &amp; their chats</h3>
+      <p>Variety streamers and their communities who want an interactive bit. The chat-controls-the-enemy hook is the pitch — free content that plays itself. They bring the audience; we bring the toy.</p>
+    </div>
+    <div class="card">
+      <span class="tag">Primary · the buyers</span>
+      <h3 class="blue">Strategy-lite players</h3>
+      <p>Fans of Warpips, They Are Billions, Age of War. They want real decisions — counters, doctrines, a tech tree, a conquest map — without a 40-hour commitment. They convert from a good demo.</p>
+    </div>
+    <div class="card">
+      <span class="tag">Secondary · the retainers</span>
+      <h3 class="blue">Session &amp; roguelite players</h3>
+      <p>Daily-challenge and "one more run" players. They don't drive launch reach, but they drive reviews and word-of-mouth after it. Served by the daily seed and unlock loops.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow"><span class="op">3 · MESSAGE</span><h2>What we say</h2></div>
+  <p class="lede">One positioning line, then taglines cut for where they run. Keep the verbs — <strong>command, break, take, own.</strong></p>
+  <div class="taglines">
+    <div class="tl lead"><span class="k">Lead line</span><span class="v">Command the front. Conquer the map.</span></div>
+    <div class="tl"><span class="k">Streamer</span><span class="v">Your chat is the enemy now.</span></div>
+    <div class="tl"><span class="k">Store / trailer</span><span class="v">Three lanes. One HQ. No mercy.</span></div>
+    <div class="tl"><span class="k">Clips / social</span><span class="v">Fast, loud, and built to be watched.</span></div>
+    <div class="tl"><span class="k">Depth pitch</span><span class="v">Every general has a plan until the drones arrive.</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow"><span class="op">4 · SCHEME OF MANEUVER</span><h2>The conversion funnel</h2></div>
+  <div class="frontline"></div>
+  <div class="funnel">
+    <div class="stage"><span class="s">Reach</span><h3>Clip</h3><p>A 15–30s chaos moment on TikTok / Shorts / Reels — a combo, a chat boss, a CLIP THAT.</p><div class="goal">→ profile tap</div></div>
+    <div class="stage"><span class="s">Capture</span><h3>Wishlist</h3><p>Every surface points to one link: the Steam page. Wishlist is the only pre-launch metric that compounds.</p><div class="goal">→ wishlist</div></div>
+    <div class="stage"><span class="s">Prove</span><h3>Demo</h3><p>The free demo is the whole strength. Ten minutes, no signup — it sells itself or nothing does.</p><div class="goal">→ played</div></div>
+    <div class="stage"><span class="s">Amplify</span><h3>Stream</h3><p>Streamer plays live with Live Chat wired in; their audience becomes tomorrow's clips and wishlists.</p><div class="goal">→ referral</div></div>
+    <div class="stage"><span class="s">Convert</span><h3>Launch</h3><p>Wishlist notifications + launch discount fire at once. Push every buyer toward a review.</p><div class="goal">→ sale + review</div></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow"><span class="op">5 · AXES OF ADVANCE</span><h2>Channel plan</h2></div>
+  <p class="lede">Where effort goes, and the one number each channel is accountable for. No channel without a KPI.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Channel</th><th>Priority</th><th>Play</th><th>Accountable metric</th></tr></thead>
+      <tbody>
+        <tr><td>Steam page + demo</td><td><span class="prio p1">Main</span></td><td>Sharp capsule, 45s trailer, live demo. The hub every link returns to.</td><td><span class="kpi">Wishlists / day</span></td></tr>
+        <tr><td>Short-form video</td><td><span class="prio p1">Main</span></td><td>1 clip/day cut from real runs. Hook in 2s, payoff by 8s, link in bio.</td><td><span class="kpi">Views → wishlist CTR</span></td></tr>
+        <tr><td>Twitch / YouTube creators</td><td><span class="prio p1">Main</span></td><td>Key drops to mid-tier variety streamers; the Live Chat integration is the segment.</td><td><span class="kpi">Referral wishlists</span></td></tr>
+        <tr><td>Discord</td><td><span class="prio p2">Support</span></td><td>Home for the daily-challenge leaderboard, demo feedback, and clip resharing.</td><td><span class="kpi">Daily active / clips shared</span></td></tr>
+        <tr><td>Reddit</td><td><span class="prio p2">Support</span></td><td>Demo-launch + Next Fest posts in r/RealTimeStrategy, r/IndieGaming. Show, don't sell.</td><td><span class="kpi">Post → page CTR</span></td></tr>
+        <tr><td>X / Bluesky</td><td><span class="prio p2">Support</span></td><td>Devlog cadence + Next Fest beats. Reshare streamer moments same-day.</td><td><span class="kpi">Clip reshares</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow"><span class="op">6 · PHASING</span><h2>Six weeks to launch</h2></div>
+  <div class="tl-rows">
+    <div class="tl-row"><div class="wk">Wk −6/−5</div><div class="bar"><b>Establish the beachhead</b><span>Steam page live · capsule + trailer · open the wishlist push · seed Discord.</span></div></div>
+    <div class="tl-row"><div class="wk">Wk −4</div><div class="bar"><b>Soft-launch the demo</b><span>Demo to Discord + a handful of trusted streamers. Fix on live feedback.</span></div></div>
+    <div class="tl-row"><div class="wk">Wk −3</div><div class="bar"><b>Start the clip machine</b><span>Daily shorts from real runs. Establish the format that actually converts.</span></div></div>
+    <div class="tl-row"><div class="wk">Wk −2/−1</div><div class="bar hot"><b>Steam Next Fest — main effort</b><span>Free demo in the Fest · coordinated streamer key drop · showcase Live Chat live. The single biggest reach window.</span></div></div>
+    <div class="tl-row"><div class="wk">Wk 0</div><div class="bar hot"><b>Launch</b><span>Wishlist notifications fire · launch discount · drive every buyer to a review within week one.</span></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow"><span class="op">7 · SUSTAINMENT</span><h2>The content engine</h2></div>
+  <p class="lede">The campaign is only affordable because <strong>the game manufactures its own marketing.</strong> The announcer, combo meter, chat boss, and CLIP THAT banner are content primitives. The machine is three repeatable outputs:</p>
+  <ul class="clean">
+    <li><b>Daily clip</b> — one short pulled from a real run or a streamer's VOD. The game does the hard part; you cut and caption.</li>
+    <li><b>Weekly dev beat</b> — one screenshot/GIF of something new (a doctrine, a War Mode map, a boss) with a line of copy. Keeps the page warm.</li>
+    <li><b>Same-day reshare</b> — every streamer moment reposted across social within hours, credit to the creator. Turns their reach into ours.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="eyebrow"><span class="op">8 · LOGISTICS</span><h2>Budget-light by design</h2></div>
+  <div class="grid g3">
+    <div class="card axis"><span class="tag">Instead of paid ads</span><h3>Keys, not spend</h3><p>The streamer integration is the paid-acquisition substitute. A free key to the right creator out-performs an ad set — and leaves a VOD behind.</p></div>
+    <div class="card axis"><span class="tag">Instead of a media buy</span><h3>Next Fest</h3><p>The single highest-leverage free reach in the calendar. Time the demo, the streamers, and the clip push to land inside it.</p></div>
+    <div class="card axis"><span class="tag">Instead of an agency</span><h3>The game as studio</h3><p>Built-in Streamer Mode, killfeed, and clip banner mean production cost per asset is near zero. Volume comes free.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow"><span class="op">9 · MEASURES OF SUCCESS</span><h2>What "winning" reads as</h2></div>
+  <p class="lede">Directional targets for a self-published indie in this genre — calibrate to your list size, but hold the shape.</p>
+  <div class="kpis">
+    <div class="kpi-tile"><div class="n">Primary</div><div class="v">7k+</div><div class="k">Wishlists before launch — the number that makes the algorithm work for you.</div></div>
+    <div class="kpi-tile"><div class="n">Health</div><div class="v">≥35%</div><div class="k">Demo → wishlist conversion. Below this, the demo — not the reach — is the problem.</div></div>
+    <div class="kpi-tile"><div class="n">Amplifier</div><div class="v">15+</div><div class="k">Creators who stream the demo in the Next Fest window.</div></div>
+    <div class="kpi-tile"><div class="n">Proof</div><div class="v">10+</div><div class="k">Reviews per 1,000 sales in week one — the path to a "Positive" rating badge.</div></div>
+  </div>
+</section>
+
+<section style="border-bottom:none;">
+  <div class="eyebrow"><span class="op">10 · RISK</span><h2>What could go wrong</h2></div>
+  <div class="grid g3">
+    <div class="card risk"><span class="tag">Highest</span><h3 class="red">Discoverability</h3><p>Steam is saturated for small strategy. <b>Mitigation:</b> the streamer wedge is the only realistic edge — lean into it hard or don't ship.</p></div>
+    <div class="card risk"><span class="tag">Medium</span><h3 class="red">Depth ceiling</h3><p>Lane-pushers can feel solved. <b>Mitigation:</b> the counter system, doctrines, tech tree, and War Mode are the "hour three" retention answer — feature them in the demo.</p></div>
+    <div class="card risk"><span class="tag">Medium</span><h3 class="red">Art bar</h3><p>Clean but modest vector look may not thumbnail against art-heavy rivals. <b>Mitigation:</b> it clips beautifully in motion — sell the motion, not the still.</p></div>
+  </div>
+</section>
+
+<footer>
+  <div>FRONTLINE COMMANDER · campaign operations order · companion to the game &amp; market-outlook report</div>
+  <div style="margin-top:6px">Main effort: <b>streamer-native reach</b> · one funnel · one link · near-zero spend</div>
+</footer>
+</div>
