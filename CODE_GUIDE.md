@@ -367,8 +367,12 @@ same pipeline, so the damage matrix applies to them too.
   conquest map is open, a timer pops `.warflash` radial-gradient bursts at
   random board positions with a muffled distant boom, so the whole theatre
   feels alive. Self-stops when the map closes.
-- **Generated news wire** (`NEWS`, `pushNews`, `renderNews`, `#newsbar`) — a
-  toggleable right sidebar (📰 button, `SAVE.news`). World headlines are built
+- **Generated news wire** (`NEWS`, `pushNews`, `renderNews`, `#newsbar`) —
+  **archived for now**: `SAVE.news` is forced `false` at boot, the 📰 topbar
+  button is `hidden`, and there is no Settings toggle. All the code is intact,
+  so re-enabling it is a one-liner (drop the `SAVE.news=false;` after `load()`
+  and un-hide the button). What it does when on: a toggleable right sidebar.
+  World headlines are built
   from templates (`WORLD_NEWS` with `nn()/nc()/nk()` fills) on a timer that runs
   even on the menu/title/war map; battle events push tagged **FRONT** and
   **FLASH** headlines via `frontNews()`/`pushNews(...,'flash')` (first blood,
@@ -391,8 +395,10 @@ same pipeline, so the damage matrix applies to them too.
   `SPAWNERS`, `LOAD_TIPS`) so it can never drift from the real numbers. The
   Counter Web tab renders `DMG_MATRIX` as a colour-graded table.
 - **Settings modal** (`#settings`, `openSettings`/`renderSettings`) — from the
-  title (⚙ Settings). Toggles for music, sound, narrator, news, and
-  **reduce-motion** (`SAVE.reduceMotion`), plus a music-volume slider. Reduce-
+  title (⚙ Settings). Toggles for music, sound, narrator, **battlefield
+  ambience** (`SAVE.ambient`), **reduce-motion** (`SAVE.reduceMotion`), a
+  music-volume slider, and a **🎲 Random Events** group (master `randomEvents`
+  plus `evSupply`/`evVoice`/`evCutscene`/`evBarrage`/`evDefector`). Reduce-
   motion suppresses screen shake (in `draw()`) and dampens the HQ-hit flash.
 - **Hotbar clarity** (`buildHotbar`) — each unit card now carries a **damage-
   type dot** (top-right, coloured by `DTDOT_COL`) and an **armour-class tag**
@@ -402,8 +408,36 @@ same pipeline, so the damage matrix applies to them too.
 - **Hype meter** (Phase 2, `G.hype`/`bumpHype`/`chatVoteTick`) — while streamer
   mode or a live Twitch chat is connected, chat reactions (`chatReact`) feed a
   hype bar shown in `#votebar`. A full bar is a **hype train**: it showers bonus
-  CP (scaling with `G.hypeTrains`), fires a clip moment, and pushes a FRONT
-  headline. The bar decays when the action cools off.
+  CP (scaling with `G.hypeTrains`), fires a clip moment, drops a crate, and
+  pushes a FRONT headline. The bar decays when the action cools off.
+
+## Combat audio, ambience & random events
+
+- **Per-weapon audio** — the old square-wave `SND.shot` is replaced by
+  synthesized reports: filtered white-noise bursts (`noiseHit` via a cached
+  `noiseBuffer`) for the *crack* of gunfire, low sine drops (`thump`) for the
+  *body* of cannon fire, composed into `gunshot()`/`cannon()`/`burst()`.
+  `SND.fireFor(u)` dispatches by `u.key` so rifles crack, tanks & artillery
+  boom, IFV/AA rip short bursts, missiles whoosh, etc. `fire()` calls it (with a
+  small skip-rate so mass battles don't distort). `SND.boom`/`hqhit` are cannon
+  voices too.
+- **Battlefield ambience** (`WARAMB`, `ambientStart`/`ambientStop`) — a looping
+  low-pass noise rumble bed plus a timer that fires panned distant gunfire &
+  muffled shelling under the fight. Starts in `start()` (non-attract), stops on
+  `endGame`/`showTitle`/`openMenu`/`showWarMap`. Gated by `SAVE.sound &&
+  SAVE.ambient`.
+- **Random occurrences** (`REVENTS`, `fireRandomEvent`, `randomEventTick`) — a
+  clock (`G.revT`) rolls one enabled event every ~30–55 s. Events:
+  **supply** (airdrop a crate → `airdrop`/`dropTick`/`drawDrops`, lands for CP +
+  heals, or enemy resupply), **voice** (`CRAZY_LINES` outburst), **cutscene**
+  (`playCutscene` → the `#cutscene` letterbox overlay with a live caption),
+  **barrage** (a shelling rakes a lane), **defector** (flip a random enemy unit
+  to your side). Each event honours its own `SAVE.ev*` flag and the master
+  `SAVE.randomEvents`. A legendary 12-kill combo also auto-fires a cutscene
+  (the "director").
+- **Phase-2 chat commands** — beyond `top/mid/bot` and `boss`, viewers can type
+  `drop` (meter → friendly airdrop), `chaos` (meter → `fireRandomEvent`), and
+  `hype`/`pog`/`W` (feed the meter). Thresholds live on `CHATLINK`.
 
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo

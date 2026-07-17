@@ -171,6 +171,17 @@
     color:var(--purple);font-size:11px;font-weight:700;letter-spacing:2px;padding:3px 14px;border-radius:20px;}
   #clipbanner{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%) scale(.6);opacity:0;
     font-size:30px;font-weight:900;color:var(--purple);text-shadow:0 0 20px var(--purple);letter-spacing:3px;}
+  /* combat cutscene overlay (random event) */
+  #cutscene{position:absolute;inset:0;z-index:33;pointer-events:none;opacity:0;transition:opacity .35s;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  #cutscene.show{opacity:1;}
+  #cutscene .cs-bar{position:absolute;left:0;width:100%;height:0;background:#000;transition:height .35s;}
+  #cutscene .cs-bar.top{top:0;} #cutscene .cs-bar.bot{bottom:0;}
+  #cutscene.show .cs-bar{height:13%;}
+  #cutscene .cs-inner{text-align:center;transform:scale(1.04);transition:transform 2.6s ease-out;background:radial-gradient(ellipse at center,#0000 40%,#000a 100%);padding:40px 60px;}
+  #cutscene.show .cs-inner{transform:scale(1);}
+  #cutscene .cs-sub{font-size:12px;font-weight:800;letter-spacing:4px;color:var(--gold);margin-bottom:8px;text-shadow:0 2px 10px #000;}
+  #cutscene .cs-cap{font-size:clamp(20px,4vw,34px);font-weight:900;color:#fff;letter-spacing:1px;text-shadow:0 3px 18px #000,0 0 30px #000;max-width:80vw;line-height:1.2;}
 
   /* ── war-map ambient explosions ── */
   .warflash{position:absolute;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
@@ -443,7 +454,7 @@
   <button class="tb-btn" id="btn-voice">🔑 Voice</button>
   <button class="tb-btn" id="btn-sound">🔊 Sound</button>
   <button class="tb-btn" id="btn-music">🎵 Music</button>
-  <button class="tb-btn" id="btn-news">📰 News</button>
+  <button class="tb-btn hidden" id="btn-news">📰 News</button>
   <button class="tb-btn" id="btn-ai">🧠 AI Debug</button>
   <button class="tb-btn hidden" id="btn-pause">⏸ Pause</button>
   <button class="tb-btn" id="btn-menu">☰ Menu</button>
@@ -511,6 +522,8 @@
     <div id="chatbox"><div class="ch-h"><span class="dot"></span>STREAM CHAT</div><div id="chatfeed"></div></div>
     <div id="clipbanner">★ CLIP THAT! ★</div>
   </div>
+  <!-- combat cutscene overlay (random event) -->
+  <div id="cutscene"><div class="cs-bar top"></div><div class="cs-inner"><div class="cs-sub"></div><div class="cs-cap"></div></div><div class="cs-bar bot"></div></div>
 
   <!-- generated news sidebar -->
   <div id="newsbar">
@@ -657,7 +670,7 @@
       </div>
       <div id="tw-status" style="font-size:12px;color:var(--dim);min-height:18px;margin-bottom:10px">Not connected — simulated chat is active in Streamer Mode.</div>
       <div style="font-size:11.5px;color:var(--faint);line-height:1.6;margin-bottom:14px">
-        Viewer commands:<br>• <b style="color:var(--ink)">top</b> / <b style="color:var(--ink)">mid</b> / <b style="color:var(--ink)">bot</b> — vote a lane; the winner gets an enemy surge on a timer.<br>• <b style="color:var(--ink)">boss</b> — enough votes summon a chat boss.
+        Viewer commands:<br>• <b style="color:var(--ink)">top</b> / <b style="color:var(--ink)">mid</b> / <b style="color:var(--ink)">bot</b> — vote a lane; the winner gets an enemy surge on a timer.<br>• <b style="color:var(--ink)">boss</b> — enough votes summon a chat boss.<br>• <b style="color:var(--good)">drop</b> — rally votes to airdrop a supply crate for the streamer.<br>• <b style="color:var(--purple)">chaos</b> — roll a random battlefield event.<br>• <b style="color:var(--gold)">hype</b> / pog / W — feed the hype meter.
       </div>
       <div class="btn-row" style="justify-content:center">
         <button class="sbtn prim" id="tw-connect">🔌 Connect</button>
@@ -719,8 +732,10 @@ const SAVE_KEY='FRONTLINE_SAVE_v1';
 const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0,
   unlocked:['blitzkrieg','mass'],medals:{},sound:true,narrator:true,streamOn:false,seenTut:false,
   campaignDone:-1,campaignStars:{},daily:{},ttsKey:'',ttsVoice:'arnold',
-  speed:1,twitchChannel:'',war:null,warWins:0,aiDebug:false,music:true,musicVol:0.5,news:true,reduceMotion:false};
+  speed:1,twitchChannel:'',war:null,warWins:0,aiDebug:false,music:true,musicVol:0.5,news:false,reduceMotion:false,
+  ambient:true,randomEvents:true,evSupply:true,evVoice:true,evCutscene:true,evBarrage:true,evDefector:true};
 let SAVE=load();
+SAVE.news=false; // live news wire archived for now (kept in code, off by default)
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
 function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(SAVE));}catch(e){}}
 function xpForLevel(l){return 100+l*80;}
@@ -976,15 +991,94 @@ function beep(freq,dur,type,vol){ if(!SAVE.sound)return; const c=actx(); if(!c)r
   try{const o=c.createOscillator(),g=c.createGain();o.type=type||'square';o.frequency.value=freq;
   g.gain.value=(vol||0.06);o.connect(g);g.connect(c.destination);o.start();
   g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+(dur||0.08));o.stop(c.currentTime+(dur||0.08));}catch(e){} }
+// ── realistic-ish weapon synthesis: filtered white-noise bursts (gunfire crack)
+//    + low sine thumps (cannon/explosion body). No audio assets, all WebAudio. ──
+let _noiseBuf=null;
+function noiseBuffer(c){ if(_noiseBuf&&_noiseBuf.sampleRate===c.sampleRate)return _noiseBuf;
+  const n=c.sampleRate*1.2, b=c.createBuffer(1,n,c.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<n;i++)d[i]=Math.random()*2-1; _noiseBuf=b; return b; }
+// a shaped noise burst — the "crack" of gunfire / the "roar" of an explosion
+function noiseHit(dur,vol,hp,lp,when,pan){ if(!SAVE.sound)return; const c=actx(); if(!c)return;
+  try{
+    const src=c.createBufferSource(); src.buffer=noiseBuffer(c);
+    src.playbackRate.value=0.8+Math.random()*0.5;
+    const g=c.createGain(), f=c.createBiquadFilter();
+    f.type='bandpass'; f.frequency.value=(hp+lp)/2; f.Q.value=0.6;
+    const hpf=c.createBiquadFilter(); hpf.type='highpass'; hpf.frequency.value=hp;
+    const lpf=c.createBiquadFilter(); lpf.type='lowpass'; lpf.frequency.value=lp;
+    const t=(when||c.currentTime);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    let node=src; node.connect(hpf); hpf.connect(lpf); lpf.connect(f); f.connect(g);
+    if(pan!=null&&c.createStereoPanner){ const p=c.createStereoPanner(); p.pan.value=pan; g.connect(p); p.connect(c.destination); }
+    else g.connect(c.destination);
+    src.start(t); src.stop(t+dur+0.02);
+  }catch(e){}
+}
+// a low-frequency body thump for cannons and explosions
+function thump(f0,f1,dur,vol,when){ if(!SAVE.sound)return; const c=actx(); if(!c)return;
+  try{const o=c.createOscillator(),g=c.createGain(); o.type='sine';
+    const t=(when||c.currentTime); o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(f1,t+dur);
+    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+0.02);}catch(e){}
+}
+// composite gunshot / cannon voices
+function gunshot(vol,tone){ noiseHit(0.055,vol||0.05,tone||900,7000); thump(180,70,0.05,(vol||0.05)*0.7); }
+function cannon(vol,big){ noiseHit(big?0.34:0.2,vol||0.13,90,big?1400:2200); thump(big?150:120,big?32:42,big?0.5:0.32,(vol||0.13)*1.1);
+  setTimeout(()=>noiseHit(big?0.5:0.28,(vol||0.13)*0.5,60,700),18); }
+function burst(n,gap,vol,tone){ for(let i=0;i<n;i++)setTimeout(()=>gunshot(vol,tone),i*gap); }
 const SND={
   deploy:()=>beep(420,0.07,'square',0.05),
-  shot:()=>beep(180+Math.random()*40,0.03,'square',0.025),
-  boom:()=>{beep(90,0.16,'sawtooth',0.08);setTimeout(()=>beep(60,0.12,'triangle',0.06),20);},
-  hqhit:()=>beep(70,0.22,'sawtooth',0.1),
+  shot:()=>gunshot(0.045,880),
+  // dispatch a firing sound matched to the weapon that shot it
+  fireFor:(u)=>{ if(!SAVE.sound)return; const k=u.key, dt=UNIT_DMGTYPE[k];
+    switch(k){
+      case 'rifle': gunshot(0.04,900); break;
+      case 'sniper': gunshot(0.09,520); thump(140,60,0.09,0.06); break;
+      case 'atgm': noiseHit(0.12,0.06,300,3000); thump(200,80,0.14,0.05); break; // missile whoosh
+      case 'ifv': burst(2,55,0.038,1100); break;                                  // autocannon pair
+      case 'aa': burst(3,45,0.03,1500); break;                                     // rapid AA
+      case 'tank': cannon(0.13,false); break;
+      case 'heli': burst(2,70,0.05,700); break;                                    // rotor cannon
+      case 'arty': cannon(0.15,true); break;
+      case 'mlrs': noiseHit(0.16,0.08,200,2600); thump(220,70,0.18,0.06); break;   // rocket ripple
+      case 'drone': noiseHit(0.1,0.04,600,4000); break;                            // dive buzz
+      default: if(dt==='ap'||dt==='he')cannon(0.11,dt==='he'); else gunshot(0.04,900);
+    } },
+  boom:(big)=>cannon(big?0.16:0.1,!!big),
+  hqhit:()=>{ cannon(0.2,true); setTimeout(()=>cannon(0.14,true),90); },
   combo:(n)=>beep(500+n*60,0.1,'square',0.07),
   win:()=>{[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,0.14,'triangle',0.08),i*90));},
   lose:()=>{[300,240,180,120].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'sawtooth',0.08),i*110));},
 };
+
+// ── AMBIENT BATTLEFIELD — a low rumble bed + sporadic distant gunfire/shelling,
+//    so the whole field feels like part of a larger war. Runs under the fight. ──
+const WARAMB={ src:null, gain:null, filt:null, timer:null, on:false };
+function ambientStart(){
+  if(WARAMB.on || !SAVE.sound || !SAVE.ambient)return;
+  const c=actx(); if(!c)return;
+  try{
+    const src=c.createBufferSource(); src.buffer=noiseBuffer(c); src.loop=true; src.playbackRate.value=0.25;
+    const filt=c.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=180; filt.Q.value=0.3;
+    const g=c.createGain(); g.gain.value=0; g.gain.setTargetAtTime(0.03,c.currentTime,1.2);
+    src.connect(filt); filt.connect(g); g.connect(c.destination); src.start();
+    WARAMB.src=src; WARAMB.gain=g; WARAMB.filt=filt; WARAMB.on=true;
+    // distant fire: occasional muffled cracks & far-off shelling, panned across the field
+    WARAMB.timer=setInterval(()=>{
+      if(!SAVE.sound||!SAVE.ambient||!G||G.over||G.paused)return;
+      const pan=(Math.random()*2-1)*0.8;
+      if(Math.random()<0.4){ noiseHit(0.4+Math.random()*0.4,0.028,50,320,null,pan); thump(90,34,0.4,0.03); } // distant shell
+      else { const n=1+((Math.random()*3)|0); for(let i=0;i<n;i++)setTimeout(()=>noiseHit(0.05,0.016,400,2600,null,pan),i*70); } // far gunfire
+    },900);
+  }catch(e){}
+}
+function ambientStop(){
+  if(WARAMB.timer){clearInterval(WARAMB.timer);WARAMB.timer=null;}
+  try{ if(WARAMB.gain){const c=actx(); WARAMB.gain.gain.setTargetAtTime(0.0001,c.currentTime,0.4);}
+    if(WARAMB.src){const s=WARAMB.src; setTimeout(()=>{try{s.stop();}catch(e){}},700);} }catch(e){}
+  WARAMB.src=null; WARAMB.gain=null; WARAMB.on=false;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════
    BACKGROUND MUSIC — an ORIGINAL, procedurally-sequenced score (WebAudio).
@@ -1419,7 +1513,8 @@ function newGame(){
     t:0, over:false, result:null, paused:false,
     laneY, laneCount:3,
     laneTerrain:kind==='tutorial'?['open','open','open']:[pick(TERRAIN_KEYS),pick(TERRAIN_KEYS),pick(TERRAIN_KEYS)],
-    units:[], projs:[], parts:[], floats:[], rings:[],
+    units:[], projs:[], parts:[], floats:[], rings:[], drops:[],
+    revT:rnd(24,42), revCount:0, // random-events clock
     cp:60, cpRate:9*(perk.cpMul||1), cpMax:280,
     ecp:70, ecpRate:11*diff.cpMul*ecpMul,
     hq:{B:hqHP,R:mode==='survival'?1:hqHP}, hqMax:{B:hqHP,R:mode==='survival'?1:hqHP},
@@ -1460,6 +1555,7 @@ function newGame(){
   }
   // chat-vote state (streamer Phase 2)
   G.cvVotes={0:0,1:0,2:0}; G.cvVoters={}; G.cvT=CHATLINK.voteEvery; G.bossMeter=0; G.bossVoters={};
+  G.dropMeter=0; G.dropVoters={}; G.chaosMeter=0; G.chaosVoters={}; // Phase 2 chat command meters
   G.hype=0; G.hypeTrains=0; // Phase 2 hype meter — chat energy that pays out CP on a full train
   // daily mutators
   if(L&&L.type==='daily'&&L.mut&&L.mut.apply){try{L.mut.apply(G);}catch(e){}}
@@ -1587,6 +1683,107 @@ function tryEmp(lane){
   announce('EMP PULSE','lane jammed','#c9a0ff');
   narr('emp');
   return true;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   RANDOM OCCURRENCES — optional battlefield surprises. Each is individually
+   toggleable in Settings (with a master switch). A clock in step() rolls one
+   at random every so often. All effects are self-contained and safe.
+   ═══════════════════════════════════════════════════════════════════════ */
+const CRAZY_LINES=[
+  "Somebody get me a bigger map — this one's on FIRE!",
+  "I've seen calmer bar fights! Push, push, PUSH!",
+  "Tell the enemy general I said... nothing. Let the artillery do the talking.",
+  "If it moves and it's red — introduce it to the ground.",
+  "I didn't come here to make friends. I came here to ruin someone's afternoon.",
+  "Morale is high! Mostly mine! Keep it that way!",
+  "Who ordered the extra tanks? Oh — nobody? Well, we have them now.",
+  "History is watching. Don't make it boring.",
+  "That was beautiful. Do it again but louder.",
+  "Coffee's cold, the enemy's colder. Advance!",
+];
+function airdrop(lane,side){
+  const y=G.laneY[lane]*H;
+  const x=side==='B'?rnd(W*0.16,W*0.34):rnd(W*0.66,W*0.84);
+  G.drops.push({x,y0:-30,y:-30,ty:y-14,lane,side,vy:115,landed:false,life:0,sway:rnd(0,6.28)});
+}
+function landDrop(d){
+  d.landed=true;
+  explode(d.x,d.ty+14,30,d.side,16); G.shake=Math.max(G.shake,SAVE.reduceMotion?3:7);
+  if(d.side==='B'){
+    const bonus=45+((Math.random()*40)|0); G.cp=Math.min(G.cpMax,G.cp+bonus);
+    floatText(d.x,d.ty,'+'+bonus+' CP','#ffce5a');
+    // patch up nearby friendlies
+    for(const u of G.units){ if(u.side==='B'&&u.alive&&dist(u.x,u.y,d.x,d.ty)<90){ u.hp=Math.min(u.maxHp,u.hp+u.maxHp*0.35); u.hitFlash=0.3; } }
+  } else {
+    // enemy resupply — a couple of fresh units
+    const k=pick(['rifle','ifv','atgm']); for(let i=0;i<2;i++)spawn('R',k,d.lane);
+    floatText(d.x,d.ty,'ENEMY RESUPPLY','#ff8f6f');
+  }
+}
+function dropTick(dt){
+  if(!G.drops||!G.drops.length)return;
+  for(const d of G.drops){
+    if(d.landed){ d.landT=(d.landT||0)+dt; continue; }
+    d.y+=d.vy*dt; d.sway+=dt*3;
+    if(d.y>=d.ty){ d.y=d.ty; d.landT=0; landDrop(d); }
+  }
+  G.drops=G.drops.filter(d=>!(d.landed&&d.landT>1.5));
+}
+// ── the event roster ──
+const REVENTS={
+  supply:{ flag:'evSupply', run(){ const lane=(Math.random()*3)|0;
+    announce('📦 SUPPLY DROP','friendly airdrop inbound','#3fd07a'); airdrop(lane,'B');
+    if(SAVE.evVoice&&Math.random()<0.4)say("Christmas came early, Commander. Grab the crate.",'mock',1);
+    chatReact&&chatReact('deploy'); } },
+  voice:{ flag:'evVoice', run(){ announce('📻 THE MARSHAL','','#ffce5a'); say(pick(CRAZY_LINES),pick(['mock','grim','hype']),2); } },
+  cutscene:{ flag:'evCutscene', run(){ playCutscene(); } },
+  barrage:{ flag:'evBarrage', run(){ const lane=(Math.random()*3)|0; const onUs=Math.random()<0.5;
+    const side=onUs?'R':'B', foe=onUs?'B':'R', y=G.laneY[lane]*H;
+    announce('💥 ARTILLERY BARRAGE',(onUs?'brace — incoming on our line':'a stray barrage rakes the enemy'),'#ff5a4a');
+    if(SAVE.evVoice)say(onUs?"Incoming! Everybody down!":"Someone up there likes us. Watch this.",'grim',1);
+    for(let i=0;i<8;i++)setTimeout(()=>{ if(!G||G.over)return; const ix=clamp(W*(onUs?0.18:0.6)+rnd(-60,60),30,W-30), iy=y+rnd(-30,30);
+      explode(ix,iy,42,foe,50); G.shake=Math.max(G.shake,SAVE.reduceMotion?4:12);
+      for(const u of G.units){ if(u.side===side&&u.alive&&dist(u.x,u.y,ix,iy)<42)damage(u,55,{side:foe,dmgType:'he'}); }
+    },i*140); } },
+  defector:{ flag:'evDefector', run(){ const enemies=G.units.filter(u=>u.side==='R'&&u.alive&&!u.boss);
+    if(!enemies.length){ REVENTS.supply.run(); return; }
+    const u=pick(enemies); u.side='B'; u.spotted=true; u.stealth=false; u.hitFlash=0.5; u.vetKills=0;
+    u.name=unitName(u.key,G.country); floatText(u.x,u.y-u.r-14,'DEFECTOR ▲','#5ff0e0');
+    explode(u.x,u.y,34,'B',14);
+    announce('🏳 DEFECTOR','an enemy '+ (UNITS[u.key]?UNITS[u.key].name:'unit') +' joins us','#5ff0e0');
+    if(SAVE.evVoice)say("Well, well. A change of heart on the enemy line. Welcome aboard.",'mock',1); } },
+};
+function fireRandomEvent(){
+  const pool=[]; for(const k in REVENTS){ const e=REVENTS[k]; if(SAVE[e.flag])pool.push(e); }
+  if(!pool.length)return;
+  try{ pick(pool).run(); G.revCount++; }catch(e){}
+}
+function randomEventTick(dt){
+  if(!SAVE.randomEvents||!G||G.over||G.paused||G.tutorial||G.attract)return;
+  G.revT-=dt;
+  if(G.revT<=0){ G.revT=rnd(30,55); fireRandomEvent(); }
+}
+// ── COMBAT CUTSCENE — a brief cinematic overlay describing a real on-field clash ──
+const CUT_CAPTIONS=[
+  a=>`${a} holds the line under withering fire.`,
+  a=>`${a} pushes through the smoke.`,
+  a=>`A ${a} duel decides the sector.`,
+  a=>`${a} — no cover, no retreat.`,
+  a=>`The ${a} makes its stand.`,
+];
+let _cutT=null;
+function playCutscene(){
+  const el=document.getElementById('cutscene'); if(!el)return;
+  // pick something dramatic that's actually happening
+  const live=G.units.filter(u=>u.alive);
+  const focus=live.length?pick(live):null;
+  const who=focus?(focus.name||(UNITS[focus.key]&&UNITS[focus.key].name)||'the front'):'the front line';
+  el.querySelector('.cs-cap').textContent=pick(CUT_CAPTIONS)(who);
+  el.querySelector('.cs-sub').textContent=(G.warName||(G.mission&&G.mission.name)||'the front').toUpperCase();
+  el.classList.add('show');
+  SND.combo(4);
+  clearTimeout(_cutT); _cutT=setTimeout(()=>{ el.classList.remove('show'); }, 2600);
 }
 
 /* ── AGE OF WAR: evolution, enemy aging, and base turrets ── */
@@ -1754,7 +1951,8 @@ function addCombo(){
   if(G.combo===3){announce('TRIPLE KILL','','#ffce5a');narr('combo3');}
   else if(G.combo===5){announce('RAMPAGE','five down','#ff9f40');narr('combo5');frontNews('Enemy line buckles as our forces rout a full detachment','combo',10);}
   else if(G.combo===8){announce('UNSTOPPABLE','','#ff5a4a');narr('combo8');frontNews('Breakthrough! Commander tears an eight-kill hole in the enemy advance','combo',10);}
-  else if(G.combo===12){announce('LEGENDARY','12 kill streak','#c9a0ff'); clipMoment();narr('combo12');frontNews('MASSACRE on the line — the enemy is in full retreat, sources say','combo',10);}
+  else if(G.combo===12){announce('LEGENDARY','12 kill streak','#c9a0ff'); clipMoment();narr('combo12');frontNews('MASSACRE on the line — the enemy is in full retreat, sources say','combo',10);
+    if(SAVE.randomEvents&&SAVE.evCutscene&&!G.attract)playCutscene();}   // director: a legendary streak earns a cinematic
   else if(G.combo>12&&G.combo%5===0){announce('DOMINATING',G.combo+' streak','#c9a0ff');clipMoment();}
   chatReact('combo',G.combo);
 }
@@ -1773,7 +1971,8 @@ function scorch(x,y,r){ if(!G.scorches)G.scorches=[]; G.scorches.push({x,y,r:(r|
 /* ── PROJECTILES ── */
 function fire(u,tgt){
   u.muzzle=0.1; u.cd=u.rof;
-  SND.shot();
+  // per-weapon report — only for on-screen/near units so mass battles don't distort
+  if(SAVE.sound && (!u.diving) && Math.random()<0.85) SND.fireFor(u);
   let dmg=u.dmg;
   // damage-type × armour-class is applied in damage(); here only the shooter-side modifiers
   // lane terrain — hilltop favours ranged/arty, forest favours dug-in infantry
@@ -1894,6 +2093,8 @@ function step(dt){
   // streamer Phase 2 — chat votes drive the enemy
   chatVoteTick(dt);
   newsTick(dt);
+  randomEventTick(dt);        // optional battlefield surprises (settings-gated)
+  dropTick(dt);               // falling supply crates
   if(G.ages)ageTick(dt);      // Age-of-War: enemy evolves over time
   turretTick(dt);             // base turrets fire
   spawnerTick(dt);            // production structures emit units
@@ -2084,6 +2285,7 @@ function draw(){
     for(const p of G.projs)drawProj(p);
     for(const u of air)drawUnit(u);
     drawParts();
+    drawDrops();
     drawPowerFX();
     drawWeather();
   }
@@ -2314,6 +2516,24 @@ function drawParts(){
   for(const f of G.floats){cx.globalAlpha=clamp(1-f.age/f.life,0,1);cx.fillStyle=f.col;
     cx.font='bold 14px var(--font)';cx.textAlign='center';cx.fillText(f.txt,f.x,f.y);}
   cx.globalAlpha=1;
+}
+function drawDrops(){
+  if(!G.drops)return;
+  for(const d of G.drops){
+    if(d.landed){ // crate sitting, fading marker
+      cx.globalAlpha=clamp(1-(d.landT||0)/1.5,0,1);
+      cx.font='20px var(--font)';cx.textAlign='center';cx.fillText('📦',d.x,d.ty+4);
+      cx.globalAlpha=1; continue;
+    }
+    // parachute + swinging crate
+    const sway=Math.sin(d.sway)*6;
+    cx.strokeStyle=d.side==='B'?'#bfe4ff':'#ffb080';cx.lineWidth=1.2;cx.globalAlpha=0.9;
+    cx.beginPath();cx.moveTo(d.x-9,d.y-12);cx.lineTo(d.x+sway,d.y+6);cx.moveTo(d.x+9,d.y-12);cx.lineTo(d.x+sway,d.y+6);cx.stroke();
+    cx.fillStyle=d.side==='B'?'#3fd07a':'#d63a2a';
+    cx.beginPath();cx.arc(d.x,d.y-14,10,Math.PI,0);cx.fill();      // canopy
+    cx.font='16px var(--font)';cx.textAlign='center';cx.fillText('📦',d.x+sway,d.y+9);
+    cx.globalAlpha=1;
+  }
 }
 
 /* ═══ HUD SYNC ═══ */
@@ -2565,6 +2785,7 @@ function bumpHype(n){
     G.cp+=bonus;
     announce('🚂 HYPE TRAIN!','chat sends +'+bonus+' CP','#c9a0ff');
     chatReactSafe('combo',6); clipMoment();
+    if(SAVE.randomEvents&&SAVE.evSupply&&G.drops)airdrop((Math.random()*3)|0,'B'); // the crowd sends a crate too
     frontNews('Chat erupts — a hype train rolls through and the war room banks '+bonus+' extra CP','hype',4);
   }
 }
@@ -2587,7 +2808,7 @@ function clipMoment(){
    fully offline. All incoming text is HTML-escaped before display.
    ═══════════════════════════════════════════════════════════════════════ */
 const CHATLINK={ ws:null, channel:'', connected:false, connecting:false,
-  voteEvery:14, bossThreshold:8 };
+  voteEvery:14, bossThreshold:8, dropThreshold:6, chaosThreshold:8 };
 function escapeHtml(s){return (''+s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function chatStatus(txt,col){ const el=document.getElementById('tw-status'); if(el){el.textContent=txt;el.style.color=col||'var(--dim)';} }
 function chatMsgRaw(user,txt,ucol){
@@ -2613,7 +2834,7 @@ function chatConnect(channel){
     CHATLINK.connected=true; CHATLINK.connecting=false;
     chatStatus('● LIVE — reading #'+channel,'var(--good)');
     SAVE.twitchChannel=channel; if(!SAVE.streamOn){SAVE.streamOn=true;refreshTopbar();} persist();
-    chatMsgRaw('FRONTLINE','Connected! Chat: type top / mid / bot to surge the enemy at a lane, or boss to summon a boss.','#5ff0e0');
+    chatMsgRaw('FRONTLINE','Connected! Chat commands: top/mid/bot surge a lane · boss summons a boss · drop resupplies the streamer · chaos rolls a random event · hype fills the meter.','#5ff0e0');
   };
   ws.onmessage=ev=>handleIRC(ev.data);
   ws.onerror=()=>{ chatStatus('Connection error — check the name / your network.','var(--red)'); CHATLINK.connecting=false; };
@@ -2643,7 +2864,14 @@ function onChatMsg(user,text){
     return;
   }
   if(/^boss$/.test(t)){ if(!G.bossVoters[user]){ G.bossVoters[user]=1; G.bossMeter++;
-    if(G.bossMeter>=CHATLINK.bossThreshold){ spawnBoss((Math.random()*3)|0); G.bossMeter=0; G.bossVoters={}; } } }
+    if(G.bossMeter>=CHATLINK.bossThreshold){ spawnBoss((Math.random()*3)|0); G.bossMeter=0; G.bossVoters={}; } } return; }
+  // ── viewers HELP the streamer ──
+  if(/^(drop|supply)$/.test(t)){ if(!G.dropVoters[user]){ G.dropVoters[user]=1; G.dropMeter++;
+    if(G.dropMeter>=CHATLINK.dropThreshold){ airdrop((Math.random()*3)|0,'B'); announce('📦 CHAT SUPPLY DROP','viewers resupply your line','#3fd07a');
+      chatMsgRaw('FRONTLINE','Chat drops a crate on your line!','#3fd07a'); G.dropMeter=0; G.dropVoters={}; bumpHype(10); } } return; }
+  if(/^(chaos|event|roll)$/.test(t)){ if(!G.chaosVoters[user]){ G.chaosVoters[user]=1; G.chaosMeter++;
+    if(G.chaosMeter>=CHATLINK.chaosThreshold){ announce('🎲 CHAT ROLLS THE DICE','anything can happen','#c9a0ff'); fireRandomEvent(); G.chaosMeter=0; G.chaosVoters={}; } } return; }
+  if(/^(hype|pog|lets ?go|w)$/.test(t)){ bumpHype(3); return; }
 }
 function spawnBoss(lane){
   if(!G)return;
@@ -2685,6 +2913,7 @@ function chatVoteTick(dt){
 function endGame(winner,reason){
   if(G.over)return;
   G.over=true; G.result=winner;
+  ambientStop();
   const won=winner==='B';
   if(won)SND.win(); else SND.lose();
   if(won)musicStart('victory'); else musicSetTheme('menu');
@@ -2871,6 +3100,7 @@ function hideTut(){ const el=document.getElementById('tutbox'); if(el)el.classLi
 
 /* ═══ MENU ═══ */
 function openMenu(){
+  ambientStop();
   document.getElementById('menu').classList.remove('hidden');
   document.getElementById('title').classList.add('hidden');
   document.getElementById('warmap').classList.add('hidden');
@@ -2970,6 +3200,7 @@ function start(){
   newGame();
   actx();
   musicStart('battle');
+  if(!G.attract)ambientStart();
   syncStanceUI(); syncSpeedUI();
   const big=(G.kind==='campaign'&&G.mission)?G.mission.name:((MODES[G.mode]&&MODES[G.mode].name)||G.kind);
   announce(String(big).toUpperCase(),DOCTRINES[G.doc].name+' · '+DIFFS[G.diff].name+' · '+G.wx.name,DOCTRINES[G.doc].col);
@@ -3254,7 +3485,9 @@ function renderManualBody(tab){
     <h2>Countries</h2>
     <p>Choosing a country renames the roster to that nation's real equipment — a US tank becomes the <b>M1 Abrams</b>, a Russian one the <b>T-90M</b>. It's flavour only; no stats change.</p>
     <h2>Streaming</h2>
-    <p>Connect <b>📡 Live Chat</b> to a Twitch channel and viewers can vote on lanes, trigger events and drive the on-screen <b>hype meter</b>. Great for streamers who want the audience in the fight.</p>`;
+    <p>Connect <b>📡 Live Chat</b> to a Twitch channel and viewers can vote on lanes, summon bosses, call <b>supply drops</b>, roll <b>chaos</b> events, and drive the on-screen <b>hype meter</b> (a full "hype train" pays out bonus CP and a crate). Great for streamers who want the audience in the fight.</p>
+    <h2>Random Events</h2>
+    <p>Battles can throw <b>surprises</b>: airdropped <b>supply crates</b>, off-the-rails narrator lines, cinematic <b>combat cutscenes</b>, a sudden <b>artillery barrage</b>, or an enemy <b>defector</b> switching sides. Turn any of them on or off — or all at once — in <b>⚙ Settings → Random Events</b>.</p>`;
   } else if(tab==='tips'){
     h=`<h2>Field-tested advice</h2><ul>`;
     LOAD_TIPS.forEach(t=>h+=`<li>${t.replace(/<b>/g,'<b>')}</li>`);
@@ -3291,14 +3524,27 @@ function renderSettings(){
       <input id="set-vol" type="range" min="0" max="100" value="${Math.round((SAVE.musicVol!=null?SAVE.musicVol:0.5)*100)}" style="width:130px;accent-color:var(--gold)"></div>`+
     settingRow('Sound Effects','Blips, booms and impacts',`<button id="set-sound" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.sound)}</button>`)+
     settingRow('Narrator','The Iron Marshal war-room voice',`<button id="set-narr" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.narrator)}</button>`)+
-    settingRow('News Wire','Generated battlefield & world headlines',`<button id="set-news" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.news)}</button>`)+
-    settingRow('Reduce Motion','Calm screen shake, flashes & parallax',`<button id="set-motion" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.reduceMotion)}</button>`);
+    settingRow('Battlefield Ambience','Distant gunfire & artillery rumble under the fight',`<button id="set-amb" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.ambient)}</button>`)+
+    settingRow('Reduce Motion','Calm screen shake, flashes & parallax',`<button id="set-motion" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.reduceMotion)}</button>`)+
+    `<div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.5px;margin:6px 2px -2px">🎲 RANDOM EVENTS</div>`+
+    settingRow('Random Events','Master switch for battlefield surprises',`<button id="set-rev" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.randomEvents)}</button>`)+
+    settingRow('· Supply Drops','Air-dropped crates grant CP or reinforcements',`<button id="set-ev-supply" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evSupply)}</button>`)+
+    settingRow('· Crazy Voicelines','Off-the-rails narrator outbursts',`<button id="set-ev-voice" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evVoice)}</button>`)+
+    settingRow('· Combat Cutscenes','Brief cinematic close-ups of the action',`<button id="set-ev-cut" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evCutscene)}</button>`)+
+    settingRow('· Artillery Barrage','A surprise shelling rakes a lane',`<button id="set-ev-barr" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evBarrage)}</button>`)+
+    settingRow('· Defectors','An enemy unit switches sides mid-battle',`<button id="set-ev-def" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evDefector)}</button>`);
   const bind=(id,fn)=>{const b=document.getElementById(id); if(b)b.onclick=()=>{fn();renderSettings();};};
   bind('set-music',()=>{ SAVE.music=!SAVE.music; persist(); if(SAVE.music)musicStart(musicContextTheme()); else musicStop(); refreshTopbar(); });
   bind('set-sound',()=>{ SAVE.sound=!SAVE.sound; persist(); });
   bind('set-narr',()=>{ SAVE.narrator=!SAVE.narrator; persist(); if(!SAVE.narrator)narrStop(); });
-  bind('set-news',()=>{ SAVE.news=!SAVE.news; persist(); renderNews(); });
+  bind('set-amb',()=>{ SAVE.ambient=!SAVE.ambient; persist(); if(!SAVE.ambient)ambientStop(); });
   bind('set-motion',()=>{ SAVE.reduceMotion=!SAVE.reduceMotion; persist(); });
+  bind('set-rev',()=>{ SAVE.randomEvents=!SAVE.randomEvents; persist(); });
+  bind('set-ev-supply',()=>{ SAVE.evSupply=!SAVE.evSupply; persist(); });
+  bind('set-ev-voice',()=>{ SAVE.evVoice=!SAVE.evVoice; persist(); });
+  bind('set-ev-cut',()=>{ SAVE.evCutscene=!SAVE.evCutscene; persist(); });
+  bind('set-ev-barr',()=>{ SAVE.evBarrage=!SAVE.evBarrage; persist(); });
+  bind('set-ev-def',()=>{ SAVE.evDefector=!SAVE.evDefector; persist(); });
   const vol=document.getElementById('set-vol');
   if(vol)vol.oninput=()=>{ SAVE.musicVol=(+vol.value)/100; persist();
     try{ if(MUSIC.master&&MUSIC.ctx)MUSIC.master.gain.setTargetAtTime(SAVE.musicVol,MUSIC.ctx.currentTime,0.1); }catch(e){}
@@ -3401,6 +3647,7 @@ function attractTick(dt){
 
 /* ── TITLE SCREEN ── */
 function showTitle(){
+  ambientStop();
   ['menu','warmap','results','hud','pauseScreen','manual','settings'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('title').classList.remove('hidden');
@@ -3450,6 +3697,7 @@ function warAttackable(w,node){ return node.owner==='enemy' && warNeighbors(w,no
 function warDiffFor(str){ return str>=80?'legendary':str>=62?'elite':str>=44?'veteran':'recruit'; }
 let warSel=null;
 function showWarMap(){
+  ambientStop();
   ['title','menu','results','hud','pauseScreen'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('warmap').classList.remove('hidden');
