@@ -197,6 +197,9 @@
   /* when the news bar is open, nudge the right-side HUD clear of it */
   body.news-open #objbar{right:250px;} body.news-open #killfeed{right:250px;}
   body.news-open #combo{right:250px;} body.news-open #votebar{right:250px;} body.news-open #aidebug{right:250px;}
+  /* full-screen menus recenter clear of the open news bar */
+  body.news-open #manual,body.news-open #settings,body.news-open #warmap,body.news-open #menu{padding-right:250px;}
+  @media (max-width:820px){ body.news-open #manual,body.news-open #settings,body.news-open #warmap,body.news-open #menu{padding-right:180px;} }
 
   /* ── SCREENS (menu/results) ── */
   .screen{position:absolute;inset:0;z-index:30;background:radial-gradient(ellipse at 50% 30%,#141c2b,#080b11);
@@ -261,6 +264,64 @@
   .t-btn.tut{border-color:var(--good);} .t-btn.tut b{color:var(--good);} .t-btn.tut:hover{box-shadow:0 0 18px #3fd07a44;}
   .title-foot{font-size:12px;color:var(--dim);text-shadow:0 2px 6px #000;margin-top:10px;}
   .title-foot b{color:var(--gold);}
+  .t-btn.manual{border-color:var(--purple);} .t-btn.manual b{color:var(--purple);} .t-btn.manual:hover{box-shadow:0 0 18px #c9a0ff44;}
+  .t-btn.settings{border-color:var(--gold);} .t-btn.settings b{color:var(--gold);} .t-btn.settings:hover{box-shadow:0 0 18px #ffce5a44;}
+
+  /* ── FIELD MANUAL / WIKI ── */
+  #manual{justify-content:flex-start;padding-top:52px;}
+  #manual h1{font-size:28px;margin-bottom:2px;}
+  .man-wrap{width:min(920px,95vw);display:flex;flex-direction:column;flex:1;min-height:0;}
+  .man-tabs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:6px 0 12px;}
+  .man-tab{padding:7px 15px;border:1px solid var(--line);border-radius:8px;background:#121a28dd;color:var(--dim);
+    font-size:12px;font-weight:700;letter-spacing:.5px;transition:.12s;}
+  .man-tab:hover{color:var(--ink);border-color:var(--purple);}
+  .man-tab.on{background:var(--purple);color:var(--bg);border-color:var(--purple);}
+  .man-body{flex:1;min-height:0;overflow-y:auto;padding:4px 8px 24px;text-align:left;line-height:1.55;}
+  .man-body h2{font-size:16px;color:var(--gold);margin:14px 0 6px;letter-spacing:.5px;}
+  .man-body h2:first-child{margin-top:0;}
+  .man-body p{font-size:13px;color:var(--dim);margin-bottom:8px;max-width:820px;}
+  .man-body p b{color:var(--ink);}
+  .man-body ul{margin:0 0 10px 4px;list-style:none;}
+  .man-body li{font-size:13px;color:var(--dim);margin-bottom:5px;padding-left:16px;position:relative;}
+  .man-body li:before{content:'▸';position:absolute;left:0;color:var(--purple);}
+  .man-body li b{color:var(--ink);}
+  /* unit cards grid */
+  .man-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:10px;}
+  .man-u{background:var(--panel);border:1px solid var(--line);border-left-width:3px;border-radius:9px;padding:8px 10px;}
+  .man-u .mu-h{display:flex;align-items:center;gap:8px;margin-bottom:3px;}
+  .man-u .mu-g{font-size:20px;line-height:1;}
+  .man-u .mu-n{font-size:13px;font-weight:800;}
+  .man-u .mu-tags{margin-left:auto;display:flex;gap:4px;}
+  .man-u .mu-d{font-size:11px;color:var(--dim);margin-bottom:5px;line-height:1.4;}
+  .man-u .mu-stats{display:flex;flex-wrap:wrap;gap:3px 8px;font-family:var(--mono);font-size:10px;color:var(--faint);}
+  .man-u .mu-stats span b{color:var(--ink);font-weight:700;}
+  .dtag{font-size:8.5px;font-weight:800;letter-spacing:.5px;padding:2px 5px;border-radius:4px;text-transform:uppercase;}
+  .dtag.sa{background:#8fd0ff22;color:#8fd0ff;} .dtag.ap{background:#ffb34722;color:#ffb347;}
+  .dtag.he{background:#ff9f7f22;color:#ff9f7f;} .dtag.aa{background:#7fffaa22;color:#7fffaa;}
+  .dtag.inf{background:#8fd0ff18;color:#8fd0ff;border:1px solid #8fd0ff44;}
+  .dtag.light{background:#ffdf7f18;color:#ffdf7f;border:1px solid #ffdf7f44;}
+  .dtag.heavy{background:#ffb34718;color:#ffb347;border:1px solid #ffb34744;}
+  .dtag.air{background:#c9a0ff18;color:#c9a0ff;border:1px solid #c9a0ff44;}
+  .dtag.support{background:#9fffce18;color:#9fffce;border:1px solid #9fffce44;}
+  /* counter matrix table */
+  .man-matrix{border-collapse:collapse;margin:6px 0 12px;font-size:12px;}
+  .man-matrix th,.man-matrix td{border:1px solid var(--line);padding:6px 10px;text-align:center;font-family:var(--mono);}
+  .man-matrix th{background:var(--panel2);color:var(--ink);font-weight:700;font-size:11px;}
+  .man-matrix td.rl{background:var(--panel2);color:var(--gold);font-weight:700;text-align:left;font-family:inherit;}
+  .man-cardrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+  .man-doc{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 12px;flex:1;min-width:240px;}
+  .man-doc .md-h{font-size:13px;font-weight:800;margin-bottom:3px;display:flex;align-items:center;gap:7px;}
+  .man-doc .md-d{font-size:11.5px;color:var(--dim);line-height:1.45;}
+  .man-doc .md-lock{font-size:10px;color:var(--faint);font-family:var(--mono);margin-top:4px;}
+  /* damage-type dot on hotbar cards */
+  .card .dtdot{position:absolute;top:2px;right:4px;width:8px;height:8px;border-radius:50%;box-shadow:0 0 0 1px #0006;}
+  .card .actag{position:absolute;bottom:2px;right:3px;font-size:7px;font-weight:800;letter-spacing:.3px;
+    color:var(--faint);font-family:var(--mono);text-transform:uppercase;}
+  /* hotbar group separators */
+  .hb-sep{width:1px;align-self:stretch;margin:4px 2px;background:var(--line);}
+  .hb-glabel{position:absolute;top:-13px;left:0;font-size:7.5px;font-weight:800;letter-spacing:1px;
+    color:var(--faint);text-transform:uppercase;white-space:nowrap;}
+  .card{margin-top:0;}
 
   /* ── WAR MODE ── */
   #warmap{justify-content:flex-start;padding-top:52px;}
@@ -513,6 +574,8 @@
       <div class="title-btns2">
         <button class="t-btn war" id="t-war"><b>🗺 War Mode</b><small>conquer the map</small></button>
         <button class="t-btn tut" id="t-tut"><b>🎓 Tutorial</b><small>learn the ropes</small></button>
+        <button class="t-btn manual" id="t-manual"><b>📖 Field Manual</b><small>how everything works</small></button>
+        <button class="t-btn settings" id="t-settings"><b>⚙ Settings</b><small>audio &amp; motion</small></button>
       </div>
       <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span></div>
     </div>
@@ -529,6 +592,25 @@
       <button class="sbtn" id="war-new">↻ New War</button>
       <button class="sbtn" id="war-fight" disabled>⚔ Attack Selected</button>
     </div>
+  </div>
+
+  <!-- FIELD MANUAL / WIKI -->
+  <div class="screen hidden" id="manual">
+    <button class="back-btn" id="man-back">◀ Title</button>
+    <h1>📖 <b>FIELD MANUAL</b></h1>
+    <div class="tag" style="margin-bottom:6px">Everything you need to command the frontline — the roster, the counter web, doctrines, ages, modes and hard-won tips.</div>
+    <div class="man-wrap">
+      <div class="man-tabs" id="man-tabs"></div>
+      <div class="man-body" id="man-body"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div class="screen hidden" id="settings">
+    <button class="back-btn" id="set-back">◀ Back</button>
+    <h1>⚙ <b>SETTINGS</b></h1>
+    <div class="tag">Tune the experience. Changes save automatically.</div>
+    <div id="set-body" style="width:min(440px,92vw);display:flex;flex-direction:column;gap:14px;text-align:left;"></div>
   </div>
 
   <!-- RESULTS -->
@@ -637,7 +719,7 @@ const SAVE_KEY='FRONTLINE_SAVE_v1';
 const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0,
   unlocked:['blitzkrieg','mass'],medals:{},sound:true,narrator:true,streamOn:false,seenTut:false,
   campaignDone:-1,campaignStars:{},daily:{},ttsKey:'',ttsVoice:'arnold',
-  speed:1,twitchChannel:'',war:null,warWins:0,aiDebug:false,music:true,musicVol:0.5,news:true};
+  speed:1,twitchChannel:'',war:null,warWins:0,aiDebug:false,music:true,musicVol:0.5,news:true,reduceMotion:false};
 let SAVE=load();
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
 function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(SAVE));}catch(e){}}
@@ -914,14 +996,20 @@ const SND={
 const MUSIC={ ctx:null, master:null, timer:null, theme:null, themeName:'', step:0, nextT:0, running:false };
 const M_HZ=n=>440*Math.pow(2,(n-69)/12);
 // chord progressions (MIDI triads, one chord per bar of 16 steps) + sparse lead melodies
+/* Original heroic themes — big brass leads, choir pads and timpani, in the
+   spirit of an epic strategy score (all melodies written fresh here). */
 const THEMES={
-  menu:{tempo:92, prog:[[57,60,64],[52,55,59],[53,57,60],[55,59,62]],
-    lead:{0:69,6:72,16:71,24:69,32:67,40:69,48:64,56:67}, drums:0.35},
-  battle:{tempo:146, prog:[[57,60,64],[53,57,60],[55,59,62],[52,55,59]],
-    lead:{0:69,4:71,8:72,12:71,16:69,20:65,24:69,32:72,36:74,40:72,44:69,48:67,52:69,56:71},
-    drums:1},
-  victory:{tempo:118, prog:[[60,64,67],[55,59,62],[57,60,64],[65,69,72]],
-    lead:{0:72,4:76,8:79,12:76,16:74,20:72,24:74,32:76,36:79,40:84,48:83,52:79,56:76}, drums:1},
+  // solemn, noble anteroom music
+  menu:{tempo:80, prog:[[45,52,57,60],[40,47,52,55],[41,48,53,57],[43,50,55,59]],
+    lead:{0:64,8:67,16:69,28:67, 32:65,40:64,48:60,56:62}, brass:false, timp:0, drums:0.25, pad:0.05},
+  // driving, heroic battle anthem
+  battle:{tempo:128, prog:[[45,52,57,60],[41,48,53,57],[43,50,55,59],[40,47,52,55]],
+    lead:{0:69,4:72,8:76,12:74, 16:72,20:71,24:69,28:76, 32:77,36:76,40:72,44:74, 48:71,52:69,56:67,60:69},
+    brass:true, timp:1, drums:1, pad:0.045},
+  // bright, triumphant fanfare
+  victory:{tempo:104, prog:[[48,55,60,64],[43,50,55,59],[45,52,57,60],[53,60,65,69]],
+    lead:{0:72,2:72,4:79,8:76,12:79, 16:84,22:83,28:79, 32:81,36:79,40:76,44:79, 48:84,54:83,60:79},
+    brass:true, timp:1, drums:1, pad:0.05},
 };
 function musicInit(){
   if(MUSIC.ctx)return MUSIC.ctx;
@@ -954,21 +1042,47 @@ function mDrum(when,kind){
   const g=c.createGain(); g.gain.setValueAtTime(kind==='snare'?0.35:0.14,when); g.gain.exponentialRampToValueAtTime(0.0001,when+dur);
   s.connect(f); f.connect(g); g.connect(MUSIC.master); s.start(when); s.stop(when+dur);
 }
+function mBrass(freq,dur,vol,when){
+  // stacked detuned saws through a low-pass swell = heroic brass
+  const c=MUSIC.ctx; if(!c)return;
+  const f=c.createBiquadFilter(); f.type='lowpass'; f.frequency.setValueAtTime(700,when); f.frequency.linearRampToValueAtTime(2600,when+0.06);
+  const g=c.createGain(); g.gain.setValueAtTime(0.0001,when); g.gain.linearRampToValueAtTime(vol,when+0.05);
+  g.gain.setValueAtTime(vol,when+dur*0.6); g.gain.exponentialRampToValueAtTime(0.0001,when+dur);
+  f.connect(g); g.connect(MUSIC.master);
+  [0,7,-5].forEach((det,i)=>{ const o=c.createOscillator(); o.type=i?'sawtooth':'square';
+    o.frequency.setValueAtTime(freq*(i===2?0.5:1),when); o.detune.value=det; o.connect(f); o.start(when); o.stop(when+dur+0.05); });
+}
+function mChoir(chord,dur,vol,when){
+  const c=MUSIC.ctx; if(!c)return;
+  const g=c.createGain(); g.gain.setValueAtTime(0.0001,when); g.gain.linearRampToValueAtTime(vol,when+0.4);
+  g.gain.setValueAtTime(vol,when+dur*0.7); g.gain.exponentialRampToValueAtTime(0.0001,when+dur); g.connect(MUSIC.master);
+  for(const n of chord){ [-6,6].forEach(det=>{ const o=c.createOscillator(); o.type='triangle';
+    o.frequency.value=M_HZ(n+12); o.detune.value=det; o.connect(g); o.start(when); o.stop(when+dur+0.05); }); }
+}
+function mTimp(when,vol){
+  const c=MUSIC.ctx; if(!c)return;
+  const o=c.createOscillator(),g=c.createGain(); o.type='sine';
+  o.frequency.setValueAtTime(120,when); o.frequency.exponentialRampToValueAtTime(52,when+0.18);
+  g.gain.setValueAtTime(vol,when); g.gain.exponentialRampToValueAtTime(0.0001,when+0.34);
+  o.connect(g); g.connect(MUSIC.master); o.start(when); o.stop(when+0.36);
+}
 function musicStepAt(when){
   const th=MUSIC.theme; if(!th)return;
   const step=MUSIC.step, bar=Math.floor(step/16)%th.prog.length, beat=step%16;
   const chord=th.prog[bar];
-  // bass root, pulsing eighths
-  if(beat%2===0) mTone(M_HZ(chord[0]-24),0.20,'triangle',0.20,when,600);
-  // arpeggio, softer, every 16th
-  mTone(M_HZ(chord[beat%chord.length]),0.11,'square',0.045,when,1500);
-  // pad chord on the downbeat
-  if(beat===0)for(const n of chord)mTone(M_HZ(n),1.6,'sawtooth',0.02,when,900);
-  // drums
-  const dv=th.drums;
-  if(dv){ if(beat===0||beat===8)mDrum(when,'kick'); if(beat===4||beat===12)mDrum(when,'snare'); if(beat%2===1)mDrum(when,'hat'); }
-  // lead melody
-  const lm=th.lead&&th.lead[step]; if(lm)mTone(M_HZ(lm),0.34,'sawtooth',0.085,when,2600);
+  // bass root, pulsing eighths (down two octaves from the chord root)
+  if(beat%2===0) mTone(M_HZ(chord[0]-12),0.22,'triangle',0.20,when,500);
+  // gentle arpeggio through the chord tones
+  mTone(M_HZ(chord[1+(beat%(chord.length-1))]),0.10,'square',0.035,when,1400);
+  // sustained choir pad each bar
+  if(beat===0) mChoir(chord, (60/th.tempo)*4*0.98, th.pad||0.04, when);
+  // drums / timpani
+  if(th.drums){ if(beat===0||beat===8)mDrum(when,'kick'); if(beat===4||beat===12)mDrum(when,'snare'); if(beat%2===1)mDrum(when,'hat'); }
+  if(th.timp){ if(beat===0)mTimp(when,0.4); if(th.tempo>110&&beat===8)mTimp(when,0.3); }
+  // lead melody — brass on the heroic themes, soft saw on the menu
+  const lm=th.lead&&th.lead[step];
+  if(lm){ if(th.brass){ mBrass(M_HZ(lm),0.36,0.11,when); mBrass(M_HZ(lm+12),0.36,0.05,when); }
+    else mTone(M_HZ(lm),0.5,'sawtooth',0.07,when,2000); }
 }
 function musicSchedule(){
   if(!MUSIC.running)return;
@@ -1346,6 +1460,7 @@ function newGame(){
   }
   // chat-vote state (streamer Phase 2)
   G.cvVotes={0:0,1:0,2:0}; G.cvVoters={}; G.cvT=CHATLINK.voteEvery; G.bossMeter=0; G.bossVoters={};
+  G.hype=0; G.hypeTrains=0; // Phase 2 hype meter — chat energy that pays out CP on a full train
   // daily mutators
   if(L&&L.type==='daily'&&L.mut&&L.mut.apply){try{L.mut.apply(G);}catch(e){}}
   for(const u of HOTBAR)G.cds[u]=0;
@@ -1955,7 +2070,7 @@ function checkWin(){
 function draw(){
   cx.clearRect(0,0,W,H);
   cx.save();
-  if(G&&G.shake>0){cx.translate(rnd(-G.shake,G.shake),rnd(-G.shake,G.shake));}
+  if(G&&G.shake>0&&!SAVE.reduceMotion){const s=G.shake;cx.translate(rnd(-s,s),rnd(-s,s));}
   drawField();
   if(G){
     // lane guides
@@ -1979,7 +2094,7 @@ function draw(){
   cx.fillStyle=vg;cx.fillRect(0,0,W,H);
   // flash overlay handled via DOM
   const flashEl=document.getElementById('fx-flash');
-  if(G&&G.flash>0){flashEl.style.opacity=G.flash*0.5;flashEl.style.background=G.hqFlashCol||'#ff3020';}
+  if(G&&G.flash>0){flashEl.style.opacity=G.flash*(SAVE.reduceMotion?0.18:0.5);flashEl.style.background=G.hqFlashCol||'#ff3020';}
   else flashEl.style.opacity=0;
 }
 let _wxStreaks=null;
@@ -2245,9 +2360,12 @@ function syncHUD(){
   if(vb){
     if((SAVE.streamOn||CHATLINK.connected)&&!G.tutorial){ vb.style.display='block';
       const tot=G.cvVotes[0]+G.cvVotes[1]+G.cvVotes[2];
+      const hp=Math.round(G.hype||0), hot=hp>=75;
       vb.innerHTML=`<div class="vb-h">CHAT → ENEMY LANE <span style="color:var(--faint)">${Math.ceil(G.cvT)}s</span></div>`+
         [0,1,2].map(i=>`<div class="vb-row"><span>${['TOP','MID','BOT'][i]}</span><div class="vb-track"><i style="width:${tot?Math.round(G.cvVotes[i]/tot*100):0}%"></i></div><span>${G.cvVotes[i]}</span></div>`).join('')+
-        `<div class="vb-boss">BOSS ${G.bossMeter}/${CHATLINK.bossThreshold}</div>`;
+        `<div class="vb-boss">BOSS ${G.bossMeter}/${CHATLINK.bossThreshold}</div>`+
+        `<div class="vb-h" style="margin-top:5px;color:${hot?'#ff9f40':'#c9a0ff'}">🚂 HYPE ${G.hypeTrains?'· x'+G.hypeTrains:''}<span style="color:var(--faint)">${hp}%</span></div>`+
+        `<div class="vb-track" style="height:8px"><i style="width:${hp}%;background:linear-gradient(90deg,#c9a0ff,${hot?'#ff9f40':'#5ff0e0'});transition:width .25s"></i></div>`;
     } else vb.style.display='none';
   }
   // strike button
@@ -2281,6 +2399,11 @@ function syncHUD(){
 }
 
 /* ═══ HOTBAR UI ═══ */
+// damage-type dot colours (matches the .dtag accent palette)
+const DTDOT_COL={sa:'#8fd0ff',ap:'#ffb347',he:'#ff9f7f',aa:'#7fffaa'};
+// hotbar groups: after the last key in each group we drop a thin separator so the
+// bar reads in tactical chunks (infantry · armour · fires · air/AD · support)
+const HB_GROUP_END={sniper:1,ifv:1,mlrs:1,drone:1};
 function buildHotbar(){
   const hb=document.getElementById('hotbar'); hb.innerHTML='';
   HOTBAR.forEach((key,i)=>{
@@ -2292,7 +2415,11 @@ function buildHotbar(){
       ? `${AGES[UNIT_MINAGE[key]].glyph}<b>AGE&nbsp;${UNIT_MINAGE[key]+1}</b><span>EVOLVE</span>`
       : `🔒<b>${tierUnlockCost(key)}</b><span>T${tier}</span>`;
     const dispName=unitName(key, G?G.country:'generic');
-    el.innerHTML=`<span class="key">${i<9?i+1:''}</span><div class="glyph" style="color:${u.col}">${u.glyph}</div>
+    const dt=UNIT_DMGTYPE[key], ac=UNIT_ARMORCLASS[key];
+    const dtDot=dt?`<span class="dtdot" style="background:${DTDOT_COL[dt]}" title="${DMGTYPE_LABEL[dt]}"></span>`
+      :`<span class="dtdot" style="background:#9fffce" title="Support"></span>`;
+    const acTag=ac?`<span class="actag">${ac==='inf'?'INF':ac==='light'?'LGT':ac==='heavy'?'HVY':ac==='air'?'AIR':ac}</span>`:'';
+    el.innerHTML=`<span class="key">${i<9?i+1:''}</span>${dtDot}${acTag}<div class="glyph" style="color:${u.col}">${u.glyph}</div>
       <div class="nm">${dispName}</div><div class="cost">${unitCost(key)}</div>
       <div class="cd" style="display:none"></div><div class="ready-flash"></div>
       <div class="lockov">${lockInner}</div>`;
@@ -2302,8 +2429,10 @@ function buildHotbar(){
       else { G.selCard=key; }
       showLaneHint();
     };
-    el.title=(locked?(ageGate?'Unlocks in the '+AGES[UNIT_MINAGE[key]].name+'. ':'Tier '+tier+' — pay '+tierUnlockCost(key)+' CP to unlock. '):'')+(u.desc||'');
+    const cw=dt?DMGTYPE_LABEL[dt]+' — '+((()=>{const m=DMG_MATRIX[dt];const best=Object.keys(m).sort((a,b)=>m[b]-m[a]).slice(0,2).map(x=>ARMORCLASS_LABEL[x]);return 'strong vs '+best.join(' & ');})()):'Support unit';
+    el.title=(locked?(ageGate?'Unlocks in the '+AGES[UNIT_MINAGE[key]].name+'. ':'Tier '+tier+' — pay '+tierUnlockCost(key)+' CP to unlock. '):'')+(u.desc||'')+' · '+cw;
     hb.appendChild(el);
+    if(HB_GROUP_END[key]){ const sep=document.createElement('div'); sep.className='hb-sep'; hb.appendChild(sep); }
   });
   // missile strike special card
   const st=document.createElement('div');
@@ -2414,12 +2543,34 @@ function chatMsg(txt,col){
   while(feed.children.length>9)feed.removeChild(feed.firstChild);
 }
 let chatIdleT=0;
+// how much each chat reaction feeds the hype meter
+const HYPE_GAIN={combo:14,win:40,deploy:2,wave:3,hqhit:5,lose:0,idle:1};
 function chatReact(kind,n){
+  if(!SAVE.streamOn && !CHATLINK.connected)return;
+  bumpHype((HYPE_GAIN[kind]!=null?HYPE_GAIN[kind]:2)+(kind==='combo'?Math.min(12,(n||0)):0));
   if(!SAVE.streamOn)return;
   const pool=CHAT_HYPE[kind]||CHAT_HYPE.idle;
   const burst=kind==='combo'&&n>=5?3:kind==='win'||kind==='lose'?4:1;
   for(let i=0;i<burst;i++)setTimeout(()=>chatMsg(pick(pool)),i*160);
 }
+// ── PHASE 2: HYPE METER — chat energy fills a bar; a full bar is a "hype train"
+//    that showers the commander with bonus CP and clips the moment. ──
+function bumpHype(n){
+  if(!G||G.over||G.tutorial)return;
+  if(!SAVE.streamOn && !CHATLINK.connected)return;
+  G.hype=Math.min(100,(G.hype||0)+n);
+  if(G.hype>=100){
+    G.hype=25; G.hypeTrains=(G.hypeTrains||0)+1;
+    const bonus=60+G.hypeTrains*15;
+    G.cp+=bonus;
+    announce('🚂 HYPE TRAIN!','chat sends +'+bonus+' CP','#c9a0ff');
+    chatReactSafe('combo',6); clipMoment();
+    frontNews('Chat erupts — a hype train rolls through and the war room banks '+bonus+' extra CP','hype',4);
+  }
+}
+// bump the chat feed without recursing back into the hype meter
+function chatReactSafe(kind,n){ if(!SAVE.streamOn)return; const pool=CHAT_HYPE[kind]||CHAT_HYPE.idle;
+  const burst=n>=5?3:1; for(let i=0;i<burst;i++)setTimeout(()=>chatMsg(pick(pool)),i*140); }
 function clipMoment(){
   if(!SAVE.streamOn)return;
   const b=document.getElementById('clipbanner');
@@ -2509,6 +2660,8 @@ function spawnBoss(lane){
 function chatVoteTick(dt){
   if(!G||G.over||G.tutorial)return;
   if(!SAVE.streamOn && !CHATLINK.connected)return;
+  // hype meter drifts down when the action cools off
+  if(G.hype>0)G.hype=Math.max(0,G.hype-dt*3.5);
   // when not connected but streamer mode is on, simulate votes so the mechanic demos offline
   if(!CHATLINK.connected){
     if(Math.random()<dt*2.4){ G.cvVotes[(Math.random()*3)|0]++; }
@@ -2980,6 +3133,182 @@ document.getElementById('btn-tutorial').onclick=()=>launchTutorial();
 document.getElementById('tut-skip').onclick=()=>{ if(G&&G.tutorial)tutFinish(); };
 document.getElementById('fr-yes').onclick=()=>{document.getElementById('firstrun').classList.remove('show');document.getElementById('title').classList.add('hidden');launchTutorial();};
 document.getElementById('fr-no').onclick=()=>{document.getElementById('firstrun').classList.remove('show');SAVE.seenTut=true;persist();};
+/* ═══ FIELD MANUAL / WIKI — generated from the live data tables so it never drifts ═══ */
+const DMGTYPE_LABEL={sa:'Small Arms',ap:'Armour-Piercing',he:'High Explosive',aa:'Anti-Air'};
+const ARMORCLASS_LABEL={inf:'Infantry',light:'Light',heavy:'Heavy',air:'Air',struct:'Structure'};
+function openManual(tab){
+  ['title','menu','warmap','results','hud','pauseScreen','settings'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('btn-pause').classList.add('hidden');
+  document.getElementById('manual').classList.remove('hidden');
+  buildManualTabs(tab||'basics');
+}
+const MAN_TABS=[
+  ['basics','📋 Basics'],['roster','🎖 Roster'],['counters','⚔ Counter Web'],
+  ['doctrines','🏳 Doctrines'],['ages','🧬 Ages'],['modes','🗺 Modes'],['tips','💡 Tips'],
+];
+function buildManualTabs(active){
+  const tabs=document.getElementById('man-tabs'); tabs.innerHTML='';
+  MAN_TABS.forEach(([id,lbl])=>{
+    const b=document.createElement('button'); b.className='man-tab'+(id===active?' on':''); b.textContent=lbl;
+    b.onclick=()=>buildManualTabs(id); tabs.appendChild(b);
+  });
+  renderManualBody(active);
+}
+function renderManualBody(tab){
+  const el=document.getElementById('man-body'); let h='';
+  if(tab==='basics'){
+    h=`<h2>The one-minute brief</h2>
+    <p>You command one side of a three-lane battlefield. Your HQ sits on the left; the enemy's on the right. <b>Destroy their HQ before they destroy yours.</b></p>
+    <ul>
+      <li><b>Command Points (CP)</b> tick in automatically and pour in from every kill. Spend them to deploy units.</li>
+      <li><b>Pick a card</b> from the hotbar, then <b>click a lane</b> to drop that unit into the fight. Number keys 1–9 select cards too.</li>
+      <li><b>Every unit has a job.</b> The coloured dot on each card is its <b>damage type</b>; the corner tag is its <b>armour class</b>. Match your damage type to their armour to win exchanges — see the Counter Web tab.</li>
+      <li><b>Stances</b> (Z/X/C) change how your whole force behaves — push, hold, or skirmish — without touching stats.</li>
+      <li><b>Speed</b> control lets you slow the fight to 0.5× to micromanage, or run it at 2× to blitz.</li>
+    </ul>
+    <h2>Free commander powers</h2>
+    <ul>
+      <li><b>☢ Missile Strike</b> — call a free strike on a point in a lane. Reloads on a timer.</li>
+      <li><b>📡 Recon Flare</b> — reveals every enemy in a lane through fog & weather for a few seconds.</li>
+      <li><b>⚡ EMP Pulse</b> (Rank 3) — jams a whole lane; they can barely fire or move briefly.</li>
+    </ul>
+    <h2>Winning the long game</h2>
+    <p>Bank CP for <b>tech tiers</b> and <b>production spawners</b> (factories that pump out units on a timer), earn <b>veterancy</b> on units that rack up kills, and read the <b>lane terrain</b> — forests favour infantry ambushes, hills extend gunners and artillery.</p>`;
+  } else if(tab==='roster'){
+    h=`<p>The full roster. <b>DMG</b> is the damage type it deals; <b>Armour</b> is how it soaks hits. Stats are base values before doctrine, terrain, veterancy and age scaling.</p><div class="man-grid">`;
+    HOTBAR.forEach(key=>{
+      const u=UNITS[key], dt=UNIT_DMGTYPE[key], ac=UNIT_ARMORCLASS[key];
+      const dtTag=dt?`<span class="dtag ${dt}">${dt}</span>`:`<span class="dtag support">SUPPORT</span>`;
+      const acTag=`<span class="dtag ${ac}">${ARMORCLASS_LABEL[ac]}</span>`;
+      const stats=[];
+      if(u.hp)stats.push(`<span>HP <b>${u.hp}</b></span>`);
+      if(u.dmg)stats.push(`<span>DMG <b>${u.dmg}</b></span>`);
+      if(u.rng)stats.push(`<span>RNG <b>${u.rng}</b></span>`);
+      if(u.spd)stats.push(`<span>SPD <b>${u.spd}</b></span>`);
+      if(u.splash)stats.push(`<span>AoE <b>${u.splash}</b></span>`);
+      if(u.heal)stats.push(`<span>HEAL <b>${u.heal}</b></span>`);
+      stats.push(`<span>CP <b>${u.cost}</b></span>`);
+      h+=`<div class="man-u" style="border-left-color:${u.col}">
+        <div class="mu-h"><span class="mu-g" style="color:${u.col}">${u.glyph}</span>
+        <span class="mu-n">${u.name}</span><span class="mu-tags">${dtTag}${acTag}</span></div>
+        <div class="mu-d">${u.desc||''}</div>
+        <div class="mu-stats">${stats.join('')}</div></div>`;
+    });
+    h+=`</div><h2>Production spawners</h2><div class="man-cardrow">`;
+    for(const t of SPAWNER_KEYS){ const s=SPAWNERS[t];
+      h+=`<div class="man-doc" style="border-left:3px solid ${s.col}"><div class="md-h"><span style="color:${s.col}">${s.glyph}</span>${s.name}</div>
+      <div class="md-d">${s.desc} — built just ahead of your HQ, produces a unit every ${s.interval}s.</div>
+      <div class="md-lock">Cost ${s.cost} CP · max ${MAX_SPAWNERS} per side</div></div>`;
+    }
+    h+=`</div>`;
+  } else if(tab==='counters'){
+    h=`<h2>The counter web</h2>
+    <p>Every hit is scaled by <b>damage type vs armour class</b>. Read a row (the weapon) across the columns (the target's armour): higher is better. This is the heart of the game — bring the right tool.</p>
+    <table class="man-matrix"><tr><th>Weapon ↓ / Armour →</th>`;
+    ['inf','light','heavy','air','struct'].forEach(ac=>h+=`<th>${ARMORCLASS_LABEL[ac]}</th>`);
+    h+=`</tr>`;
+    for(const dt in DMG_MATRIX){
+      h+=`<tr><td class="rl"><span class="dtag ${dt}">${dt}</span> ${DMGTYPE_LABEL[dt]}</td>`;
+      ['inf','light','heavy','air','struct'].forEach(ac=>{
+        const v=DMG_MATRIX[dt][ac]; const col=v>=1.3?'#7fffaa':v>=1?'#ffce5a':v>=0.6?'#ffab40':'#ff5a4a';
+        h+=`<td style="color:${col}">${v.toFixed(2)}×</td>`;
+      });
+      h+=`</tr>`;
+    }
+    h+=`</table>
+    <ul>
+      <li><b>Small Arms</b> (rifles, IFVs, snipers) — shred infantry, ping off tanks.</li>
+      <li><b>Armour-Piercing</b> (AT teams, tanks, helis, drones) — the tank-killers; poor against infantry.</li>
+      <li><b>High Explosive</b> (artillery, rockets) — clears groups and levels structures; useless against aircraft.</li>
+      <li><b>Anti-Air</b> (AA vehicles) — own the sky, near-worthless against the ground.</li>
+    </ul>
+    <p><b>Crits:</b> precision units (the sniper) land the occasional double-damage hit. <b>Terrain</b> and <b>veterancy</b> layer on top of these numbers.</p>`;
+  } else if(tab==='doctrines'){
+    h=`<p>Pick a doctrine before a Play-mode battle. It bends your whole army one way — cheaper armour, more infantry, harder-hitting fires, a tougher HQ. Higher doctrines unlock as you rank up.</p><div class="man-cardrow">`;
+    for(const k in DOCTRINES){ const d=DOCTRINES[k]; const locked=SAVE.lvl<d.unlock;
+      h+=`<div class="man-doc" style="border-left:3px solid ${d.col}">
+        <div class="md-h"><span style="color:${d.col}">${d.glyph}</span>${d.name}</div>
+        <div class="md-d">${d.desc}</div>
+        <div class="md-lock">${d.unlock===0?'Available from the start':(locked?'🔒 Unlocks at Rank '+d.unlock:'✓ Unlocked (Rank '+d.unlock+')')}</div></div>`;
+    }
+    h+=`</div>`;
+  } else if(tab==='ages'){
+    h=`<h2>Evolution mode — the Age of War</h2>
+    <p>In Evolution mode you start in the trenches and <b>evolve through five ages</b>, each unlocking new hardware and scaling your HQ, units and support. Evolve by racking up kills (and passive progress); the enemy is capped to one age ahead of you, never more.</p><div class="man-cardrow">`;
+    AGES.forEach((a,i)=>{
+      const units=HOTBAR.filter(k=>UNIT_MINAGE[k]===i).map(k=>UNITS[k].name);
+      h+=`<div class="man-doc" style="border-left:3px solid ${a.col}">
+        <div class="md-h"><span style="color:${a.col}">${a.glyph}</span>Age ${i+1} · ${a.name}</div>
+        <div class="md-d">HQ ×${a.hqMul.toFixed(2)} · units ×${a.unit.toFixed(2)} · support ×${a.sup.toFixed(1)}${units.length?'<br><b>Unlocks:</b> '+units.join(', '):''}</div>
+        <div class="md-lock">${i===0?'Starting age':'Evolve threshold '+a.evo}</div></div>`;
+    });
+    h+=`</div>`;
+  } else if(tab==='modes'){
+    h=`<h2>Ways to play</h2>
+    <ul>
+      <li><b>▶ Play</b> — a quick battle. Pick a doctrine, country, mode and difficulty. Buy your way up the tech tiers mid-fight.</li>
+      <li><b>🧬 Evolution</b> — Age of War. Evolve through five ages, gate your roster by age, race the enemy up the tech tree.</li>
+      <li><b>🗺 War Mode</b> — a conquest map. Every node is a battle; take one and you cut supply to its neighbours, lose and the enemy pushes back. Win by taking the enemy capital.</li>
+      <li><b>🎓 Tutorial</b> — a short narrated walkthrough of the core loop.</li>
+    </ul>
+    <h2>Countries</h2>
+    <p>Choosing a country renames the roster to that nation's real equipment — a US tank becomes the <b>M1 Abrams</b>, a Russian one the <b>T-90M</b>. It's flavour only; no stats change.</p>
+    <h2>Streaming</h2>
+    <p>Connect <b>📡 Live Chat</b> to a Twitch channel and viewers can vote on lanes, trigger events and drive the on-screen <b>hype meter</b>. Great for streamers who want the audience in the fight.</p>`;
+  } else if(tab==='tips'){
+    h=`<h2>Field-tested advice</h2><ul>`;
+    LOAD_TIPS.forEach(t=>h+=`<li>${t.replace(/<b>/g,'<b>')}</li>`);
+    h+=`</ul><h2>Commander's notes</h2><ul>
+      <li><b>Read the corner tags.</b> Never throw riflemen at a wall of tanks — bring AT teams, tanks or drones (armour-piercing).</li>
+      <li><b>Artillery shapes the fight.</b> Keep guns behind your line and let the front hold while HE rains down.</li>
+      <li><b>Own the sky first.</b> One AA vehicle per lane shuts down helis and drones cheaply.</li>
+      <li><b>Bank for spawners.</b> A barracks or drone bay pays for itself over a long battle.</li>
+      <li><b>Kills are income.</b> Winning an exchange funds the next push — trade up, never down.</li>
+    </ul>`;
+  }
+  el.innerHTML=h; el.scrollTop=0;
+}
+
+/* ═══ SETTINGS MODAL ═══ */
+function openSettings(){
+  ['title','menu','warmap','results','hud','pauseScreen','manual'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('settings').classList.remove('hidden');
+  renderSettings();
+}
+function settingRow(label,sub,control){
+  return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;">
+    <div><div style="font-size:13px;font-weight:700;color:var(--ink)">${label}</div><div style="font-size:11px;color:var(--dim);margin-top:2px">${sub}</div></div>
+    <div>${control}</div></div>`;
+}
+function renderSettings(){
+  const el=document.getElementById('set-body');
+  const toggle=(on)=>`<span style="display:inline-block;width:46px;height:24px;border-radius:13px;background:${on?'var(--good)':'#2a3550'};position:relative;transition:.15s;">
+    <span style="position:absolute;top:2px;left:${on?'24px':'2px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:.15s;"></span></span>`;
+  el.innerHTML=
+    settingRow('Music','Original orchestral score',`<button id="set-music" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.music)}</button>`)+
+    `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;">
+      <div><div style="font-size:13px;font-weight:700;color:var(--ink)">Music Volume</div><div style="font-size:11px;color:var(--dim);margin-top:2px">${Math.round((SAVE.musicVol!=null?SAVE.musicVol:0.5)*100)}%</div></div>
+      <input id="set-vol" type="range" min="0" max="100" value="${Math.round((SAVE.musicVol!=null?SAVE.musicVol:0.5)*100)}" style="width:130px;accent-color:var(--gold)"></div>`+
+    settingRow('Sound Effects','Blips, booms and impacts',`<button id="set-sound" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.sound)}</button>`)+
+    settingRow('Narrator','The Iron Marshal war-room voice',`<button id="set-narr" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.narrator)}</button>`)+
+    settingRow('News Wire','Generated battlefield & world headlines',`<button id="set-news" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.news)}</button>`)+
+    settingRow('Reduce Motion','Calm screen shake, flashes & parallax',`<button id="set-motion" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.reduceMotion)}</button>`);
+  const bind=(id,fn)=>{const b=document.getElementById(id); if(b)b.onclick=()=>{fn();renderSettings();};};
+  bind('set-music',()=>{ SAVE.music=!SAVE.music; persist(); if(SAVE.music)musicStart(musicContextTheme()); else musicStop(); refreshTopbar(); });
+  bind('set-sound',()=>{ SAVE.sound=!SAVE.sound; persist(); });
+  bind('set-narr',()=>{ SAVE.narrator=!SAVE.narrator; persist(); if(!SAVE.narrator)narrStop(); });
+  bind('set-news',()=>{ SAVE.news=!SAVE.news; persist(); renderNews(); });
+  bind('set-motion',()=>{ SAVE.reduceMotion=!SAVE.reduceMotion; persist(); });
+  const vol=document.getElementById('set-vol');
+  if(vol)vol.oninput=()=>{ SAVE.musicVol=(+vol.value)/100; persist();
+    try{ if(MUSIC.master&&MUSIC.ctx)MUSIC.master.gain.setTargetAtTime(SAVE.musicVol,MUSIC.ctx.currentTime,0.1); }catch(e){}
+    const lbl=vol.parentNode.querySelector('div div:last-child'); if(lbl)lbl.textContent=Math.round(SAVE.musicVol*100)+'%'; };
+}
+document.getElementById('man-back').onclick=()=>showTitle();
+document.getElementById('t-manual').onclick=()=>openManual('basics');
+document.getElementById('set-back').onclick=()=>showTitle();
+document.getElementById('t-settings').onclick=()=>openSettings();
+
 // title screen
 document.getElementById('t-play').onclick=()=>{leaveTitle();openMenu();};
 document.getElementById('t-evo').onclick=()=>{leaveTitle();launchEvolution();};
@@ -3072,7 +3401,7 @@ function attractTick(dt){
 
 /* ── TITLE SCREEN ── */
 function showTitle(){
-  ['menu','warmap','results','hud','pauseScreen'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['menu','warmap','results','hud','pauseScreen','manual','settings'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('title').classList.remove('hidden');
   document.getElementById('t-rank').textContent='Rank '+SAVE.lvl;
@@ -3245,6 +3574,30 @@ const WORLD_NEWS=[
   ()=>`Volunteers flood recruiting stations in ${nn()} after dawn broadcast`,
 ];
 function genWorldNews(){ try{ return pick(WORLD_NEWS)(); }catch(e){ return 'Reports coming in from the front...'; } }
+// battle-derived headlines that read the LIVE game state
+function genBattleNews(){
+  if(!G||G.over)return genWorldNews();
+  try{
+    const co=COUNTRIES[G.country]||COUNTRIES.generic, en=COUNTRIES[G.enemyCountry]||COUNTRIES.russia;
+    const DEMONYM={generic:'Allied',usa:'US',russia:'Russian',china:'Chinese',uk:'British',germany:'German',japan:'Japanese'};
+    const flag=co.flag, us=DEMONYM[G.country]||co.name, them=DEMONYM[G.enemyCountry]||en.name;
+    const front=G.warName||(G.mission&&G.mission.name)||'the front';
+    const hqR=Math.round(G.hq.R/G.hqMax.R*100), hqB=Math.round(G.hq.B/G.hqMax.B*100);
+    const gen=G.general?G.general.name.replace(/^(Gen\.|Col\.|Marshal|Air Marshal)\s*/,'').replace(/"/g,''):'enemy command';
+    const terr=G.laneTerrain?TERRAINS[G.laneTerrain[(Math.random()*3)|0]].name.toLowerCase():'open';
+    const pool=[
+      `${flag} ${us} forces claim ${G.kills} enemy units destroyed on ${front}`,
+      hqR<70?`Enemy HQ reported at ${hqR}% strength as ${us} presses the assault on ${front}`:`${them} dig in on ${front}; ${us} commanders weigh the next push`,
+      hqB<70?`${us} home command holding at ${hqB}% under a heavy ${them} counter-push`:`${us} lines hold firm across ${front}`,
+      `Fierce fighting reported in the ${terr} sector of ${front}`,
+      G.ages?`${flag} ${us} fields ${AGES[G.age].name}-era hardware as ${them} race to keep pace`:`${us} commit fresh reserves to ${front}`,
+      `${gen} vows the ${them} line "will not break" on ${front}`,
+      G.deploys>0?`${us} has committed ${G.deploys} formations to ${front} so far`:`${us} forces mass for an opening move on ${front}`,
+      G.bestCombo>=5?`Analysts stunned by a ${G.bestCombo}-kill ${us} breakthrough on ${front}`:`${them} probe ${us} defences along ${front}`,
+    ];
+    return pick(pool);
+  }catch(e){ return genWorldNews(); }
+}
 function pushNews(text,tag){ NEWS.items.unshift({text,tag:tag||'world'}); while(NEWS.items.length>18)NEWS.items.pop(); renderNews(); }
 let newsPulse=0;
 function renderNews(){
@@ -3258,7 +3611,11 @@ function renderNews(){
     return `<div class="nb-item ${n.tag}"><span class="nb-tag">${tag}</span>${escapeHtml(n.text)}</div>`;
   }).join('')||'<div class="nb-item"><span class="nb-tag">○ WORLD</span>Awaiting the wire…</div>';
 }
-function newsTick(dt){ if(!SAVE.news)return; NEWS.worldT-=dt; if(NEWS.worldT<=0){ NEWS.worldT=rnd(7,13); pushNews(genWorldNews(),'world'); } }
+function newsTick(dt){ if(!SAVE.news)return; NEWS.worldT-=dt; if(NEWS.worldT<=0){ NEWS.worldT=rnd(17,27);
+  // in an active battle, mostly report on the real fight; sprinkle in the occasional world headline
+  const inBattle = G && !G.over && !G.attract;
+  if(inBattle && Math.random()<0.78) pushNews(genBattleNews(),'world');
+  else pushNews(genWorldNews(),'world'); } }
 // front-line headline helpers (rate-limited)
 let _newsCd={};
 function frontNews(text,key,cd){ if(!SAVE.news)return; const now=performance.now();
@@ -3273,7 +3630,7 @@ function _musicKick(){ if(SAVE.music){ musicInit(); try{ if(MUSIC.ctx&&MUSIC.ctx
 window.addEventListener('pointerdown',_musicKick,true);
 window.addEventListener('keydown',_musicKick,true);
 // world news keeps ticking on the menu / title / war map too (in-battle newsTick adds the rest)
-setInterval(()=>{ if(SAVE.news && (!G || G.over || G.attract)) pushNews(genWorldNews(),'world'); }, 10000);
+setInterval(()=>{ if(SAVE.news && (!G || G.over || G.attract)) pushNews(genWorldNews(),'world'); }, 19000);
 // seed the wire so the sidebar isn't empty
 pushNews(genWorldNews(),'world'); pushNews(genWorldNews(),'world'); renderNews();
 resize(); refreshTopbar(); buildMenu();

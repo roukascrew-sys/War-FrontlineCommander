@@ -352,14 +352,17 @@ same pipeline, so the damage matrix applies to them too.
 
 ## Music, war-map ambience & the news wire
 
-- **Background music** (`MUSIC`, `THEMES`) — an **original** procedurally-
-  sequenced score (WebAudio), not any external track. A tiny step-sequencer
-  (`musicSchedule`/`musicStepAt`) plays bass + arpeggio + pad + drums + a lead
-  over a per-theme chord progression. Three themes — `menu`, `battle`,
-  `victory` — swapped by game state (`musicStart`/`musicSetTheme`, called from
-  `showTitle`/`start`/`endGame`/`openMenu`/`showWarMap`). Starts on the first
-  user gesture (browsers block audio before that); toggle via the 🎵 topbar
-  button (`SAVE.music`, `SAVE.musicVol`).
+- **Background music** (`MUSIC`, `THEMES`) — an **original**, epic/orchestral
+  procedurally-sequenced score (WebAudio), styled after Age-of-War-type battle
+  themes but composed here, not any external track. A step-sequencer
+  (`musicSchedule`/`musicStepAt`) layers a bass + arpeggio, a **choir pad**
+  (`mChoir`, once per bar), **timpani** hits on strong beats (`mTimp`), drums,
+  and a **brass-doubled lead** (`mBrass`, octave-stacked) over a per-theme chord
+  progression. Themes carry `brass`/`timp`/`pad` flags. Three themes — `menu`,
+  `battle`, `victory` — swapped by game state (`musicStart`/`musicSetTheme`,
+  called from `showTitle`/`start`/`endGame`/`openMenu`/`showWarMap`). Starts on
+  the first user gesture; toggle via the 🎵 topbar button or the Settings modal
+  (`SAVE.music`, `SAVE.musicVol`).
 - **War-map ambient explosions** (`startWarFx`/`warFxTick`) — while the
   conquest map is open, a timer pops `.warflash` radial-gradient bursts at
   random board positions with a muffled distant boom, so the whole theatre
@@ -371,7 +374,36 @@ same pipeline, so the damage matrix applies to them too.
   **FLASH** headlines via `frontNews()`/`pushNews(...,'flash')` (first blood,
   combo tiers, HQ hits, evolution, boss, war captures/losses, win/lose). All
   text is `escapeHtml()`-escaped. `body.news-open` shifts the right-side HUD
-  clear of the bar.
+  and the full-screen menus clear of the bar.
+  During a live battle the wire runs on a **slower cadence** (`newsTick` →
+  `rnd(17,27)s`) and mostly pushes **battle-derived** headlines
+  (`genBattleNews()`, ~78% of the time) that read live `G` state — country
+  demonyms, front name, HQ %, kills, deploys, ages, terrain, best combo — with
+  the occasional world headline mixed in.
+
+## Field Manual, Settings & the hype meter (manageability overhaul)
+
+- **Field Manual / wiki** (`#manual`, `openManual`/`buildManualTabs`/
+  `renderManualBody`) — a tabbed in-game encyclopedia reachable from the title
+  (📖 Field Manual). Tabs: **Basics, Roster, Counter Web, Doctrines, Ages,
+  Modes, Tips**. Every tab is **generated from the live data tables** (`UNITS`,
+  `UNIT_DMGTYPE`/`UNIT_ARMORCLASS`, `DMG_MATRIX`, `DOCTRINES`, `AGES`,
+  `SPAWNERS`, `LOAD_TIPS`) so it can never drift from the real numbers. The
+  Counter Web tab renders `DMG_MATRIX` as a colour-graded table.
+- **Settings modal** (`#settings`, `openSettings`/`renderSettings`) — from the
+  title (⚙ Settings). Toggles for music, sound, narrator, news, and
+  **reduce-motion** (`SAVE.reduceMotion`), plus a music-volume slider. Reduce-
+  motion suppresses screen shake (in `draw()`) and dampens the HQ-hit flash.
+- **Hotbar clarity** (`buildHotbar`) — each unit card now carries a **damage-
+  type dot** (top-right, coloured by `DTDOT_COL`) and an **armour-class tag**
+  (bottom-right: INF/LGT/HVY/AIR), with thin **group separators** (`HB_GROUP_END`
+  → `.hb-sep`) between infantry · armour · fires · air/AD · support. Tooltips
+  spell out what each unit is strong against.
+- **Hype meter** (Phase 2, `G.hype`/`bumpHype`/`chatVoteTick`) — while streamer
+  mode or a live Twitch chat is connected, chat reactions (`chatReact`) feed a
+  hype bar shown in `#votebar`. A full bar is a **hype train**: it showers bonus
+  CP (scaling with `G.hypeTrains`), fires a clip moment, and pushes a FRONT
+  headline. The bar decays when the action cools off.
 
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
