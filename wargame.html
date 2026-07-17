@@ -172,6 +172,32 @@
   #clipbanner{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%) scale(.6);opacity:0;
     font-size:30px;font-weight:900;color:var(--purple);text-shadow:0 0 20px var(--purple);letter-spacing:3px;}
 
+  /* ── war-map ambient explosions ── */
+  .warflash{position:absolute;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle,rgba(255,230,150,0.95) 0%,rgba(255,150,60,0.6) 35%,rgba(255,90,50,0.15) 60%,transparent 75%);
+    animation:warflash .95s ease-out forwards;}
+  @keyframes warflash{0%{opacity:0;transform:translate(-50%,-50%) scale(0.2);}18%{opacity:1;}100%{opacity:0;transform:translate(-50%,-50%) scale(1.4);}}
+
+  /* ── generated news sidebar ── */
+  #newsbar{position:absolute;top:52px;right:0;bottom:0;width:224px;background:linear-gradient(180deg,#0a0e16f2,#070a10f2);
+    border-left:1px solid var(--line);display:none;flex-direction:column;z-index:36;box-shadow:-6px 0 24px #0006;}
+  #newsbar.show{display:flex;}
+  #newsbar .nb-h{font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--red);padding:9px 12px;
+    border-bottom:1px solid var(--line);display:flex;align-items:center;gap:7px;background:#12060899;}
+  #newsbar .nb-dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:pulse 1.2s infinite;}
+  #newsbar .nb-feed{flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:8px;}
+  #newsbar .nb-item{font-size:11.5px;line-height:1.4;color:var(--ink);border-left:2px solid var(--line);
+    padding:2px 0 2px 8px;animation:kfin .25s ease;}
+  #newsbar .nb-item .nb-tag{display:block;font-family:var(--mono);font-size:8.5px;letter-spacing:1px;color:var(--faint);margin-bottom:2px;}
+  #newsbar .nb-item.front{border-left-color:var(--gold);} #newsbar .nb-item.front .nb-tag{color:var(--gold);}
+  #newsbar .nb-item.flash{border-left-color:var(--red);} #newsbar .nb-item.flash .nb-tag{color:var(--red);}
+  #newsbar .nb-item.world{border-left-color:var(--blue);} #newsbar .nb-item.world .nb-tag{color:var(--blue);}
+  #newsbar .nb-foot{font-size:8.5px;letter-spacing:.5px;color:var(--faint);padding:6px 12px;border-top:1px solid var(--line);text-align:center;}
+  @media (max-width:820px){ #newsbar{width:180px;} }
+  /* when the news bar is open, nudge the right-side HUD clear of it */
+  body.news-open #objbar{right:250px;} body.news-open #killfeed{right:250px;}
+  body.news-open #combo{right:250px;} body.news-open #votebar{right:250px;} body.news-open #aidebug{right:250px;}
+
   /* ── SCREENS (menu/results) ── */
   .screen{position:absolute;inset:0;z-index:30;background:radial-gradient(ellipse at 50% 30%,#141c2b,#080b11);
     display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow-y:auto;}
@@ -355,6 +381,8 @@
   <button class="tb-btn" id="btn-narr">🎙 Narrator</button>
   <button class="tb-btn" id="btn-voice">🔑 Voice</button>
   <button class="tb-btn" id="btn-sound">🔊 Sound</button>
+  <button class="tb-btn" id="btn-music">🎵 Music</button>
+  <button class="tb-btn" id="btn-news">📰 News</button>
   <button class="tb-btn" id="btn-ai">🧠 AI Debug</button>
   <button class="tb-btn hidden" id="btn-pause">⏸ Pause</button>
   <button class="tb-btn" id="btn-menu">☰ Menu</button>
@@ -421,6 +449,13 @@
     <div id="streamtag">● LIVE — FRONTLINE COMMANDER</div>
     <div id="chatbox"><div class="ch-h"><span class="dot"></span>STREAM CHAT</div><div id="chatfeed"></div></div>
     <div id="clipbanner">★ CLIP THAT! ★</div>
+  </div>
+
+  <!-- generated news sidebar -->
+  <div id="newsbar">
+    <div class="nb-h"><span class="nb-dot"></span>WAR WIRE — LIVE</div>
+    <div class="nb-feed"></div>
+    <div class="nb-foot">FRONTLINE NEWS NETWORK · all reports simulated</div>
   </div>
 
   <!-- MAIN MENU -->
@@ -602,7 +637,7 @@ const SAVE_KEY='FRONTLINE_SAVE_v1';
 const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0,
   unlocked:['blitzkrieg','mass'],medals:{},sound:true,narrator:true,streamOn:false,seenTut:false,
   campaignDone:-1,campaignStars:{},daily:{},ttsKey:'',ttsVoice:'arnold',
-  speed:1,twitchChannel:'',war:null,warWins:0,aiDebug:false};
+  speed:1,twitchChannel:'',war:null,warWins:0,aiDebug:false,music:true,musicVol:0.5,news:true};
 let SAVE=load();
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
 function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(SAVE));}catch(e){}}
@@ -868,6 +903,109 @@ const SND={
   win:()=>{[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,0.14,'triangle',0.08),i*90));},
   lose:()=>{[300,240,180,120].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'sawtooth',0.08),i*110));},
 };
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BACKGROUND MUSIC — an ORIGINAL, procedurally-sequenced score (WebAudio).
+   Not the copyrighted YouTube tracks; these are original epic-battle loops in
+   the same spirit: a driving minor "battle" theme, a triumphant "victory"
+   fanfare, and a calmer "menu" theme. A tiny step-sequencer over a chord
+   progression drives bass, arpeggio, lead and drums.
+   ═══════════════════════════════════════════════════════════════════════ */
+const MUSIC={ ctx:null, master:null, timer:null, theme:null, themeName:'', step:0, nextT:0, running:false };
+const M_HZ=n=>440*Math.pow(2,(n-69)/12);
+// chord progressions (MIDI triads, one chord per bar of 16 steps) + sparse lead melodies
+const THEMES={
+  menu:{tempo:92, prog:[[57,60,64],[52,55,59],[53,57,60],[55,59,62]],
+    lead:{0:69,6:72,16:71,24:69,32:67,40:69,48:64,56:67}, drums:0.35},
+  battle:{tempo:146, prog:[[57,60,64],[53,57,60],[55,59,62],[52,55,59]],
+    lead:{0:69,4:71,8:72,12:71,16:69,20:65,24:69,32:72,36:74,40:72,44:69,48:67,52:69,56:71},
+    drums:1},
+  victory:{tempo:118, prog:[[60,64,67],[55,59,62],[57,60,64],[65,69,72]],
+    lead:{0:72,4:76,8:79,12:76,16:74,20:72,24:74,32:76,36:79,40:84,48:83,52:79,56:76}, drums:1},
+};
+function musicInit(){
+  if(MUSIC.ctx)return MUSIC.ctx;
+  try{ MUSIC.ctx=new (window.AudioContext||window.webkitAudioContext)();
+    MUSIC.master=MUSIC.ctx.createGain(); MUSIC.master.gain.value=0; MUSIC.master.connect(MUSIC.ctx.destination);
+  }catch(e){}
+  return MUSIC.ctx;
+}
+function mTone(freq,dur,type,vol,when,filt){
+  const c=MUSIC.ctx; if(!c)return;
+  const o=c.createOscillator(),g=c.createGain(); o.type=type; o.frequency.setValueAtTime(freq,when);
+  let last=o;
+  if(filt){ const f=c.createBiquadFilter(); f.type='lowpass'; f.frequency.value=filt; o.connect(f); last=f; }
+  last.connect(g); g.connect(MUSIC.master);
+  g.gain.setValueAtTime(0.0001,when); g.gain.exponentialRampToValueAtTime(vol,when+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001,when+dur);
+  o.start(when); o.stop(when+dur+0.03);
+}
+function mDrum(when,kind){
+  const c=MUSIC.ctx; if(!c)return;
+  if(kind==='kick'){ const o=c.createOscillator(),g=c.createGain(); o.type='sine';
+    o.frequency.setValueAtTime(140,when); o.frequency.exponentialRampToValueAtTime(45,when+0.12);
+    g.gain.setValueAtTime(0.5,when); g.gain.exponentialRampToValueAtTime(0.0001,when+0.15);
+    o.connect(g); g.connect(MUSIC.master); o.start(when); o.stop(when+0.16); return; }
+  // noise-based snare / hat
+  const dur=kind==='snare'?0.16:0.05, b=c.createBuffer(1,c.sampleRate*dur,c.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+  const s=c.createBufferSource(); s.buffer=b;
+  const f=c.createBiquadFilter(); f.type=kind==='snare'?'bandpass':'highpass'; f.frequency.value=kind==='snare'?1800:7000;
+  const g=c.createGain(); g.gain.setValueAtTime(kind==='snare'?0.35:0.14,when); g.gain.exponentialRampToValueAtTime(0.0001,when+dur);
+  s.connect(f); f.connect(g); g.connect(MUSIC.master); s.start(when); s.stop(when+dur);
+}
+function musicStepAt(when){
+  const th=MUSIC.theme; if(!th)return;
+  const step=MUSIC.step, bar=Math.floor(step/16)%th.prog.length, beat=step%16;
+  const chord=th.prog[bar];
+  // bass root, pulsing eighths
+  if(beat%2===0) mTone(M_HZ(chord[0]-24),0.20,'triangle',0.20,when,600);
+  // arpeggio, softer, every 16th
+  mTone(M_HZ(chord[beat%chord.length]),0.11,'square',0.045,when,1500);
+  // pad chord on the downbeat
+  if(beat===0)for(const n of chord)mTone(M_HZ(n),1.6,'sawtooth',0.02,when,900);
+  // drums
+  const dv=th.drums;
+  if(dv){ if(beat===0||beat===8)mDrum(when,'kick'); if(beat===4||beat===12)mDrum(when,'snare'); if(beat%2===1)mDrum(when,'hat'); }
+  // lead melody
+  const lm=th.lead&&th.lead[step]; if(lm)mTone(M_HZ(lm),0.34,'sawtooth',0.085,when,2600);
+}
+function musicSchedule(){
+  if(!MUSIC.running)return;
+  const c=MUSIC.ctx; if(!c)return;
+  const stepDur=(60/MUSIC.theme.tempo)/4; // 16th note
+  while(MUSIC.nextT < c.currentTime+0.14){
+    musicStepAt(MUSIC.nextT);
+    MUSIC.nextT+=stepDur; MUSIC.step=(MUSIC.step+1)%64;
+  }
+}
+function musicSetTheme(name){
+  if(!THEMES[name]||MUSIC.themeName===name)return;
+  MUSIC.themeName=name; MUSIC.theme=THEMES[name];
+}
+function musicStart(name){
+  if(!SAVE.music)return;
+  musicInit(); if(!MUSIC.ctx)return;
+  try{ if(MUSIC.ctx.state==='suspended')MUSIC.ctx.resume(); }catch(e){}
+  musicSetTheme(name||MUSIC.themeName||'menu');
+  if(!MUSIC.running){ MUSIC.running=true; MUSIC.nextT=MUSIC.ctx.currentTime+0.08; MUSIC.step=0;
+    MUSIC.timer=setInterval(musicSchedule,40); }
+  MUSIC.master.gain.cancelScheduledValues(MUSIC.ctx.currentTime);
+  MUSIC.master.gain.setTargetAtTime((SAVE.musicVol!=null?SAVE.musicVol:0.5),MUSIC.ctx.currentTime,0.4);
+}
+function musicStop(){
+  if(!MUSIC.running)return;
+  try{ MUSIC.master.gain.setTargetAtTime(0,MUSIC.ctx.currentTime,0.25); }catch(e){}
+  const t=MUSIC.timer;
+  setTimeout(()=>{ if(!SAVE.music){ clearInterval(t); MUSIC.running=false; } },500);
+  MUSIC.running=false; clearInterval(MUSIC.timer); MUSIC.timer=null;
+}
+function musicToggle(){ SAVE.music=!SAVE.music; persist(); if(SAVE.music){ musicStart(musicContextTheme()); } else { musicStop(); } refreshTopbar(); }
+function musicContextTheme(){
+  if(!G) return 'menu';
+  if(G.over) return G.result==='B'?'victory':'battle';
+  return G.attract?'menu':'battle';
+}
 
 /* ═══════════════════════════════════════════════════════════════════════
    NARRATOR — "THE IRON MARSHAL"
@@ -1365,6 +1503,7 @@ function tryEvolve(){
   for(const key of HOTBAR)G.unlocked[key]=(UNIT_MINAGE[key]<=G.age); // new age unlocks new iron
   buildHotbar();
   announce('⬆ '+a.name.toUpperCase(),'your forces evolve',a.col);
+  frontNews('Our forces field '+a.name+'-era hardware as the arms race leaps forward','evo',4);
   SND.win(); G.shake=Math.max(G.shake,9);
   say("We've reached the "+a.name+". New iron, new options — use them.",'proud',1);
   syncAgeUI();
@@ -1485,7 +1624,7 @@ function killUnit(u,src){
     G.cp=Math.min(G.cpMax,G.cp+bnt); floatText(u.x,u.y-u.r-4,'+'+bnt,'#ffce5a');
     if(G.ages)G.evo+=6;
     G.kills++;
-    if(!G.firstBlood){G.firstBlood=true; if(G.t>1)narr('firstBlood');}
+    if(!G.firstBlood){G.firstBlood=true; if(G.t>1){narr('firstBlood'); frontNews('First contact confirmed — the '+((G.warName||MODES[G.mode]&&MODES[G.mode].name||'front'))+' erupts into open battle','fb',20);}}
     addCombo();
   } else if(killer==='R'){
     G.ecp=Math.min(G.cpMax,G.ecp+bnt);
@@ -1498,9 +1637,9 @@ function addCombo(){
   if(G.combo>G.bestCombo)G.bestCombo=G.combo;
   if(G.combo>=2){ SND.combo(G.combo); showCombo(); }
   if(G.combo===3){announce('TRIPLE KILL','','#ffce5a');narr('combo3');}
-  else if(G.combo===5){announce('RAMPAGE','five down','#ff9f40');narr('combo5');}
-  else if(G.combo===8){announce('UNSTOPPABLE','','#ff5a4a');narr('combo8');}
-  else if(G.combo===12){announce('LEGENDARY','12 kill streak','#c9a0ff'); clipMoment();narr('combo12');}
+  else if(G.combo===5){announce('RAMPAGE','five down','#ff9f40');narr('combo5');frontNews('Enemy line buckles as our forces rout a full detachment','combo',10);}
+  else if(G.combo===8){announce('UNSTOPPABLE','','#ff5a4a');narr('combo8');frontNews('Breakthrough! Commander tears an eight-kill hole in the enemy advance','combo',10);}
+  else if(G.combo===12){announce('LEGENDARY','12 kill streak','#c9a0ff'); clipMoment();narr('combo12');frontNews('MASSACRE on the line — the enemy is in full retreat, sources say','combo',10);}
   else if(G.combo>12&&G.combo%5===0){announce('DOMINATING',G.combo+' streak','#c9a0ff');clipMoment();}
   chatReact('combo',G.combo);
 }
@@ -1639,6 +1778,7 @@ function step(dt){
   if(!G.tutorial&&G.general){ G.rivalTauntT-=dt; if(G.rivalTauntT<=0){ G.rivalTauntT=rnd(24,36); showRival(pick(G.general.taunts)); } }
   // streamer Phase 2 — chat votes drive the enemy
   chatVoteTick(dt);
+  newsTick(dt);
   if(G.ages)ageTick(dt);      // Age-of-War: enemy evolves over time
   turretTick(dt);             // base turrets fire
   spawnerTick(dt);            // production structures emit units
@@ -1752,8 +1892,8 @@ function updateUnits(dt){
         G.hq[foe]=Math.max(0,G.hq[foe]-hit);
         if(u.side==='B'){G.dmgDealt+=hit;} else {G.dmgTaken+=hit;}
         explode(hqX,u.y,30,u.side,18); u.alive=false;
-        if(foe==='B'){G.shake=Math.max(G.shake,10);G.flash=Math.max(G.flash,0.5);SND.hqhit();chatReact('hqhit');narr('hqYours');}
-        else{SND.hqhit();narr('hqTheirs');}
+        if(foe==='B'){G.shake=Math.max(G.shake,10);G.flash=Math.max(G.flash,0.5);SND.hqhit();chatReact('hqhit');narr('hqYours');frontNews('Home Command takes a direct hit — capital under threat, officials confirm','hqB',9);}
+        else{SND.hqhit();narr('hqTheirs');frontNews('Our forces strike the enemy capital; their high command scrambles','hqR',9);}
         checkWin();
       }
     }
@@ -2219,7 +2359,7 @@ cv.addEventListener('pointermove',e=>{
 cv.addEventListener('pointerleave',()=>{ if(G)G.hoverLane=-1; });
 cv.addEventListener('pointerdown',e=>{
   if(!G||G.over||G.paused)return;
-  actx();
+  actx(); if(SAVE.music&&!MUSIC.running)musicStart(musicContextTheme());
   const r=cv.getBoundingClientRect();
   const x=e.clientX-r.left, y=e.clientY-r.top;
   const lane=laneFromY(y);
@@ -2363,6 +2503,7 @@ function spawnBoss(lane){
   b.r=Math.round(b.r*1.7); b.spd*=0.7; b.col='#c9a0ff'; b.glyph='☠';
   announce('⚠ CHAT BOSS','the '+['top','middle','bottom'][lane]+' lane','#c9a0ff');
   chatMsgRaw('FRONTLINE','A BOSS has been summoned in the '+['top','mid','bot'][lane]+' lane!','#c9a0ff');
+  frontNews('BREAKING: a monstrous armoured unit appears on the '+['northern','central','southern'][lane]+' front','boss',3);
   G.shake=Math.max(G.shake,12);
 }
 function chatVoteTick(dt){
@@ -2393,6 +2534,8 @@ function endGame(winner,reason){
   G.over=true; G.result=winner;
   const won=winner==='B';
   if(won)SND.win(); else SND.lose();
+  if(won)musicStart('victory'); else musicSetTheme('menu');
+  pushNews(won?'VICTORY: enemy resistance on the '+((G.warName||'front'))+' collapses; the field is ours':'DEFEAT: our lines break and the front is lost — command reels','flash');
   narr(won?'victory':'defeat');
   if(won&&G.general&&!G.tutorial)showRival(pick(G.general.lose));
   // tutorial never counts toward progression
@@ -2585,6 +2728,7 @@ function openMenu(){
   narrStop(); hideTut();
   document.getElementById('rivalbox').classList.remove('show');
   G=null; window.G=null; LAUNCH=null;
+  musicStart('menu'); musicSetTheme('menu');
   buildMenu(); refreshTopbar();
 }
 function buildMenu(){
@@ -2659,6 +2803,7 @@ function announceLocked(d){document.getElementById('doc-desc').innerHTML=`<b sty
 
 /* ═══ START / LOOP ═══ */
 function start(){
+  stopWarFx();
   document.getElementById('menu').classList.add('hidden');
   document.getElementById('title').classList.add('hidden');
   document.getElementById('warmap').classList.add('hidden');
@@ -2671,6 +2816,7 @@ function start(){
   narrStop();
   newGame();
   actx();
+  musicStart('battle');
   syncStanceUI(); syncSpeedUI();
   const big=(G.kind==='campaign'&&G.mission)?G.mission.name:((MODES[G.mode]&&MODES[G.mode].name)||G.kind);
   announce(String(big).toUpperCase(),DOCTRINES[G.doc].name+' · '+DIFFS[G.diff].name+' · '+G.wx.name,DOCTRINES[G.doc].col);
@@ -2779,8 +2925,13 @@ function refreshTopbar(){
   document.getElementById('btn-narr').textContent=(SAVE.narrator?'🎙 Narrator':'🔇 Narrator');
   document.getElementById('btn-twitch').classList.toggle('on',!!CHATLINK.connected);
   document.getElementById('btn-ai').classList.toggle('on',!!SAVE.aiDebug);
+  document.getElementById('btn-music').classList.toggle('on',!!SAVE.music);
+  document.getElementById('btn-music').textContent=SAVE.music?'🎵 Music':'🔇 Music';
+  document.getElementById('btn-news').classList.toggle('on',!!SAVE.news);
 }
 document.getElementById('btn-ai').onclick=()=>{SAVE.aiDebug=!SAVE.aiDebug;persist();refreshTopbar();};
+document.getElementById('btn-music').onclick=()=>musicToggle();
+document.getElementById('btn-news').onclick=()=>{SAVE.news=!SAVE.news;persist();refreshTopbar();renderNews();};
 document.getElementById('btn-stream').onclick=()=>{SAVE.streamOn=!SAVE.streamOn;persist();refreshTopbar();
   if(SAVE.streamOn){document.getElementById('chatfeed').innerHTML='';chatReact('idle');}};
 document.getElementById('btn-sound').onclick=()=>{SAVE.sound=!SAVE.sound;persist();refreshTopbar();if(SAVE.sound){actx();beep(600,0.08,'square',0.06);}};
@@ -2928,6 +3079,7 @@ function showTitle(){
   document.getElementById('t-best').textContent='Best '+SAVE.best.toLocaleString();
   document.getElementById('title-tag').textContent=pick(TITLE_TAGS);
   startAttract();
+  musicStart('menu');
   if(!SAVE.seenTut){ setTimeout(()=>{ if(!document.getElementById('title').classList.contains('hidden'))
     document.getElementById('firstrun').classList.add('show'); },600); }
 }
@@ -2973,9 +3125,11 @@ function showWarMap(){
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('warmap').classList.remove('hidden');
   G=null; window.G=null; narrStop();
+  musicStart('menu'); musicSetTheme('menu');
   if(!SAVE.war) genWar();
   warSel=null;
   renderWarMap();
+  startWarFx();   // distant battlefields flicker across the theatre
 }
 function renderWarMap(){
   const w=SAVE.war; if(!w)return;
@@ -3034,10 +3188,12 @@ function warResolve(won){
     w.momentum=Math.min(100,w.momentum+8);
     // supply cut — every enemy neighbour weakens
     for(const nid of warNeighbors(w,n.id)){ const m=w.nodes[nid]; if(m.owner==='enemy'&&!m.cap)m.str=Math.max(15,m.str-20); }
-    if(n.cap==='enemy'){ w.done='won'; SAVE.warWins=(SAVE.warWins||0)+1; }
+    pushNews(n.name.toUpperCase()+' FALLS — supply lines to neighbouring sectors severed','flash');
+    if(n.cap==='enemy'){ w.done='won'; SAVE.warWins=(SAVE.warWins||0)+1; pushNews('THE WAR IS WON — the enemy capital has fallen','flash'); }
   } else {
     n.str=Math.min(99,n.str+12);          // the target digs in
     w.momentum=Math.max(0,w.momentum-10);
+    pushNews('Assault on '+n.name+' repelled; the enemy digs in and reinforces','flash');
     // counter-attack: if momentum is low, the enemy retakes a weak forward node
     if(w.momentum<38){
       const forward=w.nodes.filter(x=>x.owner==='you'&&!x.cap&&warNeighbors(w,x.id).some(k=>w.nodes[k].owner==='enemy'));
@@ -3051,9 +3207,75 @@ function warResolve(won){
   w.turns++; w.pending=null; persist();
 }
 
+/* ═══ WAR MODE AMBIENT FX — distant battlefields flicker across the theatre ═══ */
+let warFxTimer=null;
+function startWarFx(){ stopWarFx(); warFxTimer=setInterval(warFxTick,620); }
+function stopWarFx(){ if(warFxTimer){clearInterval(warFxTimer);warFxTimer=null;} }
+function warFxTick(){
+  const wm=document.getElementById('warmap');
+  if(!wm||wm.classList.contains('hidden')){ stopWarFx(); return; }
+  const board=document.getElementById('war-board'); if(!board)return;
+  if(Math.random()<0.82){
+    const f=document.createElement('div'); f.className='warflash';
+    const sz=rnd(16,44); f.style.width=sz+'px'; f.style.height=sz+'px';
+    f.style.left=rnd(5,95)+'%'; f.style.top=rnd(12,88)+'%';
+    board.appendChild(f); setTimeout(()=>{try{f.remove();}catch(e){}},1000);
+    if(SAVE.sound){ try{ beep(rnd(46,80),rnd(0.18,0.34),'sawtooth',0.026); }catch(e){} }
+  }
+}
+
+/* ═══ GENERATED NEWS — a fake wire service reacting to the battle, the war & the world ═══ */
+const NEWS={ items:[], worldT:5 };
+const NEWS_NATIONS=['Redland','the Federation','the Northern Bloc','the Directorate','the Republic','the Southern Coalition','Kestrel','Vantia','the Iron Pact'];
+const NEWS_CITIES=['Vardan','Kessler Pass','Grey Harbor','Ironford','Dunmoor','Aldergate','Torval','Halcyon','the capital','the eastern front'];
+const NEWS_KIT=['drone swarms','armour columns','rocket artillery','loitering munitions','EW convoys','attack helicopters','autonomous turrets'];
+const nn=()=>pick(NEWS_NATIONS), nc=()=>pick(NEWS_CITIES), nk=()=>pick(NEWS_KIT);
+const WORLD_NEWS=[
+  ()=>`Markets slide as war spending in ${nn()} hits a record high`,
+  ()=>`${nn()} calls an emergency session over the ${nc()} offensive`,
+  ()=>`Refugee columns stream out of ${nc()} as fighting intensifies`,
+  ()=>`Analysts warn ${nn()} "cannot sustain this tempo past winter"`,
+  ()=>`Unclaimed ${nk()} reported over ${nc()}; ${nn()} denies involvement`,
+  ()=>`Peace talks in ${nc()} collapse within the hour`,
+  ()=>`${nn()} unveils new ${nk()} as the arms race escalates`,
+  ()=>`Grain prices spike; a ${nn()} blockade is blamed`,
+  ()=>`Cyberattack blacks out ${nc()}'s power grid, officials say`,
+  ()=>`Satellite imagery shows fresh ${nk()} massing near ${nc()}`,
+  ()=>`${nn()} declares martial law across three provinces`,
+  ()=>`Volunteers flood recruiting stations in ${nn()} after dawn broadcast`,
+];
+function genWorldNews(){ try{ return pick(WORLD_NEWS)(); }catch(e){ return 'Reports coming in from the front...'; } }
+function pushNews(text,tag){ NEWS.items.unshift({text,tag:tag||'world'}); while(NEWS.items.length>18)NEWS.items.pop(); renderNews(); }
+let newsPulse=0;
+function renderNews(){
+  const el=document.getElementById('newsbar'); if(!el)return;
+  document.body.classList.toggle('news-open',!!SAVE.news);
+  if(!SAVE.news){ el.classList.remove('show'); return; }
+  el.classList.add('show');
+  const feed=el.querySelector('.nb-feed'); if(!feed)return;
+  feed.innerHTML=NEWS.items.map(n=>{
+    const tag=n.tag==='front'?'● FRONT':n.tag==='flash'?'⚡ FLASH':'○ WORLD';
+    return `<div class="nb-item ${n.tag}"><span class="nb-tag">${tag}</span>${escapeHtml(n.text)}</div>`;
+  }).join('')||'<div class="nb-item"><span class="nb-tag">○ WORLD</span>Awaiting the wire…</div>';
+}
+function newsTick(dt){ if(!SAVE.news)return; NEWS.worldT-=dt; if(NEWS.worldT<=0){ NEWS.worldT=rnd(7,13); pushNews(genWorldNews(),'world'); } }
+// front-line headline helpers (rate-limited)
+let _newsCd={};
+function frontNews(text,key,cd){ if(!SAVE.news)return; const now=performance.now();
+  if(key){ if(_newsCd[key]&&now-_newsCd[key]<(cd||6)*1000)return; _newsCd[key]=now; }
+  pushNews(text,'front'); }
+
 /* ═══ BOOT ═══ */
 // unlock by level on load
 for(const k in DOCTRINES)if(SAVE.lvl>=DOCTRINES[k].unlock&&!SAVE.unlocked.includes(k))SAVE.unlocked.push(k);
+// start music on the first real user gesture (browsers block audio before that)
+function _musicKick(){ if(SAVE.music){ musicInit(); try{ if(MUSIC.ctx&&MUSIC.ctx.state==='suspended')MUSIC.ctx.resume(); }catch(e){} if(!MUSIC.running)musicStart(musicContextTheme()); } }
+window.addEventListener('pointerdown',_musicKick,true);
+window.addEventListener('keydown',_musicKick,true);
+// world news keeps ticking on the menu / title / war map too (in-battle newsTick adds the rest)
+setInterval(()=>{ if(SAVE.news && (!G || G.over || G.attract)) pushNews(genWorldNews(),'world'); }, 10000);
+// seed the wire so the sidebar isn't empty
+pushNews(genWorldNews(),'world'); pushNews(genWorldNews(),'world'); renderNews();
 resize(); refreshTopbar(); buildMenu();
 requestAnimationFrame(loop);
 runLoader(); // loading screen → dynamic title (with attract battle) → menu / war

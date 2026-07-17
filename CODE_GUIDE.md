@@ -350,6 +350,29 @@ same pipeline, so the damage matrix applies to them too.
   `drawField`) with lingering smoke, a deploy ripple, and a hovered-lane
   highlight (`G.hoverLane` from a canvas `pointermove`).
 
+## Music, war-map ambience & the news wire
+
+- **Background music** (`MUSIC`, `THEMES`) — an **original** procedurally-
+  sequenced score (WebAudio), not any external track. A tiny step-sequencer
+  (`musicSchedule`/`musicStepAt`) plays bass + arpeggio + pad + drums + a lead
+  over a per-theme chord progression. Three themes — `menu`, `battle`,
+  `victory` — swapped by game state (`musicStart`/`musicSetTheme`, called from
+  `showTitle`/`start`/`endGame`/`openMenu`/`showWarMap`). Starts on the first
+  user gesture (browsers block audio before that); toggle via the 🎵 topbar
+  button (`SAVE.music`, `SAVE.musicVol`).
+- **War-map ambient explosions** (`startWarFx`/`warFxTick`) — while the
+  conquest map is open, a timer pops `.warflash` radial-gradient bursts at
+  random board positions with a muffled distant boom, so the whole theatre
+  feels alive. Self-stops when the map closes.
+- **Generated news wire** (`NEWS`, `pushNews`, `renderNews`, `#newsbar`) — a
+  toggleable right sidebar (📰 button, `SAVE.news`). World headlines are built
+  from templates (`WORLD_NEWS` with `nn()/nc()/nk()` fills) on a timer that runs
+  even on the menu/title/war map; battle events push tagged **FRONT** and
+  **FLASH** headlines via `frontNews()`/`pushNews(...,'flash')` (first blood,
+  combo tiers, HQ hits, evolution, boss, war captures/losses, win/lose). All
+  text is `escapeHtml()`-escaped. `body.news-open` shifts the right-side HUD
+  clear of the bar.
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass
