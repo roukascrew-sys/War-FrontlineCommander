@@ -141,6 +141,14 @@
   #announce .txt{font-size:44px;font-weight:900;letter-spacing:2px;text-transform:uppercase;
     text-shadow:0 0 24px currentColor,0 3px 6px #000;opacity:0;}
   #announce .sub{font-size:16px;font-weight:700;color:var(--dim);margin-top:2px;opacity:0;}
+  /* 10-second prep-phase countdown */
+  #prepbanner{position:absolute;top:20%;left:50%;transform:translateX(-50%);text-align:center;z-index:14;display:none;
+    pointer-events:auto;cursor:pointer;}
+  #prepbanner.show{display:block;}
+  #prepbanner .pb-t{font-size:15px;font-weight:800;letter-spacing:4px;color:var(--gold);text-shadow:0 2px 8px #000;}
+  #prepbanner .pb-n{font-size:70px;font-weight:900;color:#fff;line-height:1;font-family:var(--mono);text-shadow:0 0 30px var(--gold),0 4px 10px #000;}
+  #prepbanner .pb-s{font-size:12px;font-weight:600;color:var(--dim);margin-top:4px;text-shadow:0 2px 6px #000;}
+  #prepbanner .pb-s b{color:var(--cyan);}
 
   /* combo */
   #combo{position:absolute;top:64px;right:16px;text-align:right;opacity:0;transition:.15s;z-index:11;}
@@ -352,6 +360,13 @@
   .wnode.sel{box-shadow:0 0 0 3px var(--gold);}
   @keyframes wpulse{50%{box-shadow:0 0 22px #ffce5aaa;}}
   #war-info{margin-top:10px;font-size:13px;color:var(--dim);min-height:40px;max-width:640px;text-align:center;line-height:1.5;}
+  .war-alloc{margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--ink);}
+  .war-alloc>span:first-child{color:var(--gold);font-weight:700;}
+  .wa-btn{width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:16px;font-weight:800;line-height:1;}
+  .wa-btn:hover{border-color:var(--gold);color:var(--gold);}
+  .war-alloc>b{font-family:var(--mono);font-size:16px;color:var(--gold);min-width:38px;text-align:center;}
+  .wa-bank{color:var(--faint);} .wa-bank b{color:var(--cyan);}
+  .wa-note{flex-basis:100%;font-size:10.5px;color:var(--faint);line-height:1.4;margin-top:2px;}
   #war-info b{color:var(--ink);}
   .menu-cols{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;max-width:960px;}
   .mcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;width:280px;}
@@ -480,6 +495,7 @@
     <div id="combo"><div class="n">x2</div><div class="l">COMBO</div></div>
     <div id="killfeed"></div>
     <div id="announce"><div class="txt"></div><div class="sub"></div></div>
+    <div id="prepbanner"><div class="pb-t">PREP PHASE</div><div class="pb-n">10</div><div class="pb-s">queue your opening wave — the enemy is frozen · <b>SKIP ▸</b></div></div>
     <div id="lanehint">▲ click a lane to deploy</div>
     <!-- stance + speed controls -->
     <div id="ctrlbar">
@@ -790,8 +806,8 @@ const UNITS={
     aa:true,onlyAir:true,splash:0,r:10,desc:'shreds aircraft, useless vs ground'},
   heli:{name:'Attack Heli',glyph:'⬡',cat:'air',cost:80,cd:2.6,hp:70,dmg:22,rof:0.8,rng:120,spd:44,col:'#d49bff',
     aa:false,flies:true,splash:8,r:11,vsArmor:2.2,desc:'flies over, hits armour'},
-  drone:{name:'Kamikaze Drone',glyph:'⬟',cat:'dro',cost:26,cd:0.9,hp:16,dmg:40,rof:99,rng:16,spd:60,col:'#ffdf7f',
-    aa:false,flies:true,splash:10,r:8,kamikaze:true,vsArmor:2.5,desc:'fast, one-shot, dives on armour'},
+  drone:{name:'Kamikaze Drone',glyph:'⬟',cat:'dro',cost:11,cd:0.45,hp:11,dmg:38,rof:99,rng:16,spd:62,col:'#ffdf7f',
+    aa:false,flies:true,lowAir:true,splash:9,r:8,kamikaze:true,vsArmor:2.5,desc:'dirt-cheap one-shot diver — swarm them, but EW & rapid fire shred them'},
   // ── Phase 1 additions ──
   sniper:{name:'Sniper',glyph:'✛',cat:'inf',cost:40,cd:1.6,hp:18,dmg:34,rof:2.4,rng:210,spd:20,col:'#c9e0ff',
     aa:false,splash:0,r:6,vsArmor:0.35,precise:true,desc:'long-range, shreds infantry, useless vs armour'},
@@ -800,12 +816,17 @@ const UNITS={
   mlrs:{name:'Rocket Arty',glyph:'▤',cat:'arty',cost:82,cd:3.6,hp:52,dmg:20,rof:3.0,rng:270,spd:9,col:'#ff8f6f',
     aa:false,splash:30,r:11,arc:true,salvo:4,desc:'devastating rocket salvo, very fragile'},
   jammer:{name:'EW Jammer',glyph:'◈',cat:'veh',cost:52,cd:2.8,hp:74,dmg:0,rof:99,rng:0,spd:20,col:'#b0a0ff',
-    aa:false,splash:0,r:10,jam:0.55,jamR:135,support:true,desc:'suppresses enemy fire in a radius — no weapon'},
+    aa:false,splash:0,r:10,jam:0.55,jamR:135,antiDrone:true,support:true,desc:'suppresses enemy fire in a radius & fries drones — no weapon'},
+  // ── air-power tier: a strafing gunship and the fighter that hard-counters it ──
+  interceptor:{name:'Interceptor',glyph:'➤',cat:'air',cost:58,cd:1.6,hp:58,dmg:30,rof:0.7,rng:150,spd:66,col:'#7fd0ff',
+    aa:false,flies:true,hunter:true,splash:0,r:9,vsAir:3,desc:'fast fighter — hunts enemy aircraft; hard-counters gunships & drones'},
+  gunship:{name:'Gunship',glyph:'✈',cat:'air',cost:165,cd:0.55,hp:230,dmg:15,rof:0.55,rng:210,spd:22,col:'#ff7f50',
+    aa:false,flies:true,gunship:true,splash:8,r:15,desc:'loiters mid-field and strafes all three lanes — needs interceptor cover'},
 };
-const HOTBAR=['rifle','atgm','sniper','tank','ifv','arty','mlrs','aa','heli','drone','medic','jammer'];
+const HOTBAR=['rifle','atgm','sniper','tank','ifv','arty','mlrs','aa','heli','drone','medic','jammer','interceptor','gunship'];
 
 /* ── IN-BATTLE TECH TIERS — in normal modes you buy your way up the tree mid-fight ── */
-const UNIT_TIER={rifle:1,atgm:1,ifv:1, sniper:2,tank:2,aa:2,arty:2,drone:2,medic:2, heli:3,mlrs:3,jammer:3};
+const UNIT_TIER={rifle:1,atgm:1,ifv:1, sniper:2,tank:2,aa:2,arty:2,drone:2,medic:2, heli:3,mlrs:3,jammer:3,interceptor:3,gunship:3};
 const TIER_UNLOCK={1:0,2:60,3:130}; // CP paid once per battle to open a tier's units
 function unitTier(key){return UNIT_TIER[key]||1;}
 function tierUnlockCost(key){return TIER_UNLOCK[unitTier(key)]||0;}
@@ -821,8 +842,8 @@ const DMG_MATRIX={           //  vs: inf   light  heavy  air    struct
   he:{inf:1.30,light:1.15,heavy:0.72,air:0.30,struct:1.45}, // high explosive
   aa:{inf:0.35,light:0.50,heavy:0.30,air:2.40,struct:0.20}, // anti-air
 };
-const UNIT_DMGTYPE={rifle:'sa',atgm:'ap',sniper:'sa',tank:'ap',ifv:'sa',arty:'he',mlrs:'he',aa:'aa',heli:'ap',drone:'ap',medic:null,jammer:null};
-const UNIT_ARMORCLASS={rifle:'inf',atgm:'inf',sniper:'inf',medic:'inf',tank:'heavy',ifv:'light',arty:'light',mlrs:'light',aa:'light',jammer:'light',heli:'air',drone:'air'};
+const UNIT_DMGTYPE={rifle:'sa',atgm:'ap',sniper:'sa',tank:'ap',ifv:'sa',arty:'he',mlrs:'he',aa:'aa',heli:'ap',drone:'ap',medic:null,jammer:null,interceptor:'aa',gunship:'he'};
+const UNIT_ARMORCLASS={rifle:'inf',atgm:'inf',sniper:'inf',medic:'inf',tank:'heavy',ifv:'light',arty:'light',mlrs:'light',aa:'light',jammer:'light',heli:'air',drone:'air',interceptor:'air',gunship:'air'};
 const UNIT_CRIT={sniper:0.24}; // precision units land the occasional double-damage hit
 function dmgMul(dt,ac){ return (dt&&DMG_MATRIX[dt]&&DMG_MATRIX[dt][ac||'inf'])||1; }
 
@@ -835,7 +856,7 @@ const AGES=[
   {name:'Future',     glyph:'⬢', hqMul:3.20, unit:1.95, sup:3.0, evo:960, slots:4, col:'#c9a0ff'},
 ];
 // which age each unit becomes available in (Evolution mode gates the roster by age)
-const UNIT_MINAGE={rifle:0,ifv:0,medic:0, atgm:1,tank:1,aa:1, sniper:2,arty:2,jammer:2, mlrs:3,heli:3, drone:4};
+const UNIT_MINAGE={rifle:0,ifv:0,medic:0, atgm:1,tank:1,aa:1, sniper:2,arty:2,jammer:2, mlrs:3,heli:3,interceptor:3, drone:4,gunship:4};
 
 /* ── PRODUCTION SPAWNERS — expensive structures built just ahead of your HQ that
    pump out a unit on a timer. A long-term economy investment. Capped per side. ── */
@@ -850,12 +871,12 @@ const MAX_SPAWNERS=4;
 /* ── COUNTRIES — rename the roster to real national equipment (flavour only, no stat change) ── */
 const COUNTRIES={
   generic:{name:'Generic',flag:'🏴',names:{}},
-  usa:{name:'United States',flag:'🇺🇸',names:{rifle:'Rifleman',atgm:'Javelin Team',sniper:'Marine Sniper',tank:'M1 Abrams',ifv:'M2 Bradley',arty:'M109 Paladin',mlrs:'HIMARS',aa:'M-SHORAD Avenger',heli:'AH-64 Apache',drone:'Switchblade',medic:'Corpsman',jammer:'EW Stryker'}},
-  russia:{name:'Russia',flag:'🇷🇺',names:{rifle:'Motor Rifles',atgm:'Kornet Team',sniper:'SVD Marksman',tank:'T-90M',ifv:'BMP-3',arty:'2S19 Msta-S',mlrs:'BM-30 Smerch',aa:'Pantsir-S1',heli:'Ka-52 Alligator',drone:'Lancet',medic:'Medic',jammer:'Krasukha EW'}},
-  china:{name:'China',flag:'🇨🇳',names:{rifle:'PLA Infantry',atgm:'HJ-12 Team',sniper:'QBU Marksman',tank:'Type 99A',ifv:'ZBD-04A',arty:'PLZ-05',mlrs:'PHL-03',aa:'HQ-17',heli:'Z-10',drone:'CH-901',medic:'Medic',jammer:'EW Vehicle'}},
-  uk:{name:'United Kingdom',flag:'🇬🇧',names:{rifle:'Riflemen',atgm:'NLAW Team',sniper:'Sharpshooter',tank:'Challenger 2',ifv:'Warrior',arty:'AS-90',mlrs:'MLRS',aa:'Stormer HVM',heli:'Apache AH1',drone:'Loitering Munition',medic:'Medic',jammer:'EW Variant'}},
-  germany:{name:'Germany',flag:'🇩🇪',names:{rifle:'Panzergrenadier',atgm:'MELLS Team',sniper:'G82 Marksman',tank:'Leopard 2A7',ifv:'Puma',arty:'PzH 2000',mlrs:'MARS II',aa:'Gepard',heli:'Tiger',drone:'HERON',medic:'Sanitäter',jammer:'EW Variant'}},
-  japan:{name:'Japan',flag:'🇯🇵',names:{rifle:'JGSDF Infantry',atgm:'Type 01 Team',sniper:'Marksman',tank:'Type 10',ifv:'Type 89',arty:'Type 99 SPH',mlrs:'MLRS',aa:'Type 11',heli:'AH-64DJ',drone:'Loitering Munition',medic:'Medic',jammer:'EW Variant'}},
+  usa:{name:'United States',flag:'🇺🇸',names:{rifle:'Rifleman',atgm:'Javelin Team',sniper:'Marine Sniper',tank:'M1 Abrams',ifv:'M2 Bradley',arty:'M109 Paladin',mlrs:'HIMARS',aa:'M-SHORAD Avenger',heli:'AH-64 Apache',drone:'Switchblade',medic:'Corpsman',jammer:'EW Stryker',interceptor:'F-22 Raptor',gunship:'AC-130 Spectre'}},
+  russia:{name:'Russia',flag:'🇷🇺',names:{rifle:'Motor Rifles',atgm:'Kornet Team',sniper:'SVD Marksman',tank:'T-90M',ifv:'BMP-3',arty:'2S19 Msta-S',mlrs:'BM-30 Smerch',aa:'Pantsir-S1',heli:'Ka-52 Alligator',drone:'Lancet',medic:'Medic',jammer:'Krasukha EW',interceptor:'Su-57 Felon',gunship:'Il-76 Gunship'}},
+  china:{name:'China',flag:'🇨🇳',names:{rifle:'PLA Infantry',atgm:'HJ-12 Team',sniper:'QBU Marksman',tank:'Type 99A',ifv:'ZBD-04A',arty:'PLZ-05',mlrs:'PHL-03',aa:'HQ-17',heli:'Z-10',drone:'CH-901',medic:'Medic',jammer:'EW Vehicle',interceptor:'J-20 Mighty Dragon',gunship:'Y-8 Gunship'}},
+  uk:{name:'United Kingdom',flag:'🇬🇧',names:{rifle:'Riflemen',atgm:'NLAW Team',sniper:'Sharpshooter',tank:'Challenger 2',ifv:'Warrior',arty:'AS-90',mlrs:'MLRS',aa:'Stormer HVM',heli:'Apache AH1',drone:'Loitering Munition',medic:'Medic',jammer:'EW Variant',interceptor:'Typhoon FGR4',gunship:'Gunship'}},
+  germany:{name:'Germany',flag:'🇩🇪',names:{rifle:'Panzergrenadier',atgm:'MELLS Team',sniper:'G82 Marksman',tank:'Leopard 2A7',ifv:'Puma',arty:'PzH 2000',mlrs:'MARS II',aa:'Gepard',heli:'Tiger',drone:'HERON',medic:'Sanitäter',jammer:'EW Variant',interceptor:'Eurofighter',gunship:'Gunship'}},
+  japan:{name:'Japan',flag:'🇯🇵',names:{rifle:'JGSDF Infantry',atgm:'Type 01 Team',sniper:'Marksman',tank:'Type 10',ifv:'Type 89',arty:'Type 99 SPH',mlrs:'MLRS',aa:'Type 11',heli:'AH-64DJ',drone:'Loitering Munition',medic:'Medic',jammer:'EW Variant',interceptor:'F-15J',gunship:'Gunship'}},
 };
 const COUNTRY_KEYS=Object.keys(COUNTRIES);
 function unitName(key,country){ const c=COUNTRIES[country]; return (c&&c.names[key])||UNITS[key].name; }
@@ -925,12 +946,17 @@ const MODES={
   blitz:{name:'Blitz (2:00)',desc:'Two-minute clock. Whoever has dealt the most HQ damage when time runs out wins. Fast and aggressive.'},
   survival:{name:'Survival',desc:'Endless enemy waves that get harder every 30s. No enemy HQ to kill — just see how long your line holds.'},
 };
+// cpMul: enemy economy · qualMul: enemy unit stat multiplier · think: AI decision
+// interval multiplier (higher = slower/dumber) · open: opening enemy count ·
+// smart: enables focus-fire / hard-countering / budget-hoarding AI ·
+// playerCp: a leg-up on the player's income so the low tiers feel generous.
 const DIFFS={
-  recruit:{name:'Recruit',cpMul:0.7,qualMul:0.85,col:'#3fd07a'},
-  veteran:{name:'Veteran',cpMul:1.0,qualMul:1.0,col:'#ffce5a'},
-  elite:{name:'Elite',cpMul:1.28,qualMul:1.15,col:'#ff9f40'},
-  legendary:{name:'Legendary',cpMul:1.6,qualMul:1.35,col:'#ff5a4a'},
+  recruit:  {name:'Recruit',  cpMul:0.52, qualMul:0.72, think:1.7,  open:2, smart:false, playerCp:1.25, col:'#3fd07a'},
+  veteran:  {name:'Veteran',  cpMul:1.00, qualMul:1.04, think:1.0,  open:3, smart:false, playerCp:1.02, col:'#ffce5a'},
+  elite:    {name:'Elite',    cpMul:1.36, qualMul:1.24, think:0.76, open:4, smart:true,  playerCp:1.0,  col:'#ff9f40'},
+  legendary:{name:'Legendary',cpMul:1.90, qualMul:1.60, think:0.48, open:6, smart:true,  playerCp:1.0,  col:'#ff5a4a'},
 };
+const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
 
 /* ── WEATHER (from the simulator's environment layer — shapes range, tempo & spotting) ── */
 const WEATHERS={
@@ -1326,8 +1352,11 @@ function radioStop(){
 
 /* split a line into speakable clauses so pitch/rate can drift line-to-line */
 function splitClauses(text){
-  const parts=text.split(/(?<=[,;—-])\s+|(?<=\.\.\.)\s+/).map(s=>s.trim()).filter(Boolean);
-  return parts.length?parts:[text];
+  // split on sentence enders AND internal clause breaks so delivery can breathe
+  let parts=text.split(/(?<=[.!?…])\s+|(?<=[,;:—-])\s+/).map(s=>s.trim()).filter(Boolean);
+  // fold very short fragments back into the previous clause (don't over-chop)
+  const out=[]; for(const p of parts){ if(out.length&&p.replace(/[^\w]/g,'').length<7){ out[out.length-1]+=' '+p; } else out.push(p); }
+  return out.length?out:[text];
 }
 function narrSpeakOffline(text,mood){
   const ss=window.speechSynthesis;
@@ -1338,18 +1367,26 @@ function narrSpeakOffline(text,mood){
   let i=0;
   const speakNext=()=>{
     if(i>=clauses.length){ radioStop(); NARR.speaking=false; drainNarr(); return; }
-    const clause=clauses[i++];
+    const clause=clauses[i]; const idx=i; i++;
+    const first=idx===0, last=idx===clauses.length-1;
+    const emphatic=/[!?]$/.test(clause) || (clause.length>3 && clause===clause.toUpperCase());
+    const trailOff=/\.\.\.$|…$/.test(clause);
     try{
-      const u=new SpeechSynthesisUtterance(clause);
-      // drift pitch/rate per clause — first clause a touch higher (the "hook"), trailing clauses settle lower
-      const drift=(i===1?0.03:0)-(i>2?0.02*(i-2):0);
-      u.rate=clamp(m.r+drift+rnd(-0.05,0.05),0.55,1.7);
-      u.pitch=clamp(m.p+drift*1.4+rnd(-0.06,0.06),0.35,1.5);
-      u.volume=0.95;
+      const u=new SpeechSynthesisUtterance(clause.replace(/[—-]$/,''));
+      // a human contour: open a touch brighter & quicker (the hook), settle and slow toward
+      // the close, lift on emphatic/exclaimed clauses, drop and drag on a trail-off, and add
+      // gentle per-clause jitter so no two lines read exactly alike.
+      let rate=m.r + (first?0.05:0) - (last?0.05:0) + (emphatic?0.06:0) - (trailOff?0.12:0) + rnd(-0.045,0.045);
+      let pitch=m.p + (first?0.04:0) - (last?0.05:0) + (emphatic?0.09:0) - (trailOff?0.06:0) + rnd(-0.05,0.05);
+      u.rate=clamp(rate,0.55,1.7); u.pitch=clamp(pitch,0.35,1.5);
+      u.volume=clamp(0.9+rnd(-0.05,0.05),0.6,1);
       if(NARR.voice)u.voice=NARR.voice;
-      u.onend=speakNext; u.onerror=speakNext;
+      // breathe between clauses — a short, slightly random pause is what sells "human"
+      u.onend=()=>{ if(!last)radioClick(false); const gap=last?0:(emphatic?rnd(80,150):trailOff?rnd(320,460):rnd(140,300)); setTimeout(speakNext,gap); };
+      u.onerror=()=>setTimeout(speakNext,40);
+      if(!first)radioClick(true);
       ss.speak(u);
-    }catch(e){speakNext();}
+    }catch(e){ setTimeout(speakNext,30); }
   };
   NARR.speaking=true;
   speakNext();
@@ -1515,22 +1552,25 @@ function newGame(){
     laneTerrain:kind==='tutorial'?['open','open','open']:[pick(TERRAIN_KEYS),pick(TERRAIN_KEYS),pick(TERRAIN_KEYS)],
     units:[], projs:[], parts:[], floats:[], rings:[], drops:[],
     revT:rnd(24,42), revCount:0, // random-events clock
-    cp:60, cpRate:9*(perk.cpMul||1), cpMax:280,
+    cp:60+((L&&L.startCp)||0), cpRate:9*(perk.cpMul||1)*(diff.playerCp||1), cpMax:280,
     ecp:70, ecpRate:11*diff.cpMul*ecpMul,
     hq:{B:hqHP,R:mode==='survival'?1:hqHP}, hqMax:{B:hqHP,R:mode==='survival'?1:hqHP},
     hqFloor:1, // lowest HQ fraction seen (campaign star tracking)
     dmgDealt:0, dmgTaken:0, kills:0, deploys:0, spent:0,
     combo:0, comboT:0, bestCombo:0, firstBlood:false,
     cds:{},
-    strikeCd:0, strikeCdMax:22*(perk.strikeCdMul||1),
+    strikeCds:{gunship:0,barrage:0,precision:0}, barrage:null,
     reconCd:0, reconMax:20, flareLane:-1, flareT:0,
     empCd:0, empMax:32, empLane:-1, empT:0,
     shake:0, flash:0, slowmo:0,
     selCard:HOTBAR[0],
     wave:0, waveT:0, waveInterval:30,
     clock:kind==='blitz'?120:0,
-    aiT:kind==='tutorial'?1e9:0.8, aiThink:1.15/diff.cpMul,
+    // 10-second prep: queue your opening deployment while everything is frozen
+    prep:(kind==='tutorial'||kind==='attract')?0:PREP_TIME, frozen:false,
+    aiT:kind==='tutorial'?1e9:0.8, aiThink:1.15*(diff.think||1),
     aiHold:kind==='tutorial', // AI frozen until tutorial releases it
+    aiSmart:!!diff.smart,
     announceT:0, idleTauntT:20,
   };
   // rival enemy general — flavor + drives the AI's unit-composition bias
@@ -1561,8 +1601,8 @@ function newGame(){
   if(L&&L.type==='daily'&&L.mut&&L.mut.apply){try{L.mut.apply(G);}catch(e){}}
   for(const u of HOTBAR)G.cds[u]=0;
   window.G=G; // expose for console/debug
-  // opening skirmishers so lanes are alive from the first second
-  if(mode!=='survival'&&kind!=='tutorial'){ for(let i=0;i<3;i++){ spawn('R',pick(['rifle','ifv','rifle']),i); } }
+  // opening skirmishers so lanes are alive from the first second (count scales with difficulty)
+  if(mode!=='survival'&&kind!=='tutorial'){ const oc=diff.open||3; for(let i=0;i<oc;i++){ spawn('R',pick(['rifle','ifv','rifle']),i%3); } }
   // campaign "start outnumbered" openers
   if(L&&L.openEnemy){ for(let i=0;i<L.openEnemy;i++){ spawn('R',pick(['tank','ifv','rifle','atgm']),(Math.random()*3)|0); } }
   buildHotbar();
@@ -1606,6 +1646,7 @@ function spawn(side,key,lane,xOverride){
     baseHp:hp,baseDmg:dmg,vetRank:0,vetKills:0,
     r:u.r,col:u.col,glyph:u.glyph,flies:!!u.flies,arc:!!u.arc,aa:!!u.aa,onlyAir:!!u.onlyAir,
     splash:u.splash,kamikaze:!!u.kamikaze,armor:!!u.armor,
+    lowAir:!!u.lowAir,gunship:!!u.gunship,hunter:!!u.hunter,antiDrone:!!u.antiDrone,
     vsArmor:u.vsArmor||1,vsAir:u.vsAir||1,cat:u.cat,
     name:unitName(key, side==='B'?G.country:G.enemyCountry),
     dmgType:UNIT_DMGTYPE[key]||'sa', armorClass:UNIT_ARMORCLASS[key]||'inf', crit:UNIT_CRIT[key]||0, cover:false,
@@ -1644,21 +1685,92 @@ function tryDeploy(key,lane){
   if(G.tutorial&&window.tutOnAction)tutOnAction('deploy',key,lane);
   return true;
 }
-function tryStrike(lane,x){
-  if(G.strikeCd>0||G.over||G.paused)return false;
-  G.strikeCd=G.strikeCdMax;
-  G.strikeUsedCount=(G.strikeUsedCount||0)+1;
-  const sup=(G.ages?AGES[G.age].sup:1);             // ultimate scales with your age
-  const rad=46*Math.sqrt(sup), dmg=70*sup, impacts=Math.min(6,3+Math.floor((sup-1)*2));
-  const tx=clamp(x,W*0.35,W-40), ty=G.laneY[lane]*H;
+/* ═══ AIR SUPPORT — three off-map strike abilities replace the old bomb ═══
+   gunship  : a slow AC-130-style pass that rakes ONE lane with cannon fire.
+   barrage  : a rolling/creeping barrage that walks up ALL THREE lanes over ~1 min.
+   precision: a fast, pinpoint munition — the old strike, quicker reload, less punch. */
+const STRIKES={
+  gunship:  {name:'Gunship Run',   glyph:'🚁', key:'G', col:'#ff9f40', cd:30,
+    desc:'A gunship makes a strafing pass, raking one lane with sustained cannon fire.'},
+  barrage:  {name:'Rolling Barrage',glyph:'💥', key:'B', col:'#ff5a4a', cd:75,
+    desc:'A creeping barrage walks up all three lanes over a full minute — devastating but slow.'},
+  precision:{name:'Precision Munitions',glyph:'🎯', key:'0', col:'#5ff0e0', cd:11,
+    desc:'A fast, pinpoint strike on one spot. Less punch than a barrage, but reloads quickly.'},
+};
+const STRIKE_KEYS=Object.keys(STRIKES);
+function strikeCdMax(type){ const base=STRIKES[type].cd; return base*(G&&G.perk&&G.perk.strikeCdMul||1); }
+function strikeReady(type){ return G && (G.strikeCds[type]||0)<=0 && !G.over && !G.paused && !G.frozen; }
+// PRECISION — a fast pinpoint munition (the classic strike, tuned down + quick CD)
+function tryPrecision(lane,x){
+  if(!strikeReady('precision'))return false;
+  G.strikeCds.precision=strikeCdMax('precision');
+  const sup=(G.ages?AGES[G.age].sup:1);
+  const rad=40*Math.sqrt(sup), dmg=46*sup, impacts=Math.min(5,3+Math.floor((sup-1)*1.6));
+  const tx=clamp(x,W*0.32,W-40), ty=G.laneY[lane]*H;
   for(let i=0;i<impacts;i++)setTimeout(()=>{ if(!G)return;
-    const ix=tx+rnd(-44,44),iy=ty+rnd(-32,32);
-    explode(ix,iy,rad,'B',60);
+    const ix=tx+rnd(-38,38),iy=ty+rnd(-26,26);
+    explode(ix,iy,rad,'B',44); SND.boom(true);
     for(const u of G.units){ if(u.side==='R'&&u.alive&&dist(u.x,u.y,ix,iy)<rad){ damage(u,dmg,{side:'B',dmgType:'he'}); } }
-    G.shake=Math.max(G.shake,14);
-  },i*120);
-  announce(G.ages&&G.age>0?AGES[G.age].name.toUpperCase()+' STRIKE':'MISSILE STRIKE','danger close');
+    G.shake=Math.max(G.shake,SAVE.reduceMotion?4:11);
+  },i*100);
+  announce('🎯 PRECISION STRIKE','pinpoint · danger close','#5ff0e0');
   return true;
+}
+// GUNSHIP RUN — a strafing aircraft sweeps ONE lane with cannon fire over ~2.6s
+function tryGunshipRun(lane){
+  if(!strikeReady('gunship'))return false;
+  G.strikeCds.gunship=strikeCdMax('gunship');
+  const sup=(G.ages?AGES[G.age].sup:1);
+  const y=G.laneY[lane]*H, dmg=30*sup;
+  announce('🚁 GUNSHIP RUN','strafing the '+['top','middle','bottom'][lane]+' lane','#ff9f40');
+  if(SAVE.evVoice||SAVE.narrator)say(pick(["Gunship on station. Cleared hot.","Guns, guns, guns — walk it down the lane.","Air support inbound. Heads down."]),'grim',1);
+  // a run of ~22 bursts marching left→right along the lane
+  const runs=22;
+  for(let i=0;i<runs;i++)setTimeout(()=>{ if(!G||G.over)return;
+    const gx=W*0.24 + (W*0.66)*(i/runs) + rnd(-14,14);
+    explode(gx,y+rnd(-14,14),26,'B',10); SND.fireFor({key:'gunship'});
+    for(let t=0;t<3;t++)G.parts.push({x:gx+rnd(-8,8),y:y-90,vx:rnd(-20,20),vy:380,life:0.22,age:0,col:'#ffd27f',sz:2.4});
+    for(const u of G.units){ if(u.side==='R'&&u.alive&&u.lane===lane&&Math.abs(u.x-gx)<40){ damage(u,dmg,{side:'B',dmgType:'ap'}); } }
+    if(i%5===0)G.shake=Math.max(G.shake,SAVE.reduceMotion?3:6);
+  },i*110);
+  return true;
+}
+// ROLLING BARRAGE — a creeping wall of fire walks up ALL lanes over ~60s
+function tryBarrage(){
+  if(!strikeReady('barrage'))return false;
+  G.strikeCds.barrage=strikeCdMax('barrage');
+  const sup=(G.ages?AGES[G.age].sup:1);
+  G.barrage={t:0, dur:60, x:W*0.30, endX:W-60, tick:0, dmg:40*sup};
+  announce('💥 ROLLING BARRAGE','walking fire — all lanes, one minute','#ff5a4a');
+  if(SAVE.evVoice||SAVE.narrator)say(pick(["Rolling barrage — advance behind the fire.","Shift fire on my mark. Walk it up the whole front.","One minute of hell, gentlemen. Keep behind the wall."]),'grim',1);
+  return true;
+}
+function barrageTick(dt){
+  const b=G.barrage; if(!b)return;
+  b.t+=dt;
+  // the wall of fire creeps forward across the whole minute
+  const frac=clamp(b.t/b.dur,0,1);
+  b.x=W*0.30 + (b.endX-W*0.30)*frac;
+  b.tick-=dt;
+  if(b.tick<=0){
+    b.tick=0.5; // an impact set roughly twice a second, across all three lanes
+    for(let ln=0;ln<3;ln++){
+      const iy=G.laneY[ln]*H+rnd(-20,20), ix=b.x+rnd(-26,26);
+      explode(ix,iy,34,'B',22);
+      for(const u of G.units){ if(u.side==='R'&&u.alive&&dist(u.x,u.y,ix,iy)<34){ damage(u,b.dmg,{side:'B',dmgType:'he'}); } }
+    }
+    SND.boom(true); G.shake=Math.max(G.shake,SAVE.reduceMotion?3:8);
+  }
+  if(b.t>=b.dur)G.barrage=null;
+}
+// dispatch used by the lane-click / quick-deploy handlers
+function tryStrike(type,lane,x){
+  let ok;
+  if(type==='gunship')ok=tryGunshipRun(lane);
+  else if(type==='barrage')ok=tryBarrage();
+  else ok=tryPrecision(lane,x);
+  if(ok)G.strikeUsedCount=(G.strikeUsedCount||0)+1;
+  return ok;
 }
 /* ── COMMANDER POWERS: Recon Flare (free intel) & EMP Pulse (rank 3, jams a lane) ── */
 function tryRecon(lane){
@@ -1903,6 +2015,8 @@ function damage(u,dmg,src){
     if(u.cover)dmg*=0.6;                             // dug-in / forest cover softens the hit
     if(src.crit&&Math.random()<src.crit){ dmg*=2; floatText(u.x,u.y-u.r-6,'CRIT!','#ffce5a'); }
   }
+  // rapid-fire weapons hose cheap drones out of the sky
+  if(u.key==='drone' && src && src.rof && src.rof<=0.75) dmg*=2.4;
   u.hp-=dmg; u.hitFlash=1;
   u.sup=Math.min(1,(u.sup||0)+0.10); // taking fire suppresses
   if(src&&src.side==='B'){G.dmgDealt+=dmg;}
@@ -2011,32 +2125,44 @@ function aiStep(dt){
   G.aiT=rnd(G.aiThink*0.6,G.aiThink*1.3);
   // survival: pump waves, ignore economy caps
   const budget=G.mode==='survival'? 40+G.wave*22 : G.ecp;
-  // count player composition to counter
-  let pArmor=0,pAir=0,pInf=0;
-  for(const u of G.units)if(u.side==='B'&&u.alive){ if(u.armor)pArmor++; else if(u.flies)pAir++; else pInf++; }
-  // weighted pick
+  // count player composition to counter (and per-lane strength for smart targeting)
+  let pArmor=0,pAir=0,pInf=0,pDrone=0,pGun=0; const laneStr=[0,0,0];
+  for(const u of G.units)if(u.side==='B'&&u.alive){
+    if(u.armor)pArmor++; else if(u.flies)pAir++; else pInf++;
+    if(u.key==='drone')pDrone++; if(u.gunship)pGun++;
+    laneStr[u.lane]=(laneStr[u.lane]||0)+(u.maxHp*0.02+u.dmg*0.1);
+  }
+  const airThreat=pAir+pDrone*0.5+pGun*3;
+  // weighted pick — now includes the interceptor (vs air) and the gunship (pressure)
   let choices=[
-    ['rifle',3],['atgm',pArmor>1?4:1],['tank',2],['ifv',2],
-    ['arty',1.5],['mlrs',pInf>4?1.4:0.3],['aa',pAir>0?4:0.4],
-    ['heli',pArmor>2?3:1],['drone',pArmor>1?3:1.5]];
+    ['rifle',3],['atgm',pArmor>1?4:1],['tank',2],['ifv',pDrone>2?3:2],
+    ['arty',1.5],['mlrs',pInf>4?1.4:0.3],['aa',airThreat>0?4:0.4],
+    ['heli',pArmor>2?3:1],['drone',pArmor>1?2.6:1.3],
+    ['interceptor',airThreat>1?4:0.3],['gunship',(G.aiSmart&&budget>240)?1.4:0.15]];
   // campaign / daily enemy bias — lean the enemy toward a theme
   if(G.enemyBias){ for(const c of choices){ if(c[0]===G.enemyBias)c[1]*=3.2; } }
   // banned units (daily mutators) never appear
   if(G.banned&&G.banned.length)choices=choices.filter(c=>G.banned.indexOf(c[0])<0);
   if(!choices.length)choices=[['rifle',1]];
   // what's the AI most worried about? (drives the readout)
-  const threat = (pArmor>=pAir&&pArmor>=pInf&&pArmor>0)?'ARMOR' : (pAir>=pInf&&pAir>0)?'AIR' : (pInf>0)?'INFANTRY':'nothing yet';
-  // spend budget on 1-3 units
-  let spend=Math.min(budget, G.mode==='survival'?budget: rnd(0.5,1)*budget);
-  let guard=0, built=[];
-  while(spend>18&&guard++<6){
+  const threat = (airThreat>=pArmor&&airThreat>=pInf&&airThreat>0)?'AIR' : (pArmor>=pInf&&pArmor>0)?'ARMOR' : (pInf>0)?'INFANTRY':'nothing yet';
+  // smart AI (elite+) commits more of its budget and picks lanes deliberately;
+  // the low tiers spend loosely and scatter — easier to read and to beat.
+  const commit = G.aiSmart? rnd(0.78,1.0) : rnd(0.45,0.9);
+  let spend=Math.min(budget, G.mode==='survival'?budget: commit*budget);
+  // smart lane choice: half the time pile onto the player's WEAKEST lane (punch through),
+  // otherwise contest their strongest. Dumb AI just scatters at random.
+  const weakLane=laneStr.indexOf(Math.min(...laneStr)), strongLane=laneStr.indexOf(Math.max(...laneStr));
+  const pickLane=()=> G.aiSmart ? (Math.random()<0.55?weakLane:strongLane) : ((Math.random()*3)|0);
+  let guard=0, built=[]; const maxUnits=G.aiSmart?8:6;
+  while(spend>14&&guard++<maxUnits){
     const key=weightedPick(choices);
     const c=UNITS[key].cost*0.9;
     if(c>spend)break;
     spend-=c; G.ecp-=Math.min(G.ecp,UNITS[key].cost*0.9);
-    spawn('R',key,(Math.random()*3)|0); built.push(key);
+    spawn('R',key,pickLane()); built.push(key);
   }
-  recordAIThought({budget,pArmor,pAir,pInf,threat,built,choices});
+  recordAIThought({budget,pArmor,pAir:Math.round(airThreat),pInf,threat,built,choices});
 }
 /* ── AI DEBUG: record what the enemy commander is thinking each decision ── */
 function recordAIThought(o){
@@ -2066,13 +2192,22 @@ function weightedPick(arr){ let t=0;for(const[,w]of arr)t+=w; let r=Math.random(
 function step(dt){
   if(G.paused||G.over)return;
   G.t+=dt;
+  // ── 10-second prep: the field is frozen while you queue your opening wave ──
+  if(G.prep>0){
+    G.frozen=true; G.prep-=dt; G.cp=Math.min(G.cpMax,G.cp+G.cpRate*dt); // CP still flows so you can stage units
+    if(G.prep<=0){ G.prep=0; G.frozen=false; announce('⚔ ENGAGE','the line is live','#ffce5a'); SND.combo(4);
+      if(!G.tutorial&&!G.attract)narr('battleStart'); }
+    updateUnits(dt); updateFX(dt);  // units idle (frozen); deploy ripples still settle
+    return;
+  }
   // attract-mode auto-play (title background)
   if(G.attract)attractTick(dt);
   // tutorial script
   if(G.tutorial&&!G.tutDone)tutTick(dt);
   // cooldowns
   for(const k in G.cds)if(G.cds[k]>0)G.cds[k]=Math.max(0,G.cds[k]-dt);
-  if(G.strikeCd>0)G.strikeCd=Math.max(0,G.strikeCd-dt);
+  for(const t in G.strikeCds)if(G.strikeCds[t]>0)G.strikeCds[t]=Math.max(0,G.strikeCds[t]-dt);
+  if(G.barrage)barrageTick(dt);   // rolling barrage creeps up the field
   if(G.reconCd>0)G.reconCd=Math.max(0,G.reconCd-dt);
   if(G.empCd>0)G.empCd=Math.max(0,G.empCd-dt);
   if(G.flareT>0)G.flareT=Math.max(0,G.flareT-dt);
@@ -2109,16 +2244,20 @@ function step(dt){
 }
 
 function nearestEnemy(u){
-  let best=null,bd=1e9;
+  let best=null,bd=1e9, bestAir=null,bad=1e9;
+  const rapid=(u.rof<=0.75 && !u.support && u.dmg>0); // rifles/IFVs/interceptors can swat low-flying drones
   for(const o of G.units){ if(!o.alive||o.side===u.side)continue;
     if(u.onlyAir&&!o.flies)continue;           // AA only shoots air
     if(o.flies&&!u.aa&&!u.flies&&!u.kamikaze&&u.cat!=='arty'){
-      // ground non-AA can't hit fliers (except arty barrage & other fliers/kamikaze)
-      continue;
+      // ground non-AA can't hit fliers — EXCEPT rapid-fire units vs a low-flying drone
+      if(!(o.lowAir&&rapid))continue;
     }
     const d=dist(u.x,u.y,o.x,o.y);
     if(d<bd){bd=d;best=o;}
+    if(o.flies&&d<bad){bad=d;bestAir=o;}
   }
+  // interceptors are air-superiority hunters — they prioritise enemy aircraft
+  if(u.hunter&&bestAir)return {tgt:bestAir,d:bad};
   return {tgt:best,d:bd};
 }
 /* fog of war (cosmetic): which enemy units the player can actually see */
@@ -2145,7 +2284,33 @@ function supportTick(u,dt){
   if(u.jam>0){
     for(const o of G.units){ if(o.alive&&o.side!==u.side&&dist(o.x,o.y,u.x,u.y)<u.jamR){
       o.sup=Math.min(1,(o.sup||0)+u.jam*dt);
+      // EW hard-counters drones — it fries their electronics: they lose their dive and burn down fast
+      if(u.antiDrone&&o.key==='drone'){ o.diving=null; o.jammed=true; o.sup=1;
+        damage(o,o.maxHp*dt*1.6,{side:u.side}); if(Math.random()<dt*3)G.parts.push({x:o.x,y:o.y,vx:rnd(-20,20),vy:rnd(-20,20),life:0.4,age:0,col:'#b0a0ff',sz:2}); }
     }}
+  }
+}
+/* ── FLOATING GUNSHIP — loiters mid-field on its own side and strafes all three lanes.
+   It never sieges the HQ; it's an air-superiority target that needs interceptor cover. ── */
+function gunshipTick(u,dt){
+  const homeX = u.side==='B'? W*0.44 : W*0.56;
+  if(Math.abs(u.x-homeX)>4) u.x += Math.sign(homeX-u.x)*u.spd*2.8*dt;
+  // patrol vertically across the lane band
+  const top=G.laneY[0]*H-6, bot=G.laneY[2]*H+6;
+  if(u.gy==null)u.gy=u.y;
+  u.gy += (u.gdir||1)*46*dt;
+  if(u.gy>bot){u.gy=bot;u.gdir=-1;} else if(u.gy<top){u.gy=top;u.gdir=1;}
+  u.y=u.gy+Math.sin(u.bob)*2;
+  u.cd-=dt;
+  if(u.cd<=0){
+    let fired=false;
+    for(let ln=0;ln<3;ln++){ // one target per lane within reach
+      let tgt=null,bd=1e9;
+      for(const o of G.units){ if(o.alive&&o.side!==u.side&&o.lane===ln){ const d=Math.abs(o.x-u.x); if(d<u.rng&&d<bd){bd=d;tgt=o;} } }
+      if(tgt){ damage(tgt,u.dmg,u); fired=true;
+        G.parts.push({x:u.x,y:u.y,vx:(tgt.x-u.x)*3,vy:(tgt.y-u.y)*3,life:0.14,age:0,col:'#ffd27f',sz:2.2}); }
+    }
+    if(fired){ u.muzzle=0.1; if(Math.random()<0.5)SND.fireFor(u); u.cd=u.rof; } else u.cd=0.35;
   }
 }
 function updateUnits(dt){
@@ -2153,11 +2318,14 @@ function updateUnits(dt){
   computeSpotting();
   for(const u of G.units){
     if(!u.alive)continue;
+    // during prep everything holds position — just breathe the idle animation
+    if(G.frozen){ u.bob+=dt*3; if(u.muzzle>0)u.muzzle-=dt; if(u.hitFlash>0)u.hitFlash-=dt*4; continue; }
     if(u.muzzle>0)u.muzzle-=dt; if(u.hitFlash>0)u.hitFlash-=dt*4;
     if(u.sup>0)u.sup=Math.max(0,u.sup-dt*0.34); // morale recovers over time
     if(G.empT>0&&u.side==='R'&&u.lane===G.empLane)u.sup=Math.max(u.sup||0,0.95); // EMP pulse jams a lane
     u.bob+=dt*6;
     u.cover=(u.cat==='inf' && G.laneTerrain && G.laneTerrain[u.lane]==='forest'); // infantry dig into the treeline
+    if(u.gunship){ gunshipTick(u,dt); continue; } // floating gunship has its own flight logic
     if(u.support)supportTick(u,dt);
     // kamikaze diving
     if(u.diving){ const t=u.diving; if(!t.alive){u.diving=null;}
@@ -2588,12 +2756,16 @@ function syncHUD(){
         `<div class="vb-track" style="height:8px"><i style="width:${hp}%;background:linear-gradient(90deg,#c9a0ff,${hot?'#ff9f40':'#5ff0e0'});transition:width .25s"></i></div>`;
     } else vb.style.display='none';
   }
-  // strike button
-  const stk=document.getElementById('card-strike');
-  if(stk){const cdEl=stk.querySelector('.cd');
-    if(G.strikeCd>0){cdEl.style.display='flex';cdEl.textContent=Math.ceil(G.strikeCd);stk.classList.add('cant');}
-    else{cdEl.style.display='none';stk.classList.remove('cant');}
-    stk.classList.toggle('sel',G.selCard==='strike');
+  // prep-phase countdown banner
+  const pb=document.getElementById('prepbanner');
+  if(pb){ if(G.prep>0&&!G.attract){ pb.classList.add('show'); pb.querySelector('.pb-n').textContent=Math.ceil(G.prep); }
+    else pb.classList.remove('show'); }
+  // air-support strike buttons (gunship / barrage / precision)
+  for(const type of STRIKE_KEYS){ const el=document.getElementById('card-'+type); if(!el)continue;
+    const cdEl=el.querySelector('.cd'); const cd=G.strikeCds[type]||0;
+    if(cd>0){cdEl.style.display='flex';cdEl.textContent=Math.ceil(cd);el.classList.add('cant');}
+    else{cdEl.style.display='none';el.classList.remove('cant');}
+    el.classList.toggle('sel',G.selCard===type);
   }
   // recon flare button
   const rc=document.getElementById('card-recon');
@@ -2623,7 +2795,7 @@ function syncHUD(){
 const DTDOT_COL={sa:'#8fd0ff',ap:'#ffb347',he:'#ff9f7f',aa:'#7fffaa'};
 // hotbar groups: after the last key in each group we drop a thin separator so the
 // bar reads in tactical chunks (infantry · armour · fires · air/AD · support)
-const HB_GROUP_END={sniper:1,ifv:1,mlrs:1,drone:1};
+const HB_GROUP_END={sniper:1,ifv:1,mlrs:1,drone:1,jammer:1};
 function buildHotbar(){
   const hb=document.getElementById('hotbar'); hb.innerHTML='';
   HOTBAR.forEach((key,i)=>{
@@ -2654,14 +2826,18 @@ function buildHotbar(){
     hb.appendChild(el);
     if(HB_GROUP_END[key]){ const sep=document.createElement('div'); sep.className='hb-sep'; hb.appendChild(sep); }
   });
-  // missile strike special card
-  const st=document.createElement('div');
-  st.className='card'; st.id='card-strike'; st.style.borderColor='var(--red2)';
-  st.innerHTML=`<span class="key">0</span><div class="glyph" style="color:var(--red)">☢</div>
-    <div class="nm">Missile Strike</div><div class="cost" style="color:var(--red)">FREE</div>
-    <div class="cd" style="display:none"></div>`;
-  st.onclick=()=>{G.selCard='strike';showLaneHint();};
-  hb.appendChild(st);
+  // AIR SUPPORT — three off-map strike cards (gunship run / rolling barrage / precision)
+  { const sep=document.createElement('div'); sep.className='hb-sep'; hb.appendChild(sep); }
+  for(const type of STRIKE_KEYS){ const s=STRIKES[type];
+    const el=document.createElement('div');
+    el.className='card'; el.id='card-'+type; el.style.borderColor=s.col;
+    el.innerHTML=`<span class="key">${s.key}</span><div class="glyph" style="color:${s.col}">${s.glyph}</div>
+      <div class="nm">${s.name}</div><div class="cost" style="color:${s.col}">FREE</div>
+      <div class="cd" style="display:none"></div>`;
+    el.title=s.desc;
+    el.onclick=()=>{G.selCard=type;showLaneHint();};
+    hb.appendChild(el);
+  }
   // recon flare — free, exposes a whole lane through the fog for a few seconds
   const rc=document.createElement('div');
   rc.className='card'; rc.id='card-recon'; rc.style.borderColor='var(--cyan)';
@@ -2706,13 +2882,15 @@ cv.addEventListener('pointermove',e=>{
   const r=cv.getBoundingClientRect(); G.hoverLane=laneFromY(e.clientY-r.top);
 });
 cv.addEventListener('pointerleave',()=>{ if(G)G.hoverLane=-1; });
+// click the prep banner to skip the countdown and start immediately
+{ const pbEl=document.getElementById('prepbanner'); if(pbEl)pbEl.addEventListener('pointerdown',()=>{ if(G&&G.prep>0)G.prep=0.001; }); }
 cv.addEventListener('pointerdown',e=>{
   if(!G||G.over||G.paused)return;
   actx(); if(SAVE.music&&!MUSIC.running)musicStart(musicContextTheme());
   const r=cv.getBoundingClientRect();
   const x=e.clientX-r.left, y=e.clientY-r.top;
   const lane=laneFromY(y);
-  if(G.selCard==='strike'){ tryStrike(lane,x); }
+  if(STRIKES[G.selCard]){ tryStrike(G.selCard,lane,x); }
   else if(G.selCard==='recon'){ tryRecon(lane); }
   else if(G.selCard==='emp'){ tryEmp(lane); }
   else if(G.selCard&&G.selCard.indexOf('sp-')===0){ tryBuildSpawner(G.selCard.slice(3),lane); }
@@ -3061,7 +3239,7 @@ const TUT_STEPS=[
   {say:"Good. Now some armour. Deploy a Tank — press 4, then tap a lane. That's your battering ram.",mood:'deadpan',cond:()=>tutHasB('tank')},
   {enter:()=>{spawn('R','tank',1);},say:"Here's the lesson that wins wars — counters. I've rolled a Tank at your middle lane. Rifles bounce off its armour. Kill it with an AT Team: press 2, deploy, and watch it work.",mood:'grim',cond:()=>G.kills>=1},
   {say:"That's rock-paper-scissors with guns. AT beats armour, armour crushes infantry, infantry swarms the AT. Read what's coming, send the counter.",mood:'deadpan',wait:7},
-  {say:"One more toy — your missile strike. Free, on a timer. Press 0, then tap a lane, and level whatever's standing there.",mood:'hype',cond:()=>(G.strikeUsedCount||0)>=1},
+  {say:"One more toy — air support. Three free strikes on timers: a gunship run, a rolling barrage, and precision munitions. Press 0 for precision, then tap a lane, and level whatever's standing there.",mood:'hype',cond:()=>(G.strikeUsedCount||0)>=1},
   {say:"That's everything, Commander. Their HQ sits on the right — crack it before they crack yours. I'm releasing their army... now. Good luck. Try not to embarrass us.",mood:'proud',wait:6.5,last:true},
 ];
 function tutStart(){
@@ -3203,13 +3381,14 @@ function start(){
   if(!G.attract)ambientStart();
   syncStanceUI(); syncSpeedUI();
   const big=(G.kind==='campaign'&&G.mission)?G.mission.name:((MODES[G.mode]&&MODES[G.mode].name)||G.kind);
-  announce(String(big).toUpperCase(),DOCTRINES[G.doc].name+' · '+DIFFS[G.diff].name+' · '+G.wx.name,DOCTRINES[G.doc].col);
+  if(G.prep>0)announce('⏳ PREP · '+String(big).toUpperCase(),'queue your opening wave — enemy frozen','#5ff0e0');
+  else announce(String(big).toUpperCase(),DOCTRINES[G.doc].name+' · '+DIFFS[G.diff].name+' · '+G.wx.name,DOCTRINES[G.doc].col);
   if(!G.tutorial){
     if(G.wxKey!=='clear')say(G.wx.line,'grim',1);
     if(G.kind==='campaign'&&G.mission)say(G.mission.brief,'brief',1);
     else if(G.kind==='daily'&&G.daily)say("Today's orders, Commander: "+G.daily.mut.name+". "+G.daily.mut.desc,'brief',1);
-    else narr('battleStart');
-    if(G.general)setTimeout(()=>{ if(G&&!G.over&&!G.tutorial)showRival(G.general.intro); },1400);
+    else if(G.prep<=0)narr('battleStart'); // otherwise battleStart fires when prep ends
+    if(G.general)setTimeout(()=>{ if(G&&!G.over&&!G.tutorial)showRival(G.general.intro); },G.prep>0?Math.min(9000,G.prep*1000+800):1400);
   }
   if(SAVE.streamOn){document.getElementById('chatfeed').innerHTML='';chatReact('idle');}
 }
@@ -3237,7 +3416,7 @@ window.addEventListener('keydown',e=>{
   // number keys select card: 1–9 = first nine cards, 0 = missile strike
   const n=parseInt(e.key,10);
   if(!isNaN(n)){
-    if(n===0){G.selCard='strike';showLaneHint();return;}
+    if(n===0){G.selCard='precision';showLaneHint();return;}
     if(n>=1&&n<=9&&n<=HOTBAR.length){ const key=HOTBAR[n-1];
       if(!G.unlocked[key]){ if(!G.ages && tryUnlock(key))G.selCard=key; } else G.selCard=key;
       showLaneHint();return;}
@@ -3245,6 +3424,9 @@ window.addEventListener('keydown',e=>{
   // R / F select the commander powers
   if(k==='r'){G.selCard='recon';showLaneHint();return;}
   if(k==='f'){ if(SAVE.lvl>=3){G.selCard='emp';showLaneHint();} return; }
+  // G / B select the gunship run & rolling barrage air-support strikes
+  if(k==='g'){G.selCard='gunship';showLaneHint();return;}
+  if(k==='b'){G.selCard='barrage';showLaneHint();return;}
   // Z / X / C set troop stance on the fly (behaviour only)
   if(k==='z'){setStance('assault');return;}
   if(k==='x'){setStance('defend');return;}
@@ -3286,7 +3468,7 @@ function syncStanceUI(){
   for(const s in STANCES){ const b=document.getElementById('stance-'+s); if(b)b.classList.toggle('on',G&&G.stance===s); }
 }
 function quickDeploy(lane){
-  if(G.selCard==='strike')tryStrike(lane,W*0.6);
+  if(STRIKES[G.selCard])tryStrike(G.selCard,lane,W*0.6);
   else if(G.selCard==='recon')tryRecon(lane);
   else if(G.selCard==='emp')tryEmp(lane);
   else if(G.selCard&&G.selCard.indexOf('sp-')===0)tryBuildSpawner(G.selCard.slice(3),lane);
@@ -3391,17 +3573,23 @@ function renderManualBody(tab){
     h=`<h2>The one-minute brief</h2>
     <p>You command one side of a three-lane battlefield. Your HQ sits on the left; the enemy's on the right. <b>Destroy their HQ before they destroy yours.</b></p>
     <ul>
+      <li><b>10-second prep.</b> Every battle opens with a frozen prep phase — queue your opening wave into the lanes while the enemy is held. Click the timer to skip it.</li>
       <li><b>Command Points (CP)</b> tick in automatically and pour in from every kill. Spend them to deploy units.</li>
       <li><b>Pick a card</b> from the hotbar, then <b>click a lane</b> to drop that unit into the fight. Number keys 1–9 select cards too.</li>
       <li><b>Every unit has a job.</b> The coloured dot on each card is its <b>damage type</b>; the corner tag is its <b>armour class</b>. Match your damage type to their armour to win exchanges — see the Counter Web tab.</li>
       <li><b>Stances</b> (Z/X/C) change how your whole force behaves — push, hold, or skirmish — without touching stats.</li>
       <li><b>Speed</b> control lets you slow the fight to 0.5× to micromanage, or run it at 2× to blitz.</li>
     </ul>
+    <h2>Free air support (three strikes, each on its own timer)</h2>
+    <ul>
+      <li><b>🚁 Gunship Run</b> (G) — a strafing pass that rakes ONE lane with sustained cannon fire.</li>
+      <li><b>💥 Rolling Barrage</b> (B) — a creeping wall of fire walks up ALL three lanes over a full minute. Slow, but devastating.</li>
+      <li><b>🎯 Precision Munitions</b> (0) — a fast, pinpoint strike on one spot. Less punch, quick reload.</li>
+    </ul>
     <h2>Free commander powers</h2>
     <ul>
-      <li><b>☢ Missile Strike</b> — call a free strike on a point in a lane. Reloads on a timer.</li>
-      <li><b>📡 Recon Flare</b> — reveals every enemy in a lane through fog & weather for a few seconds.</li>
-      <li><b>⚡ EMP Pulse</b> (Rank 3) — jams a whole lane; they can barely fire or move briefly.</li>
+      <li><b>📡 Recon Flare</b> (R) — reveals every enemy in a lane through fog & weather for a few seconds.</li>
+      <li><b>⚡ EMP Pulse</b> (F, Rank 3) — jams a whole lane; they can barely fire or move briefly.</li>
     </ul>
     <h2>Winning the long game</h2>
     <p>Bank CP for <b>tech tiers</b> and <b>production spawners</b> (factories that pump out units on a timer), earn <b>veterancy</b> on units that rack up kills, and read the <b>lane terrain</b> — forests favour infantry ambushes, hills extend gunners and artillery.</p>`;
@@ -3495,6 +3683,8 @@ function renderManualBody(tab){
       <li><b>Read the corner tags.</b> Never throw riflemen at a wall of tanks — bring AT teams, tanks or drones (armour-piercing).</li>
       <li><b>Artillery shapes the fight.</b> Keep guns behind your line and let the front hold while HE rains down.</li>
       <li><b>Own the sky first.</b> One AA vehicle per lane shuts down helis and drones cheaply.</li>
+      <li><b>Drones are cheap swarm — and cheaply beaten.</b> They're dirt-cheap and deadly to armour, but rapid-fire units (riflemen, IFVs, interceptors) and any EW jammer shred them out of the sky. Don't send drones into massed rifles.</li>
+      <li><b>The gunship rules the middle — until a fighter shows up.</b> A gunship loiters mid-field and strafes all three lanes, but it can't defend itself; screen it with your own interceptors, and bring interceptors to kill the enemy's.</li>
       <li><b>Bank for spawners.</b> A barracks or drone bay pays for itself over a long battle.</li>
       <li><b>Kills are income.</b> Winning an exchange funds the next push — trade up, never down.</li>
     </ul>`;
@@ -3634,14 +3824,14 @@ function startAttract(){
   sel.mode='skirmish'; sel.doctrine=pick(docs); sel.diff='veteran';
   resize(); newGame();
   G.attract=true; G.techMode=false; for(const k of HOTBAR)G.unlocked[k]=true;
-  G.cpRate=16; G.ecpRate=16; G._atkT=0.4;
+  G.cpRate=16; G.ecpRate=16; G._atkT=0.4; G.prep=0; G.frozen=false;
   document.getElementById('hud').classList.add('hidden');
 }
 function attractTick(dt){
   G._atkT-=dt;
   if(G._atkT<=0){ G._atkT=rnd(0.45,0.95);
-    G.cp=240; tryDeploy(pick(HOTBAR),(Math.random()*3)|0);
-    if(Math.random()<0.12)tryStrike((Math.random()*3)|0,W*0.6);
+    G.cp=240; tryDeploy(pick(HOTBAR.filter(k=>k!=='gunship')),(Math.random()*3)|0);
+    if(Math.random()<0.12)tryStrike(pick(STRIKE_KEYS),(Math.random()*3)|0,W*0.6);
   }
 }
 
@@ -3688,7 +3878,7 @@ function genWar(){
   // edges: connect each node to nodes in the adjacent column within a y window
   const edges=[];
   for(const a of nodes){ for(const b of nodes){ if(b.col===a.col+1 && Math.abs(a.y-b.y)<0.42){ edges.push([a.id,b.id]); } } }
-  const WAR={nodes,edges,momentum:50,done:null,turns:0};
+  const WAR={nodes,edges,momentum:50,done:null,turns:0,cpBank:180,alloc:0};
   SAVE.war=WAR; persist();
   return WAR;
 }
@@ -3740,11 +3930,27 @@ function renderWarMap(){
   else if(w.done==='lost')sub.innerHTML='<b style="color:var(--red)">WAR LOST</b> — Home Command was overrun. Start a New War.';
   else sub.innerHTML=`Fronts held: <b>${held}/${tot}</b> · War momentum: <b>${Math.round(w.momentum)}</b> · Click a glowing node to attack it.`;
   // info panel
+  if(w.cpBank==null)w.cpBank=180; if(w.alloc==null)w.alloc=0;
+  w.alloc=clamp(w.alloc,0,w.cpBank);
   const info=document.getElementById('war-info'), fight=document.getElementById('war-fight');
   if(warSel!=null){ const n=w.nodes[warSel]; const att=warAttackable(w,n);
     info.innerHTML=`<b>${n.name}</b> — ${n.owner==='you'?'yours':'enemy-held'} · ${WEATHERS[n.weather].glyph} ${WEATHERS[n.weather].name}`+
-      (n.owner==='enemy'?` · strength <b>${n.str}</b> → ${DIFFS[warDiffFor(n.str)].name}${att?'':' <span style="color:var(--warn)">(not on the front yet)</span>'}`:'');
+      (n.owner==='enemy'?` · strength <b>${n.str}</b> → ${DIFFS[warDiffFor(n.str)].name}${att?'':' <span style="color:var(--warn)">(not on the front yet)</span>'}`:'')+
+      (att&&!w.done?`<div class="war-alloc">
+        <span>⚡ Reserve CP into this assault:</span>
+        <button class="wa-btn" id="wa-minus">−</button>
+        <b id="wa-val">${w.alloc}</b>
+        <button class="wa-btn" id="wa-plus">+</button>
+        <span class="wa-bank">reserve bank: <b>${Math.round(w.cpBank)}</b></span>
+        <div class="wa-note">Committed CP starts the battle in your coffers. Win and unspent CP (plus a bonus) returns to the reserve — snowball it into deeper pushes.</div>
+      </div>`:'');
     fight.disabled=!att||!!w.done;
+    if(att&&!w.done){
+      const step=20;
+      const mb=document.getElementById('wa-minus'), pb=document.getElementById('wa-plus');
+      if(mb)mb.onclick=()=>{ w.alloc=clamp(w.alloc-step,0,w.cpBank); persist(); renderWarMap(); };
+      if(pb)pb.onclick=()=>{ w.alloc=clamp(w.alloc+step,0,w.cpBank); persist(); renderWarMap(); };
+    }
   } else { info.innerHTML='Select a node to see the briefing.'; fight.disabled=true; }
 }
 function selectWarNode(id){ warSel=id; renderWarMap(); }
@@ -3753,14 +3959,20 @@ function warFight(){
   const n=w.nodes[warSel]; if(!warAttackable(w,n))return;
   w.pending=n.id;
   const str=n.str;
+  // spend the reserve CP the player committed — it becomes their starting coffers
+  const alloc=clamp(w.alloc||0,0,w.cpBank||0);
+  w.cpBank=Math.max(0,(w.cpBank||0)-alloc); w.spentAlloc=alloc; w.alloc=0; persist();
   LAUNCH={type:'war', warName:n.name, diff:warDiffFor(str), weather:n.weather,
-    enemyBias:n.bias, ecpMul:0.8+str/100*0.8, openEnemy:n.cap==='enemy'?4:0};
+    enemyBias:n.bias, ecpMul:0.8+str/100*0.8, openEnemy:n.cap==='enemy'?4:0, startCp:alloc};
   start();
 }
 function warResolve(won){
   const w=SAVE.war; if(!w||w.pending==null)return;
   const n=w.nodes[w.pending];
+  // leftover CP from the battle (plus a victory bonus) flows back into the reserve
+  const leftover=(window.G&&Math.round(window.G.cp))||0;
   if(won){
+    w.cpBank=Math.min(600,Math.round((w.cpBank||0)+leftover*0.5+40)); // banked reserve grows — push deeper
     n.owner='you'; n.str=0;
     w.momentum=Math.min(100,w.momentum+8);
     // supply cut — every enemy neighbour weakens

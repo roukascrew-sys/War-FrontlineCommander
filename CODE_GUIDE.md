@@ -439,6 +439,47 @@ same pipeline, so the damage matrix applies to them too.
   `drop` (meter → friendly airdrop), `chaos` (meter → `fireRandomEvent`), and
   `hype`/`pog`/`W` (feed the meter). Thresholds live on `CHATLINK`.
 
+## Prep phase, air support, air power & difficulty
+
+- **10-second prep** (`PREP_TIME`, `G.prep`/`G.frozen`) — every non-tutorial
+  battle opens frozen: `step()` decrements `G.prep`, keeps CP flowing, idles all
+  units (`updateUnits` early-continues on `G.frozen`), and skips `aiStep`/
+  turrets/spawners until it ends, then fires `battleStart`. `#prepbanner` shows
+  the countdown; click it to skip (`G.prep=0.001`).
+- **Air support — three strikes** (`STRIKES`, `G.strikeCds`) replace the old
+  single bomb: `tryGunshipRun(lane)` rakes one lane with a marching strafe;
+  `tryBarrage()` sets `G.barrage` and `barrageTick()` walks a wall of fire up all
+  three lanes over 60 s; `tryPrecision(lane,x)` is the old strike with a shorter
+  CD and less punch. Cards `card-gunship/-barrage/-precision`, keys G/B/0,
+  dispatched through `tryStrike(type,lane,x)`.
+- **Gunship & interceptor units** — `gunship` (`u.gunship`) loiters mid-field via
+  `gunshipTick()` (glides to a home x on its side, patrols the lane band, strafes
+  one target per lane) and never sieges the HQ; `interceptor` (`u.hunter`) is an
+  air-superiority fighter — `nearestEnemy` returns the nearest flier for hunters,
+  and its `aa` damage type shreds air. The AI fields both (`aiStep` choices
+  weight interceptor by air-threat, gunship at high budget on smart tiers).
+  New flags must be copied in `spawn()` (`lowAir/gunship/hunter/antiDrone`).
+- **Drone rebalance** — drones are dirt-cheap (cost 11) glass cannons.
+  `nearestEnemy` now lets rapid-fire ground units (`rof<=0.75`) target a
+  low-flying drone (`u.lowAir`); `damage()` multiplies drone hits ×2.4 from
+  rapid fire; and an EW jammer (`u.antiDrone`) fries drones in `supportTick`
+  (cancels the dive, pins them, burns them down).
+- **Difficulty** (`DIFFS`) — each tier now carries `cpMul` (enemy economy),
+  `qualMul` (enemy stats), `think` (AI cadence), `open` (opening enemy count),
+  `smart` (focus-fire / hard-counter / budget-hoard AI in `aiStep`), and
+  `playerCp` (a leg-up on the player's income). Recruit is a teaching cakewalk;
+  Veteran/Elite are a real fight; Legendary is brutal (measured: it beats a
+  strong scripted player ~2⁄3 of the time). Tune in the `DIFFS` table.
+- **War Mode reserve CP** (`w.cpBank`/`w.alloc`) — before an assault the player
+  allocates reserve CP (stepper in the war-info panel) that becomes starting CP
+  (`LAUNCH.startCp` → `newGame`); on a win `warResolve` returns half the
+  leftover CP plus a bonus to the bank, so you snowball deeper pushes.
+- **Humanised narrator** — `splitClauses` now breaks on sentence *and* clause
+  boundaries and folds tiny fragments; `narrSpeakOffline` gives each clause a
+  human contour (open brighter, settle/slow to the close, lift on emphatic
+  lines, drag on trail-offs), per-clause jitter, and short randomized breathing
+  pauses with radio key-clicks between clauses.
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass
