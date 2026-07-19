@@ -556,6 +556,35 @@ everything on `endGame`/`showTitle`. Effects:
 Everything honours `SAVE.reduceMotion` where it shakes, and only fires in a live
 battle (`onChatMsg` guards) — the simulated offline chat never sends these words.
 
+## ⭐ v1.0 — launch build (roadmap complete)
+
+`GAME_VERSION='1.0.0'` (shown in the title footer). Phases 1–3 of the roadmap
+are done: content & campaign (P1), streamer/chat integration incl. big-vote
+powers + information warfare + chaos mode (P2), and launch polish — prep phase,
+title difficulty, sprites, per-weapon audio, Field Manual, Settings (P3).
+
+**Career backend** (the depth layer under the frontend):
+- `recordBattle(won,score)` in `endGame` feeds `SAVE.career` (battles/W-L/kills/
+  deploys/CP/strikes/damage/time + per-unit tallies from `G.built`),
+  `SAVE.history` (rolling 25-battle log), and `SAVE.rivalry` (per-general W/L).
+- `rivalIntroFor(gen)` makes generals greet you based on the head-to-head
+  record — revenge lines, taunts, dead-even challenges.
+- **🎖 Service Record** screen (`openRecord`/`renderRecord`, title button
+  `t-record`): career tiles, most-fielded unit bars, rivalry table, medal wall,
+  recent-battle log. Results screens also carry an **AAR line** (force
+  committed, CP spent, strikes, opposing general).
+
+**Gags (all individually toggleable in Settings → Fun & Gags):**
+- `gagChatter` — deploy/kill quips (`CHATTER_DEPLOY/KILL`) floated over units.
+- `gagGolden` — the Golden Drone (a `REVENTS` entry): a harmless gold CP piñata
+  that crosses the field; shooting it pays a jackpot, and it despawns harmlessly
+  at the HQ line (`u.golden` guard in the siege block).
+- `gagVictory` — confetti + jet flypast on the win screen (`.vic-conf/.vic-jet`).
+
+Design intent: streamer spectacle (chaos, chat powers, gags) is **all opt-out**,
+so a strategist can run a clean, systems-driven match — counters, terrain,
+weather, veterancy, tech, war-map logistics — with none of the noise.
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass

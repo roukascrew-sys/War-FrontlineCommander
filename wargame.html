@@ -65,7 +65,8 @@
 
   #scoreboard{position:absolute;top:10px;left:14px;font-family:var(--mono);font-size:12px;color:var(--dim);line-height:1.7;}
   #scoreboard b{color:var(--ink);}
-  #objbar{position:absolute;top:10px;right:14px;text-align:right;font-size:12px;color:var(--dim);line-height:1.6;font-family:var(--mono);}
+  #objbar{position:absolute;top:10px;right:14px;text-align:right;font-size:12px;color:var(--dim);line-height:1.6;font-family:var(--mono);
+    max-width:260px;overflow:hidden;text-overflow:ellipsis;}
   #objbar .big{font-size:15px;font-weight:800;color:var(--gold);}
 
   /* base HP bars */
@@ -307,6 +308,21 @@
   .title-foot{font-size:12px;color:var(--dim);text-shadow:0 2px 6px #000;margin-top:10px;}
   .title-foot b{color:var(--gold);}
   .t-btn.manual{border-color:var(--purple);} .t-btn.manual b{color:var(--purple);} .t-btn.manual:hover{box-shadow:0 0 18px #c9a0ff44;}
+  .t-btn.record{border-color:var(--warn);} .t-btn.record b{color:var(--warn);} .t-btn.record:hover{box-shadow:0 0 18px #ffab4044;}
+  /* service record widgets */
+  .rec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:14px;}
+  .rec-stat{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 12px;text-align:center;}
+  .rec-stat b{display:block;font-family:var(--mono);font-size:19px;color:var(--gold);}
+  .rec-stat span{font-size:9.5px;font-weight:700;letter-spacing:1px;color:var(--faint);text-transform:uppercase;}
+  .rec-bar{display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:11.5px;color:var(--dim);}
+  .rec-bar .rb-n{width:110px;text-align:right;color:var(--ink);font-weight:600;}
+  .rec-bar .rb-t{flex:1;height:9px;background:#0008;border-radius:5px;overflow:hidden;}
+  .rec-bar .rb-t i{display:block;height:100%;border-radius:5px;}
+  .rec-bar .rb-v{width:34px;font-family:var(--mono);}
+  .rec-riv{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin-bottom:6px;font-size:12.5px;}
+  .rec-riv .rr-g{font-size:18px;} .rec-riv b{color:var(--ink);} .rec-riv .rr-rec{margin-left:auto;font-family:var(--mono);font-weight:700;}
+  .rec-log{font-family:var(--mono);font-size:11.5px;color:var(--dim);padding:5px 8px;border-bottom:1px solid #1a2333;display:flex;gap:10px;flex-wrap:wrap;}
+  .rec-log .w{color:var(--good);font-weight:700;} .rec-log .l{color:var(--red);font-weight:700;}
   .t-btn.settings{border-color:var(--gold);} .t-btn.settings b{color:var(--gold);} .t-btn.settings:hover{box-shadow:0 0 18px #ffce5a44;}
 
   /* ── FIELD MANUAL / WIKI ── */
@@ -420,6 +436,15 @@
   .res-stats .l{color:var(--dim);} .res-stats .v{font-family:var(--mono);font-weight:700;text-align:right;}
   .res-verdict{font-size:52px;font-weight:900;letter-spacing:3px;margin-bottom:6px;}
   .res-xp{font-size:15px;color:var(--cyan);font-family:var(--mono);margin:6px 0 4px;}
+  .res-aar{font-size:12px;color:var(--dim);max-width:620px;text-align:center;line-height:1.6;margin:2px 0 6px;
+    background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:8px 14px;}
+  /* 🎉 victory flyover gag */
+  .vic-conf{position:absolute;top:-12px;width:8px;height:12px;border-radius:2px;pointer-events:none;z-index:3;
+    animation:vicfall linear forwards;}
+  @keyframes vicfall{0%{transform:translateY(0) rotate(0);opacity:1;}100%{transform:translateY(105vh) rotate(660deg);opacity:0.7;}}
+  .vic-jet{position:absolute;top:16%;left:-220px;font-size:34px;color:var(--gold);pointer-events:none;z-index:3;
+    text-shadow:0 0 18px #ffce5a88;animation:vicjet 3.2s ease-in forwards;}
+  @keyframes vicjet{to{left:110%;}}
   .btn-row{display:flex;gap:12px;margin-top:18px;}
   .sbtn{padding:12px 26px;font-size:14px;font-weight:800;letter-spacing:1px;border-radius:10px;background:var(--panel2);
     border:1px solid var(--line);color:var(--ink);transition:.1s;}
@@ -631,9 +656,10 @@
         <button class="t-btn war" id="t-war"><b>🗺 War Mode</b><small>conquer the map</small></button>
         <button class="t-btn tut" id="t-tut"><b>🎓 Tutorial</b><small>learn the ropes</small></button>
         <button class="t-btn manual" id="t-manual"><b>📖 Field Manual</b><small>how everything works</small></button>
+        <button class="t-btn record" id="t-record"><b>🎖 Service Record</b><small>your career &amp; rivals</small></button>
         <button class="t-btn settings" id="t-settings"><b>⚙ Settings</b><small>audio &amp; motion</small></button>
       </div>
-      <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span></div>
+      <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span> · <span id="t-ver">v1.0.0</span></div>
     </div>
   </div>
 
@@ -659,6 +685,14 @@
       <div class="man-tabs" id="man-tabs"></div>
       <div class="man-body" id="man-body"></div>
     </div>
+  </div>
+
+  <!-- SERVICE RECORD -->
+  <div class="screen hidden" id="record">
+    <button class="back-btn" id="rec-back">◀ Title</button>
+    <h1>🎖 <b>SERVICE RECORD</b></h1>
+    <div class="tag" style="margin-bottom:6px">Your whole career — every battle is remembered, and so are your rivals.</div>
+    <div class="man-wrap"><div class="man-body" id="rec-body"></div></div>
   </div>
 
   <!-- SETTINGS MODAL -->
@@ -777,7 +811,10 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   campaignDone:-1,campaignStars:{},daily:{},ttsKey:'',ttsVoice:'arnold',
   speed:1,twitchChannel:'',war:null,warWins:0,aiDebug:false,music:true,musicVol:0.5,news:false,reduceMotion:false,
   ambient:true,randomEvents:true,evSupply:true,evVoice:true,evCutscene:true,evBarrage:true,evDefector:true,
-  chaosMode:false};
+  chaosMode:false,
+  gagChatter:true,gagGolden:true,gagVictory:true,
+  history:[],career:{battles:0,wins:0,losses:0,kills:0,deploys:0,cpSpent:0,strikes:0,units:{},dmgDealt:0,timePlayed:0},
+  rivalry:{}};
 let SAVE=load();
 SAVE.news=false; // live news wire archived for now (kept in code, off by default)
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
@@ -985,6 +1022,7 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:1.90, qualMul:1.60, think:0.48, open:6, smart:true,  playerCp:1.0,  col:'#ff5a4a'},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
+const GAME_VERSION='1.0.0'; // ⭐ launch build
 
 /* ── WEATHER (from the simulator's environment layer — shapes range, tempo & spotting) ── */
 const WEATHERS={
@@ -1342,6 +1380,18 @@ function narrPickVoice(){
 }
 if(window.speechSynthesis){ narrPickVoice(); try{window.speechSynthesis.onvoiceschanged=narrPickVoice;}catch(e){} }
 
+/* the generals REMEMBER you — intros change with your head-to-head record */
+function rivalIntroFor(gen){
+  try{
+    const r=SAVE.rivalry&&SAVE.rivalry[gen.name];
+    if(!r||(r.w===0&&r.l===0))return gen.intro;
+    const total=r.w+r.l;
+    if(r.w>=3&&r.l===0)return "You. "+(r.w)+" times you've humiliated me. There is no plan B this time — there is only artillery.";
+    if(r.w>r.l)return "Back again, Commander. "+r.w+"–"+r.l+", your favour. I've studied every one of those defeats.";
+    if(r.l>r.w)return "Ah, my favourite student. "+r.l+" lessons taught, "+(r.w||'none')+" learned. Shall we make it "+(r.l+1)+"?";
+    return "Dead even, Commander — "+r.w+" apiece. Today we settle it.";
+  }catch(e){ return gen.intro; }
+}
 let rivalHideT=null;
 function showRival(text){
   if(!G||!G.general)return;
@@ -1733,9 +1783,13 @@ function tryDeploy(key,lane){
   if(G.cp<cost){ flashCard(key,'cant'); return false; }
   if(G.cds[key]>0){ return false; }
   G.cp-=cost; G.spent+=cost; G.deploys++;
+  if(!G.built)G.built={}; G.built[key]=(G.built[key]||0)+1; // per-unit career tally
   G.cds[key]=unitCD(key)*(G.cdMul||1);
   spawn('B',key,lane);
   SND.deploy();
+  // 🗣 unit chatter gag — a quick quip from the fresh deployment (toggleable)
+  if(SAVE.gagChatter&&!G.attract&&Math.random()<0.22){ const u=G.units[G.units.length-1];
+    if(u)floatText(u.x+14,u.y-u.r-12,pick(CHATTER_DEPLOY),'#cfe3ff'); }
   // deploy ripple feedback
   G.rings.push({x:58,y:G.laneY[lane]*H,r:2,max:24,life:0.4,age:0,col:'#7fd0ff'});
   if(G.tutorial&&window.tutOnAction)tutOnAction('deploy',key,lane);
@@ -1881,6 +1935,9 @@ function tryEmp(lane){
    toggleable in Settings (with a master switch). A clock in step() rolls one
    at random every so often. All effects are self-contained and safe.
    ═══════════════════════════════════════════════════════════════════════ */
+/* 🗣 unit chatter — tiny personality quips floated over units (toggleable gag) */
+const CHATTER_DEPLOY=["On it.","Movin' out!","Who ordered a war?","Born ready.","Payday's Friday, right?","For the front!","I just got here...","Let's work.","Boots down!","Copy that."];
+const CHATTER_KILL=["Got one!","Scratch one!","Tell my momma!","That's a promotion.","Next!","Ha! Seen that?","One less problem.","Textbook.","Add it to the tab."];
 const CRAZY_LINES=[
   "Somebody get me a bigger map — this one's on FIRE!",
   "I've seen calmer bar fights! Push, push, PUSH!",
@@ -1944,6 +2001,12 @@ const REVENTS={
     explode(u.x,u.y,34,'B',14);
     announce('🏳 DEFECTOR','an enemy '+ (UNITS[u.key]?UNITS[u.key].name:'unit') +' joins us','#5ff0e0');
     if(SAVE.evVoice)say("Well, well. A change of heart on the enemy line. Welcome aboard.",'mock',1); } },
+  golden:{ flag:'gagGolden', run(){ const lane=(Math.random()*3)|0;
+    spawn('R','drone',lane); const g=G.units[G.units.length-1];
+    g.golden=true; g.kamikaze=false; g.diving=null; g.dmg=0; g.hp=g.maxHp=26; g.spd*=1.15;
+    g.col='#ffd700'; g.name='Golden Drone'; g.spotted=true; g.stealth=false;
+    announce('🥇 GOLDEN DRONE','shoot it down for a CP jackpot!','#ffce5a');
+    if(SAVE.evVoice)say("Gold contact crossing the line. Whoever bags it drinks free tonight.",'hype',1); } },
 };
 function fireRandomEvent(){
   const pool=[]; for(const k in REVENTS){ const e=REVENTS[k]; if(SAVE[e.flag])pool.push(e); }
@@ -2123,6 +2186,16 @@ function killUnit(u,src){
   for(const o of G.units){ if(o.alive&&o.side===u.side&&o!==u&&dist(o.x,o.y,u.x,u.y)<70){ o.sup=Math.min(1,(o.sup||0)+0.16); } }
   const killer=src&&src.side;
   if(src&&src.alive)grantVetXP(src);
+  // 🥇 GOLDEN DRONE gag — shooting it down is a CP piñata
+  if(u.golden&&killer==='B'){
+    const jackpot=90; G.cp=Math.min(G.cpMax,G.cp+jackpot);
+    floatText(u.x,u.y-14,'🥇 +'+jackpot+' CP!','#ffce5a');
+    for(let i=0;i<26;i++)G.parts.push({x:u.x,y:u.y,vx:rnd(-120,120),vy:rnd(-160,20),life:rnd(0.5,1.1),age:0,col:pick(['#ffce5a','#fff2b0','#ffd700']),sz:rnd(2,3.6)});
+    announce('🥇 GOLDEN DRONE DOWN','+'+jackpot+' CP jackpot','#ffce5a'); SND.combo(5);
+  }
+  // 🗣 chatter gag — the shooter celebrates now and then (toggleable)
+  if(SAVE.gagChatter&&killer==='B'&&src&&src.alive&&!u.golden&&Math.random()<0.12&&!G.attract)
+    floatText(src.x,src.y-src.r-14,pick(CHATTER_KILL),'#cfe3ff');
   // kill bounty — combat feeds the economy (both sides), Age-of-War style
   const bnt=Math.round(((UNITS[u.key]&&UNITS[u.key].cost)||20)*0.30);
   if(killer==='B'){
@@ -2474,6 +2547,7 @@ function updateUnits(dt){
     // reached enemy HQ?
     const hqX=u.side==='B'?W-24:24;
     if((u.side==='B'&&u.x>=W-40)||(u.side==='R'&&u.x<=40)){
+      if(u.golden){ u.alive=false; floatText(u.x,u.y,'…and it got away','#ffdf7f'); continue; } // the piñata escapes
       const foe=u.side==='B'?'R':'B';
       if(G.mode==='survival'&&foe==='R'){ /* no enemy HQ */ }
       else{
@@ -2831,6 +2905,12 @@ function drawUnit(u){
   if(u.age>0&&AGES[u.age]){cx.beginPath();cx.arc(x,y,u.r+4,0,6.28);cx.strokeStyle=AGES[u.age].col;cx.lineWidth=1.3;cx.globalAlpha=0.65;cx.stroke();cx.globalAlpha=1;}
   // the representational little model
   drawUnitSprite(u,x,y);
+  // ☠ chat-boss marker (sprites replaced glyphs, so the boss gets a crown of doom)
+  if(u.boss){ cx.font='bold '+(u.r+2)+'px var(--font)';cx.textAlign='center';cx.textBaseline='middle';
+    cx.fillStyle='#c9a0ff';cx.fillText('☠',x,y-u.r-10);cx.textBaseline='alphabetic';
+    cx.beginPath();cx.arc(x,y,u.r+5,0,6.28);cx.strokeStyle='rgba(201,160,255,0.5)';cx.lineWidth=2;cx.stroke(); }
+  // 🥇 golden drone sparkle
+  if(u.golden&&Math.random()<0.35)G.parts.push({x:x+rnd(-6,6),y:y+rnd(-6,6),vx:rnd(-12,12),vy:rnd(-20,6),life:0.4,age:0,col:'#ffe89a',sz:1.8});
   // 👻 phantom casualty — a fake death skull + red flash over a perfectly healthy unit
   if(u.phantom>0){
     const fl=(Math.sin(performance.now()/70)+1)/2;
@@ -3544,9 +3624,29 @@ function endGame(winner,reason){
   for(const k in DOCTRINES)if(SAVE.lvl>=DOCTRINES[k].unlock&&!SAVE.unlocked.includes(k))SAVE.unlocked.push(k);
   // medals
   checkMedals(won,score);
+  // 🎖 career backend — battle history, aggregates & rivalry memory
+  try{ recordBattle(won,score); }catch(e){}
   persist();
   chatReact(won?'win':'lose');
   showResults(won,reason,score,xpGain,leveled);
+}
+/* ── SERVICE RECORD backend — every real battle feeds a persistent career ── */
+function recordBattle(won,score){
+  if(!SAVE.career)SAVE.career=JSON.parse(JSON.stringify(DEFAULT_SAVE.career));
+  if(!SAVE.history)SAVE.history=[]; if(!SAVE.rivalry)SAVE.rivalry={};
+  const c=SAVE.career;
+  c.battles++; if(won)c.wins++; else c.losses++;
+  c.kills+=G.kills; c.deploys+=G.deploys; c.cpSpent+=Math.round(G.spent||0);
+  c.strikes+=(G.strikeUsedCount||0); c.dmgDealt+=Math.round(G.dmgDealt||0); c.timePlayed+=Math.round(G.t||0);
+  for(const k in (G.built||{}))c.units[k]=(c.units[k]||0)+G.built[k];
+  // rolling battle log (newest first, capped)
+  SAVE.history.unshift({ ts:Date.now(), kind:G.kind, mode:G.mode, diff:G.diff, doc:G.doc,
+    country:G.country, won, score, kills:G.kills, dur:Math.round(G.t),
+    vs:G.general?G.general.name:'', war:G.warName||null });
+  while(SAVE.history.length>25)SAVE.history.pop();
+  // rivalry memory — the enemy generals remember you
+  if(G.general){ const r=SAVE.rivalry[G.general.name]||(SAVE.rivalry[G.general.name]={w:0,l:0});
+    if(won)r.w++; else r.l++; }
 }
 const MEDALS={
   first_win:{n:'First Blood',d:'Win your first battle'},
@@ -3600,6 +3700,7 @@ function showResults(won,reason,score,xpGain,leveled){
       ${G.mode==='survival'?`<div class="l">Survived</div><div class="v">${Math.floor(G.t)}s (wave ${G.wave+1})</div>`:''}
     </div>
     ${isTut?'':`<div class="res-xp">+${xpGain} XP${leveled?`  ·  ⬆ RANK UP → ${SAVE.lvl}`:''}</div>`}
+    ${(!isTut&&G.built&&Object.keys(G.built).length)?`<div class="res-aar">AAR — force committed: ${Object.keys(G.built).sort((a,b)=>G.built[b]-G.built[a]).slice(0,5).map(k=>`<b style="color:${UNITS[k].col}">${G.built[k]}×</b> ${unitName(k,G.country)}`).join(' · ')} · <span style="color:var(--faint)">${Math.round(G.spent)} CP spent · ${G.strikeUsedCount||0} strikes${G.general?' · vs '+G.general.name:''}</span></div>`:''}
     ${campExtra}
     <div class="btn-row">
       ${G.kind==='war'?`<button class="sbtn prim" id="r-war">🗺 War Map</button>`:
@@ -3610,6 +3711,15 @@ function showResults(won,reason,score,xpGain,leveled){
     ${leveled?renderUnlockNote():''}
   `;
   r.classList.remove('hidden');
+  // 🎉 victory flyover gag — confetti + a jet flypast over the results (toggleable)
+  if(won&&!isTut&&SAVE.gagVictory&&!SAVE.reduceMotion){
+    for(let i=0;i<40;i++){ const c=document.createElement('div'); c.className='vic-conf';
+      c.style.left=rnd(4,96)+'%'; c.style.background=pick(['#ffce5a','#3fd07a','#4aa8ff','#c9a0ff','#ff9f40']);
+      c.style.animationDelay=rnd(0,1.6)+'s'; c.style.animationDuration=rnd(2.4,4.2)+'s';
+      r.appendChild(c); setTimeout(()=>{try{c.remove();}catch(e){}},7000); }
+    const jet=document.createElement('div'); jet.className='vic-jet'; jet.textContent='✈ ✈ ✈';
+    r.appendChild(jet); setTimeout(()=>{try{jet.remove();}catch(e){}},3600);
+  }
   if(G.kind==='war'){ document.getElementById('r-war').onclick=()=>{r.classList.add('hidden');showWarMap();}; }
   else if(nextMission){ document.getElementById('r-next').onclick=()=>{r.classList.add('hidden');launchCampaign(nextMission.id);}; }
   else { const ra=document.getElementById('r-again'); if(ra)ra.onclick=()=>{r.classList.add('hidden'); if(isTut){LAUNCH=null;openMenu();} else start();}; }
@@ -3808,7 +3918,7 @@ function start(){
     if(G.kind==='campaign'&&G.mission)say(G.mission.brief,'brief',1);
     else if(G.kind==='daily'&&G.daily)say("Today's orders, Commander: "+G.daily.mut.name+". "+G.daily.mut.desc,'brief',1);
     else if(G.prep<=0)narr('battleStart'); // otherwise battleStart fires when prep ends
-    if(G.general)setTimeout(()=>{ if(G&&!G.over&&!G.tutorial)showRival(G.general.intro); },G.prep>0?Math.min(9000,G.prep*1000+800):1400);
+    if(G.general)setTimeout(()=>{ if(G&&!G.over&&!G.tutorial)showRival(rivalIntroFor(G.general)); },G.prep>0?Math.min(9000,G.prep*1000+800):1400);
   }
   if(SAVE.streamOn){document.getElementById('chatfeed').innerHTML='';chatReact('idle');}
 }
@@ -3970,7 +4080,7 @@ document.getElementById('fr-no').onclick=()=>{document.getElementById('firstrun'
 const DMGTYPE_LABEL={sa:'Small Arms',ap:'Armour-Piercing',he:'High Explosive',aa:'Anti-Air'};
 const ARMORCLASS_LABEL={inf:'Infantry',light:'Light',heavy:'Heavy',air:'Air',struct:'Structure'};
 function openManual(tab){
-  ['title','menu','warmap','results','hud','pauseScreen','settings'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','settings','record'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('manual').classList.remove('hidden');
   buildManualTabs(tab||'basics');
@@ -4012,7 +4122,9 @@ function renderManualBody(tab){
       <li><b>⚡ EMP Pulse</b> (F, Rank 3) — jams a whole lane; they can barely fire or move briefly.</li>
     </ul>
     <h2>Winning the long game</h2>
-    <p>Bank CP for <b>tech tiers</b> and <b>production spawners</b> (factories that pump out units on a timer), earn <b>veterancy</b> on units that rack up kills, and read the <b>lane terrain</b> — forests favour infantry ambushes, hills extend gunners and artillery.</p>`;
+    <p>Bank CP for <b>tech tiers</b> and <b>production spawners</b> (factories that pump out units on a timer), earn <b>veterancy</b> on units that rack up kills, and read the <b>lane terrain</b> — forests favour infantry ambushes, hills extend gunners and artillery.</p>
+    <h2>Your career is remembered</h2>
+    <p>Every real battle feeds your <b>🎖 Service Record</b> — career totals, your most-fielded units, a rolling battle log, and a head-to-head <b>rivalry record against every enemy general</b>. Beat one enough times and they'll greet you differently. All gags and random events are individually toggleable in ⚙ Settings, so a pure strategy session is always one switch away.</p>`;
   } else if(tab==='roster'){
     h=`<p>The full roster. <b>DMG</b> is the damage type it deals; <b>Armour</b> is how it soaks hits. Stats are base values before doctrine, terrain, veterancy and age scaling.</p><div class="man-grid">`;
     HOTBAR.forEach(key=>{
@@ -4127,7 +4239,7 @@ function renderManualBody(tab){
 
 /* ═══ SETTINGS MODAL ═══ */
 function openSettings(){
-  ['title','menu','warmap','results','hud','pauseScreen','manual'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','manual','record'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('settings').classList.remove('hidden');
   renderSettings();
 }
@@ -4156,6 +4268,10 @@ function renderSettings(){
     settingRow('· Combat Cutscenes','Brief cinematic close-ups of the action',`<button id="set-ev-cut" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evCutscene)}</button>`)+
     settingRow('· Artillery Barrage','A surprise shelling rakes a lane',`<button id="set-ev-barr" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evBarrage)}</button>`)+
     settingRow('· Defectors','An enemy unit switches sides mid-battle',`<button id="set-ev-def" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evDefector)}</button>`)+
+    `<div style="font-size:13px;font-weight:800;color:var(--cyan);letter-spacing:.5px;margin:6px 2px -2px">😄 FUN &amp; GAGS</div>`+
+    settingRow('Unit Chatter','Troops quip when deployed & after kills',`<button id="set-gag-chat" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.gagChatter)}</button>`)+
+    settingRow('Golden Drone','A rare CP piñata crosses the field — shoot it down',`<button id="set-gag-gold" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.gagGolden)}</button>`)+
+    settingRow('Victory Flyover','Confetti & a jet flypast on the win screen',`<button id="set-gag-vic" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.gagVictory)}</button>`)+
     `<div style="font-size:13px;font-weight:800;color:var(--red);letter-spacing:.5px;margin:6px 2px -2px">🤪 CHAOS MODE <span style="color:var(--faint);font-size:9px">BETA</span></div>`+
     settingRow('Chaos / Meme Mode','Nonstop explosions, free spawns, rapid events & mayhem — built for clips. Turn on, then start any battle.',`<button id="set-chaos" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.chaosMode)}</button>`);
   const bind=(id,fn)=>{const b=document.getElementById(id); if(b)b.onclick=()=>{fn();renderSettings();};};
@@ -4171,11 +4287,70 @@ function renderSettings(){
   bind('set-ev-barr',()=>{ SAVE.evBarrage=!SAVE.evBarrage; persist(); });
   bind('set-ev-def',()=>{ SAVE.evDefector=!SAVE.evDefector; persist(); });
   bind('set-chaos',()=>{ SAVE.chaosMode=!SAVE.chaosMode; persist(); });
+  bind('set-gag-chat',()=>{ SAVE.gagChatter=!SAVE.gagChatter; persist(); });
+  bind('set-gag-gold',()=>{ SAVE.gagGolden=!SAVE.gagGolden; persist(); });
+  bind('set-gag-vic',()=>{ SAVE.gagVictory=!SAVE.gagVictory; persist(); });
   const vol=document.getElementById('set-vol');
   if(vol)vol.oninput=()=>{ SAVE.musicVol=(+vol.value)/100; persist();
     try{ if(MUSIC.master&&MUSIC.ctx)MUSIC.master.gain.setTargetAtTime(SAVE.musicVol,MUSIC.ctx.currentTime,0.1); }catch(e){}
     const lbl=vol.parentNode.querySelector('div div:last-child'); if(lbl)lbl.textContent=Math.round(SAVE.musicVol*100)+'%'; };
 }
+/* ═══ SERVICE RECORD — the career backend surfaced ═══ */
+function openRecord(){
+  ['title','menu','warmap','results','hud','pauseScreen','settings','manual'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('btn-pause').classList.add('hidden');
+  document.getElementById('record').classList.remove('hidden');
+  renderRecord();
+}
+function fmtDur(s){ if(s>=3600)return Math.floor(s/3600)+'h '+Math.floor(s%3600/60)+'m'; if(s>=60)return Math.floor(s/60)+'m '+(s%60)+'s'; return s+'s'; }
+function renderRecord(){
+  const el=document.getElementById('rec-body'); if(!el)return;
+  const c=SAVE.career||{battles:0,wins:0,losses:0,kills:0,deploys:0,cpSpent:0,strikes:0,units:{},dmgDealt:0,timePlayed:0};
+  const wr=c.battles?Math.round(c.wins/c.battles*100):0;
+  let h=`<h2>Career</h2><div class="rec-grid">`+
+    `<div class="rec-stat"><b>${c.battles}</b><span>battles</span></div>`+
+    `<div class="rec-stat"><b>${c.wins}–${c.losses}</b><span>record (${wr}%)</span></div>`+
+    `<div class="rec-stat"><b>${c.kills.toLocaleString()}</b><span>kills</span></div>`+
+    `<div class="rec-stat"><b>${c.deploys.toLocaleString()}</b><span>deployments</span></div>`+
+    `<div class="rec-stat"><b>${c.cpSpent.toLocaleString()}</b><span>CP spent</span></div>`+
+    `<div class="rec-stat"><b>${c.strikes}</b><span>air strikes</span></div>`+
+    `<div class="rec-stat"><b>${Math.round(c.dmgDealt).toLocaleString()}</b><span>damage dealt</span></div>`+
+    `<div class="rec-stat"><b>${fmtDur(c.timePlayed)}</b><span>time in battle</span></div>`+
+    `<div class="rec-stat"><b>${SAVE.lvl}</b><span>rank</span></div>`+
+    `<div class="rec-stat"><b>${SAVE.warWins||0}</b><span>wars won</span></div>`+
+  `</div>`;
+  // unit usage
+  const uk=Object.keys(c.units||{}).sort((a,b)=>c.units[b]-c.units[a]);
+  if(uk.length){
+    const max=c.units[uk[0]];
+    h+=`<h2>Order of Battle — most fielded</h2>`;
+    uk.slice(0,8).forEach(k=>{ const u=UNITS[k]; if(!u)return;
+      h+=`<div class="rec-bar"><span class="rb-n">${u.name}</span><div class="rb-t"><i style="width:${Math.round(c.units[k]/max*100)}%;background:${u.col}"></i></div><span class="rb-v">${c.units[k]}</span></div>`; });
+    h+=`<p style="margin-top:6px">Signature unit: <b>${UNITS[uk[0]].name}</b> — your most trusted call.</p>`;
+  }
+  // rivalry
+  const rk=Object.keys(SAVE.rivalry||{});
+  if(rk.length){
+    h+=`<h2>Rivals — they remember</h2>`;
+    for(const name of rk){ const r=SAVE.rivalry[name]; const gen=GENERALS.find(g=>g.name===name);
+      const edge=r.w>r.l?'<span style="color:var(--good)">you lead</span>':r.l>r.w?'<span style="color:var(--red)">they lead</span>':'<span style="color:var(--gold)">dead even</span>';
+      h+=`<div class="rec-riv"><span class="rr-g" style="color:${gen?gen.col:'#fff'}">${gen?gen.glyph:'★'}</span><b>${name}</b> ${edge}<span class="rr-rec">${r.w}–${r.l}</span></div>`; }
+  }
+  // medals
+  const mk=Object.keys(SAVE.medals||{});
+  h+=`<h2>Medals (${mk.length}/${Object.keys(MEDALS).length})</h2><p>${Object.keys(MEDALS).map(id=>(SAVE.medals[id]?'🏅 ':'▫ ')+MEDALS[id].n).join(' · ')}</p>`;
+  // battle log
+  if((SAVE.history||[]).length){
+    h+=`<h2>Recent battles</h2>`;
+    for(const b of SAVE.history.slice(0,12)){
+      const d=new Date(b.ts); const when=(d.getMonth()+1)+'/'+d.getDate();
+      h+=`<div class="rec-log"><span class="${b.won?'w':'l'}">${b.won?'WIN':'LOSS'}</span><span>${b.kind==='war'?('WAR·'+(b.war||'')):(MODES[b.mode]?MODES[b.mode].name:b.mode)}</span><span>${DIFFS[b.diff]?DIFFS[b.diff].name:b.diff}</span><span>${b.kills} kills</span><span>${b.score} pts</span><span>${fmtDur(b.dur)}</span><span style="color:var(--faint)">${when}</span></div>`;
+    }
+  } else if(!c.battles){ h+=`<p>No battles on record yet. The front is waiting, Commander.</p>`; }
+  el.innerHTML=h; el.scrollTop=0;
+}
+document.getElementById('t-record').onclick=()=>openRecord();
+document.getElementById('rec-back').onclick=()=>showTitle();
 document.getElementById('man-back').onclick=()=>showTitle();
 document.getElementById('t-manual').onclick=()=>openManual('basics');
 document.getElementById('set-back').onclick=()=>showTitle();
@@ -4274,11 +4449,12 @@ function attractTick(dt){
 /* ── TITLE SCREEN ── */
 function showTitle(){
   ambientStop(); infoClear();
-  ['menu','warmap','results','hud','pauseScreen','manual','settings'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['menu','warmap','results','hud','pauseScreen','manual','settings','record'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('title').classList.remove('hidden');
   document.getElementById('t-rank').textContent='Rank '+SAVE.lvl;
   document.getElementById('t-best').textContent='Best '+SAVE.best.toLocaleString();
+  const tv=document.getElementById('t-ver'); if(tv)tv.textContent='v'+GAME_VERSION;
   document.getElementById('title-tag').textContent=pick(TITLE_TAGS);
   buildTitleDiff();
   startAttract();
