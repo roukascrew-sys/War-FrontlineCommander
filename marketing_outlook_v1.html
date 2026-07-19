@@ -1,0 +1,198 @@
+<title>FRONTLINE COMMANDER — Launch Marketing Outlook & Franchise Plan</title>
+<style>
+  :root{
+    --bg:#0b0f16; --panel:#141b28; --panel2:#1a2333; --line:#26324a;
+    --ink:#e8edf5; --dim:#93a1b8; --faint:#5b6880;
+    --gold:#f0c243; --green:#3fd07a; --red:#ff5a4a; --blue:#4aa8ff;
+    --stamp:#f0c243;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#f4f6f8; --panel:#ffffff; --panel2:#eef1f5; --line:#d4dae4;
+      --ink:#1a2230; --dim:#4a5568; --faint:#8a94a6;
+      --gold:#a07908; --green:#1f7a48; --red:#c03a2c; --blue:#1f5fa8; --stamp:#a07908; }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b0f16; --panel:#141b28; --panel2:#1a2333; --line:#26324a;
+    --ink:#e8edf5; --dim:#93a1b8; --faint:#5b6880;
+    --gold:#f0c243; --green:#3fd07a; --red:#ff5a4a; --blue:#4aa8ff; --stamp:#f0c243;
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f6f8; --panel:#ffffff; --panel2:#eef1f5; --line:#d4dae4;
+    --ink:#1a2230; --dim:#4a5568; --faint:#8a94a6;
+    --gold:#a07908; --green:#1f7a48; --red:#c03a2c; --blue:#1f5fa8; --stamp:#a07908;
+  }
+  *{box-sizing:border-box;}
+  body{background:var(--bg);color:var(--ink);margin:0;
+    font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.65;}
+  .wrap{max-width:860px;margin:0 auto;padding:0 24px 80px;}
+  .classbar{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:3px;
+    text-align:center;color:var(--stamp);border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    padding:8px 0;margin:26px 0;text-transform:uppercase;}
+  header{padding-top:22px;}
+  .doc-meta{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--faint);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+  h1{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-weight:900;font-stretch:condensed;
+    font-size:clamp(34px,6vw,54px);line-height:0.98;letter-spacing:1px;text-transform:uppercase;
+    margin:18px 0 8px;text-wrap:balance;}
+  h1 .g{color:var(--gold);}
+  .subtitle{font-style:italic;color:var(--dim);font-size:18px;max-width:60ch;margin:0 0 8px;}
+  /* stencil annex headers */
+  .annex{margin-top:56px;position:relative;border:1.5px solid var(--stamp);padding:10px 18px;
+    display:flex;align-items:baseline;gap:14px;width:fit-content;max-width:100%;}
+  .annex::before,.annex::after{content:'';position:absolute;width:10px;height:10px;}
+  .annex::before{top:-1.5px;left:-1.5px;border-top:4px solid var(--stamp);border-left:4px solid var(--stamp);}
+  .annex::after{bottom:-1.5px;right:-1.5px;border-bottom:4px solid var(--stamp);border-right:4px solid var(--stamp);}
+  .annex .ax{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;letter-spacing:2px;color:var(--stamp);}
+  .annex h2{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-weight:900;font-stretch:condensed;
+    font-size:22px;letter-spacing:1.5px;text-transform:uppercase;margin:0;}
+  h3{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-weight:800;font-size:15px;
+    letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin:28px 0 8px;}
+  p{max-width:68ch;margin:12px 0;}
+  p b{color:var(--ink);}
+  .lede{font-size:17.5px;}
+  ul{max-width:68ch;padding-left:22px;margin:10px 0;}
+  li{margin-bottom:7px;}
+  li::marker{color:var(--gold);}
+  /* stat tiles */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:20px 0;}
+  .tile{background:var(--panel);border:1px solid var(--line);padding:14px 16px;}
+  .tile b{display:block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:24px;
+    font-variant-numeric:tabular-nums;color:var(--gold);}
+  .tile span{font-family:system-ui,sans-serif;font-size:10.5px;font-weight:700;letter-spacing:1.4px;
+    text-transform:uppercase;color:var(--faint);}
+  .tile.gr b{color:var(--green);} .tile.rd b{color:var(--red);}
+  /* pillar cards */
+  .pillars{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:20px 0;}
+  .pillar{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--gold);padding:16px 18px;}
+  .pillar.p-red{border-top-color:var(--red);} .pillar.p-green{border-top-color:var(--green);} .pillar.p-blue{border-top-color:var(--blue);}
+  .pillar h4{font-family:system-ui,sans-serif;font-weight:800;font-size:14px;letter-spacing:0.6px;
+    text-transform:uppercase;margin:0 0 6px;}
+  .pillar p{font-size:14px;color:var(--dim);margin:0;}
+  /* tables */
+  .tblwrap{overflow-x:auto;margin:18px 0;}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;}
+  th{font-family:system-ui,sans-serif;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
+    color:var(--faint);text-align:left;padding:8px 12px;border-bottom:2px solid var(--line);}
+  td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--dim);}
+  td:first-child{color:var(--ink);font-weight:600;white-space:nowrap;}
+  td .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;}
+  .ok{color:var(--green);font-weight:700;} .warn{color:var(--gold);font-weight:700;}
+  /* franchise timeline */
+  .fr{border-left:3px solid var(--line);margin:24px 0 8px 6px;padding-left:26px;display:flex;flex-direction:column;gap:26px;}
+  .fr-item{position:relative;}
+  .fr-item::before{content:'';position:absolute;left:-33.5px;top:6px;width:12px;height:12px;background:var(--bg);
+    border:3px solid var(--gold);border-radius:50%;}
+  .fr-item.live::before{background:var(--gold);}
+  .fr-item .when{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;letter-spacing:2px;color:var(--faint);text-transform:uppercase;}
+  .fr-item h4{font-family:system-ui,sans-serif;font-weight:900;font-stretch:condensed;font-size:19px;
+    letter-spacing:0.8px;text-transform:uppercase;margin:2px 0 6px;}
+  .fr-item h4 .tag{font-size:10px;letter-spacing:1.4px;color:var(--bg);background:var(--gold);padding:2px 8px;margin-left:8px;vertical-align:middle;}
+  .fr-item p{font-size:14.5px;color:var(--dim);margin:0;max-width:64ch;}
+  .quote{border-left:3px solid var(--gold);padding:4px 0 4px 18px;margin:22px 0;font-style:italic;font-size:17px;color:var(--dim);max-width:60ch;}
+  .quote .who{display:block;font-style:normal;font-family:ui-monospace,monospace;font-size:11px;letter-spacing:2px;color:var(--faint);margin-top:6px;text-transform:uppercase;}
+  footer{margin-top:60px;}
+  @media (prefers-reduced-motion: no-preference){
+    .annex{transition:border-color .2s;}
+  }
+</style>
+
+<div class="wrap">
+  <div class="classbar">Command Distribution · Marketing Directorate · For Planning Purposes</div>
+  <header>
+    <div class="doc-meta"><span>DOC 2026-FLC-01 · LAUNCH BRIEFING</span><span>BUILD v1.0.0 · STATUS: GO</span></div>
+    <h1>Frontline <span class="g">Commander</span><br>Launch Outlook &amp; Franchise Plan</h1>
+    <p class="subtitle">One battlefield, two audiences: built to stream, deep enough to main. The plan for taking it to market — and the two games that follow it.</p>
+  </header>
+
+  <section>
+    <div class="annex"><span class="ax">ANNEX A</span><h2>The Product at v1.0</h2></div>
+    <p class="lede">Frontline Commander is a single-file, zero-install lane-battler in the Age-of-War lineage, finished to launch depth. It is not a shell over a demo loop: under the frontend sits a genuine systems game — a damage-type × armour-class counter web across 14 units, per-lane terrain, weather, morale &amp; suppression, EW, veterancy, an in-battle tech tree, five-age Evolution, a persistent conquest map with reserve-CP logistics, and a career backend that remembers every battle you fight and every general you fight it against.</p>
+    <div class="tiles">
+      <div class="tile"><b>14</b><span>units in the counter web</span></div>
+      <div class="tile"><b>7</b><span>game modes</span></div>
+      <div class="tile"><b>9</b><span>doctrines</span></div>
+      <div class="tile"><b>20+</b><span>chat commands</span></div>
+      <div class="tile"><b>7</b><span>playable nations</span></div>
+      <div class="tile gr"><b>0</b><span>installs required</span></div>
+    </div>
+    <p>Everything spectacular is <b>opt-out</b>. Chaos mode, random events, gags, and chat sabotage each have their own switch, so the same build serves a Twitch mob one hour and a solo strategist the next. That toggle architecture is the product's core commercial bet.</p>
+  </section>
+
+  <section>
+    <div class="annex"><span class="ax">ANNEX B</span><h2>Positioning &amp; Pillars</h2></div>
+    <p><b>Category:</b> streamable strategy. <b>One-line pitch:</b> <i>an RTS where the chat is a player — and the enemy generals remember you.</i></p>
+    <div class="pillars">
+      <div class="pillar p-red"><h4>Chat is a player</h4><p>Anonymous Twitch IRC, no OAuth. Viewers surge lanes, summon bosses, drop supplies — and 50 chanting "nuke" glasses the field. Information-warfare commands gaslight the streamer's own screen. Clips manufacture themselves.</p></div>
+      <div class="pillar"><h4>Real depth underneath</h4><p>A measured counter web, terrain, weather, EW, veterancy and logistics. The balance gradient is playtested by machine: Recruit teaches, Legendary beats a strong scripted player two games in three.</p></div>
+      <div class="pillar p-green"><h4>A career that remembers</h4><p>Service Record, per-unit history, medals, and rivalry memory — beat a general three times and their next intro admits it. Character depth players keep coming back to.</p></div>
+      <div class="pillar p-blue"><h4>Session in five minutes</h4><p>10-second prep phase, one HTML file, runs anywhere a browser runs. The distance from link to first kill is under a minute.</p></div>
+    </div>
+    <div class="quote">"You. Three times you've humiliated me. There is no plan B this time — there is only artillery."
+      <span class="who">— Marshal Dubois, to a returning player. This is what retention sounds like.</span></div>
+  </section>
+
+  <section>
+    <div class="annex"><span class="ax">ANNEX C</span><h2>Audiences &amp; Channels</h2></div>
+    <div class="tblwrap"><table>
+      <tr><th>Segment</th><th>What hooks them</th><th>Channel</th><th>Proof asset</th></tr>
+      <tr><td>Streamers &amp; clip economy</td><td>Chat commands, infowar sabotage, chaos mode, hype trains</td><td>Twitch creator outreach, clip compilations on TikTok/Shorts</td><td>30-sec "chat nuked my base" clip reel</td></tr>
+      <tr><td>Strategy players</td><td>Counter web, doctrines, Legendary difficulty, War Mode logistics</td><td>Steam, r/RealTimeStrategy, strategy YouTube essayists</td><td>Field Manual + measured balance writeup</td></tr>
+      <tr><td>Age-of-War nostalgia</td><td>Evolution mode: five ages, base turrets, evolve-or-die</td><td>Flash-revival communities, itch.io, web portals</td><td>"The lane battler grew up" trailer beat</td></tr>
+      <tr><td>Idle web players</td><td>Zero install, 5-minute sessions, daily challenge</td><td>Web portals, browser-game aggregators</td><td>Playable link — the game is its own ad</td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <div class="annex"><span class="ax">ANNEX D</span><h2>Go-to-Market — Three Phases</h2></div>
+    <div class="tblwrap"><table>
+      <tr><th>Phase</th><th>Window</th><th>Moves</th><th>Gate to next</th></tr>
+      <tr><td>1 · Soft launch</td><td>Weeks 0–4</td><td>itch.io + web portals; daily challenge as return hook; Field Manual doubles as press kit; collect balance telemetry</td><td class="mono">1k WAU, D7 &gt; 8%</td></tr>
+      <tr><td>2 · Creator surge</td><td>Weeks 4–12</td><td>20 mid-size Twitch strategy/variety streamers; "Chat vs Commander" event format; infowar command reveal as content beat; clip pipeline to Shorts</td><td class="mono">3 organic clips &gt; 100k views</td></tr>
+      <tr><td>3 · Steam launch</td><td>Months 4–6</td><td>Steam release with achievements mapped to medals; launch discount tied to a community "war week"; chaos mode featured in the trailer's last 10 seconds</td><td class="mono">Review score &gt; 85%</td></tr>
+    </table></div>
+    <h3>KPIs that matter</h3>
+    <ul>
+      <li><b>Clip velocity</b> — clips published per 100 streamed hours; the streamer suite exists to maximize this.</li>
+      <li><b>Purist retention</b> — D30 among players with gags/chaos toggled <i>off</i>; proves the strategy core stands alone.</li>
+      <li><b>Rivalry depth</b> — median battles against a single general; measures whether character memory drives return sessions.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="annex"><span class="ax">ANNEX E</span><h2>The Franchise — Three Titles, One War</h2></div>
+    <p>The Iron Marshal is the franchise voice; the rival generals are its recurring cast; the counter web is its shared combat grammar. Each title serves a different session length with the same fiction.</p>
+    <div class="fr">
+      <div class="fr-item live">
+        <span class="when">Now · v1.0 shipped</span>
+        <h4>Frontline Commander<span class="tag">Live</span></h4>
+        <p>The lane battler. Five-minute sessions, streamer-native, career memory. The franchise's front door and clip factory.</p>
+      </div>
+      <div class="fr-item">
+        <span class="when">Title II · +12 months</span>
+        <h4>Frontline Commander: Grand Theater</h4>
+        <p>The staff-college game, productized from our existing full-scale war simulator engine — the validated one with sensor physics, belief &amp; disinformation modeling, logistics tonnage, casualty chains and orbital warfare. Sessions are campaigns, not battles. Same generals, now across whole theaters; your Commander career imports as your officer dossier. Positioned against grand strategy, priced as the "serious" tier.</p>
+      </div>
+      <div class="fr-item">
+        <span class="when">Title III · +20 months</span>
+        <h4>Frontline: Pocket Wars</h4>
+        <p>Mobile roguelite auto-battler: draft a doctrine, run a 10-node war map, one-hand play. The counter web becomes a deck; the generals become bosses with the same voices and grudges. Free with cosmetic nations — the reach title that feeds players back to the other two.</p>
+      </div>
+    </div>
+    <p><b>Why this order works:</b> Commander builds the audience and the cast cheaply; Grand Theater monetizes the depth-seeking segment with an engine that already exists; Pocket Wars converts reach into franchise identity. Shared save signals — rank, rivalries, medals — make each title a funnel into the others.</p>
+  </section>
+
+  <section>
+    <div class="annex"><span class="ax">ANNEX F</span><h2>Risks &amp; Mitigations</h2></div>
+    <div class="tblwrap"><table>
+      <tr><th>Risk</th><th>Read</th><th>Mitigation</th></tr>
+      <tr><td>Streamer fatigue</td><td class="warn">Medium</td><td>Chaos is a mode, not the game; seasonal chat-command drops keep the format fresh</td></tr>
+      <tr><td>"Just a flash game" perception</td><td class="warn">Medium</td><td>Lead strategy-channel pitches with the Field Manual, measured balance, and Legendary challenge runs</td></tr>
+      <tr><td>Single-dev bus factor</td><td class="ok">Low</td><td>One-file architecture + CODE_GUIDE means any contributor is productive in a day</td></tr>
+      <tr><td>Platform (Twitch API) shift</td><td class="ok">Low</td><td>Read-only anonymous IRC today; simulated-chat fallback already ships in the build</td></tr>
+    </table></div>
+  </section>
+
+  <footer>
+    <div class="classbar">End of Briefing · Frontline Command · "Bank the points. Break the line. Take the war."</div>
+  </footer>
+</div>
