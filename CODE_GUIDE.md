@@ -529,6 +529,33 @@ same pipeline, so the damage matrix applies to them too.
   strikes/big-chat-powers/meme-shouts every ~1.6–4 s, and a strobing overload
   tint. Everything still honours `reduceMotion`.
 
+## 🧠 Information warfare (streamer gaslighting chat commands)
+
+Chat commands that sabotage the **streamer's perception/UI** (not game balance),
+routed through the same big-vote `chatPower` system with `IW_POWERS` thresholds.
+State lives on `G.info`; `infoTick(dt)` decays timers and `infoClear()` wipes
+everything on `endGame`/`showTitle`. Effects:
+
+- **`iwPhantom`** — flags healthy player units with `u.phantom` (fake skull +
+  red flash drawn in `drawUnit`, fake death sound); no real damage.
+- **`iwGaslight`** (`G.info.gaslightT`) — `syncHUD` forces the strike/recon/emp
+  cards to look ready (`.iw-fakeready` glow, timers hidden); every ability's
+  `try*` calls `iwGaslightBlock()` first, so clicks fizzle with a denial buzz.
+- **`iwFog`** (`G.info.fog`, `drawInfoFog`) — a black radial blob hides a random
+  slice of the field in world space.
+- **`iwPing`** (`G.info.ping`, `drawInfoPing`, `iwSiren`) — a pulsing "UNDER
+  ATTACK" marker + air-raid siren in an empty corner (screen space).
+- **`iwGray`** — `body.iw-gray` grayscales `#hud`/`#cv` for 15 s.
+- **`iwTunnel`** — `#iw-tunnel` radial-mask vignette whose hole follows the
+  cursor (window `pointermove` sets `--mx/--my`).
+- **`iwJumble`** (`jumbleUI`) — randomises flex `order` on hotbar cards + tilts
+  the bar; fully reversible (ids/handlers untouched).
+- **`iwDonate`** — a stylised `#iw-donate` fake-donation gag popup (generic, no
+  real brand — a self-aware in-game bit, not a real record).
+
+Everything honours `SAVE.reduceMotion` where it shakes, and only fires in a live
+battle (`onChatMsg` guards) — the simulated offline chat never sends these words.
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass

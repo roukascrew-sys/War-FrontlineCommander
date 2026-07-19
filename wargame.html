@@ -191,6 +191,20 @@
   #cutscene.show .cs-inner{transform:scale(1);}
   #cutscene .cs-sub{font-size:12px;font-weight:800;letter-spacing:4px;color:var(--gold);margin-bottom:8px;text-shadow:0 2px 10px #000;}
   #cutscene .cs-cap{font-size:clamp(20px,4vw,34px);font-weight:900;color:#fff;letter-spacing:1px;text-shadow:0 3px 18px #000,0 0 30px #000;max-width:80vw;line-height:1.2;}
+  /* ── 🧠 INFORMATION WARFARE overlays ── */
+  body.iw-gray #hud, body.iw-gray #cv{filter:grayscale(1) contrast(1.05);}
+  .card.iw-fakeready{box-shadow:0 0 0 2px #3fd07a inset,0 0 14px #3fd07a99;animation:iwglow .8s ease-in-out infinite;}
+  @keyframes iwglow{50%{box-shadow:0 0 0 2px #7fffaa inset,0 0 22px #7fffaacc;}}
+  #iw-tunnel{position:absolute;inset:0;z-index:34;pointer-events:none;opacity:0;transition:opacity .4s;
+    --mx:50%;--my:50%;background:radial-gradient(circle 150px at var(--mx) var(--my),transparent 0,transparent 120px,rgba(0,0,0,0.86) 300px,#000 60%);}
+  #iw-tunnel.show{opacity:1;}
+  #iw-donate{position:absolute;top:26%;left:50%;transform:translate(-50%,-14px);z-index:41;pointer-events:none;
+    width:min(420px,84vw);text-align:center;padding:16px 22px;border-radius:14px;opacity:0;transition:.3s;
+    background:linear-gradient(135deg,#1a2740,#0e1622);border:2px solid #3fd07a;box-shadow:0 12px 40px #000a,0 0 30px #3fd07a55;}
+  #iw-donate.show{opacity:1;transform:translate(-50%,0);}
+  #iw-donate .iwd-head{font-size:12px;font-weight:800;letter-spacing:3px;color:#3fd07a;}
+  #iw-donate .iwd-amt{font-size:19px;font-weight:900;color:var(--gold);margin:5px 0 4px;}
+  #iw-donate .iwd-msg{font-size:14px;color:var(--ink);font-style:italic;}
 
   /* ── war-map ambient explosions ── */
   .warflash{position:absolute;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
@@ -549,6 +563,9 @@
   </div>
   <!-- combat cutscene overlay (random event) -->
   <div id="cutscene"><div class="cs-bar top"></div><div class="cs-inner"><div class="cs-sub"></div><div class="cs-cap"></div></div><div class="cs-bar bot"></div></div>
+  <!-- 🧠 information-warfare overlays (streamer gaslighting) -->
+  <div id="iw-tunnel"></div>
+  <div id="iw-donate"><div class="iwd-head">💸 NEW DONATION</div><div class="iwd-amt">viewer donated $5</div><div class="iwd-msg">"gg"</div></div>
 
   <!-- generated news sidebar -->
   <div id="newsbar">
@@ -1631,6 +1648,7 @@ function newGame(){
   G.cvVotes={0:0,1:0,2:0}; G.cvVoters={}; G.cvT=CHATLINK.voteEvery; G.bossMeter=0; G.bossVoters={};
   G.dropMeter=0; G.dropVoters={}; G.chaosMeter=0; G.chaosVoters={}; // Phase 2 chat command meters
   G.chatPowers={}; // Phase 2 big-vote chat powers (nuke / storm / fortify / blitz)
+  G.info={grayT:0,tunnelT:0,gaslightT:0,fogT:0,fog:null,ping:null,jumbleT:0}; // 🧠 information-warfare effects
   // 🤪 BETA CHAOS / MEME MODE — crank everything for maximum clippable mayhem
   G.chaos = !!SAVE.chaosMode && kind!=='tutorial' && !G.attract;
   if(G.chaos){ G.cpRate*=3.2; G.ecpRate*=3.0; G.cpMax=750; G.cp=340; G.revT=rnd(2.5,5); G.prep=Math.min(G.prep,3); }
@@ -1740,6 +1758,7 @@ function strikeCdMax(type){ const base=STRIKES[type].cd; return base*(G&&G.perk&
 function strikeReady(type){ return G && (G.strikeCds[type]||0)<=0 && !G.over && !G.paused && !G.frozen; }
 // PRECISION — a fast pinpoint munition (the classic strike, tuned down + quick CD)
 function tryPrecision(lane,x){
+  if(iwGaslightBlock())return false;
   if(!strikeReady('precision'))return false;
   G.strikeCds.precision=strikeCdMax('precision');
   const sup=(G.ages?AGES[G.age].sup:1);
@@ -1756,6 +1775,7 @@ function tryPrecision(lane,x){
 }
 // GUNSHIP RUN — a strafing aircraft sweeps ONE lane with cannon fire over ~2.6s
 function tryGunshipRun(lane){
+  if(iwGaslightBlock())return false;
   if(!strikeReady('gunrun'))return false;
   G.strikeCds.gunrun=strikeCdMax('gunrun');
   const sup=(G.ages?AGES[G.age].sup:1);
@@ -1793,6 +1813,7 @@ function drawGunrun(){
 }
 // ROLLING BARRAGE — a creeping wall of fire walks up ALL lanes over ~60s
 function tryBarrage(){
+  if(iwGaslightBlock())return false;
   if(!strikeReady('barrage'))return false;
   G.strikeCds.barrage=strikeCdMax('barrage');
   const sup=(G.ages?AGES[G.age].sup:1);
@@ -1830,6 +1851,7 @@ function tryStrike(type,lane,x){
 }
 /* ── COMMANDER POWERS: Recon Flare (free intel) & EMP Pulse (rank 3, jams a lane) ── */
 function tryRecon(lane){
+  if(iwGaslightBlock())return false;
   if(!G||G.reconCd>0||G.over||G.paused)return false;
   G.reconCd=G.reconMax;
   G.flareLane=lane; G.flareT=6.5;
@@ -1841,6 +1863,7 @@ function tryRecon(lane){
   return true;
 }
 function tryEmp(lane){
+  if(iwGaslightBlock())return false;
   if(!G||G.empCd>0||G.over||G.paused||SAVE.lvl<3)return false;
   G.empCd=G.empMax;
   G.empLane=lane; G.empT=3.4;
@@ -2287,6 +2310,7 @@ function step(dt){
   newsTick(dt);
   randomEventTick(dt);        // optional battlefield surprises (settings-gated)
   if(G.chaos)chaosTick(dt);   // 🤪 beta chaos/meme mode mayhem
+  infoTick(dt);               // 🧠 information-warfare effect timers
   dropTick(dt);               // falling supply crates
   if(G.ages)ageTick(dt);      // Age-of-War: enemy evolves over time
   turretTick(dt);             // base turrets fire
@@ -2401,6 +2425,7 @@ function updateUnits(dt){
     // during prep everything holds position — just breathe the idle animation
     if(G.frozen){ u.bob+=dt*3; if(u.muzzle>0)u.muzzle-=dt; if(u.hitFlash>0)u.hitFlash-=dt*4; continue; }
     if(u.muzzle>0)u.muzzle-=dt; if(u.hitFlash>0)u.hitFlash-=dt*4;
+    if(u.phantom>0)u.phantom-=dt; // 👻 fake-death marker fades on its own
     if(u.sup>0)u.sup=Math.max(0,u.sup-dt*0.34); // morale recovers over time
     if(G.empT>0&&u.side==='R'&&u.lane===G.empLane)u.sup=Math.max(u.sup||0,0.95); // EMP pulse jams a lane
     u.bob+=dt*6;
@@ -2536,10 +2561,12 @@ function draw(){
     drawParts();
     drawDrops();
     drawGunrun();
+    drawInfoFog();     // 🌫 schrödinger fog (world space)
     drawPowerFX();
     drawWeather();
   }
   cx.restore();
+  drawInfoPing();      // ⚠ ghost ping (screen space)
   // cinematic vignette (screen-space, unaffected by shake)
   const vg=cx.createRadialGradient(W/2,H*0.52,H*0.32,W/2,H*0.52,H*0.82);
   vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,0.34)');
@@ -2804,6 +2831,13 @@ function drawUnit(u){
   if(u.age>0&&AGES[u.age]){cx.beginPath();cx.arc(x,y,u.r+4,0,6.28);cx.strokeStyle=AGES[u.age].col;cx.lineWidth=1.3;cx.globalAlpha=0.65;cx.stroke();cx.globalAlpha=1;}
   // the representational little model
   drawUnitSprite(u,x,y);
+  // 👻 phantom casualty — a fake death skull + red flash over a perfectly healthy unit
+  if(u.phantom>0){
+    const fl=(Math.sin(performance.now()/70)+1)/2;
+    cx.fillStyle='rgba(255,60,50,'+(0.30+0.25*fl)+')';cx.beginPath();cx.arc(x,y,u.r+2,0,6.28);cx.fill();
+    cx.font='bold '+(u.r+4)+'px var(--font)';cx.textAlign='center';cx.textBaseline='middle';cx.fillStyle='#fff';
+    cx.fillText('💀',x,y-u.r-8);cx.textBaseline='alphabetic';
+  }
   // muzzle flash
   if(u.muzzle>0){cx.fillStyle='rgba(255,220,120,0.9)';cx.beginPath();
     const dx=u.side==='B'?u.r+4:-u.r-4;cx.arc(x+dx,y,4,0,6.28);cx.fill();}
@@ -2956,6 +2990,12 @@ function syncHUD(){
     el.classList.toggle('cant',atCap||G.cp<SPAWNERS[type].cost);
     el.classList.toggle('sel',G.selCard==='sp-'+type);
   }
+  // 🎛 GASLIT COOLDOWNS — every ability card LOOKS ready (glow, no timer) but will fizzle
+  const gaslit=G.info&&G.info.gaslightT>0;
+  for(const id of ['card-gunrun','card-barrage','card-precision','card-recon','card-emp']){ const el=document.getElementById(id); if(!el)continue;
+    el.classList.toggle('iw-fakeready',gaslit);
+    if(gaslit){ const cd=el.querySelector('.cd'); if(cd)cd.style.display='none'; el.classList.remove('cant'); }
+  }
 }
 
 /* ═══ HOTBAR UI ═══ */
@@ -3050,6 +3090,9 @@ cv.addEventListener('pointermove',e=>{
   const r=cv.getBoundingClientRect(); G.hoverLane=laneFromY(e.clientY-r.top);
 });
 cv.addEventListener('pointerleave',()=>{ if(G)G.hoverLane=-1; });
+// 🔦 tunnel-vision spotlight follows the cursor across the whole screen
+window.addEventListener('pointermove',e=>{ if(G&&G.info&&G.info.tunnelT>0){ const t=document.getElementById('iw-tunnel');
+  if(t){ t.style.setProperty('--mx',e.clientX+'px'); t.style.setProperty('--my',e.clientY+'px'); } } },{passive:true});
 // click the prep banner to skip the countdown and start immediately
 { const pbEl=document.getElementById('prepbanner'); if(pbEl)pbEl.addEventListener('pointerdown',()=>{ if(G&&G.prep>0)G.prep=0.001; }); }
 cv.addEventListener('pointerdown',e=>{
@@ -3146,6 +3189,119 @@ function clipMoment(){
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   🧠 INFORMATION WARFARE — chat commands that mess with the STREAMER'S
+   perception & UI, not the game balance. Pure gaslighting for the clips.
+   All effects are cosmetic/temporary and self-clean via infoTick / cleanup.
+   ═══════════════════════════════════════════════════════════════════════ */
+function iwActive(){ return G&&G.info; }
+function iwSay(msg,col){ if(SAVE.streamOn)chatMsgRaw('FRONTLINE',msg,col||'#c9a0ff'); }
+// a short "denied" buzzer for gaslit ability clicks
+function iwDenied(){ if(!SAVE.sound)return; beep(150,0.08,'square',0.05); setTimeout(()=>beep(110,0.12,'sawtooth',0.05),70); }
+// a rising/falling air-raid siren for ghost pings
+function iwSiren(){ if(!SAVE.sound)return; const c=actx(); if(!c)return;
+  try{ const o=c.createOscillator(),g=c.createGain(); o.type='sawtooth'; const t=c.currentTime;
+    o.frequency.setValueAtTime(440,t); o.frequency.linearRampToValueAtTime(760,t+0.5); o.frequency.linearRampToValueAtTime(440,t+1.0);
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.05,t+0.1); g.gain.setValueAtTime(0.05,t+0.9); g.gain.exponentialRampToValueAtTime(0.0001,t+1.1);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+1.15);
+  }catch(e){} }
+
+// 1) 👻 PHANTOM CASUALTIES — fake skulls + death sounds over healthy front-line units
+function iwPhantom(){
+  if(!iwActive())return;
+  const healthy=G.units.filter(u=>u.side==='B'&&u.alive&&u.hp>=u.maxHp*0.85);
+  const marks=healthy.sort(()=>Math.random()-0.5).slice(0,Math.min(5,healthy.length));
+  marks.forEach((u,i)=>{ u.phantom=3.4; setTimeout(()=>{ try{ if(u.alive){ SND.boom(u.cat==='veh'||u.cat==='arty'); G.shake=Math.max(G.shake,SAVE.reduceMotion?2:5); } }catch(e){} }, i*160); });
+  announce('👻 PHANTOM CASUALTIES','...are your units dying? (no)','#c9a0ff');
+  iwSay('chat makes your line "die" — check twice before you retreat 💀','#c9a0ff');
+}
+// 2) 🎛 GASLIT COOLDOWNS — abilities LOOK ready but fizzle on use
+function iwGaslight(){ if(!iwActive())return; G.info.gaslightT=13;
+  announce('🎛 GASLIT COOLDOWNS','they look ready. trust nothing','#ff9f40');
+  iwSay('your abilities are lying to you now 🎛','#ff9f40'); }
+// 3) 🌫 SCHRÖDINGER FOG — a black blob hides a random slice of the field
+function iwFog(){ if(!iwActive())return; G.info.fogT=10;
+  G.info.fog={ x:rnd(W*0.34,W*0.82), y:G.laneY[(Math.random()*3)|0]*H+rnd(-30,30), r:rnd(150,230) };
+  announce('🌫 SCHRÖDINGER FOG','army in there? or nothing? who knows','#8fd0ff');
+  iwSay('a wall of fog — is the enemy massing behind it? 🌫','#8fd0ff'); }
+// 4) ⚠ GHOST PING — blaring "UNDER ATTACK" siren + marker in an EMPTY corner
+function iwPing(){ if(!iwActive())return;
+  const corner=pick([[0.16,0.16],[0.16,0.86],[0.86,0.16],[0.86,0.86]]);
+  G.info.ping={ x:corner[0]*W, y:corner[1]*H, t:4.5 }; iwSiren();
+  announce('⚠ UNDER ATTACK','','#ff5a4a');
+  iwSay('⚠ UNDER ATTACK ⚠ (there is nothing there. look anyway.)','#ff5a4a'); }
+// 5) 🎨 COLOR DRAIN — grayscale for 15s so red/blue reads as one grey mush
+function iwGray(){ if(!iwActive())return; G.info.grayT=15; document.body.classList.add('iw-gray');
+  announce('🎨 COLOR DRAIN','who is friendly again?','#8a94a6');
+  iwSay('good luck telling friend from foe 🎨','#c9a0ff'); }
+// 6) 🔦 TUNNEL VISION — heavy vignette; you can only see around the cursor
+function iwTunnel(){ if(!iwActive())return; G.info.tunnelT=12;
+  const el=document.getElementById('iw-tunnel'); if(el)el.classList.add('show');
+  announce('🔦 TUNNEL VISION','find the battle with your mouse','#c9a0ff');
+  iwSay('here is a flashlight. the rest is dark 🔦','#c9a0ff'); }
+// 7) 🔀 UI JUMBLE — shuffle the hotbar + nudge panels so muscle memory breaks
+function iwJumble(){ if(!iwActive())return; G.info.jumbleT=15; jumbleUI(true);
+  announce('🔀 UI JUMBLE','your buttons moved. good luck','#ffdf7f');
+  iwSay('rearranged your whole UI 🔀 enjoy','#ffdf7f'); }
+function jumbleUI(on){
+  const hb=document.getElementById('hotbar'); if(!hb)return;
+  const cards=[...hb.children];
+  if(on){ cards.forEach(c=>{ c.style.order=(Math.random()*100)|0; }); hb.style.transform='translateX(-50%) rotate('+rnd(-2.5,2.5)+'deg)'; document.body.classList.add('iw-jumble'); }
+  else { cards.forEach(c=>{ c.style.order=''; }); hb.style.transform=''; document.body.classList.remove('iw-jumble'); }
+}
+// 8) 💸 "DONATION" — a stylised fake dono alert (a game gag) yanks attention mid-fight
+function iwDonate(){ if(!iwActive())return;
+  const el=document.getElementById('iw-donate'); if(!el)return;
+  const u=pick(CHAT_USERS), amt=pick(['$5','$10','$20','$50','$100']);
+  const msg=pick(['gg keep it up','you got this... probably','why is it grey','stop looking at chat','the fog is empty btw','clip #4372','no thoughts head empty','turn around']);
+  el.querySelector('.iwd-amt').textContent=u+' donated '+amt;
+  el.querySelector('.iwd-msg').textContent='"'+msg+'"';
+  el.classList.add('show'); if(SAVE.sound)beep(880,0.1,'sine',0.05),setTimeout(()=>beep(1180,0.12,'sine',0.05),110);
+  clearTimeout(iwDonate._t); iwDonate._t=setTimeout(()=>el.classList.remove('show'),4200);
+  iwSay('(that donation was fake. made you look though 💸)','#3fd07a');
+}
+// ── decay timers & auto-cleanup ──
+function infoTick(dt){
+  const I=G.info; if(!I)return;
+  if(I.grayT>0){ I.grayT-=dt; if(I.grayT<=0)document.body.classList.remove('iw-gray'); }
+  if(I.tunnelT>0){ I.tunnelT-=dt; if(I.tunnelT<=0){ const e=document.getElementById('iw-tunnel'); if(e)e.classList.remove('show'); } }
+  if(I.jumbleT>0){ I.jumbleT-=dt; if(I.jumbleT<=0)jumbleUI(false); }
+  if(I.gaslightT>0)I.gaslightT-=dt;
+  if(I.fogT>0){ I.fogT-=dt; if(I.fogT<=0)I.fog=null; }
+  if(I.ping){ I.ping.t-=dt; if(I.ping.t<=0)I.ping=null; }
+}
+// clear every info-warfare effect (called on battle end / leaving)
+function infoClear(){
+  try{ document.body.classList.remove('iw-gray','iw-jumble');
+    const t=document.getElementById('iw-tunnel'); if(t)t.classList.remove('show');
+    const d=document.getElementById('iw-donate'); if(d)d.classList.remove('show');
+    jumbleUI(false);
+  }catch(e){}
+  if(G&&G.info)G.info={grayT:0,tunnelT:0,gaslightT:0,fogT:0,fog:null,ping:null,jumbleT:0};
+}
+// draw the world-space fog blob (called inside the shaken world transform)
+function drawInfoFog(){
+  const I=G&&G.info; if(!I||!I.fog)return; const f=I.fog;
+  const a=clamp(I.fogT/1.2,0,1);
+  const g=cx.createRadialGradient(f.x,f.y,f.r*0.35,f.x,f.y,f.r);
+  g.addColorStop(0,'rgba(4,6,10,'+(0.98*a)+')'); g.addColorStop(0.7,'rgba(4,6,10,'+(0.9*a)+')'); g.addColorStop(1,'rgba(4,6,10,0)');
+  cx.fillStyle=g; cx.beginPath(); cx.arc(f.x,f.y,f.r,0,6.28); cx.fill();
+  cx.fillStyle='rgba(180,200,230,'+(0.5*a)+')'; cx.font='bold 13px var(--mono)'; cx.textAlign='center'; cx.fillText('? ? ?',f.x,f.y);
+}
+// draw the screen-space ghost ping (called after the world transform is restored)
+function drawInfoPing(){
+  const I=G&&G.info; if(!I||!I.ping)return; const p=I.ping;
+  const pulse=(Math.sin(performance.now()/120)+1)/2;
+  cx.save(); cx.globalAlpha=0.6+0.4*pulse;
+  cx.strokeStyle='#ff3020'; cx.lineWidth=3; cx.beginPath(); cx.arc(p.x,p.y,18+pulse*14,0,6.28); cx.stroke();
+  cx.fillStyle='#ff3020'; cx.beginPath(); cx.arc(p.x,p.y,5,0,6.28); cx.fill();
+  cx.font='bold 12px var(--mono)'; cx.textAlign='center'; cx.fillStyle='#ff6a5a';
+  cx.fillText('⚠ UNDER ATTACK', p.x, p.y-26);
+  cx.restore();
+}
+// gaslight guard — while active, any ability click fizzles with a denial
+function iwGaslightBlock(){ if(G&&G.info&&G.info.gaslightT>0){ iwDenied(); if(G)floatText(W*0.5,H*0.4,'NOT READY','#ff5a4a'); return true; } return false; }
+
+/* ═══════════════════════════════════════════════════════════════════════
    PHASE 2 — LIVE STREAMER CHAT (real Twitch integration)
    Connects anonymously (read-only) to a Twitch channel's chat over IRC-WS —
    no login, no OAuth, no keys. Viewers steer the ENEMY: "top / mid / bot"
@@ -3223,9 +3379,20 @@ function onChatMsg(user,text){
   if(/^(storm|rain|arty)$/.test(t)){ chatPower(user,'storm',CHAT_POWERS.storm,'⛈ STORM OF STEEL',chatStorm); return; }
   if(/^(fortify|heal|shield)$/.test(t)){ chatPower(user,'fortify',CHAT_POWERS.fortify,'🛡 FORTIFY',chatFortify); return; }
   if(/^(blitz|zerg|charge|rush)$/.test(t)){ chatPower(user,'blitz',CHAT_POWERS.blitz,'⚔ CHAT BLITZ',chatBlitz); return; }
+  // ── 🧠 INFORMATION WARFARE — perception & UI sabotage aimed at the streamer ──
+  if(/^(phantom|phantomcasualties|ghosts?)$/.test(t)){ chatPower(user,'iw_phantom',IW_POWERS.phantom,'👻 PHANTOM CASUALTIES',iwPhantom); return; }
+  if(/^(gaslight|gaslightcooldowns|fakecd)$/.test(t)){ chatPower(user,'iw_gaslight',IW_POWERS.gaslight,'🎛 GASLIT COOLDOWNS',iwGaslight); return; }
+  if(/^(fog|schrodinger|schrödinger|schrodingersfog)$/.test(t)){ chatPower(user,'iw_fog',IW_POWERS.fog,'🌫 SCHRÖDINGER FOG',iwFog); return; }
+  if(/^(ping|ghostping|attack)$/.test(t)){ chatPower(user,'iw_ping',IW_POWERS.ping,'⚠ GHOST PING',iwPing); return; }
+  if(/^(colordrain|colourdrain|gray|grey|greyscale|grayscale)$/.test(t)){ chatPower(user,'iw_gray',IW_POWERS.gray,'🎨 COLOR DRAIN',iwGray); return; }
+  if(/^(tunnel|tunnelvision)$/.test(t)){ chatPower(user,'iw_tunnel',IW_POWERS.tunnel,'🔦 TUNNEL VISION',iwTunnel); return; }
+  if(/^(jumble|uijumble|scramble)$/.test(t)){ chatPower(user,'iw_jumble',IW_POWERS.jumble,'🔀 UI JUMBLE',iwJumble); return; }
+  if(/^(dono|donate|fakedonate|donation)$/.test(t)){ chatPower(user,'iw_dono',IW_POWERS.dono,'💸 "DONATION"',iwDonate); return; }
 }
 // how many UNIQUE chatters must chant a word to trigger each power
 const CHAT_POWERS={ nuke:50, storm:22, fortify:16, blitz:26 };
+// information-warfare thresholds — cruel, temporary trolls, so a little cheaper to rally
+const IW_POWERS={ phantom:10, gaslight:12, fog:12, ping:8, gray:14, tunnel:12, jumble:16, dono:6 };
 function chatPower(user,key,threshold,label,fn){
   if(!G||G.over)return;
   const p=G.chatPowers[key]||(G.chatPowers[key]={voters:{},n:0});
@@ -3344,7 +3511,7 @@ function chatVoteTick(dt){
 function endGame(winner,reason){
   if(G.over)return;
   G.over=true; G.result=winner;
-  ambientStop();
+  ambientStop(); infoClear();
   const won=winner==='B';
   if(won)SND.win(); else SND.lose();
   if(won)musicStart('victory'); else musicSetTheme('menu');
@@ -3928,6 +4095,18 @@ function renderManualBody(tab){
     <h2>Streaming</h2>
     <p>Connect <b>📡 Live Chat</b> to a Twitch channel and viewers can vote on lanes, summon bosses, call <b>supply drops</b>, roll <b>chaos</b> events, and drive the on-screen <b>hype meter</b> (a full "hype train" pays out bonus CP and a crate). Big chants take many unique chatters: <b>fortify</b> (16) heals your army, <b>storm</b> (22) shells every lane, <b>blitz</b> (26) drops a free wave, and <b>nuke</b> (50) glasses the whole field. Great for streamers who want the audience in the fight.</p>
     <p><b>🤪 Chaos / Meme Mode (beta)</b> — flip it on in ⚙ Settings, then start any battle for nonstop explosions, free spawns, rapid events and mayhem. Built purely for clips.</p>
+    <h2>🧠 Information Warfare (chat gaslighting)</h2>
+    <p>When live chat is connected, enough unique chatters chanting one of these can mess with the <b>streamer's own screen</b> — pure clip-bait:</p>
+    <ul>
+      <li><b>!phantom</b> — fake death skulls & sounds over perfectly healthy units.</li>
+      <li><b>!gaslight</b> — every ability bar <i>looks</i> ready but fizzles when clicked.</li>
+      <li><b>!fog</b> — a black blob hides a random slice of the field (army in there… or nothing?).</li>
+      <li><b>!ping</b> — a blaring "UNDER ATTACK" siren & marker in an empty corner.</li>
+      <li><b>!colordrain</b> — the whole game goes grayscale; good luck telling friend from foe.</li>
+      <li><b>!tunnel</b> — heavy vignette; you can only see a spotlight around your cursor.</li>
+      <li><b>!jumble</b> — shuffles the hotbar and tilts the UI to shatter muscle memory.</li>
+      <li><b>!dono</b> — a fake "donation" alert yanks your attention mid-fight.</li>
+    </ul>
     <h2>Random Events</h2>
     <p>Battles can throw <b>surprises</b>: airdropped <b>supply crates</b>, off-the-rails narrator lines, cinematic <b>combat cutscenes</b>, a sudden <b>artillery barrage</b>, or an enemy <b>defector</b> switching sides. Turn any of them on or off — or all at once — in <b>⚙ Settings → Random Events</b>.</p>`;
   } else if(tab==='tips'){
@@ -4094,7 +4273,7 @@ function attractTick(dt){
 
 /* ── TITLE SCREEN ── */
 function showTitle(){
-  ambientStop();
+  ambientStop(); infoClear();
   ['menu','warmap','results','hud','pauseScreen','manual','settings'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('title').classList.remove('hidden');
