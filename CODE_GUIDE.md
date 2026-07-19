@@ -506,6 +506,29 @@ same pipeline, so the damage matrix applies to them too.
   `chaosTick` rains cosmetic explosions, free-spawns both sides, and fires
   events/strikes/meme-text on timers. HUD shows a "🤪 CHAOS MODE BETA" tag.
 
+## Unit sprites, title difficulty, A-10/AC-130 audio, chaos v2
+
+- **Representational unit sprites** (`drawUnitSprite`, `rr` helper) — `drawUnit`
+  no longer draws "coloured disc + glyph"; it calls `drawUnitSprite(u,x,y)` which
+  draws a little model per unit (soldier/AT/sniper/medic, tank, IFV, AA with
+  radar + missile rack, SPG/MLRS with barrels/tubes, EW dish, helicopter with
+  rotor disc, quad-rotor drone, interceptor jet, AC-130-style gunship). Drawn in
+  a ±14 box, scaled by `u.r`, mirrored to face the enemy (`f = side==='B'?1:-1`).
+  To add a unit's look, add a branch keyed on `u.key`/`u.cat`.
+- **Global difficulty on the title** (`buildTitleDiff`, `#title-diff`) — chips on
+  the title set `sel.diff`, which every launcher already reads (`launchEvolution`,
+  the options menu, etc.), so difficulty is chosen once for all modes (War Mode
+  still derives its own per-node difficulty by design).
+- **A-10 / AC-130 audio** — `a10Brrrt(dur,vol)` is a ~60 Hz sawtooth buzz +
+  gritty bandpassed noise (the GAU-8 "BRRRT"), retriggered on a cadence in
+  `gunrunTick`; `ac130(vol)` is a heavy 105 mm "THOOMP" (muzzle clank + deep
+  `cannon` body + long low `thump` tail) used by the gunship unit in
+  `gunshipTick`.
+- **Chaos v2** (`chaosTick`) — cranked hard: economy ×3.2/×3.0, multiple
+  detonations per tick, 2–4 free spawns per wave (capped at 110 units), events/
+  strikes/big-chat-powers/meme-shouts every ~1.6–4 s, and a strobing overload
+  tint. Everything still honours `reduceMotion`.
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass

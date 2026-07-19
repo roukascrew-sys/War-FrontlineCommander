@@ -259,6 +259,14 @@
   @keyframes titlepulse{50%{text-shadow:0 0 60px rgba(255,206,90,0.3),0 6px 20px #000;}}
   .title-tag{color:var(--ink);font-size:15px;font-weight:600;letter-spacing:1px;opacity:.9;text-shadow:0 2px 8px #000;}
   .title-btns{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:12px;}
+  /* global difficulty picker on the title (applies to Play, Evolution, etc.) */
+  .title-diff{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+  .title-diff .td-lbl{font-size:11px;font-weight:800;letter-spacing:2px;color:var(--dim);text-shadow:0 2px 6px #000;}
+  .td-chips{display:flex;gap:6px;flex-wrap:wrap;}
+  .td-chip{padding:6px 13px;border-radius:20px;border:1.5px solid var(--line);background:#0e1622dd;color:var(--dim);
+    font-size:12px;font-weight:800;letter-spacing:.5px;transition:.12s;}
+  .td-chip:hover{transform:translateY(-2px);color:var(--ink);}
+  .td-chip.on{color:var(--bg);}
   .title-btns2{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;}
   /* two headline mode buttons — each keyed to its own accent */
   .hero-btn{display:flex;align-items:center;gap:14px;padding:16px 26px;border-radius:14px;min-width:250px;
@@ -597,6 +605,7 @@
     <div id="title-inner">
       <div class="title-logo">⚔ <b>FRONTLINE</b><br><span>COMMANDER</span></div>
       <div class="title-tag" id="title-tag">Bank the points. Break the line. Take the war.</div>
+      <div class="title-diff" id="title-diff"><span class="td-lbl">DIFFICULTY</span><span class="td-chips" id="td-chips"></span></div>
       <div class="title-btns">
         <button class="hero-btn play" id="t-play"><span class="hb-ic">▶</span><span class="hb-tx"><b>PLAY</b><small>quick battle · pick doctrine &amp; mode</small></span></button>
         <button class="hero-btn evo" id="t-evo"><span class="hb-ic">🧬</span><span class="hb-tx"><b>EVOLUTION</b><small>Age of War · evolve through 5 ages</small></span></button>
@@ -1055,6 +1064,29 @@ function gunshot(vol,tone){ noiseHit(0.055,vol||0.05,tone||900,7000); thump(180,
 function cannon(vol,big){ noiseHit(big?0.34:0.2,vol||0.13,90,big?1400:2200); thump(big?150:120,big?32:42,big?0.5:0.32,(vol||0.13)*1.1);
   setTimeout(()=>noiseHit(big?0.5:0.28,(vol||0.13)*0.5,60,700),18); }
 function burst(n,gap,vol,tone){ for(let i=0;i<n;i++)setTimeout(()=>gunshot(vol,tone),i*gap); }
+// A-10 GAU-8 "BRRRT" — the Warthog's ~65Hz buzzsaw (a sawtooth growl + gritty noise)
+function a10Brrrt(dur,vol){ if(!SAVE.sound)return; const c=actx(); if(!c)return;
+  try{
+    const t=c.currentTime, D=dur||0.55, V=(vol||0.09);
+    const o=c.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(58,t); o.frequency.linearRampToValueAtTime(66,t+D);
+    const of=c.createBiquadFilter(); of.type='lowpass'; of.frequency.value=760;
+    const og=c.createGain(); og.gain.setValueAtTime(0.0001,t); og.gain.linearRampToValueAtTime(V,t+0.04);
+    og.gain.setValueAtTime(V,t+D-0.08); og.gain.exponentialRampToValueAtTime(0.0001,t+D);
+    o.connect(of); of.connect(og); og.connect(c.destination); o.start(t); o.stop(t+D+0.02);
+    // grit layer — bandpassed noise so it rasps rather than hums
+    const src=c.createBufferSource(); src.buffer=noiseBuffer(c); src.loop=true; src.playbackRate.value=0.45;
+    const nf=c.createBiquadFilter(); nf.type='bandpass'; nf.frequency.value=1500; nf.Q.value=0.6;
+    const ng=c.createGain(); ng.gain.setValueAtTime(0.0001,t); ng.gain.linearRampToValueAtTime(V*0.55,t+0.04);
+    ng.gain.setValueAtTime(V*0.55,t+D-0.08); ng.gain.exponentialRampToValueAtTime(0.0001,t+D);
+    src.connect(nf); nf.connect(ng); ng.connect(c.destination); src.start(t); src.stop(t+D+0.02);
+  }catch(e){}
+}
+// AC-130 105mm cannon — a slow, heavy "THOOMP" with a metallic clank and a long low tail
+function ac130(vol){ const V=vol||0.16;
+  noiseHit(0.05,V*0.55,900,4200);          // muzzle clank
+  cannon(V,true);                           // deep boom body
+  thump(78,26,0.6,V*0.8);                   // long rumbling tail
+}
 const SND={
   deploy:()=>beep(420,0.07,'square',0.05),
   shot:()=>gunshot(0.045,880),
@@ -1601,7 +1633,7 @@ function newGame(){
   G.chatPowers={}; // Phase 2 big-vote chat powers (nuke / storm / fortify / blitz)
   // 🤪 BETA CHAOS / MEME MODE — crank everything for maximum clippable mayhem
   G.chaos = !!SAVE.chaosMode && kind!=='tutorial' && !G.attract;
-  if(G.chaos){ G.cpRate*=2.4; G.ecpRate*=2.2; G.cpMax=520; G.cp=260; G.revT=rnd(4,8); G.prep=Math.min(G.prep,4); }
+  if(G.chaos){ G.cpRate*=3.2; G.ecpRate*=3.0; G.cpMax=750; G.cp=340; G.revT=rnd(2.5,5); G.prep=Math.min(G.prep,3); }
   G.hype=0; G.hypeTrains=0; // Phase 2 hype meter — chat energy that pays out CP on a full train
   // daily mutators
   if(L&&L.type==='daily'&&L.mut&&L.mut.apply){try{L.mut.apply(G);}catch(e){}}
@@ -1737,9 +1769,11 @@ function gunrunTick(dt){
   const g=G.gunrun; if(!g)return;
   g.t+=dt; const frac=clamp(g.t/g.dur,0,1);
   g.x=g.startX+(g.endX-g.startX)*frac; g.y=G.laneY[g.lane]*H;
+  // A-10 GAU-8 "BRRRT" — one long buzz per pass, re-triggered on a cadence
+  g.snd=(g.snd||0)-dt; if(g.snd<=0){ g.snd=0.5; a10Brrrt(0.5,0.1); }
   g.tick-=dt;
   if(g.tick<=0){ g.tick=0.07; // rapid cannon bursts marching down the lane
-    explode(g.x+rnd(-10,10),g.y+rnd(-12,12),22,'B',6); if(Math.random()<0.5)SND.fireFor({key:'gunship'});
+    explode(g.x+rnd(-10,10),g.y+rnd(-12,12),22,'B',6);
     for(let t=0;t<2;t++)G.parts.push({x:g.x+rnd(-8,8),y:g.y-84,vx:rnd(-16,16),vy:430,life:0.2,age:0,col:'#ffd27f',sz:2.4});
     for(const u of G.units){ if(u.side==='R'&&u.alive&&u.lane===g.lane&&Math.abs(u.x-g.x)<46){ damage(u,g.dmg,{side:'B',dmgType:'ap'}); } }
     G.shake=Math.max(G.shake,SAVE.reduceMotion?3:6);
@@ -2334,7 +2368,7 @@ function gunshipTick(u,dt){
       if(tgt){ damage(tgt,u.dmg,u); fired=true;
         G.parts.push({x:u.x,y:u.y,vx:(tgt.x-u.x)*3,vy:(tgt.y-u.y)*3,life:0.14,age:0,col:'#ffd27f',sz:2.2}); }
     }
-    if(fired){ u.muzzle=0.1; if(Math.random()<0.5)SND.fireFor(u); u.cd=u.rof; } else u.cd=0.35;
+    if(fired){ u.muzzle=0.1; ac130(0.13); u.cd=u.rof; } else u.cd=0.35;
   }
 }
 /* ── INTERCEPTOR — a lasting combat air patrol: flies a wide elliptical circle over
@@ -2654,6 +2688,98 @@ function drawHQ(x,side,col){
   cx.font='bold 20px var(--mono)';cx.textAlign='center';cx.fillStyle='#fff';
   cx.fillText(side==='B'?'★':'☭',side==='B'?x+8:x-w+14,cy);
 }
+/* ── rounded-rect path helper ── */
+function rr(X,Y,Wd,Ht,R){ R=Math.min(R,Ht/2,Wd/2); cx.beginPath();
+  cx.moveTo(X+R,Y);cx.arcTo(X+Wd,Y,X+Wd,Y+Ht,R);cx.arcTo(X+Wd,Y+Ht,X,Y+Ht,R);
+  cx.arcTo(X,Y+Ht,X,Y,R);cx.arcTo(X,Y,X+Wd,Y,R);cx.closePath(); }
+/* ── representational unit silhouettes — best-effort little models, drawn facing
+   the enemy (B → right, R → left). Everything is in a ~±14 unit box, scaled by r. ── */
+function drawUnitSprite(u,px,py){
+  const f=u.side==='B'?1:-1, k=u.r/8;
+  const col=u.hitFlash>0?'#ffffff':u.col;
+  const dk=shade(col,0.60), lt=shade(col,1.30), steel='#3a4250', dsteel='#232a34', gun='#1c2029';
+  cx.save(); cx.translate(px,py); cx.scale(f*k,k); cx.lineJoin='round'; cx.lineWidth=1.1/k;
+  const key=u.key, cat=u.cat;
+  if(cat==='inf'){
+    // legs
+    cx.strokeStyle=dk; cx.lineWidth=1.7; cx.beginPath();cx.moveTo(-1.2,4);cx.lineTo(-1.8,8);cx.moveTo(1.2,4);cx.lineTo(1.9,8);cx.stroke();
+    // torso / plate carrier
+    cx.fillStyle=col; rr(-2.4,-1.6,4.8,6,1.6); cx.fill(); cx.strokeStyle=dk;cx.lineWidth=1.1;cx.stroke();
+    // head + helmet
+    cx.fillStyle=lt; cx.beginPath();cx.arc(0,-3.4,1.9,0,6.28);cx.fill();
+    cx.fillStyle=col; cx.beginPath();cx.arc(0,-4.2,2.5,Math.PI,0);cx.fill(); cx.fillRect(-2.5,-4.2,5,1);
+    if(key==='medic'){ cx.fillStyle='#ff5a4a'; cx.fillRect(-1.4,0.4,2.8,0.9); cx.fillRect(-0.45,-0.6,0.9,2.9); }
+    else if(key==='atgm'){ cx.strokeStyle=gun;cx.lineWidth=2.6;cx.beginPath();cx.moveTo(-2,-1);cx.lineTo(7,-4);cx.stroke();
+      cx.fillStyle='#ffce5a';cx.beginPath();cx.arc(7,-4,1,0,6.28);cx.fill(); }
+    else if(key==='sniper'){ cx.strokeStyle=gun;cx.lineWidth=1.4;cx.beginPath();cx.moveTo(-2,0.2);cx.lineTo(9,-1.6);cx.stroke();
+      cx.fillStyle='#8fd0ff';cx.fillRect(2,-1.6,1.4,0.8); }
+    else { cx.strokeStyle=gun;cx.lineWidth=1.8;cx.beginPath();cx.moveTo(-1,0);cx.lineTo(6.5,-1.4);cx.stroke(); }
+  } else if(key==='tank'){
+    cx.fillStyle=dsteel; rr(-10,2,20,5,2);cx.fill();
+    cx.fillStyle=steel; for(let i=-8;i<=8;i+=3.4){cx.beginPath();cx.arc(i,4.5,1.5,0,6.28);cx.fill();}
+    cx.fillStyle=dk; cx.beginPath();cx.moveTo(-9,-2);cx.lineTo(7,-2);cx.lineTo(10,1);cx.lineTo(-9,1);cx.closePath();cx.fill();
+    cx.fillStyle=col; rr(-4.5,-6.6,8.5,5,2);cx.fill(); cx.strokeStyle=dk;cx.stroke();
+    cx.strokeStyle=dsteel;cx.lineWidth=2.4;cx.beginPath();cx.moveTo(3.5,-4.2);cx.lineTo(13.5,-4.6);cx.stroke();
+    cx.fillStyle=dsteel;cx.fillRect(12.6,-5.5,1.8,1.8);
+  } else if(key==='ifv'){
+    cx.fillStyle='#171b22'; for(const wx of [-6,-1.5,4]){cx.beginPath();cx.arc(wx,4,2,0,6.28);cx.fill();}
+    cx.fillStyle=col; cx.beginPath();cx.moveTo(-8,3);cx.lineTo(-8,-1.5);cx.lineTo(4,-3.5);cx.lineTo(8,-0.5);cx.lineTo(8,3);cx.closePath();cx.fill();cx.strokeStyle=dk;cx.stroke();
+    cx.fillStyle=lt; rr(-1.5,-6,4,3,1);cx.fill();
+    cx.strokeStyle=gun;cx.lineWidth=1.6;cx.beginPath();cx.moveTo(2,-4.5);cx.lineTo(9.5,-5);cx.stroke();
+  } else if(key==='aa'){
+    cx.fillStyle='#171b22'; for(const wx of [-6,-1.5,4]){cx.beginPath();cx.arc(wx,4,2,0,6.28);cx.fill();}
+    cx.fillStyle=col; rr(-8,-2.5,16,5.5,1.5);cx.fill();cx.strokeStyle=dk;cx.stroke();
+    // quad missile rack angled up-forward
+    cx.strokeStyle=dsteel;cx.lineWidth=1.5;for(let i=0;i<4;i++){cx.beginPath();cx.moveTo(-2+i*0.9,-3);cx.lineTo(5+i*0.9,-8);cx.stroke();}
+    // radar panel
+    cx.fillStyle=lt;cx.save();cx.translate(-5,-4);cx.rotate(-0.5);cx.fillRect(-2.5,-0.6,5,1.4);cx.restore();
+  } else if(cat==='arty'){
+    cx.fillStyle=dsteel; rr(-9,2,18,4.5,2);cx.fill();
+    cx.fillStyle=steel; for(let i=-7;i<=7;i+=3.4){cx.beginPath();cx.arc(i,4.4,1.4,0,6.28);cx.fill();}
+    cx.fillStyle=col; rr(-8,-2.5,15,5,1.5);cx.fill();cx.strokeStyle=dk;cx.stroke();
+    if(key==='mlrs'){ // rocket tube bundle angled up
+      cx.strokeStyle=dsteel;cx.lineWidth=1.6;for(let i=0;i<4;i++){cx.beginPath();cx.moveTo(-4,-3-i*0.1);cx.lineTo(6+i*0.5,-9-i*1.1);cx.stroke();}
+    } else { // big howitzer barrel
+      cx.strokeStyle=dsteel;cx.lineWidth=2.6;cx.beginPath();cx.moveTo(-2,-3);cx.lineTo(12,-9);cx.stroke();
+      cx.fillStyle=dsteel;cx.beginPath();cx.arc(12,-9,1.2,0,6.28);cx.fill();
+    }
+  } else if(key==='jammer'){
+    cx.fillStyle='#171b22'; for(const wx of [-6,-1.5,4]){cx.beginPath();cx.arc(wx,4,2,0,6.28);cx.fill();}
+    cx.fillStyle=col; rr(-8,-2,16,5,1.5);cx.fill();cx.strokeStyle=dk;cx.stroke();
+    // dish on a mast
+    cx.strokeStyle=steel;cx.lineWidth=1.4;cx.beginPath();cx.moveTo(0,-2);cx.lineTo(0,-7);cx.stroke();
+    cx.fillStyle=lt;cx.beginPath();cx.arc(1.5,-8,3.2,Math.PI*0.6,Math.PI*1.7);cx.fill();
+  } else if(key==='heli'){
+    cx.strokeStyle=dk;cx.lineWidth=1.3;cx.beginPath();cx.moveTo(-6,5);cx.lineTo(6,5);cx.moveTo(-4,3.2);cx.lineTo(-4,5);cx.moveTo(4,3.2);cx.lineTo(4,5);cx.stroke();
+    cx.fillStyle=col;cx.beginPath();cx.ellipse(0,0,7,3.3,0,0,6.28);cx.fill();cx.strokeStyle=dk;cx.stroke();
+    cx.fillStyle='#8fd0ff';cx.beginPath();cx.arc(4.2,-0.5,1.9,0,6.28);cx.fill();
+    cx.strokeStyle=dk;cx.lineWidth=2;cx.beginPath();cx.moveTo(-6,-1);cx.lineTo(-13,-2);cx.stroke();
+    cx.beginPath();cx.moveTo(-13,-2);cx.lineTo(-13,-5.5);cx.stroke();
+    cx.strokeStyle='rgba(210,232,255,0.55)';cx.lineWidth=1.4;cx.beginPath();cx.moveTo(-9,-5.5);cx.lineTo(9,-5.5);cx.stroke();
+    cx.beginPath();cx.arc(0,-5.5,9,0,6.28);cx.globalAlpha=0.14;cx.stroke();cx.globalAlpha=1;
+  } else if(key==='drone'){
+    cx.strokeStyle=dk;cx.lineWidth=1.4;cx.beginPath();cx.moveTo(-4,-4);cx.lineTo(4,4);cx.moveTo(4,-4);cx.lineTo(-4,4);cx.stroke();
+    cx.strokeStyle='rgba(210,232,255,0.55)';for(const c of [[-4,-4],[4,-4],[-4,4],[4,4]]){cx.beginPath();cx.arc(c[0],c[1],2.3,0,6.28);cx.stroke();}
+    cx.fillStyle=col;cx.beginPath();cx.arc(0,0,2.4,0,6.28);cx.fill();
+    cx.fillStyle='#ff5a4a';cx.beginPath();cx.arc(2,0,0.9,0,6.28);cx.fill();
+  } else if(key==='interceptor'){
+    cx.fillStyle=col;cx.beginPath();cx.moveTo(12,0);cx.lineTo(0,-2);cx.lineTo(-9,-1.6);cx.lineTo(-11,-4.5);cx.lineTo(-7,-1);cx.lineTo(-10,0);cx.lineTo(-7,1);cx.lineTo(-11,4.5);cx.lineTo(-9,1.6);cx.lineTo(0,2);cx.closePath();cx.fill();cx.strokeStyle=dk;cx.stroke();
+    cx.fillStyle=dk;cx.beginPath();cx.moveTo(-1,0);cx.lineTo(-8,8);cx.lineTo(-2,1.6);cx.closePath();cx.fill();
+    cx.beginPath();cx.moveTo(-1,0);cx.lineTo(-8,-8);cx.lineTo(-2,-1.6);cx.closePath();cx.fill();
+    cx.fillStyle='#8fd0ff';cx.beginPath();cx.arc(6,0,1.4,0,6.28);cx.fill();
+  } else if(key==='gunship'){
+    cx.fillStyle=col;cx.beginPath();cx.ellipse(0,-1,14,3.4,0,0,6.28);cx.fill();cx.strokeStyle=dk;cx.stroke();
+    cx.fillStyle=lt;cx.beginPath();cx.arc(11,-1.4,2,0,6.28);cx.fill();
+    cx.fillStyle=dk;cx.beginPath();cx.moveTo(-12,-2);cx.lineTo(-16,-8);cx.lineTo(-9,-2.5);cx.closePath();cx.fill();
+    cx.fillStyle=dk;cx.fillRect(-9,-5.5,16,1.8);
+    cx.fillStyle=steel;for(const ex of [-7,-2.5,2]){cx.fillRect(ex,-4.6,2.6,1.8);}
+    cx.strokeStyle=gun;cx.lineWidth=1.7;for(const gx of [-4,-0.5,3]){cx.beginPath();cx.moveTo(gx,2);cx.lineTo(gx+1.4,5.6);cx.stroke();}
+  } else {
+    // fallback: shaded disc + glyph (should not happen for known units)
+    cx.fillStyle=col;cx.beginPath();cx.arc(0,0,u.r*0.9,0,6.28);cx.fill();cx.strokeStyle=dk;cx.stroke();
+  }
+  cx.restore();
+}
 function drawUnit(u){
   // fog of war — an unspotted enemy shows only as a faint contact marker
   if(u.side==='R'&&!u.spotted){
@@ -2672,19 +2798,12 @@ function drawUnit(u){
   // shield (defend stance) — drawn behind the body, facing the enemy
   if(u.shield){cx.strokeStyle='rgba(120,225,150,0.75)';cx.lineWidth=2.4;
     cx.beginPath();cx.arc(x,y,u.r+4,-0.95,0.95);cx.stroke();}
-  // body with a little radial shading for volume
-  const base=u.hitFlash>0?'#ffffff':u.col;
-  const bg=cx.createRadialGradient(x-u.r*0.4,y-u.r*0.4,1,x,y,u.r+1);
-  bg.addColorStop(0,shade(base,1.4));bg.addColorStop(1,shade(base,0.72));
-  cx.beginPath();cx.arc(x,y,u.r,0,6.28);cx.fillStyle=bg;cx.fill();
-  cx.lineWidth=1.5;cx.strokeStyle=u.side==='B'?'#0a3a6a':'#6a1a10';cx.stroke();
-  // side ring
-  cx.beginPath();cx.arc(x,y,u.r+2,0,6.28);cx.strokeStyle=u.side==='B'?'rgba(74,168,255,0.5)':'rgba(255,90,74,0.5)';cx.lineWidth=1;cx.stroke();
-  // age ring (Evolution mode) — colours a unit by the age it was built in
-  if(u.age>0&&AGES[u.age]){cx.beginPath();cx.arc(x,y,u.r+3.6,0,6.28);cx.strokeStyle=AGES[u.age].col;cx.lineWidth=1.4;cx.globalAlpha=0.8;cx.stroke();cx.globalAlpha=1;}
-  // glyph
-  cx.font='bold '+(u.r+3)+'px var(--mono)';cx.fillStyle='#0a0e14';cx.textAlign='center';cx.textBaseline='middle';
-  cx.fillText(u.glyph,x,y+1);cx.textBaseline='alphabetic';
+  // team-ID ring under the unit + optional age ring (Evolution)
+  cx.beginPath();cx.arc(x, y+(u.flies?3:u.r*0.6), u.r*0.82, 0, 6.28);
+  cx.strokeStyle=u.side==='B'?'rgba(74,168,255,0.42)':'rgba(255,90,74,0.42)';cx.lineWidth=1;cx.stroke();
+  if(u.age>0&&AGES[u.age]){cx.beginPath();cx.arc(x,y,u.r+4,0,6.28);cx.strokeStyle=AGES[u.age].col;cx.lineWidth=1.3;cx.globalAlpha=0.65;cx.stroke();cx.globalAlpha=1;}
+  // the representational little model
+  drawUnitSprite(u,x,y);
   // muzzle flash
   if(u.muzzle>0){cx.fillStyle='rgba(255,220,120,0.9)';cx.beginPath();
     const dx=u.side==='B'?u.r+4:-u.r-4;cx.arc(x+dx,y,4,0,6.28);cx.fill();}
@@ -3155,27 +3274,35 @@ function chatBlitz(){
 const MEME_LINES=['UNLIMITED POWER','clip it clip it CLIP IT','no thoughts only booms','the AI has left the chat','GET DOWN MR PRESIDENT','why is everything on fire','more dakka','this is fine','POV: you pressed every button'];
 function chaosTick(dt){
   if(!G.chaos||G.frozen)return;
-  // constant cosmetic detonations across the field
+  // WALL of cosmetic detonations across the field (multiple per tick)
   G.chaosT=(G.chaosT||0)-dt;
-  if(G.chaosT<=0){ G.chaosT=rnd(0.12,0.4);
-    explode(rnd(50,W-50),rnd(H*0.24,H*0.78),rnd(18,52),Math.random()<0.5?'B':'R',rnd(10,28));
-    if(!SAVE.reduceMotion)G.shake=Math.max(G.shake,rnd(4,11));
-    if(Math.random()<0.22)SND.boom(Math.random()<0.5);
+  if(G.chaosT<=0){ G.chaosT=rnd(0.05,0.16);
+    const bursts=1+((Math.random()*3)|0);
+    for(let b=0;b<bursts;b++)explode(rnd(40,W-40),rnd(H*0.22,H*0.80),rnd(18,60),Math.random()<0.5?'B':'R',rnd(12,32));
+    if(!SAVE.reduceMotion)G.shake=Math.max(G.shake,rnd(8,18));
+    if(Math.random()<0.35)SND.boom(Math.random()<0.5);
   }
-  // pack the screen — free spawns for both sides
+  // FLOOD the screen — rapid free spawns for both sides (2-4 at a time)
   G.chaosSpawnT=(G.chaosSpawnT||0)-dt;
-  if(G.chaosSpawnT<=0){ G.chaosSpawnT=rnd(0.3,0.8);
+  if(G.chaosSpawnT<=0 && G.units.length<110){ G.chaosSpawnT=rnd(0.18,0.45);
     const roster=HOTBAR.filter(k=>k!=='gunship'&&k!=='medic'&&k!=='jammer');
-    spawn(Math.random()<0.5?'B':'R', pick(roster), (Math.random()*3)|0);
+    const n=2+((Math.random()*3)|0);
+    for(let s=0;s<n;s++)spawn(Math.random()<0.5?'B':'R', pick(roster), (Math.random()*3)|0);
   }
-  // periodic spectacle: an event, a strike, or a meme shout
+  // nonstop spectacle: events, strikes, big chat powers, meme shouts, hype
   G.chaosEvT=(G.chaosEvT||0)-dt;
-  if(G.chaosEvT<=0){ G.chaosEvT=rnd(3,7);
+  if(G.chaosEvT<=0){ G.chaosEvT=rnd(1.6,4);
     const roll=Math.random();
-    if(roll<0.4)fireRandomEvent();
-    else if(roll<0.7)tryStrike(pick(STRIKE_KEYS),(Math.random()*3)|0,rnd(W*0.4,W*0.92));
-    else { floatText(rnd(W*0.3,W*0.7),rnd(H*0.35,H*0.6),pick(MEME_LINES),pick(['#ffce5a','#ff5a4a','#c9a0ff','#8fd0ff'])); if(SAVE.streamOn)chatReactSafe('combo',6); }
+    if(roll<0.30)fireRandomEvent();
+    else if(roll<0.55)tryStrike(pick(STRIKE_KEYS),(Math.random()*3)|0,rnd(W*0.4,W*0.92));
+    else if(roll<0.70){ // occasionally unleash a chat power for maximum mayhem
+      const p=pick([chatStorm,chatBlitz,chatFortify,()=>{if(Math.random()<0.35)chatNuke();else chatStorm();}]);
+      try{p();}catch(e){}
+    }
+    else { floatText(rnd(W*0.28,W*0.72),rnd(H*0.32,H*0.62),pick(MEME_LINES),pick(['#ffce5a','#ff5a4a','#c9a0ff','#8fd0ff','#3fd07a'])); bumpHype(6); if(SAVE.streamOn)chatReactSafe('combo',6); }
   }
+  // a subtle strobing red overload tint sells the mayhem
+  if(!SAVE.reduceMotion && Math.random()<dt*3){ G.flash=Math.max(G.flash,0.4); G.hqFlashCol=pick(['#ff5a4a','#ffce5a','#c9a0ff']); }
 }
 function spawnBoss(lane){
   if(!G)return;
@@ -3974,12 +4101,24 @@ function showTitle(){
   document.getElementById('t-rank').textContent='Rank '+SAVE.lvl;
   document.getElementById('t-best').textContent='Best '+SAVE.best.toLocaleString();
   document.getElementById('title-tag').textContent=pick(TITLE_TAGS);
+  buildTitleDiff();
   startAttract();
   musicStart('menu');
   if(!SAVE.seenTut){ setTimeout(()=>{ if(!document.getElementById('title').classList.contains('hidden'))
     document.getElementById('firstrun').classList.add('show'); },600); }
 }
 function leaveTitle(){ document.getElementById('title').classList.add('hidden'); G=null; window.G=null; }
+// global difficulty chips on the title — set sel.diff so Play, Evolution & the rest all honour it
+function buildTitleDiff(){
+  const host=document.getElementById('td-chips'); if(!host)return; host.innerHTML='';
+  if(!DIFFS[sel.diff])sel.diff='veteran';
+  for(const k in DIFFS){ const d=DIFFS[k];
+    const b=document.createElement('button'); b.className='td-chip'+(sel.diff===k?' on':''); b.textContent=d.name;
+    b.style.borderColor=d.col; if(sel.diff===k){b.style.background=d.col;b.style.color='#0a0e14';} else b.style.color=d.col;
+    b.onclick=()=>{ sel.diff=k; buildTitleDiff(); if(typeof buildMenu==='function')buildMenu(); };
+    host.appendChild(b);
+  }
+}
 
 /* ═══════════════════════════════════════════════════════════════════════
    WAR MODE — a conquest map. Each node is a battle; taking one cuts supply
