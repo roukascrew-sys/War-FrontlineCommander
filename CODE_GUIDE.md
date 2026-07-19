@@ -480,6 +480,32 @@ same pipeline, so the damage matrix applies to them too.
   lines, drag on trail-offs), per-clause jitter, and short randomized breathing
   pauses with radio key-clicks between clauses.
 
+## Air-support fixes, interceptor CAP, chat powers & chaos mode
+
+- **Strike/unit key un-collision** — the gun-run strike key was `gunship`, which
+  collided with the `gunship` *unit* (duplicate `card-gunship` id + same
+  `selCard`, so selecting the unit fired the strike). The strike is now `gunrun`
+  (`card-gunrun`, key G). If you add a strike, never reuse a unit key.
+- **Gun run is step-driven** (`G.gunrun`/`gunrunTick`/`drawGunrun`) instead of
+  `setTimeout` chains, so it stays in sync with 0.5×/2× speed and pause; a 🚁
+  sprite flies the lane with a strafe line.
+- **Interceptor = loitering CAP** (`u.orbit`/`interceptorTick`) — flies a wide
+  elliptical orbit over the middle whose vertical sweep spans all three lanes,
+  and damages any enemy aircraft within ~95 px of its path. It never touches the
+  ground or the HQ, so it's a lasting air shield (hp 150) that only dies to
+  enemy air. Flag copied in `spawn()`.
+- **Tech-lock cards** now show the unit's name (`.lk-nm`), the tier-unlock cost,
+  and the per-unit deploy cost (`TIER n · then X ea`).
+- **Big-vote chat powers** (`CHAT_POWERS`, `chatPower`, `G.chatPowers`) — many
+  *unique* chatters chanting the same word triggers a gameplay effect:
+  `fortify` (16) heals your army, `storm` (22) shells all lanes, `blitz` (26)
+  spawns a free wave, `nuke` (50) wipes the whole field. Progress pings fire at
+  the quarters.
+- **🤪 Chaos / Meme mode (beta)** (`SAVE.chaosMode`, `G.chaos`, `chaosTick`) — a
+  Settings toggle; when on, `newGame` cranks economy/caps and shortens prep, and
+  `chaosTick` rains cosmetic explosions, free-spawns both sides, and fires
+  events/strikes/meme-text on timers. HUD shows a "🤪 CHAOS MODE BETA" tag.
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass

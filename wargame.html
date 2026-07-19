@@ -95,10 +95,11 @@
   .card .ready-flash{position:absolute;inset:0;background:var(--gold);opacity:0;pointer-events:none;}
 
   /* tech-tier lock overlay on unit cards */
-  .card .lockov{position:absolute;inset:0;background:#080d16dd;display:none;flex-direction:column;
-    align-items:center;justify-content:center;gap:1px;font-size:15px;color:var(--gold);pointer-events:none;}
-  .card .lockov b{font-family:var(--mono);font-size:12px;color:var(--gold);}
-  .card .lockov span{font-size:8.5px;color:var(--dim);letter-spacing:1px;}
+  .card .lockov{position:absolute;inset:0;background:#080d16ee;display:none;flex-direction:column;
+    align-items:center;justify-content:center;gap:1px;font-size:13px;color:var(--gold);pointer-events:none;padding:2px;}
+  .card .lockov b{font-family:var(--mono);font-size:13px;color:var(--gold);font-weight:800;}
+  .card .lockov span{font-size:7.5px;color:var(--dim);letter-spacing:.3px;text-align:center;line-height:1.15;}
+  .card .lockov .lk-nm{font-size:8.5px;font-weight:800;color:var(--ink);text-align:center;line-height:1.05;letter-spacing:0;}
   .card.locked .lockov{display:flex;}
   .card.locked .glyph,.card.locked .nm,.card.locked .cost{opacity:0.25;}
   /* stance + speed control cluster */
@@ -686,7 +687,7 @@
       </div>
       <div id="tw-status" style="font-size:12px;color:var(--dim);min-height:18px;margin-bottom:10px">Not connected — simulated chat is active in Streamer Mode.</div>
       <div style="font-size:11.5px;color:var(--faint);line-height:1.6;margin-bottom:14px">
-        Viewer commands:<br>• <b style="color:var(--ink)">top</b> / <b style="color:var(--ink)">mid</b> / <b style="color:var(--ink)">bot</b> — vote a lane; the winner gets an enemy surge on a timer.<br>• <b style="color:var(--ink)">boss</b> — enough votes summon a chat boss.<br>• <b style="color:var(--good)">drop</b> — rally votes to airdrop a supply crate for the streamer.<br>• <b style="color:var(--purple)">chaos</b> — roll a random battlefield event.<br>• <b style="color:var(--gold)">hype</b> / pog / W — feed the hype meter.
+        Viewer commands:<br>• <b style="color:var(--ink)">top</b> / <b style="color:var(--ink)">mid</b> / <b style="color:var(--ink)">bot</b> — vote a lane; the winner gets an enemy surge on a timer.<br>• <b style="color:var(--ink)">boss</b> — enough votes summon a chat boss.<br>• <b style="color:var(--good)">drop</b> — rally votes to airdrop a supply crate for the streamer.<br>• <b style="color:var(--purple)">chaos</b> — roll a random battlefield event.<br>• <b style="color:var(--gold)">hype</b> / pog / W — feed the hype meter.<br><b style="color:var(--red)">Big chants (many unique chatters):</b> <b style="color:var(--good)">fortify</b> (16) heals your army · <b style="color:var(--warn)">storm</b> (22) shells all lanes · <b style="color:var(--blue)">blitz</b> (26) free wave · <b style="color:var(--red)">nuke</b> (50) glasses the whole field.
       </div>
       <div class="btn-row" style="justify-content:center">
         <button class="sbtn prim" id="tw-connect">🔌 Connect</button>
@@ -749,7 +750,8 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   unlocked:['blitzkrieg','mass'],medals:{},sound:true,narrator:true,streamOn:false,seenTut:false,
   campaignDone:-1,campaignStars:{},daily:{},ttsKey:'',ttsVoice:'arnold',
   speed:1,twitchChannel:'',war:null,warWins:0,aiDebug:false,music:true,musicVol:0.5,news:false,reduceMotion:false,
-  ambient:true,randomEvents:true,evSupply:true,evVoice:true,evCutscene:true,evBarrage:true,evDefector:true};
+  ambient:true,randomEvents:true,evSupply:true,evVoice:true,evCutscene:true,evBarrage:true,evDefector:true,
+  chaosMode:false};
 let SAVE=load();
 SAVE.news=false; // live news wire archived for now (kept in code, off by default)
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
@@ -818,8 +820,8 @@ const UNITS={
   jammer:{name:'EW Jammer',glyph:'◈',cat:'veh',cost:52,cd:2.8,hp:74,dmg:0,rof:99,rng:0,spd:20,col:'#b0a0ff',
     aa:false,splash:0,r:10,jam:0.55,jamR:135,antiDrone:true,support:true,desc:'suppresses enemy fire in a radius & fries drones — no weapon'},
   // ── air-power tier: a strafing gunship and the fighter that hard-counters it ──
-  interceptor:{name:'Interceptor',glyph:'➤',cat:'air',cost:58,cd:1.6,hp:58,dmg:30,rof:0.7,rng:150,spd:66,col:'#7fd0ff',
-    aa:false,flies:true,hunter:true,splash:0,r:9,vsAir:3,desc:'fast fighter — hunts enemy aircraft; hard-counters gunships & drones'},
+  interceptor:{name:'Interceptor',glyph:'➤',cat:'air',cost:70,cd:1.0,hp:150,dmg:26,rof:0.55,rng:150,spd:66,col:'#7fd0ff',
+    aa:false,flies:true,orbit:true,splash:0,r:9,vsAir:3,desc:'flies a wide combat air patrol over the middle, downing any aircraft it passes — a lasting air shield'},
   gunship:{name:'Gunship',glyph:'✈',cat:'air',cost:165,cd:0.55,hp:230,dmg:15,rof:0.55,rng:210,spd:22,col:'#ff7f50',
     aa:false,flies:true,gunship:true,splash:8,r:15,desc:'loiters mid-field and strafes all three lanes — needs interceptor cover'},
 };
@@ -1559,7 +1561,7 @@ function newGame(){
     dmgDealt:0, dmgTaken:0, kills:0, deploys:0, spent:0,
     combo:0, comboT:0, bestCombo:0, firstBlood:false,
     cds:{},
-    strikeCds:{gunship:0,barrage:0,precision:0}, barrage:null,
+    strikeCds:{gunrun:0,barrage:0,precision:0}, barrage:null, gunrun:null,
     reconCd:0, reconMax:20, flareLane:-1, flareT:0,
     empCd:0, empMax:32, empLane:-1, empT:0,
     shake:0, flash:0, slowmo:0,
@@ -1596,6 +1598,10 @@ function newGame(){
   // chat-vote state (streamer Phase 2)
   G.cvVotes={0:0,1:0,2:0}; G.cvVoters={}; G.cvT=CHATLINK.voteEvery; G.bossMeter=0; G.bossVoters={};
   G.dropMeter=0; G.dropVoters={}; G.chaosMeter=0; G.chaosVoters={}; // Phase 2 chat command meters
+  G.chatPowers={}; // Phase 2 big-vote chat powers (nuke / storm / fortify / blitz)
+  // 🤪 BETA CHAOS / MEME MODE — crank everything for maximum clippable mayhem
+  G.chaos = !!SAVE.chaosMode && kind!=='tutorial' && !G.attract;
+  if(G.chaos){ G.cpRate*=2.4; G.ecpRate*=2.2; G.cpMax=520; G.cp=260; G.revT=rnd(4,8); G.prep=Math.min(G.prep,4); }
   G.hype=0; G.hypeTrains=0; // Phase 2 hype meter — chat energy that pays out CP on a full train
   // daily mutators
   if(L&&L.type==='daily'&&L.mut&&L.mut.apply){try{L.mut.apply(G);}catch(e){}}
@@ -1646,7 +1652,7 @@ function spawn(side,key,lane,xOverride){
     baseHp:hp,baseDmg:dmg,vetRank:0,vetKills:0,
     r:u.r,col:u.col,glyph:u.glyph,flies:!!u.flies,arc:!!u.arc,aa:!!u.aa,onlyAir:!!u.onlyAir,
     splash:u.splash,kamikaze:!!u.kamikaze,armor:!!u.armor,
-    lowAir:!!u.lowAir,gunship:!!u.gunship,hunter:!!u.hunter,antiDrone:!!u.antiDrone,
+    lowAir:!!u.lowAir,gunship:!!u.gunship,hunter:!!u.hunter,antiDrone:!!u.antiDrone,orbit:!!u.orbit,
     vsArmor:u.vsArmor||1,vsAir:u.vsAir||1,cat:u.cat,
     name:unitName(key, side==='B'?G.country:G.enemyCountry),
     dmgType:UNIT_DMGTYPE[key]||'sa', armorClass:UNIT_ARMORCLASS[key]||'inf', crit:UNIT_CRIT[key]||0, cover:false,
@@ -1690,7 +1696,7 @@ function tryDeploy(key,lane){
    barrage  : a rolling/creeping barrage that walks up ALL THREE lanes over ~1 min.
    precision: a fast, pinpoint munition — the old strike, quicker reload, less punch. */
 const STRIKES={
-  gunship:  {name:'Gunship Run',   glyph:'🚁', key:'G', col:'#ff9f40', cd:30,
+  gunrun:  {name:'Gunship Run',   glyph:'🚁', key:'G', col:'#ff9f40', cd:30,
     desc:'A gunship makes a strafing pass, raking one lane with sustained cannon fire.'},
   barrage:  {name:'Rolling Barrage',glyph:'💥', key:'B', col:'#ff5a4a', cd:75,
     desc:'A creeping barrage walks up all three lanes over a full minute — devastating but slow.'},
@@ -1718,22 +1724,38 @@ function tryPrecision(lane,x){
 }
 // GUNSHIP RUN — a strafing aircraft sweeps ONE lane with cannon fire over ~2.6s
 function tryGunshipRun(lane){
-  if(!strikeReady('gunship'))return false;
-  G.strikeCds.gunship=strikeCdMax('gunship');
+  if(!strikeReady('gunrun'))return false;
+  G.strikeCds.gunrun=strikeCdMax('gunrun');
   const sup=(G.ages?AGES[G.age].sup:1);
-  const y=G.laneY[lane]*H, dmg=30*sup;
+  // a step-driven strafe so it stays in sync with game speed / pause (no setTimeout)
+  G.gunrun={lane, x:W*0.16, y:G.laneY[lane]*H, startX:W*0.16, endX:W-46, t:0, dur:2.6, dmg:30*sup, tick:0};
   announce('🚁 GUNSHIP RUN','strafing the '+['top','middle','bottom'][lane]+' lane','#ff9f40');
   if(SAVE.evVoice||SAVE.narrator)say(pick(["Gunship on station. Cleared hot.","Guns, guns, guns — walk it down the lane.","Air support inbound. Heads down."]),'grim',1);
-  // a run of ~22 bursts marching left→right along the lane
-  const runs=22;
-  for(let i=0;i<runs;i++)setTimeout(()=>{ if(!G||G.over)return;
-    const gx=W*0.24 + (W*0.66)*(i/runs) + rnd(-14,14);
-    explode(gx,y+rnd(-14,14),26,'B',10); SND.fireFor({key:'gunship'});
-    for(let t=0;t<3;t++)G.parts.push({x:gx+rnd(-8,8),y:y-90,vx:rnd(-20,20),vy:380,life:0.22,age:0,col:'#ffd27f',sz:2.4});
-    for(const u of G.units){ if(u.side==='R'&&u.alive&&u.lane===lane&&Math.abs(u.x-gx)<40){ damage(u,dmg,{side:'B',dmgType:'ap'}); } }
-    if(i%5===0)G.shake=Math.max(G.shake,SAVE.reduceMotion?3:6);
-  },i*110);
   return true;
+}
+function gunrunTick(dt){
+  const g=G.gunrun; if(!g)return;
+  g.t+=dt; const frac=clamp(g.t/g.dur,0,1);
+  g.x=g.startX+(g.endX-g.startX)*frac; g.y=G.laneY[g.lane]*H;
+  g.tick-=dt;
+  if(g.tick<=0){ g.tick=0.07; // rapid cannon bursts marching down the lane
+    explode(g.x+rnd(-10,10),g.y+rnd(-12,12),22,'B',6); if(Math.random()<0.5)SND.fireFor({key:'gunship'});
+    for(let t=0;t<2;t++)G.parts.push({x:g.x+rnd(-8,8),y:g.y-84,vx:rnd(-16,16),vy:430,life:0.2,age:0,col:'#ffd27f',sz:2.4});
+    for(const u of G.units){ if(u.side==='R'&&u.alive&&u.lane===g.lane&&Math.abs(u.x-g.x)<46){ damage(u,g.dmg,{side:'B',dmgType:'ap'}); } }
+    G.shake=Math.max(G.shake,SAVE.reduceMotion?3:6);
+  }
+  if(g.t>=g.dur)G.gunrun=null;
+}
+function drawGunrun(){
+  const g=G&&G.gunrun; if(!g)return;
+  const ax=g.x, ay=g.y-84;
+  cx.save();
+  // strafe line down to the ground
+  cx.strokeStyle='rgba(255,210,120,0.5)';cx.lineWidth=2;cx.beginPath();cx.moveTo(ax,ay+6);cx.lineTo(g.x,g.y);cx.stroke();
+  // the gunship itself
+  cx.fillStyle='#ff9f40';cx.font='22px var(--font)';cx.textAlign='center';cx.textBaseline='middle';
+  cx.fillText('🚁',ax,ay); cx.textBaseline='alphabetic';
+  cx.restore();
 }
 // ROLLING BARRAGE — a creeping wall of fire walks up ALL lanes over ~60s
 function tryBarrage(){
@@ -1766,7 +1788,7 @@ function barrageTick(dt){
 // dispatch used by the lane-click / quick-deploy handlers
 function tryStrike(type,lane,x){
   let ok;
-  if(type==='gunship')ok=tryGunshipRun(lane);
+  if(type==='gunrun')ok=tryGunshipRun(lane);
   else if(type==='barrage')ok=tryBarrage();
   else ok=tryPrecision(lane,x);
   if(ok)G.strikeUsedCount=(G.strikeUsedCount||0)+1;
@@ -2208,6 +2230,7 @@ function step(dt){
   for(const k in G.cds)if(G.cds[k]>0)G.cds[k]=Math.max(0,G.cds[k]-dt);
   for(const t in G.strikeCds)if(G.strikeCds[t]>0)G.strikeCds[t]=Math.max(0,G.strikeCds[t]-dt);
   if(G.barrage)barrageTick(dt);   // rolling barrage creeps up the field
+  if(G.gunrun)gunrunTick(dt);     // gunship strafing run marches down a lane
   if(G.reconCd>0)G.reconCd=Math.max(0,G.reconCd-dt);
   if(G.empCd>0)G.empCd=Math.max(0,G.empCd-dt);
   if(G.flareT>0)G.flareT=Math.max(0,G.flareT-dt);
@@ -2229,6 +2252,7 @@ function step(dt){
   chatVoteTick(dt);
   newsTick(dt);
   randomEventTick(dt);        // optional battlefield surprises (settings-gated)
+  if(G.chaos)chaosTick(dt);   // 🤪 beta chaos/meme mode mayhem
   dropTick(dt);               // falling supply crates
   if(G.ages)ageTick(dt);      // Age-of-War: enemy evolves over time
   turretTick(dt);             // base turrets fire
@@ -2313,6 +2337,28 @@ function gunshipTick(u,dt){
     if(fired){ u.muzzle=0.1; if(Math.random()<0.5)SND.fireFor(u); u.cd=u.rof; } else u.cd=0.35;
   }
 }
+/* ── INTERCEPTOR — a lasting combat air patrol: flies a wide elliptical circle over
+   the middle of the field and downs any aircraft it passes over. It never touches
+   the ground and never sieges the HQ, so it loiters until an enemy fighter kills it. ── */
+function interceptorTick(u,dt){
+  if(u.cx==null){ u.cx=W*0.5; u.cy=(G.laneY[1]||0.5)*H; u.ang=Math.random()*6.28;
+    u.orad=Math.min(W*0.32,320)*(0.85+Math.random()*0.2); }
+  // wide orbit over the middle; vertical sweep spans all three lanes
+  const vspan=Math.max(90,(G.laneY[2]-G.laneY[0])*H*0.62);
+  u.ang += dt*0.9*(u.side==='B'?1:-1);
+  u.x=u.cx+Math.cos(u.ang)*u.orad;
+  u.y=u.cy+Math.sin(u.ang)*vspan + Math.sin(u.bob)*2;
+  u.bob+=dt*6;
+  u.cd-=dt;
+  if(u.cd<=0){
+    // strafe any enemy AIRCRAFT it's currently passing over (generous "pass-over" radius)
+    let hit=null,bd=1e9;
+    for(const o of G.units){ if(o.alive&&o.side!==u.side&&o.flies){ const d=dist(u.x,u.y,o.x,o.y); if(d<95&&d<bd){bd=d;hit=o;} } }
+    if(hit){ damage(hit,u.dmg,u); u.muzzle=0.1; if(Math.random()<0.4)SND.fireFor(u); u.cd=u.rof;
+      G.parts.push({x:u.x,y:u.y,vx:(hit.x-u.x)*3,vy:(hit.y-u.y)*3,life:0.14,age:0,col:'#bfe4ff',sz:2.2}); }
+    else u.cd=0.2;
+  }
+}
 function updateUnits(dt){
   const dir=s=>s==='B'?1:-1;
   computeSpotting();
@@ -2326,6 +2372,7 @@ function updateUnits(dt){
     u.bob+=dt*6;
     u.cover=(u.cat==='inf' && G.laneTerrain && G.laneTerrain[u.lane]==='forest'); // infantry dig into the treeline
     if(u.gunship){ gunshipTick(u,dt); continue; } // floating gunship has its own flight logic
+    if(u.orbit){ interceptorTick(u,dt); continue; } // interceptor flies a wide CAP over the middle
     if(u.support)supportTick(u,dt);
     // kamikaze diving
     if(u.diving){ const t=u.diving; if(!t.alive){u.diving=null;}
@@ -2454,6 +2501,7 @@ function draw(){
     for(const u of air)drawUnit(u);
     drawParts();
     drawDrops();
+    drawGunrun();
     drawPowerFX();
     drawWeather();
   }
@@ -2727,6 +2775,7 @@ function syncHUD(){
   else{ob=`<div class="big">SKIRMISH</div>${DIFFS[G.diff].name} · ${DOCTRINES[G.doc].name}`;}
   if(G.wx)ob+=`<div style="margin-top:3px;color:var(--cyan)">${G.wx.glyph} ${G.wx.name}</div>`;
   if(G.general&&!G.tutorial)ob+=`<div style="margin-top:2px;color:${G.general.col}">⚔ vs ${G.general.name}</div>`;
+  if(G.chaos)ob+=`<div style="margin-top:2px;color:var(--red);font-weight:800;letter-spacing:1px">🤪 CHAOS MODE <span style="color:var(--faint);font-weight:600">BETA</span></div>`;
   document.getElementById('objbar').innerHTML=ob;
   // hotbar cooldowns / affordability
   for(const key of HOTBAR){
@@ -2803,10 +2852,10 @@ function buildHotbar(){
     const el=document.createElement('div');
     el.className='card'; el.id='card-'+key;
     const tier=unitTier(key), locked=G&&!G.unlocked[key], ageGate=G&&G.ages;
-    const lockInner = ageGate
-      ? `${AGES[UNIT_MINAGE[key]].glyph}<b>AGE&nbsp;${UNIT_MINAGE[key]+1}</b><span>EVOLVE</span>`
-      : `🔒<b>${tierUnlockCost(key)}</b><span>T${tier}</span>`;
     const dispName=unitName(key, G?G.country:'generic');
+    const lockInner = ageGate
+      ? `${AGES[UNIT_MINAGE[key]].glyph}<b class="lk-nm">${dispName}</b><span>AGE ${UNIT_MINAGE[key]+1}</span>`
+      : `<div class="lk-nm">${dispName}</div><b>🔓 ${tierUnlockCost(key)}</b><span>TIER ${tier} · then ${unitCost(key)} ea</span>`;
     const dt=UNIT_DMGTYPE[key], ac=UNIT_ARMORCLASS[key];
     const dtDot=dt?`<span class="dtdot" style="background:${DTDOT_COL[dt]}" title="${DMGTYPE_LABEL[dt]}"></span>`
       :`<span class="dtdot" style="background:#9fffce" title="Support"></span>`;
@@ -3012,7 +3061,7 @@ function chatConnect(channel){
     CHATLINK.connected=true; CHATLINK.connecting=false;
     chatStatus('● LIVE — reading #'+channel,'var(--good)');
     SAVE.twitchChannel=channel; if(!SAVE.streamOn){SAVE.streamOn=true;refreshTopbar();} persist();
-    chatMsgRaw('FRONTLINE','Connected! Chat commands: top/mid/bot surge a lane · boss summons a boss · drop resupplies the streamer · chaos rolls a random event · hype fills the meter.','#5ff0e0');
+    chatMsgRaw('FRONTLINE','Connected! Commands: top/mid/bot surge a lane · boss · drop · chaos · hype. Big chants: fortify (16) · storm (22) · blitz (26) · NUKE (50) wipes the whole field.','#5ff0e0');
   };
   ws.onmessage=ev=>handleIRC(ev.data);
   ws.onerror=()=>{ chatStatus('Connection error — check the name / your network.','var(--red)'); CHATLINK.connecting=false; };
@@ -3050,6 +3099,83 @@ function onChatMsg(user,text){
   if(/^(chaos|event|roll)$/.test(t)){ if(!G.chaosVoters[user]){ G.chaosVoters[user]=1; G.chaosMeter++;
     if(G.chaosMeter>=CHATLINK.chaosThreshold){ announce('🎲 CHAT ROLLS THE DICE','anything can happen','#c9a0ff'); fireRandomEvent(); G.chaosMeter=0; G.chaosVoters={}; } } return; }
   if(/^(hype|pog|lets ?go|w)$/.test(t)){ bumpHype(3); return; }
+  // ── big-vote CHAT POWERS — many unique chatters must chant the same word ──
+  if(/^nuke$/.test(t)){ chatPower(user,'nuke',CHAT_POWERS.nuke,'☢ NUKE',chatNuke); return; }
+  if(/^(storm|rain|arty)$/.test(t)){ chatPower(user,'storm',CHAT_POWERS.storm,'⛈ STORM OF STEEL',chatStorm); return; }
+  if(/^(fortify|heal|shield)$/.test(t)){ chatPower(user,'fortify',CHAT_POWERS.fortify,'🛡 FORTIFY',chatFortify); return; }
+  if(/^(blitz|zerg|charge|rush)$/.test(t)){ chatPower(user,'blitz',CHAT_POWERS.blitz,'⚔ CHAT BLITZ',chatBlitz); return; }
+}
+// how many UNIQUE chatters must chant a word to trigger each power
+const CHAT_POWERS={ nuke:50, storm:22, fortify:16, blitz:26 };
+function chatPower(user,key,threshold,label,fn){
+  if(!G||G.over)return;
+  const p=G.chatPowers[key]||(G.chatPowers[key]={voters:{},n:0});
+  if(p.voters[user])return; p.voters[user]=1; p.n++;
+  // progress pings at the quarters so a stream can rally toward it
+  const q=Math.floor(p.n/threshold*4);
+  if(q>(p.q||0)&&p.n<threshold){ p.q=q; chatMsgRaw('FRONTLINE',label+' charging… '+p.n+'/'+threshold,'#c9a0ff'); }
+  if(p.n>=threshold){ p.n=0; p.q=0; p.voters={}; try{fn();}catch(e){} }
+}
+// ☢ NUKE — chat glasses the entire field. Everything dies. Maximum clip.
+function chatNuke(){
+  announce('☢ CHAT NUKE','the whole front is glass','#ff5a4a');
+  say(pick(["...Chat. What did you DO.","I did not authorise that. I did not UN-authorise it either.","Well. That's one way to reset the board."]),'grim',2);
+  for(const u of G.units){ if(u.alive){ explode(u.x,u.y,u.r*2+6,'B',14); u.alive=false; } }
+  for(let i=0;i<34;i++){ explode(rnd(50,W-50),rnd(H*0.24,H*0.78),rnd(26,64),'B',26); }
+  G.shake=Math.max(G.shake,SAVE.reduceMotion?10:44); G.flash=1; G.hqFlashCol='#ffd27f';
+  SND.hqhit(); setTimeout(()=>{try{SND.boom(true);}catch(e){}},120);
+  if(typeof clipMoment==='function')clipMoment();
+  chatMsgRaw('FRONTLINE','☢☢☢ CHAT DROPPED THE NUKE ☢☢☢','#ff5a4a');
+}
+// ⛈ STORM OF STEEL — a barrage rakes every lane at once
+function chatStorm(){
+  announce('⛈ STORM OF STEEL','chat calls down fire on all lanes','#ff9f40');
+  for(let ln=0;ln<3;ln++){ const y=G.laneY[ln]*H;
+    for(let k=0;k<7;k++){ const ix=rnd(W*0.35,W-50), iy=y+rnd(-24,24);
+      explode(ix,iy,40,'B',22);
+      for(const u of G.units){ if(u.side==='R'&&u.alive&&dist(u.x,u.y,ix,iy)<40)damage(u,50,{side:'B',dmgType:'he'}); } } }
+  G.shake=Math.max(G.shake,SAVE.reduceMotion?6:20); if(typeof clipMoment==='function')clipMoment();
+  chatMsgRaw('FRONTLINE','chat brings the thunder — all lanes!','#ff9f40');
+}
+// 🛡 FORTIFY — chat patches up your whole army
+function chatFortify(){
+  announce('🛡 FORTIFY','chat mends your line','#3fd07a');
+  for(const u of G.units){ if(u.side==='B'&&u.alive){ u.hp=u.maxHp; u.sup=0; u.hitFlash=0.4;
+    G.parts.push({x:u.x,y:u.y-u.r,vx:0,vy:-30,life:0.6,age:0,col:'#9fffce',sz:3}); } }
+  bumpHype(8); chatMsgRaw('FRONTLINE','chat heals the whole army!','#3fd07a');
+}
+// ⚔ CHAT BLITZ — chat throws a free wave into every lane
+function chatBlitz(){
+  announce('⚔ CHAT BLITZ','a free wave pours in','#8fd0ff');
+  const roster=['rifle','ifv','tank','atgm','drone']; for(let ln=0;ln<3;ln++)for(let k=0;k<3;k++)spawn('B',pick(roster),ln);
+  G.shake=Math.max(G.shake,SAVE.reduceMotion?4:10); bumpHype(10); if(typeof clipMoment==='function')clipMoment();
+  chatMsgRaw('FRONTLINE','CHAT SENDS EVERYTHING — GO GO GO','#8fd0ff');
+}
+/* ═══ 🤪 CHAOS / MEME MODE (beta) — nonstop explosions, spawns, events & mayhem ═══ */
+const MEME_LINES=['UNLIMITED POWER','clip it clip it CLIP IT','no thoughts only booms','the AI has left the chat','GET DOWN MR PRESIDENT','why is everything on fire','more dakka','this is fine','POV: you pressed every button'];
+function chaosTick(dt){
+  if(!G.chaos||G.frozen)return;
+  // constant cosmetic detonations across the field
+  G.chaosT=(G.chaosT||0)-dt;
+  if(G.chaosT<=0){ G.chaosT=rnd(0.12,0.4);
+    explode(rnd(50,W-50),rnd(H*0.24,H*0.78),rnd(18,52),Math.random()<0.5?'B':'R',rnd(10,28));
+    if(!SAVE.reduceMotion)G.shake=Math.max(G.shake,rnd(4,11));
+    if(Math.random()<0.22)SND.boom(Math.random()<0.5);
+  }
+  // pack the screen — free spawns for both sides
+  G.chaosSpawnT=(G.chaosSpawnT||0)-dt;
+  if(G.chaosSpawnT<=0){ G.chaosSpawnT=rnd(0.3,0.8);
+    const roster=HOTBAR.filter(k=>k!=='gunship'&&k!=='medic'&&k!=='jammer');
+    spawn(Math.random()<0.5?'B':'R', pick(roster), (Math.random()*3)|0);
+  }
+  // periodic spectacle: an event, a strike, or a meme shout
+  G.chaosEvT=(G.chaosEvT||0)-dt;
+  if(G.chaosEvT<=0){ G.chaosEvT=rnd(3,7);
+    const roll=Math.random();
+    if(roll<0.4)fireRandomEvent();
+    else if(roll<0.7)tryStrike(pick(STRIKE_KEYS),(Math.random()*3)|0,rnd(W*0.4,W*0.92));
+    else { floatText(rnd(W*0.3,W*0.7),rnd(H*0.35,H*0.6),pick(MEME_LINES),pick(['#ffce5a','#ff5a4a','#c9a0ff','#8fd0ff'])); if(SAVE.streamOn)chatReactSafe('combo',6); }
+  }
 }
 function spawnBoss(lane){
   if(!G)return;
@@ -3425,7 +3551,7 @@ window.addEventListener('keydown',e=>{
   if(k==='r'){G.selCard='recon';showLaneHint();return;}
   if(k==='f'){ if(SAVE.lvl>=3){G.selCard='emp';showLaneHint();} return; }
   // G / B select the gunship run & rolling barrage air-support strikes
-  if(k==='g'){G.selCard='gunship';showLaneHint();return;}
+  if(k==='g'){G.selCard='gunrun';showLaneHint();return;}
   if(k==='b'){G.selCard='barrage';showLaneHint();return;}
   // Z / X / C set troop stance on the fly (behaviour only)
   if(k==='z'){setStance('assault');return;}
@@ -3673,7 +3799,8 @@ function renderManualBody(tab){
     <h2>Countries</h2>
     <p>Choosing a country renames the roster to that nation's real equipment — a US tank becomes the <b>M1 Abrams</b>, a Russian one the <b>T-90M</b>. It's flavour only; no stats change.</p>
     <h2>Streaming</h2>
-    <p>Connect <b>📡 Live Chat</b> to a Twitch channel and viewers can vote on lanes, summon bosses, call <b>supply drops</b>, roll <b>chaos</b> events, and drive the on-screen <b>hype meter</b> (a full "hype train" pays out bonus CP and a crate). Great for streamers who want the audience in the fight.</p>
+    <p>Connect <b>📡 Live Chat</b> to a Twitch channel and viewers can vote on lanes, summon bosses, call <b>supply drops</b>, roll <b>chaos</b> events, and drive the on-screen <b>hype meter</b> (a full "hype train" pays out bonus CP and a crate). Big chants take many unique chatters: <b>fortify</b> (16) heals your army, <b>storm</b> (22) shells every lane, <b>blitz</b> (26) drops a free wave, and <b>nuke</b> (50) glasses the whole field. Great for streamers who want the audience in the fight.</p>
+    <p><b>🤪 Chaos / Meme Mode (beta)</b> — flip it on in ⚙ Settings, then start any battle for nonstop explosions, free spawns, rapid events and mayhem. Built purely for clips.</p>
     <h2>Random Events</h2>
     <p>Battles can throw <b>surprises</b>: airdropped <b>supply crates</b>, off-the-rails narrator lines, cinematic <b>combat cutscenes</b>, a sudden <b>artillery barrage</b>, or an enemy <b>defector</b> switching sides. Turn any of them on or off — or all at once — in <b>⚙ Settings → Random Events</b>.</p>`;
   } else if(tab==='tips'){
@@ -3722,7 +3849,9 @@ function renderSettings(){
     settingRow('· Crazy Voicelines','Off-the-rails narrator outbursts',`<button id="set-ev-voice" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evVoice)}</button>`)+
     settingRow('· Combat Cutscenes','Brief cinematic close-ups of the action',`<button id="set-ev-cut" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evCutscene)}</button>`)+
     settingRow('· Artillery Barrage','A surprise shelling rakes a lane',`<button id="set-ev-barr" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evBarrage)}</button>`)+
-    settingRow('· Defectors','An enemy unit switches sides mid-battle',`<button id="set-ev-def" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evDefector)}</button>`);
+    settingRow('· Defectors','An enemy unit switches sides mid-battle',`<button id="set-ev-def" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evDefector)}</button>`)+
+    `<div style="font-size:13px;font-weight:800;color:var(--red);letter-spacing:.5px;margin:6px 2px -2px">🤪 CHAOS MODE <span style="color:var(--faint);font-size:9px">BETA</span></div>`+
+    settingRow('Chaos / Meme Mode','Nonstop explosions, free spawns, rapid events & mayhem — built for clips. Turn on, then start any battle.',`<button id="set-chaos" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.chaosMode)}</button>`);
   const bind=(id,fn)=>{const b=document.getElementById(id); if(b)b.onclick=()=>{fn();renderSettings();};};
   bind('set-music',()=>{ SAVE.music=!SAVE.music; persist(); if(SAVE.music)musicStart(musicContextTheme()); else musicStop(); refreshTopbar(); });
   bind('set-sound',()=>{ SAVE.sound=!SAVE.sound; persist(); });
@@ -3735,6 +3864,7 @@ function renderSettings(){
   bind('set-ev-cut',()=>{ SAVE.evCutscene=!SAVE.evCutscene; persist(); });
   bind('set-ev-barr',()=>{ SAVE.evBarrage=!SAVE.evBarrage; persist(); });
   bind('set-ev-def',()=>{ SAVE.evDefector=!SAVE.evDefector; persist(); });
+  bind('set-chaos',()=>{ SAVE.chaosMode=!SAVE.chaosMode; persist(); });
   const vol=document.getElementById('set-vol');
   if(vol)vol.oninput=()=>{ SAVE.musicVol=(+vol.value)/100; persist();
     try{ if(MUSIC.master&&MUSIC.ctx)MUSIC.master.gain.setTargetAtTime(SAVE.musicVol,MUSIC.ctx.currentTime,0.1); }catch(e){}
