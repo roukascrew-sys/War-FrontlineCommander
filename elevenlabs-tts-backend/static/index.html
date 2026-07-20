@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ElevenLabs TTS Demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body{font-family:system-ui,sans-serif;max-width:640px;margin:40px auto;padding:0 20px;color:#1a1a1a}
+  textarea{width:100%;min-height:120px;font:inherit;padding:10px;box-sizing:border-box}
+  input{width:100%;font:inherit;padding:8px;box-sizing:border-box;margin-top:4px}
+  label{font-weight:600;font-size:14px;display:block;margin-top:16px}
+  button{margin-top:16px;padding:10px 20px;font:inherit;cursor:pointer}
+  #status{margin-top:12px;font-size:14px;color:#555}
+  audio{width:100%;margin-top:16px}
+</style>
+</head>
+<body>
+  <h1>ElevenLabs TTS Demo</h1>
+  <label for="text">Text</label>
+  <textarea id="text" placeholder="Type something to speak...">Hello! This is a live test of the ElevenLabs streaming backend.</textarea>
+  <label for="voiceId">Voice ID</label>
+  <input id="voiceId" placeholder="Uses server default if left blank">
+  <button id="speak">Speak</button>
+  <div id="status"></div>
+  <audio id="player" controls></audio>
+  <script src="app.js"></script>
+</body>
+</html>
