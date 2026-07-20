@@ -620,6 +620,51 @@ weather, veterancy, tech, war-map logistics — with none of the noise.
   pre-existing gap where a fast player's early deploys could wander forward and
   land real siege damage on the enemy HQ before the script finished.
 
+## Hotbar tabs, the shrink-to-fit bug, and the custom voice slot
+
+- **Tabbed hotbar** (`HB_TABS`, `hbTab`, `buildHotbar`) — the deploy hotbar
+  used to render all ~22 cards (14 units + 3 strikes + recon + emp + 3
+  spawners) in one `flex-wrap` row. On real viewport widths that wrapped to
+  2-3 rows and grew tall enough to cover the bottom lane. `buildHotbar` now
+  renders a row of category-tab buttons into `#hbtabs` and only builds the
+  cards belonging to the active tab (`ground`/`air`/`support`/`strikes`/
+  `production`) into `#hotbar`, capping it at 7 cards (one row) in the worst
+  case. Number-key hotkeys (`keydown` handler) still resolve by index into
+  the global `HOTBAR` array regardless of which tab is showing — they were
+  already decoupled from the DOM, so this didn't need to change. Anything
+  that looks up a card by `getElementById('card-'+key)` (cooldown/afford
+  -ability refresh, tutorial, gaslight FX) was already null-guarded, so
+  cards from inactive tabs just silently no-op until their tab is active.
+- **The real bug underneath**: `#hbwrap` is `position:absolute;left:50%`
+  with `transform:translateX(-50%)` to center it, and had `max-width:97vw`
+  but no explicit `width`. For an absolutely-positioned box with
+  `width:auto`, the browser's shrink-to-fit algorithm bounds the available
+  width using the box's own `left` offset against its containing block —
+  with `left:50%` that caps it at roughly **half** the containing block's
+  width, regardless of `max-width`. That's why the bar wrapped far earlier
+  than 97vw would suggest, on both the old flat bar and, initially, the new
+  tabs. Fixed with `width:max-content` on `#hbwrap`, which forces true
+  intrinsic sizing (still capped by `max-width:97vw`). Worth remembering
+  before centering any other `position:absolute` flex container in this
+  file the same way.
+- **`jumbleUI`** used to set `hb.style.transform='translateX(-50%) rotate(...)'`
+  on `#hotbar` itself, back when `#hotbar` was the self-centered element.
+  Now that centering lives on `#hbwrap` and `#hotbar` is a plain flow child,
+  that translateX would have double-shifted the bar off-screen during the
+  UI-jumble infowar effect. It now only applies the rotation.
+- **Custom voice slot** (`ELEVEN_VOICES.custom`, `SAVE.ttsVoiceCustomId`,
+  `SAVE.ttsVoiceCustomName`, `activeVoiceId()`) — the premium narrator picker
+  only shipped with four fixed voice IDs (Arnold/Adam/Josh/Antoni). Added a
+  fifth "Custom" slot with its own Voice ID text field in the voice modal, so
+  any voice from the player's own ElevenLabs library (cloned or from the
+  Voice Library) can be used without a code change — there's no way to
+  resolve a voice *name* to its ID from this codebase without calling
+  ElevenLabs' list-voices endpoint, so the UI just asks the player to paste
+  the ID directly (My Voices → ⋯ → Copy Voice ID). Defaults to
+  `ttsVoice:'custom'` with the name pre-labeled `'Thaddeus'`; falls back to
+  the free offline voice exactly like an empty/invalid key does until both a
+  key and an ID are actually saved.
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass
