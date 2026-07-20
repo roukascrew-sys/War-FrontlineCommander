@@ -4,6 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>FRONTLINE COMMANDER — a fast war game</title>
+<meta name="description" content="Frontline Commander: a free, zero-install lane-battler where a live counter web, doctrines, and a narrated Iron Marshal meet Twitch chat sabotage. No download, no signup — click and fight.">
+<meta name="theme-color" content="#0a0e14">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<!-- Open Graph / Twitter card — fill in og:url once the page has a live domain -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="FRONTLINE COMMANDER — a fast war game">
+<meta property="og:description" content="A free, zero-install lane-battler: a live counter web, doctrines, and a narrated Iron Marshal, playable straight in the browser.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="FRONTLINE COMMANDER — a fast war game">
+<meta name="twitter:description" content="A free, zero-install lane-battler, playable straight in the browser.">
+<meta name="robots" content="index,follow">
 <style>
   :root{
     --bg:#0a0e14; --panel:#121824; --panel2:#1a2333; --line:#26324a;
@@ -79,8 +90,15 @@
   .bhp.red .lbl{color:var(--red);text-align:right;} .bhp.red .fill{background:var(--red);float:right;}
 
   /* deploy hotbar */
-  #hotbar{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;
-    gap:6px;justify-content:center;max-width:97vw;pointer-events:auto;}
+  #hbwrap{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;
+    flex-direction:column;align-items:center;gap:6px;width:max-content;max-width:97vw;}
+  #hbtabs{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;pointer-events:auto;}
+  .hbtab{padding:5px 11px;border:1px solid var(--line);border-radius:7px;background:#0b0f18d8;
+    font-size:10.5px;font-weight:800;letter-spacing:.6px;color:var(--dim);text-transform:uppercase;transition:.1s;}
+  .hbtab:hover{color:var(--ink);border-color:var(--blue);}
+  .hbtab.on{background:var(--gold);color:var(--bg);border-color:var(--gold);}
+  #hotbar{display:flex;flex-wrap:wrap;
+    gap:6px;justify-content:center;pointer-events:auto;}
   .card{width:70px;height:84px;background:var(--panel);border:1.5px solid var(--line);border-radius:10px;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;position:relative;
     transition:.1s;overflow:hidden;}
@@ -572,7 +590,10 @@
         <button id="ap-turret">⌖ TURRET <b>0/0</b></button>
       </div>
     </div>
-    <div id="hotbar"></div>
+    <div id="hbwrap">
+      <div id="hbtabs"></div>
+      <div id="hotbar"></div>
+    </div>
     <!-- narrator subtitle -->
     <div id="narrator"><span class="np">🎙 IRON MARSHAL</span><span class="nt"></span></div>
     <!-- tutorial coach mark -->
@@ -770,6 +791,11 @@
         <label style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px">VOICE</label>
         <div class="opt" id="vm-voices"></div>
       </div>
+      <div id="vm-custom-wrap" style="margin-bottom:16px;display:none">
+        <label style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px">CUSTOM VOICE ID</label>
+        <input id="vm-custom-id" type="text" placeholder="e.g. paste Thaddeus's Voice ID from ElevenLabs → My Voices" autocomplete="off" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-family:var(--mono);font-size:13px">
+        <div class="fr-p" style="text-align:left;font-size:11.5px;margin:6px 0 0">Find it in ElevenLabs under My Voices (or Voice Library) → the voice's ⋯ menu → Copy Voice ID.</div>
+      </div>
       <div id="vm-status" style="font-size:12px;color:var(--dim);min-height:18px;margin-bottom:10px"></div>
       <div class="btn-row" style="justify-content:center">
         <button class="sbtn prim" id="vm-test">▶ Test Voice</button>
@@ -808,7 +834,7 @@ function shade(hex,mul){ let h=(hex||'#888').replace('#',''); if(h.length===3)h=
 const SAVE_KEY='FRONTLINE_SAVE_v1';
 const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0,
   unlocked:['blitzkrieg','mass'],medals:{},sound:true,narrator:true,streamOn:false,seenTut:false,
-  campaignDone:-1,campaignStars:{},daily:{},ttsKey:'',ttsVoice:'arnold',
+  campaignDone:-1,campaignStars:{},daily:{},ttsKey:'',ttsVoice:'custom',ttsVoiceCustomId:'',ttsVoiceCustomName:'Thaddeus',
   speed:1,twitchChannel:'',war:null,warWins:0,aiDebug:false,music:true,musicVol:0.5,news:false,reduceMotion:false,
   ambient:true,randomEvents:true,evSupply:true,evVoice:true,evCutscene:true,evBarrage:true,evDefector:true,
   chaosMode:false,
@@ -1510,12 +1536,18 @@ const ELEVEN_VOICES={
   adam:{id:'pNInz6obpgDQGcFmaJgB',name:'Adam — resonant & clear'},
   josh:{id:'TxGEqnHWrfWFTfGW9XjX',name:'Josh — young & sharp'},
   antoni:{id:'ErXwobaYiN019PkySvjV',name:'Antoni — warm & steady'},
+  custom:{id:'',name:'Custom — paste a Voice ID'}, // any voice from your ElevenLabs library, e.g. Thaddeus
 };
+function activeVoiceId(){
+  if(SAVE.ttsVoice==='custom')return SAVE.ttsVoiceCustomId||'';
+  return (ELEVEN_VOICES[SAVE.ttsVoice]||ELEVEN_VOICES.arnold).id;
+}
 async function narrSpeakPremium(text,mood){
   const myGen=++NARR.gen; // same supersede-guard pattern as the offline path
   try{
-    const key=SAVE.ttsKey, voiceId=(ELEVEN_VOICES[SAVE.ttsVoice]||ELEVEN_VOICES.arnold).id;
+    const key=SAVE.ttsKey, voiceId=activeVoiceId();
     if(!key)throw new Error('no key');
+    if(!voiceId)throw new Error('no voice id'); // custom slot selected but never filled in
     let url=NARR.cache[text];
     if(!url){
       const resp=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+voiceId,{
@@ -3101,9 +3133,29 @@ const DTDOT_COL={sa:'#8fd0ff',ap:'#ffb347',he:'#ff9f7f',aa:'#7fffaa'};
 // hotbar groups: after the last key in each group we drop a thin separator so the
 // bar reads in tactical chunks (infantry · armour · fires · air/AD · support)
 const HB_GROUP_END={sniper:1,ifv:1,mlrs:1,drone:1,jammer:1};
+// category tabs — splits ~22 cards across 5 short rows so the bar stays one row
+// tall and never grows up over the third (bottom) lane like the old flat list did.
+// Number-key hotkeys (1-9) still map by HOTBAR index regardless of the active tab.
+const HB_TABS=[
+  {id:'ground',label:'⚔ Ground',units:new Set(['rifle','atgm','sniper','tank','ifv','arty','mlrs'])},
+  {id:'air',label:'✈ Air & AD',units:new Set(['aa','heli','drone','interceptor','gunship'])},
+  {id:'support',label:'🛠 Support',units:new Set(['medic','jammer']),abilities:true},
+  {id:'strikes',label:'💥 Strikes',strikes:true},
+  {id:'production',label:'🏭 Production',spawners:true},
+];
+let hbTab='ground';
 function buildHotbar(){
+  const tabsEl=document.getElementById('hbtabs'); tabsEl.innerHTML='';
+  for(const t of HB_TABS){
+    const tb=document.createElement('button'); tb.className='hbtab'+(hbTab===t.id?' on':'');
+    tb.textContent=t.label;
+    tb.onclick=()=>{hbTab=t.id;buildHotbar();};
+    tabsEl.appendChild(tb);
+  }
+  const tab=HB_TABS.find(t=>t.id===hbTab)||HB_TABS[0];
   const hb=document.getElementById('hotbar'); hb.innerHTML='';
   HOTBAR.forEach((key,i)=>{
+    if(!tab.units||!tab.units.has(key))return;
     const u=UNITS[key];
     const el=document.createElement('div');
     el.className='card'; el.id='card-'+key;
@@ -3132,8 +3184,7 @@ function buildHotbar(){
     if(HB_GROUP_END[key]){ const sep=document.createElement('div'); sep.className='hb-sep'; hb.appendChild(sep); }
   });
   // AIR SUPPORT — three off-map strike cards (gunship run / rolling barrage / precision)
-  { const sep=document.createElement('div'); sep.className='hb-sep'; hb.appendChild(sep); }
-  for(const type of STRIKE_KEYS){ const s=STRIKES[type];
+  if(tab.strikes)for(const type of STRIKE_KEYS){ const s=STRIKES[type];
     const el=document.createElement('div');
     el.className='card'; el.id='card-'+type; el.style.borderColor=s.col;
     el.innerHTML=`<span class="key">${s.key}</span><div class="glyph" style="color:${s.col}">${s.glyph}</div>
@@ -3143,6 +3194,7 @@ function buildHotbar(){
     el.onclick=()=>{G.selCard=type;showLaneHint();};
     hb.appendChild(el);
   }
+  if(tab.abilities){
   // recon flare — free, exposes a whole lane through the fog for a few seconds
   const rc=document.createElement('div');
   rc.className='card'; rc.id='card-recon'; rc.style.borderColor='var(--cyan)';
@@ -3162,8 +3214,9 @@ function buildHotbar(){
   ec.title=empLocked?'Unlocks at Rank 3.':'Jams every enemy in a lane — they can barely fire or advance for a few seconds.';
   ec.onclick=()=>{ if(empLocked)return; G.selCard='emp';showLaneHint();};
   hb.appendChild(ec);
+  }
   // production spawners — high-cost factories placed just ahead of your HQ
-  for(const type of SPAWNER_KEYS){ const sp=SPAWNERS[type];
+  if(tab.spawners)for(const type of SPAWNER_KEYS){ const sp=SPAWNERS[type];
     const el=document.createElement('div');
     el.className='card spawner'; el.id='card-sp-'+type; el.style.borderColor=sp.col;
     el.innerHTML=`<span class="key">🏭</span><div class="glyph" style="color:${sp.col}">${sp.glyph}</div>
@@ -3342,7 +3395,7 @@ function iwJumble(){ if(!iwActive())return; G.info.jumbleT=15; jumbleUI(true);
 function jumbleUI(on){
   const hb=document.getElementById('hotbar'); if(!hb)return;
   const cards=[...hb.children];
-  if(on){ cards.forEach(c=>{ c.style.order=(Math.random()*100)|0; }); hb.style.transform='translateX(-50%) rotate('+rnd(-2.5,2.5)+'deg)'; document.body.classList.add('iw-jumble'); }
+  if(on){ cards.forEach(c=>{ c.style.order=(Math.random()*100)|0; }); hb.style.transform='rotate('+rnd(-2.5,2.5)+'deg)'; document.body.classList.add('iw-jumble'); }
   else { cards.forEach(c=>{ c.style.order=''; }); hb.style.transform=''; document.body.classList.remove('iw-jumble'); }
 }
 // 8) 💸 "DONATION" — a stylised fake dono alert (a game gag) yanks attention mid-fight
@@ -4063,11 +4116,13 @@ function buildVoiceModal(){
   const vv=document.getElementById('vm-voices'); vv.innerHTML='';
   for(const k in ELEVEN_VOICES){
     const b=document.createElement('button'); b.className='vm-voice'+(SAVE.ttsVoice===k?' sel':'');
-    b.textContent=ELEVEN_VOICES[k].name;
+    b.textContent=k==='custom'&&SAVE.ttsVoiceCustomName?('Custom — '+SAVE.ttsVoiceCustomName):ELEVEN_VOICES[k].name;
     b.onclick=()=>{SAVE.ttsVoice=k;buildVoiceModal();};
     vv.appendChild(b);
   }
   document.getElementById('vm-key').value=SAVE.ttsKey||'';
+  document.getElementById('vm-custom-wrap').style.display=SAVE.ttsVoice==='custom'?'':'none';
+  document.getElementById('vm-custom-id').value=SAVE.ttsVoiceCustomId||'';
   document.getElementById('vm-status').textContent=SAVE.ttsKey?
     'Premium voice active — lines are cached per phrase to save quota.':
     'No key set — using the free styled radio voice.';
@@ -4076,21 +4131,28 @@ function openVoiceModal(){ buildVoiceModal(); document.getElementById('voicemoda
 function closeVoiceModal(){ document.getElementById('voicemodal').classList.remove('show'); }
 document.getElementById('btn-voice').onclick=openVoiceModal;
 document.getElementById('vm-close').onclick=closeVoiceModal;
+function readVoiceModalFields(){
+  SAVE.ttsKey=document.getElementById('vm-key').value.trim();
+  SAVE.ttsVoiceCustomId=document.getElementById('vm-custom-id').value.trim();
+}
 document.getElementById('vm-save').onclick=()=>{
-  SAVE.ttsKey=document.getElementById('vm-key').value.trim(); persist(); buildVoiceModal();
-  document.getElementById('vm-status').textContent='Saved.'+(SAVE.ttsKey?' Premium voice will be used from now on.':'');
+  readVoiceModalFields(); NARR.cache={}; persist(); buildVoiceModal();
+  const ok=!!activeVoiceId();
+  document.getElementById('vm-status').textContent=SAVE.ttsKey?
+    (ok?'Saved. Premium voice will be used from now on.':'Saved key, but the custom voice ID is empty — paste one above.'):
+    'Saved. No key set — using the free styled radio voice.';
 };
 document.getElementById('vm-clear').onclick=()=>{
-  SAVE.ttsKey=''; NARR.cache={}; persist(); buildVoiceModal();
+  SAVE.ttsKey=''; SAVE.ttsVoiceCustomId=''; SAVE.ttsVoiceCustomName=''; NARR.cache={}; persist(); buildVoiceModal();
 };
 document.getElementById('vm-test').onclick=()=>{
-  SAVE.ttsKey=document.getElementById('vm-key').value.trim();
+  readVoiceModalFields(); NARR.cache={};
   document.getElementById('vm-status').textContent='Testing...';
   narrStop();
   say("This is the Iron Marshal, reporting for duty. Let's see how I sound.",'deadpan',2);
-  setTimeout(()=>{document.getElementById('vm-status').textContent=SAVE.ttsKey?
+  setTimeout(()=>{document.getElementById('vm-status').textContent=SAVE.ttsKey&&activeVoiceId()?
     'If you heard a natural voice, the key works — hit Save to keep it.':
-    'That was the free styled voice. Add a key above for a neural voice.';},2200);
+    'That was the free styled voice. Add a key (and a voice ID, if using Custom) above for a neural voice.';},2200);
 };
 document.getElementById('btn-pause').onclick=togglePause;
 document.getElementById('btn-play').onclick=()=>{LAUNCH=null;start();};
