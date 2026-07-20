@@ -1347,7 +1347,7 @@ function musicContextTheme(){
    Every spoken line is mirrored as an on-screen subtitle regardless of path.
    ═══════════════════════════════════════════════════════════════════════ */
 const NARR={
-  voice:null, speaking:false, queue:[], persona:'IRON MARSHAL', cool:{},
+  voice:null, speaking:false, queue:[], persona:'IRON MARSHAL', cool:{}, gen:0,
   audioEl:null, cache:{}, // text -> object URL, for premium voice
   // mood → base rate (r) & pitch (p). Jittered per clause.
   moods:{
@@ -1429,7 +1429,12 @@ function radioClick(open){
   }catch(e){}
 }
 function radioStart(){
-  const c=radioCtx(); if(!c||RADIO.running)return;
+  const c=radioCtx(); if(!c)return;
+  // a previous stop may still be fading a node out (200ms tail) — kill it now instead of
+  // letting two noise loops overlap while the old one drains
+  if(RADIO.stopTimer){ clearTimeout(RADIO.stopTimer); RADIO.stopTimer=null; }
+  if(RADIO.noise){ try{RADIO.noise.stop();}catch(e){} RADIO.noise=null; }
+  if(RADIO.running)return;
   try{
     const bufSize=2*c.sampleRate;
     const buf=c.createBuffer(1,bufSize,c.sampleRate);
@@ -1446,9 +1451,11 @@ function radioStart(){
 }
 function radioStop(){
   if(!RADIO.running)return;
-  try{ radioClick(false); RADIO.gain.gain.exponentialRampToValueAtTime(0.0001,radioCtx().currentTime+0.15);
-    const src=RADIO.noise; setTimeout(()=>{try{src.stop();}catch(e){}},200); }catch(e){}
   RADIO.running=false;
+  try{ radioClick(false); RADIO.gain.gain.exponentialRampToValueAtTime(0.0001,radioCtx().currentTime+0.15);
+    const src=RADIO.noise;
+    RADIO.stopTimer=setTimeout(()=>{ try{src.stop();}catch(e){} if(RADIO.noise===src)RADIO.noise=null; RADIO.stopTimer=null; },200);
+  }catch(e){}
 }
 
 /* split a line into speakable clauses so pitch/rate can drift line-to-line */
@@ -1464,9 +1471,14 @@ function narrSpeakOffline(text,mood){
   if(!ss){NARR.speaking=false;drainNarr();return;}
   const clauses=splitClauses(text);
   const m=NARR.moods[mood]||NARR.moods.deadpan;
+  // a fresh generation token — if this chain gets interrupted (narrStop, or another
+  // say() starting a new chain), stale onend/onerror/timeout callbacks below check this
+  // and quietly stop instead of racing a newer chain into two simultaneous voices
+  const myGen=++NARR.gen;
   radioStart();
   let i=0;
   const speakNext=()=>{
+    if(myGen!==NARR.gen)return; // superseded — let the newer chain own speech+radio
     if(i>=clauses.length){ radioStop(); NARR.speaking=false; drainNarr(); return; }
     const clause=clauses[i]; const idx=i; i++;
     const first=idx===0, last=idx===clauses.length-1;
@@ -1483,11 +1495,11 @@ function narrSpeakOffline(text,mood){
       u.volume=clamp(0.9+rnd(-0.05,0.05),0.6,1);
       if(NARR.voice)u.voice=NARR.voice;
       // breathe between clauses — a short, slightly random pause is what sells "human"
-      u.onend=()=>{ if(!last)radioClick(false); const gap=last?0:(emphatic?rnd(80,150):trailOff?rnd(320,460):rnd(140,300)); setTimeout(speakNext,gap); };
-      u.onerror=()=>setTimeout(speakNext,40);
+      u.onend=()=>{ if(myGen!==NARR.gen)return; if(!last)radioClick(false); const gap=last?0:(emphatic?rnd(80,150):trailOff?rnd(320,460):rnd(140,300)); setTimeout(speakNext,gap); };
+      u.onerror=()=>{ if(myGen===NARR.gen)setTimeout(speakNext,40); };
       if(!first)radioClick(true);
       ss.speak(u);
-    }catch(e){ setTimeout(speakNext,30); }
+    }catch(e){ if(myGen===NARR.gen)setTimeout(speakNext,30); }
   };
   NARR.speaking=true;
   speakNext();
@@ -1500,6 +1512,7 @@ const ELEVEN_VOICES={
   antoni:{id:'ErXwobaYiN019PkySvjV',name:'Antoni — warm & steady'},
 };
 async function narrSpeakPremium(text,mood){
+  const myGen=++NARR.gen; // same supersede-guard pattern as the offline path
   try{
     const key=SAVE.ttsKey, voiceId=(ELEVEN_VOICES[SAVE.ttsVoice]||ELEVEN_VOICES.arnold).id;
     if(!key)throw new Error('no key');
@@ -1516,14 +1529,16 @@ async function narrSpeakPremium(text,mood){
       url=URL.createObjectURL(blob);
       NARR.cache[text]=url;
     }
+    if(myGen!==NARR.gen)return; // a newer line pre-empted us while we were fetching
     if(!NARR.audioEl){NARR.audioEl=new Audio();}
     const a=NARR.audioEl;
     a.src=url; a.volume=1;
-    a.onended=()=>{NARR.speaking=false;drainNarr();};
-    a.onerror=()=>{NARR.speaking=false;narrSpeakOffline(text,mood);};
+    a.onended=()=>{ if(myGen!==NARR.gen)return; NARR.speaking=false;drainNarr();};
+    a.onerror=()=>{ if(myGen!==NARR.gen)return; NARR.speaking=false;narrSpeakOffline(text,mood);};
     NARR.speaking=true;
     await a.play();
   }catch(e){
+    if(myGen!==NARR.gen)return;
     NARR.speaking=false;
     narrSpeakOffline(text,mood); // graceful fallback — never breaks the game
   }
@@ -1544,6 +1559,7 @@ function say(text,mood,prio){
   NARR.queue.push({text,mood}); drainNarr();
 }
 function narrStop(){
+  NARR.gen++; // invalidate any in-flight speak chain so a stale callback can never resume
   try{window.speechSynthesis&&window.speechSynthesis.cancel();}catch(e){}
   try{if(NARR.audioEl){NARR.audioEl.pause();NARR.audioEl.currentTime=0;}}catch(e){}
   radioStop();
@@ -1613,6 +1629,7 @@ const NARR_LINES={
 };
 function narr(ev,data){
   if(G&&G.attract)return; // attract-mode demo stays quiet
+  if(G&&G.tutorial&&!G.tutDone)return; // the tutorial script owns the mic — real events (a scripted kill, etc.) stay quiet so lines never layer
   const b=NARR_LINES[ev]; if(!b)return;
   if(b.cool!=null){ const now=performance.now(); if(NARR.cool[ev]&&now-NARR.cool[ev]<b.cool*1000)return; NARR.cool[ev]=now; }
   say(pick(b.lines), b.mood, b.prio||0);
@@ -3759,7 +3776,12 @@ function launchTutorial(){
 }
 function launchEvolution(){ LAUNCH=null; sel.mode='evolution'; if(!DIFFS[sel.diff])sel.diff='veteran'; start(); }
 
-/* ═══ TUTORIAL — a narrated, gated first fight ═══ */
+/* ═══ TUTORIAL — a narrated, gated first fight ═══
+   Most steps FREEZE the field (units just idle-breathe in place, no combat, no
+   drift toward the HQ) so the player can read the line and look at the board
+   without the scene running away from them. A step opts out with `freeze:false`
+   when it needs real combat to actually happen — the counter-kill demo below,
+   where the player has to watch their AT team drop the tank. */
 function tutHasB(key){ for(const u of G.units)if(u.alive&&u.side==='B'&&u.key===key)return true; return false; }
 const TUT_STEPS=[
   {say:"War room's yours now, Commander. I'm the Iron Marshal — I'll walk you through your first fight. Nice and slow.",mood:'brief',wait:6},
@@ -3767,20 +3789,21 @@ const TUT_STEPS=[
   {say:"Pick your first unit. Tap the Rifleman card down there, or press the 1 key.",mood:'deadpan',cond:()=>G.selCard==='rifle'},
   {say:"Now put him on the field — tap any of the three lanes to deploy.",mood:'deadpan',cond:()=>G.deploys>=1},
   {say:"Good. Now some armour. Deploy a Tank — press 4, then tap a lane. That's your battering ram.",mood:'deadpan',cond:()=>tutHasB('tank')},
-  {enter:()=>{spawn('R','tank',1);},say:"Here's the lesson that wins wars — counters. I've rolled a Tank at your middle lane. Rifles bounce off its armour. Kill it with an AT Team: press 2, deploy, and watch it work.",mood:'grim',cond:()=>G.kills>=1},
+  {enter:()=>{spawn('R','tank',1);},say:"Here's the lesson that wins wars — counters. I've rolled a Tank at your middle lane. Rifles bounce off its armour. Kill it with an AT Team: press 2, deploy, and watch it work.",mood:'grim',cond:()=>G.kills>=1,freeze:false},
   {say:"That's rock-paper-scissors with guns. AT beats armour, armour crushes infantry, infantry swarms the AT. Read what's coming, send the counter.",mood:'deadpan',wait:7},
-  {say:"One more toy — air support. Three free strikes on timers: a gunship run, a rolling barrage, and precision munitions. Press 0 for precision, then tap a lane, and level whatever's standing there.",mood:'hype',cond:()=>(G.strikeUsedCount||0)>=1},
+  {say:"One more toy — air support. Three free strikes on timers: a gunship run, a rolling barrage, and precision munitions. Press 0 for precision, then tap a lane, and level whatever's standing there.",mood:'hype',cond:()=>(G.strikeUsedCount||0)>=1,freeze:false},
   {say:"That's everything, Commander. Their HQ sits on the right — crack it before they crack yours. I'm releasing their army... now. Good luck. Try not to embarrass us.",mood:'proud',wait:6.5,last:true},
 ];
 function tutStart(){
   for(const s of TUT_STEPS)s._t=null;
   G.tutStep=0; G.selCard=null; // force the player to pick
+  G.frozen=true; // hold the field still for the opening line
   showTut('');
   document.getElementById('tut-skip').classList.remove('hidden');
 }
 function tutTick(dt){
   const s=TUT_STEPS[G.tutStep]; if(!s){tutFinish();return;}
-  if(s._t==null){ s._t=0; if(s.enter){try{s.enter();}catch(e){}} showTut(s.say); say(s.say,s.mood||'brief',2); }
+  if(s._t==null){ s._t=0; G.frozen=(s.freeze!==false); if(s.enter){try{s.enter();}catch(e){}} showTut(s.say); say(s.say,s.mood||'brief',2); }
   s._t+=dt;
   let done=false;
   if(s.cond){ if(s.cond())done=true; } else if(s.wait){ if(s._t>=s.wait)done=true; }
@@ -3791,7 +3814,7 @@ function tutTick(dt){
 }
 function tutFinish(){
   if(!G||G.tutDone)return;
-  G.tutDone=true; G.aiHold=false; G.aiT=1.4;
+  G.tutDone=true; G.aiHold=false; G.aiT=1.4; G.frozen=false; // the field comes alive
   if(!G.selCard)G.selCard='rifle';
   SAVE.seenTut=true; persist();
   hideTut();

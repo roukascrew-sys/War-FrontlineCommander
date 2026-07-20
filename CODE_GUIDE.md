@@ -585,6 +585,41 @@ Design intent: streamer spectacle (chaos, chat powers, gags) is **all opt-out**,
 so a strategist can run a clean, systems-driven match — counters, terrain,
 weather, veterancy, tech, war-map logistics — with none of the noise.
 
+## Tutorial audio-overlap fix & per-step freeze
+
+- **Root cause of overlapping tutorial voices**: `narr(ev)` — the generic
+  battle-event narrator hook (firstBlood, comboN, wave, hqYours/hqTheirs) —
+  was never gated for tutorial. The tutorial's own scripted `say(...,2)` lines
+  and these ambient triggers could both fire narration at once (most visibly:
+  the scripted tank kill in `TUT_STEPS[5]` sets `G.firstBlood`, which used to
+  fire `narr('firstBlood')` right on top of the tutorial's own line). Fixed by
+  a single guard at the top of `narr()`: `if(G&&G.tutorial&&!G.tutDone)return;`
+  — the tutorial owns the mic until it hands off (`tutFinish`), then normal
+  narration resumes.
+- **Secondary hardening** (belt-and-suspenders, not the primary cause but real
+  races worth closing): `RADIO` (the command-net static bed) could briefly
+  double-loop — `radioStop()` schedules the actual node stop 200ms later, and
+  a `radioStart()` inside that window used to spin up a second node before the
+  first had faded out. `radioStart()` now clears any pending stop timer and
+  hard-stops the old node immediately. Both `narrSpeakOffline` and
+  `narrSpeakPremium` also now capture a `NARR.gen` generation token at the
+  start of their speak chain and check it in every `onend`/`onerror`/retry
+  callback, so a chain interrupted mid-flight (by `narrStop()` or a fresh
+  `say()`) can never race a newer chain into simultaneous `speak()`/`play()`
+  calls. `narrStop()` bumps `NARR.gen` too.
+- **Per-step freeze** (`G.frozen`, reusing the same flag the 10-second prep
+  phase uses) — `tutTick` sets `G.frozen=(s.freeze!==false)` when entering each
+  `TUT_STEPS` entry, so by default a step holds the whole field still (units
+  just idle-breathe in `updateUnits`) while its line plays and the player
+  reads/acts. Two steps opt out with `freeze:false` because they need a live
+  action to actually resolve: the counter-kill demo (the player must be able
+  to fire on the scripted enemy tank) and the air-support demo (`strikeReady()`
+  refuses to fire any strike while `G.frozen`, so that step would otherwise
+  deadlock — the tutorial could never satisfy `strikeUsedCount>=1`). `tutFinish`
+  clears `G.frozen` on hand-off. As a side effect this also closes a latent
+  pre-existing gap where a fast player's early deploys could wander forward and
+  land real siege damage on the enemy HQ before the script finished.
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass
