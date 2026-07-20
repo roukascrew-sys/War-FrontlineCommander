@@ -159,7 +159,47 @@
   </section>
 
   <section>
-    <div class="annex"><span class="ax">ANNEX E</span><h2>The Franchise — Three Titles, One War</h2></div>
+    <div class="annex"><span class="ax">ANNEX E</span><h2>Revenue Model &amp; Monetization</h2></div>
+    <p class="lede">The core loop stays free forever — a paywalled counter web kills the clip economy Annex B is built on. Revenue sits <i>around</i> the free match: cosmetics, a career-facing pass, sponsor-safe chat commerce, and a premium sequel that monetizes the depth Grand Theater's engine already earns. No pay-to-win: every purchasable in Frontline Commander is cosmetic, convenience, or content — never a stat.</p>
+
+    <h3>Pricing Ladder</h3>
+    <div class="tblwrap"><table>
+      <tr><th>Tier</th><th>Price</th><th>Unlocks</th><th>Rationale</th></tr>
+      <tr><td>Web build</td><td class="mono">Free</td><td>All 7 modes, all 14 units, full career &amp; rivalry system</td><td>The link <i>is</i> the ad — Annex C's whole funnel depends on zero friction</td></tr>
+      <tr><td>Commander's Kit</td><td class="mono">$4.99</td><td>Cosmetic nation livery pack + HQ banner + one premium AI narrator voice</td><td>Low-friction impulse buy; reuses the existing ElevenLabs premium-voice hook as a paid skin, not a gate</td></tr>
+      <tr><td>Campaign Pass</td><td class="mono">$7.99 / season</td><td>Seasonal doctrine drops, cosmetic medal ribbons, a rotating rival-general skin</td><td>Recurs quarterly; content players already return for (Annex B's "career that remembers") becomes the billing hook</td></tr>
+      <tr><td>Steam Edition</td><td class="mono">$14.99</td><td>Full build, Steam achievements mapped to medals, offline play, no chat dependency</td><td>Captures the purist segment (Annex D KPI: purist retention) who want to own it outright</td></tr>
+    </table></div>
+
+    <h3>In-Game Commerce (Frontline Commander, live build)</h3>
+    <div class="pillars">
+      <div class="pillar"><h4>Cosmetic IAP</h4><p>National unit skins, HQ banners, victory-flyover variants, killcam filters. Sold individually ($1–3) or bundled in the Kit above. Never touches balance.</p></div>
+      <div class="pillar p-green"><h4>Narrator voice packs</h4><p>The premium ElevenLabs narrator is a $2.99 unlock per voice, three voices at launch. Direct revenue line from a system already built — no new engineering, just a paywall in front of an existing feature.</p></div>
+      <div class="pillar p-blue"><h4>Battle Pass</h4><p>Seasonal track tied to matches played, not spend — doctrine cosmetics, chat-command sound stings, title-screen frames. Free track exists; paid track ($7.99) doubles reward pace.</p></div>
+      <div class="pillar p-red"><h4>Sponsor chat takeovers</h4><p>A sponsor's brand skins the chat-power UI for a scheduled event window (e.g. a sponsored "nuke" reskin during a creator's stream). Sold to brands per-event, not per-player — keeps the free build free while monetizing the exact chat-integration surface Annex B leads with.</p></div>
+    </div>
+
+    <h3>Franchise Economics</h3>
+    <div class="tblwrap"><table>
+      <tr><th>Title</th><th>Model</th><th>Price point</th><th>Revenue role</th></tr>
+      <tr><td>Frontline Commander</td><td class="mono">Free + cosmetic IAP + pass</td><td>$0 core, $2–15 optional</td><td>Volume &amp; funnel — feeds the other two titles via shared career save</td></tr>
+      <tr><td>Grand Theater</td><td class="mono">Premium, one-time</td><td>$19.99</td><td>Margin driver — the validated staff-college engine already exists, so this is near-pure margin against sunk R&amp;D</td></tr>
+      <tr><td>Pocket Wars</td><td class="mono">F2P mobile + cosmetics + rewarded ads</td><td>$0 core, $1–10 IAP, opt-in ad views for bonus CP</td><td>Reach — lowest-friction entry point, converts back to Commander/Grand Theater via shared rivalry &amp; rank</td></tr>
+    </table></div>
+    <p>Ads are confined to Pocket Wars' rewarded-video slot (bonus CP, opt-in, skippable) — the two desktop/web titles stay ad-free by design, since Annex D's clip economy and purist-retention KPIs both depend on an uninterrupted match.</p>
+
+    <h3>Unit-Economics Targets</h3>
+    <div class="tiles">
+      <div class="tile"><b>3–5%</b><span>free → paying conversion</span></div>
+      <div class="tile"><b>$9</b><span>target ARPPU / quarter</span></div>
+      <div class="tile"><b>$0.35</b><span>blended ARPU, web build</span></div>
+      <div class="tile gr"><b>&lt;60d</b><span>Grand Theater dev-cost payback</span></div>
+    </div>
+    <p>These are planning targets, not guarantees — the soft-launch phase (Annex D, Phase 1) is where they get replaced with real telemetry before the Campaign Pass or Steam Edition go live.</p>
+  </section>
+
+  <section>
+    <div class="annex"><span class="ax">ANNEX F</span><h2>The Franchise — Three Titles, One War</h2></div>
     <p>The Iron Marshal is the franchise voice; the rival generals are its recurring cast; the counter web is its shared combat grammar. Each title serves a different session length with the same fiction.</p>
     <div class="fr">
       <div class="fr-item live">
@@ -182,13 +222,14 @@
   </section>
 
   <section>
-    <div class="annex"><span class="ax">ANNEX F</span><h2>Risks &amp; Mitigations</h2></div>
+    <div class="annex"><span class="ax">ANNEX G</span><h2>Risks &amp; Mitigations</h2></div>
     <div class="tblwrap"><table>
       <tr><th>Risk</th><th>Read</th><th>Mitigation</th></tr>
       <tr><td>Streamer fatigue</td><td class="warn">Medium</td><td>Chaos is a mode, not the game; seasonal chat-command drops keep the format fresh</td></tr>
       <tr><td>"Just a flash game" perception</td><td class="warn">Medium</td><td>Lead strategy-channel pitches with the Field Manual, measured balance, and Legendary challenge runs</td></tr>
       <tr><td>Single-dev bus factor</td><td class="ok">Low</td><td>One-file architecture + CODE_GUIDE means any contributor is productive in a day</td></tr>
       <tr><td>Platform (Twitch API) shift</td><td class="ok">Low</td><td>Read-only anonymous IRC today; simulated-chat fallback already ships in the build</td></tr>
+      <tr><td>Monetization erodes free-to-play trust</td><td class="warn">Medium</td><td>Cosmetic/convenience-only IAP (Annex E), no stat behind a paywall — enforced as a hard rule before any purchasable ships</td></tr>
     </table></div>
   </section>
 
