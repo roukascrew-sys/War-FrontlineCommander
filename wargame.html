@@ -42,7 +42,8 @@
   #topbar .spacer{flex:1;}
   .tb-btn{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);
     font-size:12px;font-weight:600;color:var(--dim);transition:.12s;}
-  .tb-btn:hover{color:var(--ink);border-color:var(--blue);}
+  .tb-btn:hover{color:var(--ink);border-color:var(--blue);transform:translateY(-1px);}
+  .tb-btn:active{transform:translateY(0) scale(0.95);}
   .tb-btn.on{color:var(--bg);background:var(--gold);border-color:var(--gold);}
   /* topbar buttons colour-keyed to what they do */
   #btn-stream:hover,#btn-twitch:hover{border-color:var(--purple);color:var(--purple);}
@@ -95,14 +96,16 @@
   #hbtabs{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;pointer-events:auto;}
   .hbtab{padding:5px 11px;border:1px solid var(--line);border-radius:7px;background:#0b0f18d8;
     font-size:10.5px;font-weight:800;letter-spacing:.6px;color:var(--dim);text-transform:uppercase;transition:.1s;}
-  .hbtab:hover{color:var(--ink);border-color:var(--blue);}
+  .hbtab:hover{color:var(--ink);border-color:var(--blue);transform:translateY(-1px);}
+  .hbtab:active{transform:translateY(0) scale(0.95);}
   .hbtab.on{background:var(--gold);color:var(--bg);border-color:var(--gold);}
   #hotbar{display:flex;flex-wrap:wrap;
     gap:6px;justify-content:center;pointer-events:auto;}
   .card{width:70px;height:84px;background:var(--panel);border:1.5px solid var(--line);border-radius:10px;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;position:relative;
     transition:.1s;overflow:hidden;}
-  .card:hover{border-color:var(--blue);transform:translateY(-3px);}
+  .card:hover{border-color:var(--blue);transform:translateY(-3px);box-shadow:0 6px 14px #0007;}
+  .card:active{transform:translateY(-1px) scale(0.97);}
   .card.sel{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold) inset;}
   .card.cant{opacity:.42;}
   .card .glyph{font-size:23px;line-height:1;}
@@ -127,8 +130,13 @@
   .ctrl-lbl{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--faint);margin-right:2px;}
   .ctrl-b{min-width:26px;height:24px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);
     font-size:13px;font-weight:700;color:var(--dim);transition:.1s;}
-  .ctrl-b:hover{color:var(--ink);border-color:var(--blue);}
+  .ctrl-b:hover{color:var(--ink);border-color:var(--blue);transform:translateY(-1px);}
+  .ctrl-b:active{transform:translateY(0) scale(0.92);}
   .ctrl-b.on{background:var(--gold);color:var(--bg);border-color:var(--gold);}
+  /* stance buttons keep their doctrine colour even when armed, so the cluster reads at a glance */
+  #stance-assault.on{background:#ff9f40;border-color:#ff9f40;} #stance-assault:hover{border-color:#ff9f40;color:#ff9f40;}
+  #stance-defend.on{background:#3fd07a;border-color:#3fd07a;} #stance-defend:hover{border-color:#3fd07a;color:#3fd07a;}
+  #stance-skirmish.on{background:#5ff0e0;border-color:#5ff0e0;} #stance-skirmish:hover{border-color:#5ff0e0;color:#5ff0e0;}
   /* chat vote bar (streamer) */
   #votebar{position:absolute;bottom:112px;right:14px;width:180px;background:#0b0f18d8;border:1px solid var(--purple);
     border-radius:8px;padding:6px 9px;display:none;pointer-events:none;z-index:11;}
@@ -300,6 +308,47 @@
     font-size:12px;font-weight:800;letter-spacing:.5px;transition:.12s;}
   .td-chip:hover{transform:translateY(-2px);color:var(--ink);}
   .td-chip.on{color:var(--bg);}
+  .td-chip .td-ic{margin-right:5px;filter:drop-shadow(0 1px 2px #000a);}
+  /* difficulty-change screen effect — flames + crossing tracers, scaled by tier severity */
+  #diff-fx{position:fixed;inset:0;pointer-events:none;z-index:36;overflow:hidden;opacity:0;}
+  #diff-fx.show{animation:diffFxFade 900ms ease-out forwards;}
+  @keyframes diffFxFade{0%{opacity:1}70%{opacity:1}100%{opacity:0}}
+  .diff-tracer{position:absolute;height:2px;width:46%;
+    background:linear-gradient(90deg,transparent,#ffe27a,#fff,transparent);
+    filter:drop-shadow(0 0 4px #ffce5a);animation:tracerCross 480ms linear forwards;}
+  .diff-tracer.rev{animation-name:tracerCrossRev;}
+  @keyframes tracerCross{0%{transform:translateX(-120%) rotate(var(--rot,-8deg));opacity:0}
+    15%{opacity:1}100%{transform:translateX(220%) rotate(var(--rot,-8deg));opacity:0}}
+  @keyframes tracerCrossRev{0%{transform:translateX(220%) rotate(var(--rot,8deg));opacity:0}
+    15%{opacity:1}100%{transform:translateX(-120%) rotate(var(--rot,8deg));opacity:0}}
+  .diff-flame{position:absolute;bottom:-8%;width:110px;height:150px;
+    background:radial-gradient(ellipse at 50% 100%, #fff2c0 0%, #ffb347 22%, #ff5a2e 48%, transparent 72%);
+    filter:blur(1px);animation:flameFlicker 900ms ease-out forwards;}
+  @keyframes flameFlicker{0%{transform:translateY(20%) scaleY(0.5);opacity:0}
+    25%{opacity:.95}55%{transform:translateY(-4%) scaleY(1.05);}100%{transform:translateY(-30%) scaleY(0.85);opacity:0}}
+  .title-shake{animation:titleShake 420ms ease-out;}
+  @keyframes titleShake{0%,100%{transform:translate(0,0);}
+    15%{transform:translate(-6px,3px);}30%{transform:translate(5px,-4px);}
+    45%{transform:translate(-4px,4px);}60%{transform:translate(6px,2px);}
+    75%{transform:translate(-3px,-3px);}90%{transform:translate(2px,2px);}}
+  /* ═══ RANK-UP SCREEN ═══ */
+  #rankup{position:absolute;inset:0;z-index:45;background:radial-gradient(circle at 50% 40%,#1a2340f0,#080b11f8);
+    display:none;align-items:center;justify-content:center;padding:24px;}
+  #rankup.show{display:flex;}
+  .ru-card{text-align:center;max-width:440px;animation:ruIn .5s cubic-bezier(.2,1.4,.4,1) both;}
+  @keyframes ruIn{0%{transform:scale(0.7);opacity:0;}100%{transform:scale(1);opacity:1;}}
+  .ru-badge{font-size:64px;line-height:1;filter:drop-shadow(0 0 22px #ffce5a99);animation:ruBadgePulse 1.6s ease-in-out infinite;}
+  @keyframes ruBadgePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+  .ru-h{font-family:system-ui,sans-serif;font-weight:900;font-size:34px;letter-spacing:3px;color:var(--gold);
+    text-shadow:0 0 30px #ffce5a88;margin:8px 0 2px;}
+  .ru-sub{font-size:16px;color:var(--ink);font-weight:700;margin-bottom:16px;}
+  .ru-rewards{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px;
+    text-align:left;margin-bottom:18px;}
+  .ru-rewards h4{font-size:10.5px;font-weight:800;letter-spacing:1.4px;color:var(--faint);text-transform:uppercase;margin:0 0 8px;}
+  .ru-rewards li{font-size:13.5px;color:var(--ink);margin-bottom:5px;list-style:none;padding-left:20px;position:relative;}
+  .ru-rewards li::before{content:'✦';position:absolute;left:0;color:var(--gold);}
+  .ru-ray{position:absolute;top:50%;left:50%;width:2px;height:60vh;background:linear-gradient(180deg,transparent,#ffce5a33,transparent);
+    transform-origin:center;pointer-events:none;}
   .title-btns2{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;}
   /* two headline mode buttons — each keyed to its own accent */
   .hero-btn{display:flex;align-items:center;gap:14px;padding:16px 26px;border-radius:14px;min-width:250px;
@@ -465,9 +514,11 @@
   @keyframes vicjet{to{left:110%;}}
   .btn-row{display:flex;gap:12px;margin-top:18px;}
   .sbtn{padding:12px 26px;font-size:14px;font-weight:800;letter-spacing:1px;border-radius:10px;background:var(--panel2);
-    border:1px solid var(--line);color:var(--ink);transition:.1s;}
-  .sbtn:hover{border-color:var(--gold);}
+    border:1px solid var(--line);color:var(--ink);transition:.12s;}
+  .sbtn:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-2px);box-shadow:0 6px 16px #0006;}
+  .sbtn:active{transform:translateY(0);box-shadow:none;}
   .sbtn.prim{background:var(--gold);color:var(--bg);border-color:var(--gold);}
+  .sbtn.prim:hover{color:var(--bg);box-shadow:0 6px 20px #ffce5a4d;}
 
   /* ── narrator subtitle ── */
   #narrator{position:absolute;left:50%;bottom:112px;transform:translateX(-50%) translateY(8px);
@@ -505,8 +556,16 @@
   .camp-btn .cn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .camp-btn .cs{color:var(--gold);font-size:13px;white-space:nowrap;}
   /* ── first-run prompt ── */
-  #firstrun,#voicemodal,#twitchmodal{position:absolute;inset:0;z-index:40;background:#080b11e0;display:none;align-items:center;justify-content:center;padding:24px;}
-  #firstrun.show,#voicemodal.show,#twitchmodal.show{display:flex;}
+  #firstrun,#voicemodal,#twitchmodal,#debugmodal{position:absolute;inset:0;z-index:40;background:#080b11e0;display:none;align-items:center;justify-content:center;padding:24px;}
+  #firstrun.show,#voicemodal.show,#twitchmodal.show,#debugmodal.show{display:flex;}
+  #dbg-groups{max-height:52vh;overflow-y:auto;margin:6px 0 4px;}
+  .dbg-grp{margin-bottom:14px;}
+  .dbg-grp h4{font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold);margin:0 0 6px;}
+  .dbg-row{display:flex;flex-wrap:wrap;gap:6px;}
+  .dbg-btn{padding:6px 11px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);
+    color:var(--dim);font-size:11.5px;font-weight:700;transition:.12s;}
+  .dbg-btn:hover{color:var(--ink);border-color:var(--blue);transform:translateY(-1px);}
+  .dbg-btn:active{transform:translateY(0) scale(0.94);}
   .fr-card{background:var(--panel);border:1px solid var(--cyan);border-radius:16px;padding:26px 30px;max-width:460px;text-align:center;box-shadow:0 20px 60px #000b;}
   .fr-h{font-size:22px;font-weight:900;color:var(--gold);margin-bottom:10px;}
   .fr-p{font-size:14px;color:var(--dim);line-height:1.6;margin-bottom:18px;}
@@ -526,7 +585,7 @@
 
 <div id="topbar">
   <div class="logo">⚔ <b>FRONTLINE</b> COMMANDER</div>
-  <div class="hstat" id="tb-rank">Rank <b id="tb-lvl">1</b></div>
+  <div class="hstat" id="tb-rank">Rank <b id="tb-lvl">1</b> <span id="tb-title" style="color:var(--faint);font-weight:600"></span> <span id="tb-badge"></span></div>
   <div class="hstat">Best <b id="tb-best">0</b></div>
   <div class="spacer"></div>
   <button class="tb-btn" id="btn-stream">📺 Streamer Mode</button>
@@ -537,6 +596,7 @@
   <button class="tb-btn" id="btn-music">🎵 Music</button>
   <button class="tb-btn hidden" id="btn-news">📰 News</button>
   <button class="tb-btn" id="btn-ai">🧠 AI Debug</button>
+  <button class="tb-btn" id="btn-debug">🐞 Debug</button>
   <button class="tb-btn hidden" id="btn-pause">⏸ Pause</button>
   <button class="tb-btn" id="btn-menu">☰ Menu</button>
 </div>
@@ -551,7 +611,7 @@
     <div id="rivalbox"><span class="rp">📡 <span id="rival-name"></span></span><span class="rt"></span></div>
     <div id="objbar"></div>
     <div id="basebars">
-      <div class="bhp blue"><div class="lbl">YOUR HQ</div><div class="track"><div class="fill" id="hpB"></div></div></div>
+      <div class="bhp blue"><div class="lbl" id="hqB-lbl">YOUR HQ</div><div class="track"><div class="fill" id="hpB"></div></div></div>
       <div class="bhp red"><div class="lbl">ENEMY HQ</div><div class="track"><div class="fill" id="hpR"></div></div></div>
     </div>
     <div id="cpwrap">
@@ -665,6 +725,7 @@
   <!-- TITLE / ATTRACT SCREEN -->
   <div class="screen hidden" id="title">
     <div id="title-scrim"></div>
+    <div id="diff-fx"></div>
     <div id="title-inner">
       <div class="title-logo">⚔ <b>FRONTLINE</b><br><span>COMMANDER</span></div>
       <div class="title-tag" id="title-tag">Bank the points. Break the line. Take the war.</div>
@@ -726,6 +787,17 @@
 
   <!-- RESULTS -->
   <div class="screen hidden" id="results"></div>
+
+  <!-- RANK-UP SCREEN — shown before results when a battle ends in a level-up -->
+  <div id="rankup">
+    <div class="ru-card">
+      <div class="ru-badge" id="ru-badge">⚔</div>
+      <div class="ru-h">RANK UP</div>
+      <div class="ru-sub" id="ru-sub">Rank 2 — Recruit</div>
+      <div class="ru-rewards" id="ru-rewards"></div>
+      <button class="sbtn prim" id="ru-continue">Continue ▸</button>
+    </div>
+  </div>
 
   <!-- LOADING SCREEN -->
   <div id="loader">
@@ -805,6 +877,18 @@
       </div>
     </div>
   </div>
+
+  <!-- DEBUG MODE — manually fire any scripted event for testing/showcasing -->
+  <div id="debugmodal">
+    <div class="fr-card" style="max-width:620px;text-align:left">
+      <div class="fr-h" style="text-align:center">🐞 Debug — Trigger Events</div>
+      <div class="fr-p" style="text-align:center">Fires the real event function directly — same code path as when it happens naturally. Most need a live battle running.</div>
+      <div id="dbg-groups"></div>
+      <div class="btn-row" style="justify-content:center;margin-top:10px">
+        <button class="sbtn" id="dbg-close">✕ Close</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -834,7 +918,7 @@ function shade(hex,mul){ let h=(hex||'#888').replace('#',''); if(h.length===3)h=
 const SAVE_KEY='FRONTLINE_SAVE_v1';
 const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0,
   unlocked:['blitzkrieg','mass'],medals:{},sound:true,narrator:true,streamOn:false,seenTut:false,
-  campaignDone:-1,campaignStars:{},daily:{},ttsKey:'',ttsVoice:'custom',ttsVoiceCustomId:'',ttsVoiceCustomName:'Thaddeus',
+  campaignDone:-1,campaignStars:{},daily:{},ttsKey:'',ttsVoice:'custom',ttsVoiceCustomId:'ZR7bgvV5iWuFTdxzb9Y6',ttsVoiceCustomName:'Thaddeus',
   speed:1,twitchChannel:'',war:null,warWins:0,aiDebug:false,music:true,musicVol:0.5,news:false,reduceMotion:false,
   ambient:true,randomEvents:true,evSupply:true,evVoice:true,evCutscene:true,evBarrage:true,evDefector:true,
   chaosMode:false,
@@ -847,6 +931,30 @@ function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.x
 function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(SAVE));}catch(e){}}
 function xpForLevel(l){return 100+l*80;}
 function addXP(n){ SAVE.xp+=n; let up=false; while(SAVE.xp>=xpForLevel(SAVE.lvl)){SAVE.xp-=xpForLevel(SAVE.lvl);SAVE.lvl++;up=true;} persist(); return up; }
+
+/* ── RANK REWARDS — cosmetic only, everyone plays the full roster/modes from rank 1.
+   A title + an HQ badge unlock automatically as you level; both are just flavour. ── */
+const COMMANDER_TITLES=[
+  {lvl:1,title:'Recruit'},{lvl:3,title:'Private First Class'},{lvl:5,title:'Corporal'},
+  {lvl:8,title:'Sergeant'},{lvl:12,title:'Lieutenant'},{lvl:16,title:'Captain'},
+  {lvl:20,title:'Major'},{lvl:25,title:'Colonel'},{lvl:30,title:'General'},
+];
+const HQ_BADGES=[
+  {lvl:1,glyph:'⚔',name:'Crossed Sabers'},{lvl:4,glyph:'🛡',name:'Iron Shield'},
+  {lvl:7,glyph:'🐺',name:'Lone Wolf'},{lvl:10,glyph:'🦅',name:'Eagle Eye'},
+  {lvl:15,glyph:'🔥',name:'Scorched Earth'},{lvl:20,glyph:'👑',name:'Crown'},
+  {lvl:25,glyph:'☠',name:'Reaper'},{lvl:30,glyph:'🌟',name:'Living Legend'},
+];
+function commanderTitle(lvl){ let t=COMMANDER_TITLES[0]; for(const e of COMMANDER_TITLES)if(lvl>=e.lvl)t=e; return t.title; }
+function currentBadge(lvl){ let b=HQ_BADGES[0]; for(const e of HQ_BADGES)if(lvl>=e.lvl)b=e; return b; }
+function rankRewardsAtLevel(lvl){ // anything that unlocks on exactly this level-up, for the rank-up screen
+  const out=[];
+  const t=COMMANDER_TITLES.find(e=>e.lvl===lvl); if(t)out.push('New title: "'+t.title+'"');
+  const b=HQ_BADGES.find(e=>e.lvl===lvl); if(b)out.push('New HQ badge: '+b.glyph+' '+b.name);
+  for(const k in DOCTRINES)if(DOCTRINES[k].unlock===lvl)out.push('New doctrine: '+DOCTRINES[k].name);
+  if(lvl===3)out.push('EMP Pulse commander power unlocked');
+  return out;
+}
 
 /* ── DOCTRINES (map to the simulator's doctrine families; here they are perks) ── */
 const DOCTRINES={
@@ -897,7 +1005,7 @@ const UNITS={
     aa:true,onlyAir:true,splash:0,r:10,desc:'shreds aircraft, useless vs ground'},
   heli:{name:'Attack Heli',glyph:'⬡',cat:'air',cost:80,cd:2.6,hp:70,dmg:22,rof:0.8,rng:120,spd:44,col:'#d49bff',
     aa:false,flies:true,splash:8,r:11,vsArmor:2.2,desc:'flies over, hits armour'},
-  drone:{name:'Kamikaze Drone',glyph:'⬟',cat:'dro',cost:11,cd:0.45,hp:11,dmg:38,rof:99,rng:16,spd:62,col:'#ffdf7f',
+  drone:{name:'Kamikaze Drone',glyph:'⬟',cat:'dro',cost:11,cd:0.45,hp:11,dmg:38,rof:99,rng:50,spd:62,col:'#ffdf7f',
     aa:false,flies:true,lowAir:true,splash:9,r:8,kamikaze:true,vsArmor:2.5,desc:'dirt-cheap one-shot diver — swarm them, but EW & rapid fire shred them'},
   // ── Phase 1 additions ──
   sniper:{name:'Sniper',glyph:'✛',cat:'inf',cost:40,cd:1.6,hp:18,dmg:34,rof:2.4,rng:210,spd:20,col:'#c9e0ff',
@@ -913,11 +1021,16 @@ const UNITS={
     aa:false,flies:true,orbit:true,splash:0,r:9,vsAir:3,desc:'flies a wide combat air patrol over the middle, downing any aircraft it passes — a lasting air shield'},
   gunship:{name:'Gunship',glyph:'✈',cat:'air',cost:165,cd:0.55,hp:230,dmg:15,rof:0.55,rng:210,spd:22,col:'#ff7f50',
     aa:false,flies:true,gunship:true,splash:8,r:15,desc:'loiters mid-field and strafes all three lanes — needs interceptor cover'},
+  // close-quarters DOT specialist — dangerous to close with, brutal once it does
+  flame:{name:'Flame Trooper',glyph:'♨',cat:'inf',cost:34,cd:1.2,hp:30,dmg:8,rof:0.9,rng:34,spd:22,col:'#ff7a3c',
+    aa:false,splash:0,r:7,burnDps:9,burnDur:3.5,desc:'very short range but sets targets ablaze — brutal vs infantry, weak vs armour'},
 };
-const HOTBAR=['rifle','atgm','sniper','tank','ifv','arty','mlrs','aa','heli','drone','medic','jammer','interceptor','gunship'];
+// appended at the end rather than grouped with the other infantry so every existing
+// number-hotkey (1-9) and tutorial "press N" instruction keeps pointing at the same unit
+const HOTBAR=['rifle','atgm','sniper','tank','ifv','arty','mlrs','aa','heli','drone','medic','jammer','interceptor','gunship','flame'];
 
 /* ── IN-BATTLE TECH TIERS — in normal modes you buy your way up the tree mid-fight ── */
-const UNIT_TIER={rifle:1,atgm:1,ifv:1, sniper:2,tank:2,aa:2,arty:2,drone:2,medic:2, heli:3,mlrs:3,jammer:3,interceptor:3,gunship:3};
+const UNIT_TIER={rifle:1,atgm:1,ifv:1, sniper:2,tank:2,aa:2,arty:2,drone:2,medic:2,flame:2, heli:3,mlrs:3,jammer:3,interceptor:3,gunship:3};
 const TIER_UNLOCK={1:0,2:60,3:130}; // CP paid once per battle to open a tier's units
 function unitTier(key){return UNIT_TIER[key]||1;}
 function tierUnlockCost(key){return TIER_UNLOCK[unitTier(key)]||0;}
@@ -933,8 +1046,8 @@ const DMG_MATRIX={           //  vs: inf   light  heavy  air    struct
   he:{inf:1.30,light:1.15,heavy:0.72,air:0.30,struct:1.45}, // high explosive
   aa:{inf:0.35,light:0.50,heavy:0.30,air:2.40,struct:0.20}, // anti-air
 };
-const UNIT_DMGTYPE={rifle:'sa',atgm:'ap',sniper:'sa',tank:'ap',ifv:'sa',arty:'he',mlrs:'he',aa:'aa',heli:'ap',drone:'ap',medic:null,jammer:null,interceptor:'aa',gunship:'he'};
-const UNIT_ARMORCLASS={rifle:'inf',atgm:'inf',sniper:'inf',medic:'inf',tank:'heavy',ifv:'light',arty:'light',mlrs:'light',aa:'light',jammer:'light',heli:'air',drone:'air',interceptor:'air',gunship:'air'};
+const UNIT_DMGTYPE={rifle:'sa',atgm:'ap',sniper:'sa',tank:'ap',ifv:'sa',arty:'he',mlrs:'he',aa:'aa',heli:'ap',drone:'ap',medic:null,jammer:null,interceptor:'aa',gunship:'he',flame:'sa'};
+const UNIT_ARMORCLASS={rifle:'inf',atgm:'inf',sniper:'inf',medic:'inf',tank:'heavy',ifv:'light',arty:'light',mlrs:'light',aa:'light',jammer:'light',heli:'air',drone:'air',interceptor:'air',gunship:'air',flame:'inf'};
 const UNIT_CRIT={sniper:0.24}; // precision units land the occasional double-damage hit
 function dmgMul(dt,ac){ return (dt&&DMG_MATRIX[dt]&&DMG_MATRIX[dt][ac||'inf'])||1; }
 
@@ -947,7 +1060,7 @@ const AGES=[
   {name:'Future',     glyph:'⬢', hqMul:3.20, unit:1.95, sup:3.0, evo:960, slots:4, col:'#c9a0ff'},
 ];
 // which age each unit becomes available in (Evolution mode gates the roster by age)
-const UNIT_MINAGE={rifle:0,ifv:0,medic:0, atgm:1,tank:1,aa:1, sniper:2,arty:2,jammer:2, mlrs:3,heli:3,interceptor:3, drone:4,gunship:4};
+const UNIT_MINAGE={rifle:0,ifv:0,medic:0, atgm:1,tank:1,aa:1, sniper:2,arty:2,jammer:2,flame:2, mlrs:3,heli:3,interceptor:3, drone:4,gunship:4};
 
 /* ── PRODUCTION SPAWNERS — expensive structures built just ahead of your HQ that
    pump out a unit on a timer. A long-term economy investment. Capped per side. ── */
@@ -962,12 +1075,12 @@ const MAX_SPAWNERS=4;
 /* ── COUNTRIES — rename the roster to real national equipment (flavour only, no stat change) ── */
 const COUNTRIES={
   generic:{name:'Generic',flag:'🏴',names:{}},
-  usa:{name:'United States',flag:'🇺🇸',names:{rifle:'Rifleman',atgm:'Javelin Team',sniper:'Marine Sniper',tank:'M1 Abrams',ifv:'M2 Bradley',arty:'M109 Paladin',mlrs:'HIMARS',aa:'M-SHORAD Avenger',heli:'AH-64 Apache',drone:'Switchblade',medic:'Corpsman',jammer:'EW Stryker',interceptor:'F-22 Raptor',gunship:'AC-130 Spectre'}},
-  russia:{name:'Russia',flag:'🇷🇺',names:{rifle:'Motor Rifles',atgm:'Kornet Team',sniper:'SVD Marksman',tank:'T-90M',ifv:'BMP-3',arty:'2S19 Msta-S',mlrs:'BM-30 Smerch',aa:'Pantsir-S1',heli:'Ka-52 Alligator',drone:'Lancet',medic:'Medic',jammer:'Krasukha EW',interceptor:'Su-57 Felon',gunship:'Il-76 Gunship'}},
-  china:{name:'China',flag:'🇨🇳',names:{rifle:'PLA Infantry',atgm:'HJ-12 Team',sniper:'QBU Marksman',tank:'Type 99A',ifv:'ZBD-04A',arty:'PLZ-05',mlrs:'PHL-03',aa:'HQ-17',heli:'Z-10',drone:'CH-901',medic:'Medic',jammer:'EW Vehicle',interceptor:'J-20 Mighty Dragon',gunship:'Y-8 Gunship'}},
-  uk:{name:'United Kingdom',flag:'🇬🇧',names:{rifle:'Riflemen',atgm:'NLAW Team',sniper:'Sharpshooter',tank:'Challenger 2',ifv:'Warrior',arty:'AS-90',mlrs:'MLRS',aa:'Stormer HVM',heli:'Apache AH1',drone:'Loitering Munition',medic:'Medic',jammer:'EW Variant',interceptor:'Typhoon FGR4',gunship:'Gunship'}},
-  germany:{name:'Germany',flag:'🇩🇪',names:{rifle:'Panzergrenadier',atgm:'MELLS Team',sniper:'G82 Marksman',tank:'Leopard 2A7',ifv:'Puma',arty:'PzH 2000',mlrs:'MARS II',aa:'Gepard',heli:'Tiger',drone:'HERON',medic:'Sanitäter',jammer:'EW Variant',interceptor:'Eurofighter',gunship:'Gunship'}},
-  japan:{name:'Japan',flag:'🇯🇵',names:{rifle:'JGSDF Infantry',atgm:'Type 01 Team',sniper:'Marksman',tank:'Type 10',ifv:'Type 89',arty:'Type 99 SPH',mlrs:'MLRS',aa:'Type 11',heli:'AH-64DJ',drone:'Loitering Munition',medic:'Medic',jammer:'EW Variant',interceptor:'F-15J',gunship:'Gunship'}},
+  usa:{name:'United States',flag:'🇺🇸',names:{rifle:'Rifleman',atgm:'Javelin Team',sniper:'Marine Sniper',tank:'M1 Abrams',ifv:'M2 Bradley',arty:'M109 Paladin',mlrs:'HIMARS',aa:'M-SHORAD Avenger',heli:'AH-64 Apache',drone:'Switchblade',medic:'Corpsman',jammer:'EW Stryker',interceptor:'F-22 Raptor',gunship:'AC-130 Spectre',flame:'M9 Flame Team'}},
+  russia:{name:'Russia',flag:'🇷🇺',names:{rifle:'Motor Rifles',atgm:'Kornet Team',sniper:'SVD Marksman',tank:'T-90M',ifv:'BMP-3',arty:'2S19 Msta-S',mlrs:'BM-30 Smerch',aa:'Pantsir-S1',heli:'Ka-52 Alligator',drone:'Lancet',medic:'Medic',jammer:'Krasukha EW',interceptor:'Su-57 Felon',gunship:'Il-76 Gunship',flame:'RPO-A Shmel Team'}},
+  china:{name:'China',flag:'🇨🇳',names:{rifle:'PLA Infantry',atgm:'HJ-12 Team',sniper:'QBU Marksman',tank:'Type 99A',ifv:'ZBD-04A',arty:'PLZ-05',mlrs:'PHL-03',aa:'HQ-17',heli:'Z-10',drone:'CH-901',medic:'Medic',jammer:'EW Vehicle',interceptor:'J-20 Mighty Dragon',gunship:'Y-8 Gunship',flame:'Type 74 Flame Team'}},
+  uk:{name:'United Kingdom',flag:'🇬🇧',names:{rifle:'Riflemen',atgm:'NLAW Team',sniper:'Sharpshooter',tank:'Challenger 2',ifv:'Warrior',arty:'AS-90',mlrs:'MLRS',aa:'Stormer HVM',heli:'Apache AH1',drone:'Loitering Munition',medic:'Medic',jammer:'EW Variant',interceptor:'Typhoon FGR4',gunship:'Gunship',flame:'Flame Pioneer'}},
+  germany:{name:'Germany',flag:'🇩🇪',names:{rifle:'Panzergrenadier',atgm:'MELLS Team',sniper:'G82 Marksman',tank:'Leopard 2A7',ifv:'Puma',arty:'PzH 2000',mlrs:'MARS II',aa:'Gepard',heli:'Tiger',drone:'HERON',medic:'Sanitäter',jammer:'EW Variant',interceptor:'Eurofighter',gunship:'Gunship',flame:'Flammenwerfer Team'}},
+  japan:{name:'Japan',flag:'🇯🇵',names:{rifle:'JGSDF Infantry',atgm:'Type 01 Team',sniper:'Marksman',tank:'Type 10',ifv:'Type 89',arty:'Type 99 SPH',mlrs:'MLRS',aa:'Type 11',heli:'AH-64DJ',drone:'Loitering Munition',medic:'Medic',jammer:'EW Variant',interceptor:'F-15J',gunship:'Gunship',flame:'Type 100 Flame Team'}},
 };
 const COUNTRY_KEYS=Object.keys(COUNTRIES);
 function unitName(key,country){ const c=COUNTRIES[country]; return (c&&c.names[key])||UNITS[key].name; }
@@ -1042,10 +1155,10 @@ const MODES={
 // smart: enables focus-fire / hard-countering / budget-hoarding AI ·
 // playerCp: a leg-up on the player's income so the low tiers feel generous.
 const DIFFS={
-  recruit:  {name:'Recruit',  cpMul:0.52, qualMul:0.72, think:1.7,  open:2, smart:false, playerCp:1.25, col:'#3fd07a'},
-  veteran:  {name:'Veteran',  cpMul:1.00, qualMul:1.04, think:1.0,  open:3, smart:false, playerCp:1.02, col:'#ffce5a'},
-  elite:    {name:'Elite',    cpMul:1.36, qualMul:1.24, think:0.76, open:4, smart:true,  playerCp:1.0,  col:'#ff9f40'},
-  legendary:{name:'Legendary',cpMul:1.90, qualMul:1.60, think:0.48, open:6, smart:true,  playerCp:1.0,  col:'#ff5a4a'},
+  recruit:  {name:'Recruit',  cpMul:0.52, qualMul:0.72, think:1.7,  open:2, smart:false, playerCp:1.25, col:'#3fd07a', glyph:'🪖', fx:0},
+  veteran:  {name:'Veteran',  cpMul:1.00, qualMul:1.04, think:1.0,  open:3, smart:false, playerCp:1.02, col:'#ffce5a', glyph:'🎖️', fx:1},
+  elite:    {name:'Elite',    cpMul:1.36, qualMul:1.24, think:0.76, open:4, smart:true,  playerCp:1.0,  col:'#ff9f40', glyph:'⚔️', fx:2},
+  legendary:{name:'Legendary',cpMul:1.90, qualMul:1.60, think:0.48, open:6, smart:true,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
 const GAME_VERSION='1.0.0'; // ⭐ launch build
@@ -1538,8 +1651,11 @@ const ELEVEN_VOICES={
   antoni:{id:'ErXwobaYiN019PkySvjV',name:'Antoni — warm & steady'},
   custom:{id:'',name:'Custom — paste a Voice ID'}, // any voice from your ElevenLabs library, e.g. Thaddeus
 };
+// voice IDs aren't secret (only the API key is) — Thaddeus's public ID, baked in as the
+// Custom slot's fallback so picking Custom + saving a key works even with the ID field blank
+const THADDEUS_VOICE_ID='ZR7bgvV5iWuFTdxzb9Y6';
 function activeVoiceId(){
-  if(SAVE.ttsVoice==='custom')return SAVE.ttsVoiceCustomId||'';
+  if(SAVE.ttsVoice==='custom')return SAVE.ttsVoiceCustomId||THADDEUS_VOICE_ID;
   return (ELEVEN_VOICES[SAVE.ttsVoice]||ELEVEN_VOICES.arnold).id;
 }
 async function narrSpeakPremium(text,mood){
@@ -1735,7 +1851,7 @@ function newGame(){
   G.enemyCountry=pick(COUNTRY_KEYS.filter(c=>c!=='generic'&&c!==G.country))||'russia';
   // Age-of-War evolution state
   G.ages=(kind==='evolution');
-  G.age=0; G.evo=0; G.enemyAge=0; G.enemyAgeT=28; G.turrets=[]; G.spawners=[]; G.scorches=[];
+  G.age=0; G.evo=0; G.enemyAge=0; G.enemyAgeT=28; G.turrets=[]; G.spawners=[]; G.scorches=[]; G.decals=[]; G.chaosRareT=null;
   // in-battle tech unlocks — normal modes make you buy the tree; Evolution gates by age
   G.techMode=(kind==='skirmish'||kind==='blitz'||kind==='survival');
   G.unlocked={};
@@ -1810,6 +1926,7 @@ function spawn(side,key,lane,xOverride){
     support:!!u.support,sup:0,firedOnce:false,
     ambush:(side==='B'&&p.ambushDmg)?p.ambushDmg:1,
     stealth:(side==='B'&&p.stealth)||false,spotted:(side==='B'),
+    burnDps:u.burnDps||0,burnDur:u.burnDur||0,burnT:0,
     muzzle:0,hitFlash:0,vx:0,bob:rnd(0,6.28),alive:true});
 }
 
@@ -2211,7 +2328,18 @@ function damage(u,dmg,src){
   u.hp-=dmg; u.hitFlash=1;
   u.sup=Math.min(1,(u.sup||0)+0.10); // taking fire suppresses
   if(src&&src.side==='B'){G.dmgDealt+=dmg;}
+  // set alight — refreshes on every hit rather than stacking, so repeated flame hits keep it lit, not escalate it
+  if(src&&src.burnDps){ u.burnT=Math.max(u.burnT||0,src.burnDur||3); u.burnDps=src.burnDps; u.burnSide=src.side; }
   if(u.hp<=0){ killUnit(u,src); }
+}
+function burnTick(u,dt){
+  if(!(u.burnT>0))return;
+  u.burnT-=dt;
+  const bd=u.burnDps*dt;
+  u.hp-=bd; u.hitFlash=Math.max(u.hitFlash,0.3);
+  if(u.burnSide==='B')G.dmgDealt+=bd; else G.dmgTaken+=bd;
+  if(Math.random()<dt*8)G.parts.push({x:u.x+rnd(-u.r*0.5,u.r*0.5),y:u.y-u.r*0.3,vx:rnd(-8,8),vy:-rnd(20,40),life:rnd(0.3,0.55),age:0,col:pick(['#ffce5a','#ff9f40','#ff5a4a']),sz:rnd(1.2,2.2)});
+  if(u.hp<=0){ killUnit(u,{side:u.burnSide,dmgType:null}); u.burnT=0; }
 }
 /* veterancy — units that keep racking up kills mid-battle grow stronger, either side */
 function grantVetXP(u){
@@ -2443,7 +2571,7 @@ function step(dt){
   updateProjs(dt);
   updateFX(dt);
   // decay shake/flash
-  if(G.shake>0)G.shake=Math.max(0,G.shake-dt*30);
+  if(G.shake>0)G.shake=Math.max(0,G.shake-dt*22);
   if(G.flash>0)G.flash=Math.max(0,G.flash-dt*2.5);
 }
 
@@ -2548,6 +2676,7 @@ function updateUnits(dt){
     if(G.frozen){ u.bob+=dt*3; if(u.muzzle>0)u.muzzle-=dt; if(u.hitFlash>0)u.hitFlash-=dt*4; continue; }
     if(u.muzzle>0)u.muzzle-=dt; if(u.hitFlash>0)u.hitFlash-=dt*4;
     if(u.phantom>0)u.phantom-=dt; // 👻 fake-death marker fades on its own
+    burnTick(u,dt); if(!u.alive)continue; // set alight by a flame trooper — resolve before anything else this frame
     if(u.sup>0)u.sup=Math.max(0,u.sup-dt*0.34); // morale recovers over time
     if(G.empT>0&&u.side==='R'&&u.lane===G.empLane)u.sup=Math.max(u.sup||0,0.95); // EMP pulse jams a lane
     u.bob+=dt*6;
@@ -2583,14 +2712,24 @@ function updateUnits(dt){
       u.vx=0;
       // skirmishers give ground when the enemy crowds inside their comfort range
       if(kite && d<rngEff*0.55){ u.x-=dir(u.side)*u.spd*spdMul*0.9*dt; }
-      if(u.cd<=0 && supp<0.85)fire(u,tgt);
+      // kamikaze units (drones) commit to the dive the instant a target is in range — their
+      // spawn cd is randomised up to u.rof (a large placeholder for "one-shot, no reload"),
+      // so gating on cd<=0 like a normal weapon used to leave them stalled in place for up
+      // to that long before ever diving
+      if(u.kamikaze){ fire(u,tgt); }
+      else if(u.cd<=0 && supp<0.85)fire(u,tgt);
     } else {
       const step=dir(u.side)*u.spd*spdMul*stMul*dt;
       if(holdLine!=null && dir(u.side)>0){
         if(u.x>holdLine) u.x=Math.max(holdLine,u.x-u.spd*spdMul*dt); // dug in ahead of the line? fall back to it
         else u.x=Math.min(u.x+step,holdLine);                        // advance only up to the line
       } else u.x+=step;
-      if(u.flies)u.y+=Math.sin(u.bob)*0.3;
+      if(u.flies){
+        if(u.kamikaze&&tgt){ // steer toward the target's lane while closing so it can't fly straight past an off-center enemy
+          const maxDy=u.spd*spdMul*dt*1.4;
+          u.y+=clamp(tgt.y-u.y,-maxDy,maxDy);
+        } else u.y+=Math.sin(u.bob)*0.3;
+      }
     }
     if(u.cd>0)u.cd-=dt;
     // reached enemy HQ?
@@ -2605,8 +2744,8 @@ function updateUnits(dt){
         G.hq[foe]=Math.max(0,G.hq[foe]-hit);
         if(u.side==='B'){G.dmgDealt+=hit;} else {G.dmgTaken+=hit;}
         explode(hqX,u.y,30,u.side,18); u.alive=false;
-        if(foe==='B'){G.shake=Math.max(G.shake,10);G.flash=Math.max(G.flash,0.5);SND.hqhit();chatReact('hqhit');narr('hqYours');frontNews('Home Command takes a direct hit — capital under threat, officials confirm','hqB',9);}
-        else{SND.hqhit();narr('hqTheirs');frontNews('Our forces strike the enemy capital; their high command scrambles','hqR',9);}
+        if(foe==='B'){G.shake=Math.max(G.shake,SAVE.reduceMotion?5:14);G.flash=Math.max(G.flash,0.5);SND.hqhit();chatReact('hqhit');narr('hqYours');frontNews('Home Command takes a direct hit — capital under threat, officials confirm','hqB',9);}
+        else{G.shake=Math.max(G.shake,SAVE.reduceMotion?3:8);SND.hqhit();narr('hqTheirs');frontNews('Our forces strike the enemy capital; their high command scrambles','hqR',9);}
         checkWin();
       }
     }
@@ -2627,7 +2766,7 @@ function updateProjs(dt){
       if(t>=1){
         p.dead=true;
         explode(p.ix,p.iy,p.splash,p.side,18); scorch(p.ix,p.iy,p.splash);
-        G.shake=Math.max(G.shake,5); if(p.side==='R')SND.boom(); else SND.boom();
+        G.shake=Math.max(G.shake,SAVE.reduceMotion?4:9); if(p.side==='R')SND.boom(); else SND.boom();
         for(const o of G.units){ if(o.alive&&o.side!==p.side){ const dd=dist(o.x,o.y,p.ix,p.iy);
           if(dd<p.splash)damage(o,p.dmg*(dd<p.splash*0.5?1:0.6),p.src); } }
       }
@@ -2655,6 +2794,9 @@ function updateFX(dt){
   for(const f of G.floats){f.age+=dt;f.y-=26*dt;}
   G.floats=G.floats.filter(f=>f.age<f.life);
   if(G.scorches){ for(const s of G.scorches)s.age+=dt; G.scorches=G.scorches.filter(s=>s.age<s.life); }
+  if(G.decals){ for(const d of G.decals){ d.age+=dt;
+      if(d.type==='fire'&&Math.random()<dt*4)G.parts.push({x:d.x+rnd(-d.r*0.4,d.r*0.4),y:d.y,vx:rnd(-6,6),vy:-rnd(18,36),life:rnd(0.4,0.8),age:0,col:pick(['#ffce5a','#ff9f40','#ff5a4a']),sz:rnd(1.4,2.6)});
+    } G.decals=G.decals.filter(d=>d.age<d.life); }
 }
 
 function checkWin(){
@@ -2784,6 +2926,16 @@ function drawField(){
   // scorch craters from explosions/artillery
   if(G&&G.scorches)for(const s of G.scorches){ const a=clamp(1-s.age/s.life,0,1)*0.5;
     cx.globalAlpha=a;cx.fillStyle='#0a0806';cx.beginPath();cx.ellipse(s.x,s.y,s.r,s.r*0.5,0,0,6.28);cx.fill();cx.globalAlpha=1; }
+  // 🎲 rare chaos-mode decals — lingering bullet holes + a flickering fire patch
+  if(G&&G.decals)for(const d of G.decals){ const a=clamp(1-d.age/d.life,0,1);
+    if(d.type==='hole'){ cx.globalAlpha=a*0.7;cx.fillStyle='#0d0a08';cx.beginPath();cx.arc(d.x,d.y,d.r,0,6.28);cx.fill();
+      cx.globalAlpha=a*0.3;cx.strokeStyle='#3a2a20';cx.lineWidth=1;cx.stroke();cx.globalAlpha=1; }
+    else{ const fl=(Math.sin(performance.now()/60+d.x)+1)/2;
+      const g=cx.createRadialGradient(d.x,d.y,0,d.x,d.y,d.r);
+      g.addColorStop(0,'rgba(255,224,150,'+(0.55*a*(0.7+0.3*fl))+')');
+      g.addColorStop(0.5,'rgba(255,120,50,'+(0.35*a)+')');
+      g.addColorStop(1,'rgba(255,80,30,0)');
+      cx.fillStyle=g;cx.beginPath();cx.arc(d.x,d.y,d.r,0,6.28);cx.fill(); } }
   // centre line
   cx.strokeStyle='rgba(255,255,255,0.05)';cx.lineWidth=2;cx.setLineDash([4,8]);
   cx.beginPath();cx.moveTo(W/2,horizon);cx.lineTo(W/2,H*0.9);cx.stroke();cx.setLineDash([]);
@@ -2851,10 +3003,13 @@ function drawUnitSprite(u,px,py){
   cx.save(); cx.translate(px,py); cx.scale(f*k,k); cx.lineJoin='round'; cx.lineWidth=1.1/k;
   const key=u.key, cat=u.cat;
   if(cat==='inf'){
-    // legs
-    cx.strokeStyle=dk; cx.lineWidth=1.7; cx.beginPath();cx.moveTo(-1.2,4);cx.lineTo(-1.8,8);cx.moveTo(1.2,4);cx.lineTo(1.9,8);cx.stroke();
+    // legs — a light scissoring gait tied to the unit's bob phase, so the squad reads as marching, not gliding
+    const legPh=Math.sin(u.bob*2.2)*0.8;
+    cx.strokeStyle=dk; cx.lineWidth=1.7; cx.beginPath();cx.moveTo(-1.2,4);cx.lineTo(-1.8+legPh,8);cx.moveTo(1.2,4);cx.lineTo(1.9-legPh,8);cx.stroke();
     // torso / plate carrier
     cx.fillStyle=col; rr(-2.4,-1.6,4.8,6,1.6); cx.fill(); cx.strokeStyle=dk;cx.lineWidth=1.1;cx.stroke();
+    // a thin rim-light down the near shoulder for a touch of body definition
+    cx.strokeStyle=lt; cx.lineWidth=0.7; cx.beginPath(); cx.moveTo(-2.3,-1.4); cx.lineTo(-2.3,3.6); cx.stroke();
     // head + helmet
     cx.fillStyle=lt; cx.beginPath();cx.arc(0,-3.4,1.9,0,6.28);cx.fill();
     cx.fillStyle=col; cx.beginPath();cx.arc(0,-4.2,2.5,Math.PI,0);cx.fill(); cx.fillRect(-2.5,-4.2,5,1);
@@ -2863,17 +3018,24 @@ function drawUnitSprite(u,px,py){
       cx.fillStyle='#ffce5a';cx.beginPath();cx.arc(7,-4,1,0,6.28);cx.fill(); }
     else if(key==='sniper'){ cx.strokeStyle=gun;cx.lineWidth=1.4;cx.beginPath();cx.moveTo(-2,0.2);cx.lineTo(9,-1.6);cx.stroke();
       cx.fillStyle='#8fd0ff';cx.fillRect(2,-1.6,1.4,0.8); }
+    else if(key==='flame'){ // fuel tank on the back + a short stubby nozzle, tank flickers like it's under pressure
+      cx.fillStyle=dsteel; rr(-3.2,-1.2,2.4,4.6,1); cx.fill();
+      cx.strokeStyle=gun;cx.lineWidth=2.2;cx.beginPath();cx.moveTo(-1,0.4);cx.lineTo(4.5,-0.6);cx.stroke();
+      const fl=(Math.sin(performance.now()/50)+1)/2; cx.fillStyle=fl>0.5?'#ffce5a':'#ff7a3c';
+      cx.beginPath();cx.arc(4.8,-0.6,1.1,0,6.28);cx.fill(); }
     else { cx.strokeStyle=gun;cx.lineWidth=1.8;cx.beginPath();cx.moveTo(-1,0);cx.lineTo(6.5,-1.4);cx.stroke(); }
   } else if(key==='tank'){
     cx.fillStyle=dsteel; rr(-10,2,20,5,2);cx.fill();
     cx.fillStyle=steel; for(let i=-8;i<=8;i+=3.4){cx.beginPath();cx.arc(i,4.5,1.5,0,6.28);cx.fill();}
     cx.fillStyle=dk; cx.beginPath();cx.moveTo(-9,-2);cx.lineTo(7,-2);cx.lineTo(10,1);cx.lineTo(-9,1);cx.closePath();cx.fill();
     cx.fillStyle=col; rr(-4.5,-6.6,8.5,5,2);cx.fill(); cx.strokeStyle=dk;cx.stroke();
+    cx.strokeStyle=lt;cx.lineWidth=0.7;cx.beginPath();cx.moveTo(-4,-6.5);cx.lineTo(3.6,-6.5);cx.stroke(); // turret-roof highlight
     cx.strokeStyle=dsteel;cx.lineWidth=2.4;cx.beginPath();cx.moveTo(3.5,-4.2);cx.lineTo(13.5,-4.6);cx.stroke();
     cx.fillStyle=dsteel;cx.fillRect(12.6,-5.5,1.8,1.8);
   } else if(key==='ifv'){
     cx.fillStyle='#171b22'; for(const wx of [-6,-1.5,4]){cx.beginPath();cx.arc(wx,4,2,0,6.28);cx.fill();}
     cx.fillStyle=col; cx.beginPath();cx.moveTo(-8,3);cx.lineTo(-8,-1.5);cx.lineTo(4,-3.5);cx.lineTo(8,-0.5);cx.lineTo(8,3);cx.closePath();cx.fill();cx.strokeStyle=dk;cx.stroke();
+    cx.strokeStyle=lt;cx.lineWidth=0.7;cx.beginPath();cx.moveTo(-7.6,-1.3);cx.lineTo(3.8,-3.3);cx.stroke(); // hull-top highlight
     cx.fillStyle=lt; rr(-1.5,-6,4,3,1);cx.fill();
     cx.strokeStyle=gun;cx.lineWidth=1.6;cx.beginPath();cx.moveTo(2,-4.5);cx.lineTo(9.5,-5);cx.stroke();
   } else if(key==='aa'){
@@ -2966,6 +3128,12 @@ function drawUnit(u){
     cx.fillStyle='rgba(255,60,50,'+(0.30+0.25*fl)+')';cx.beginPath();cx.arc(x,y,u.r+2,0,6.28);cx.fill();
     cx.font='bold '+(u.r+4)+'px var(--font)';cx.textAlign='center';cx.textBaseline='middle';cx.fillStyle='#fff';
     cx.fillText('💀',x,y-u.r-8);cx.textBaseline='alphabetic';
+  }
+  // 🔥 set alight — a flickering fire glyph riding the unit while the burn ticks
+  if(u.burnT>0){
+    const fl=(Math.sin(performance.now()/55+x)+1)/2;
+    cx.font=(u.r*0.9+3)+'px var(--font)';cx.textAlign='center';cx.textBaseline='middle';
+    cx.globalAlpha=0.75+0.25*fl; cx.fillText('🔥',x,y-u.r-4); cx.globalAlpha=1; cx.textBaseline='alphabetic';
   }
   // muzzle flash
   if(u.muzzle>0){cx.fillStyle='rgba(255,220,120,0.9)';cx.beginPath();
@@ -3137,7 +3305,7 @@ const HB_GROUP_END={sniper:1,ifv:1,mlrs:1,drone:1,jammer:1};
 // tall and never grows up over the third (bottom) lane like the old flat list did.
 // Number-key hotkeys (1-9) still map by HOTBAR index regardless of the active tab.
 const HB_TABS=[
-  {id:'ground',label:'⚔ Ground',units:new Set(['rifle','atgm','sniper','tank','ifv','arty','mlrs'])},
+  {id:'ground',label:'⚔ Ground',units:new Set(['rifle','atgm','sniper','tank','ifv','arty','mlrs','flame'])},
   {id:'air',label:'✈ Air & AD',units:new Set(['aa','heli','drone','interceptor','gunship'])},
   {id:'support',label:'🛠 Support',units:new Set(['medic','jammer']),abilities:true},
   {id:'strikes',label:'💥 Strikes',strikes:true},
@@ -3620,6 +3788,20 @@ function chaosTick(dt){
   }
   // a subtle strobing red overload tint sells the mayhem
   if(!SAVE.reduceMotion && Math.random()<dt*3){ G.flash=Math.max(G.flash,0.4); G.hqFlashCol=pick(['#ff5a4a','#ffce5a','#c9a0ff']); }
+  // 🎲 rare event: the field gets visibly chewed up — bullet holes + a patch of fire, much
+  // less frequent than the spectacle above so it still reads as a "moment" rather than noise
+  G.chaosRareT=(G.chaosRareT==null?rnd(10,18):G.chaosRareT)-dt;
+  if(G.chaosRareT<=0){ G.chaosRareT=rnd(14,26); chaosScars(); }
+}
+function chaosScars(){
+  if(!G)return;
+  if(!G.decals)G.decals=[];
+  const holes=6+((Math.random()*8)|0);
+  for(let i=0;i<holes;i++)G.decals.push({x:rnd(60,W-60),y:rnd(H*0.2,H*0.85),r:rnd(1.4,3),life:rnd(10,16),age:0,type:'hole'});
+  const fires=1+((Math.random()*2)|0);
+  for(let i=0;i<fires;i++)G.decals.push({x:rnd(90,W-90),y:rnd(H*0.25,H*0.8),r:rnd(15,26),life:rnd(5,8),age:0,type:'fire'});
+  while(G.decals.length>140)G.decals.shift(); // cheap cap so a long chaos run can't leak memory
+  announce('💥 SCARRED FIELD','stray rounds everywhere','#ff9f40');
 }
 function spawnBoss(lane){
   if(!G)return;
@@ -3675,6 +3857,7 @@ function endGame(winner,reason){
   if(G.mode==='survival')score=Math.round(G.t*10+G.kills*12+G.wave*80);
   if(G.mode==='blitz')score=Math.round(G.dmgDealt*0.6+G.kills*10);
   const xpGain=Math.round(score*0.5+(won?120:40));
+  const lvlBefore=SAVE.lvl;
   const leveled=addXP(xpGain);
   if(won)SAVE.wins++; else SAVE.losses++;
   if(score>SAVE.best)SAVE.best=score;
@@ -3698,7 +3881,8 @@ function endGame(winner,reason){
   try{ recordBattle(won,score); }catch(e){}
   persist();
   chatReact(won?'win':'lose');
-  showResults(won,reason,score,xpGain,leveled);
+  if(leveled)showRankUp(lvlBefore,SAVE.lvl,()=>showResults(won,reason,score,xpGain,leveled));
+  else showResults(won,reason,score,xpGain,leveled);
 }
 /* ── SERVICE RECORD backend — every real battle feeds a persistent career ── */
 function recordBattle(won,score){
@@ -3797,6 +3981,22 @@ function showResults(won,reason,score,xpGain,leveled){
   document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
   refreshTopbar();
+}
+/* ═══ RANK-UP SCREEN — cosmetic celebration shown before results on a level-up ═══ */
+function showRankUp(fromLvl,toLvl,onContinue){
+  const el=document.getElementById('rankup'); if(!el){onContinue();return;}
+  const badge=currentBadge(toLvl), title=commanderTitle(toLvl);
+  document.getElementById('ru-badge').textContent=badge.glyph;
+  document.getElementById('ru-sub').textContent='Rank '+toLvl+' — '+title;
+  const rewards=[];
+  for(let l=fromLvl+1;l<=toLvl;l++)rewards.push(...rankRewardsAtLevel(l));
+  const rw=document.getElementById('ru-rewards');
+  if(rewards.length){ rw.innerHTML='<h4>Unlocked</h4><ul>'+rewards.map(r=>'<li>'+r+'</li>').join('')+'</ul>'; rw.style.display=''; }
+  else rw.style.display='none';
+  el.classList.add('show');
+  if(SAVE.sound)SND.combo(5);
+  const cont=document.getElementById('ru-continue');
+  cont.onclick=()=>{ el.classList.remove('show'); onContinue(); };
 }
 function renderUnlockNote(){
   const justUnlocked=Object.keys(DOCTRINES).filter(k=>DOCTRINES[k].unlock===SAVE.lvl&&SAVE.unlocked.includes(k));
@@ -3986,6 +4186,7 @@ function start(){
   musicStart('battle');
   if(!G.attract)ambientStart();
   syncStanceUI(); syncSpeedUI();
+  const hqLbl=document.getElementById('hqB-lbl'); if(hqLbl)hqLbl.textContent=currentBadge(SAVE.lvl).glyph+' YOUR HQ';
   const big=(G.kind==='campaign'&&G.mission)?G.mission.name:((MODES[G.mode]&&MODES[G.mode].name)||G.kind);
   if(G.prep>0)announce('⏳ PREP · '+String(big).toUpperCase(),'queue your opening wave — enemy frozen','#5ff0e0');
   else announce(String(big).toUpperCase(),DOCTRINES[G.doc].name+' · '+DIFFS[G.diff].name+' · '+G.wx.name,DOCTRINES[G.doc].col);
@@ -4089,6 +4290,8 @@ function togglePause(){
 /* ═══ TOPBAR BUTTONS ═══ */
 function refreshTopbar(){
   document.getElementById('tb-lvl').textContent=SAVE.lvl;
+  document.getElementById('tb-title').textContent=commanderTitle(SAVE.lvl);
+  document.getElementById('tb-badge').textContent=currentBadge(SAVE.lvl).glyph;
   document.getElementById('tb-best').textContent=SAVE.best.toLocaleString();
   document.getElementById('btn-stream').classList.toggle('on',!!SAVE.streamOn);
   document.getElementById('stream').classList.toggle('on',!!SAVE.streamOn);
@@ -4122,7 +4325,9 @@ function buildVoiceModal(){
   }
   document.getElementById('vm-key').value=SAVE.ttsKey||'';
   document.getElementById('vm-custom-wrap').style.display=SAVE.ttsVoice==='custom'?'':'none';
-  document.getElementById('vm-custom-id').value=SAVE.ttsVoiceCustomId||'';
+  // an older save may have an explicit empty string here (poisons past DEFAULT_SAVE) — show
+  // the baked-in Thaddeus ID instead of a blank field so it's obvious a voice is selected
+  document.getElementById('vm-custom-id').value=SAVE.ttsVoiceCustomId||THADDEUS_VOICE_ID;
   document.getElementById('vm-status').textContent=SAVE.ttsKey?
     'Premium voice active — lines are cached per phrase to save quota.':
     'No key set — using the free styled radio voice.';
@@ -4154,6 +4359,49 @@ document.getElementById('vm-test').onclick=()=>{
     'If you heard a natural voice, the key works — hit Save to keep it.':
     'That was the free styled voice. Add a key (and a voice ID, if using Custom) above for a neural voice.';},2200);
 };
+/* ═══ DEBUG MODE — manually fire any scripted event ═══ */
+function dbgAction(label,fn){ return {label,fn}; }
+function DEBUG_GROUPS(){ // built lazily so it always sees the latest REVENTS/DIFFS/etc.
+  return [
+    {name:'Info-War (needs a live battle)',actions:[
+      dbgAction('👻 Phantom',()=>iwPhantom()), dbgAction('🎛 Gaslight',()=>iwGaslight()),
+      dbgAction('🌫 Fog',()=>iwFog()), dbgAction('📍 Ghost Ping',()=>iwPing()),
+      dbgAction('🩶 Color Drain',()=>iwGray()), dbgAction('🔦 Tunnel Vision',()=>iwTunnel()),
+      dbgAction('🔀 UI Jumble',()=>iwJumble()), dbgAction('💸 Fake Donation',()=>iwDonate()),
+    ]},
+    {name:'Random Events (needs a live battle)',actions:
+      Object.keys(REVENTS).map(k=>dbgAction(k, ()=>{ try{REVENTS[k].run();}catch(e){} }))},
+    {name:'Chaos & FX',actions:[
+      dbgAction('💥 Scarred Field',()=>chaosScars()),
+      dbgAction('🤪 Toggle Chaos Mode',()=>{ if(G)G.chaos=!G.chaos; }),
+      dbgAction('📳 Screen Shake',()=>{ if(G)G.shake=Math.max(G.shake,20); }),
+      dbgAction('⚡ HQ Flash',()=>{ if(G){G.flash=1;G.hqFlashCol='#ff3020';} }),
+      dbgAction('♨ Spawn Flame Trooper',()=>{ if(G)spawn('B','flame',1); }),
+      dbgAction('🎖 Preview Rank-Up Screen',()=>showRankUp(SAVE.lvl,SAVE.lvl+1,()=>{})),
+    ]},
+    {name:'Difficulty Change FX (title screen only)',actions:
+      Object.keys(DIFFS).map(k=>dbgAction(DIFFS[k].glyph+' '+DIFFS[k].name, ()=>diffFx(k)))},
+  ];
+}
+function buildDebugModal(){
+  const host=document.getElementById('dbg-groups'); if(!host)return; host.innerHTML='';
+  for(const g of DEBUG_GROUPS()){
+    const wrap=document.createElement('div'); wrap.className='dbg-grp';
+    const h=document.createElement('h4'); h.textContent=g.name; wrap.appendChild(h);
+    const row=document.createElement('div'); row.className='dbg-row';
+    for(const a of g.actions){
+      const b=document.createElement('button'); b.className='dbg-btn'; b.textContent=a.label;
+      b.onclick=()=>{ try{a.fn();}catch(e){} };
+      row.appendChild(b);
+    }
+    wrap.appendChild(row); host.appendChild(wrap);
+  }
+}
+function openDebugModal(){ buildDebugModal(); document.getElementById('debugmodal').classList.add('show'); }
+function closeDebugModal(){ document.getElementById('debugmodal').classList.remove('show'); }
+document.getElementById('btn-debug').onclick=openDebugModal;
+document.getElementById('dbg-close').onclick=closeDebugModal;
+
 document.getElementById('btn-pause').onclick=togglePause;
 document.getElementById('btn-play').onclick=()=>{LAUNCH=null;start();};
 document.getElementById('btn-daily').onclick=()=>launchDaily();
@@ -4223,6 +4471,7 @@ function renderManualBody(tab){
       if(u.spd)stats.push(`<span>SPD <b>${u.spd}</b></span>`);
       if(u.splash)stats.push(`<span>AoE <b>${u.splash}</b></span>`);
       if(u.heal)stats.push(`<span>HEAL <b>${u.heal}</b></span>`);
+      if(u.burnDps)stats.push(`<span>🔥 BURN <b>${u.burnDps}/s ×${u.burnDur}s</b></span>`);
       stats.push(`<span>CP <b>${u.cost}</b></span>`);
       h+=`<div class="man-u" style="border-left-color:${u.col}">
         <div class="mu-h"><span class="mu-g" style="color:${u.col}">${u.glyph}</span>
@@ -4537,7 +4786,7 @@ function showTitle(){
   ['menu','warmap','results','hud','pauseScreen','manual','settings','record'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('title').classList.remove('hidden');
-  document.getElementById('t-rank').textContent='Rank '+SAVE.lvl;
+  document.getElementById('t-rank').textContent=currentBadge(SAVE.lvl).glyph+' Rank '+SAVE.lvl+' '+commanderTitle(SAVE.lvl);
   document.getElementById('t-best').textContent='Best '+SAVE.best.toLocaleString();
   const tv=document.getElementById('t-ver'); if(tv)tv.textContent='v'+GAME_VERSION;
   document.getElementById('title-tag').textContent=pick(TITLE_TAGS);
@@ -4553,11 +4802,42 @@ function buildTitleDiff(){
   const host=document.getElementById('td-chips'); if(!host)return; host.innerHTML='';
   if(!DIFFS[sel.diff])sel.diff='veteran';
   for(const k in DIFFS){ const d=DIFFS[k];
-    const b=document.createElement('button'); b.className='td-chip'+(sel.diff===k?' on':''); b.textContent=d.name;
+    const b=document.createElement('button'); b.className='td-chip'+(sel.diff===k?' on':'');
+    b.innerHTML=`<span class="td-ic">${d.glyph}</span>${d.name}`;
     b.style.borderColor=d.col; if(sel.diff===k){b.style.background=d.col;b.style.color='#0a0e14';} else b.style.color=d.col;
-    b.onclick=()=>{ sel.diff=k; buildTitleDiff(); if(typeof buildMenu==='function')buildMenu(); };
+    b.onclick=()=>{ if(sel.diff!==k)diffFx(k); sel.diff=k; buildTitleDiff(); if(typeof buildMenu==='function')buildMenu(); };
     host.appendChild(b);
   }
+}
+// screen effect when the difficulty pick changes — severity scales with the tier's fx level
+// (0 recruit … 3 legendary): more/bigger crossing tracers and flame plumes at the top end.
+function diffFx(key){
+  const d=DIFFS[key]; if(!d||SAVE.reduceMotion)return;
+  const host=document.getElementById('diff-fx'); if(!host)return;
+  host.innerHTML=''; host.classList.remove('show'); void host.offsetWidth;
+  const sev=d.fx||0;
+  const tracerCount=1+sev*2;
+  for(let i=0;i<tracerCount;i++){
+    const t=document.createElement('div'); t.className='diff-tracer'+(i%2?' rev':'');
+    t.style.top=(8+Math.random()*78)+'%';
+    t.style.setProperty('--rot',(rnd(-10,10))+'deg');
+    t.style.animationDelay=(Math.random()*180)+'ms';
+    host.appendChild(t);
+  }
+  if(sev>=2){
+    const flameCount=sev===3?6:2;
+    for(let i=0;i<flameCount;i++){
+      const f=document.createElement('div'); f.className='diff-flame';
+      f.style.left=(6+Math.random()*84)+'%';
+      f.style.animationDelay=(Math.random()*220)+'ms';
+      host.appendChild(f);
+    }
+  }
+  host.classList.add('show');
+  if(sev>=3){
+    const ti=document.getElementById('title-inner'); if(ti){ ti.classList.remove('title-shake'); void ti.offsetWidth; ti.classList.add('title-shake'); }
+    if(typeof SND!=='undefined'&&SAVE.sound)SND.boom(true);
+  } else if(sev===2 && typeof SND!=='undefined'&&SAVE.sound) SND.combo(2);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

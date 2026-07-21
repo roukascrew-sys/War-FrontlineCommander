@@ -665,6 +665,54 @@ weather, veterancy, tech, war-map logistics — with none of the noise.
   the free offline voice exactly like an empty/invalid key does until both a
   key and an ID are actually saved.
 
+## v1.1 batch — voice fix, drone fix, difficulty FX, DOT, debug mode, rank-up
+
+- **Premium voice was silently falling back**: `activeVoiceId()` returned `''`
+  whenever the Custom slot was selected with no ID typed in, which threw and
+  fell back to the free voice with no visible error. Fixed by baking in a
+  `THADDEUS_VOICE_ID` fallback (voice IDs aren't secret, only the API key is)
+  used both at runtime and pre-filled in the modal's field.
+- **Real drone bug, two parts**: `spawn()` gives every unit a randomised
+  initial `cd:rnd(0,u.rof)`, and the drone's `rof:99` (meant as "no reload,
+  it's one-shot") meant a drone could sit fully stalled for up to 99s the
+  instant it entered its old 16px engagement range. Kamikaze units now fire
+  the moment they're in range, ignoring the cd gate entirely. Also widened
+  `drone.rng` 16→50 and added y-axis homing while closing (previously only
+  x moved, so an off-lane target could get flown straight past).
+- **Screen shake** already existed (`G.shake`, decayed in `step`, applied via
+  `cx.translate` in render) but was weak for artillery (5) and asymmetric for
+  HQ hits (only fired on your own HQ, not the enemy's). Strengthened both and
+  slowed the decay so it actually reads.
+- **`DIFFS[k].glyph`/`.fx`** — per-tier icon + FX severity (0-3). `diffFx(key)`
+  spawns crossing tracer/flame elements into `#diff-fx` on the title screen
+  and shakes `#title-inner` at severity 3 (Legendary). No 5th "Ultimate" tier
+  was added — reused Legendary as the top of the existing four.
+- **Burn DOT** (`u.burnDps`/`u.burnDur`/`u.burnT`, `damage()`, `burnTick()`) —
+  applied on hit from any `src.burnDps` unit, ticks in `updateUnits` before
+  the frozen/prep check. Real bug caught in testing: `spawn()` never copied
+  `burnDps`/`burnDur` from the unit definition onto the live instance, so a
+  spawned Flame Trooper would deal its direct hit but never actually ignite
+  anyone — fixed by adding those fields to the `spawn()` push.
+- **Flame Trooper** (`UNITS.flame`) appended to the *end* of `HOTBAR` rather
+  than grouped with the other infantry, specifically so no existing number
+  hotkey (1-9) or tutorial "press N" instruction shifts.
+- **`chaosScars()`** — a rare (`G.chaosRareT`, ~14-26s) chaos-mode event that
+  drops lingering bullet-hole + fire decals (`G.decals`) onto the field,
+  independent of the existing `explode()`/`scorch()` transient FX.
+- **Debug panel** (`#debugmodal`, `DEBUG_GROUPS()`) — every scripted event
+  (infowar effects, `REVENTS[k].run()`, chaos scars, shake/flash, difficulty
+  FX previews, a flame-trooper spawn, a rank-up preview) gets a button that
+  calls the real function directly, wrapped individually in try/catch so one
+  broken trigger can't take down the panel.
+- **Rank-up screen** (`#rankup`, `showRankUp(fromLvl,toLvl,onContinue)`) —
+  shown before the results screen on a level-up, listing every reward earned
+  across all levels gained that battle (handles multi-level jumps from a big
+  XP gain in one pass). Rewards are `COMMANDER_TITLES` (flavour text next to
+  "Rank N" everywhere it's shown) and `HQ_BADGES` (a glyph shown on the HQ
+  label and title screen) — both purely cosmetic, computed from `SAVE.lvl`
+  with no separate unlock-list to desync, and neither gates any mode, unit,
+  or doctrine, so the full roster stays playable from rank 1.
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass
