@@ -93,6 +93,10 @@
   /* deploy hotbar */
   #hbwrap{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;
     flex-direction:column;align-items:center;gap:6px;width:max-content;max-width:97vw;}
+  /* permanent commander-powers row — strikes/recon/emp, always visible regardless of hbtab */
+  #quickbar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;pointer-events:auto;
+    padding-bottom:6px;border-bottom:1px dashed var(--line);margin-bottom:2px;}
+  #quickbar:empty{display:none;border:none;margin:0;padding:0;}
   #hbtabs{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;pointer-events:auto;}
   .hbtab{padding:5px 11px;border:1px solid var(--line);border-radius:7px;background:#0b0f18d8;
     font-size:10.5px;font-weight:800;letter-spacing:.6px;color:var(--dim);text-transform:uppercase;transition:.1s;}
@@ -309,23 +313,26 @@
   .td-chip:hover{transform:translateY(-2px);color:var(--ink);}
   .td-chip.on{color:var(--bg);}
   .td-chip .td-ic{margin-right:5px;filter:drop-shadow(0 1px 2px #000a);}
-  /* difficulty-change screen effect — flames + crossing tracers, scaled by tier severity */
-  #diff-fx{position:fixed;inset:0;pointer-events:none;z-index:36;overflow:hidden;opacity:0;}
-  #diff-fx.show{animation:diffFxFade 900ms ease-out forwards;}
-  @keyframes diffFxFade{0%{opacity:1}70%{opacity:1}100%{opacity:0}}
+  /* difficulty ambience — a persistent scene (flames/tracers) that stays up on any pre-battle
+     screen (title or the skirmish menu) for as long as that tier is selected, plus a one-shot
+     burst of extra tracers the instant the pick changes. Scaled by tier severity (DIFFS[k].fx). */
+  #diff-fx{position:fixed;inset:0;pointer-events:none;z-index:36;overflow:hidden;display:none;}
+  #diff-fx.show{display:block;}
   .diff-tracer{position:absolute;height:2px;width:46%;
     background:linear-gradient(90deg,transparent,#ffe27a,#fff,transparent);
     filter:drop-shadow(0 0 4px #ffce5a);animation:tracerCross 480ms linear forwards;}
   .diff-tracer.rev{animation-name:tracerCrossRev;}
+  .diff-tracer.loop{animation-iteration-count:infinite;animation-delay:calc(var(--i,0) * 1.4s);}
   @keyframes tracerCross{0%{transform:translateX(-120%) rotate(var(--rot,-8deg));opacity:0}
     15%{opacity:1}100%{transform:translateX(220%) rotate(var(--rot,-8deg));opacity:0}}
   @keyframes tracerCrossRev{0%{transform:translateX(220%) rotate(var(--rot,8deg));opacity:0}
     15%{opacity:1}100%{transform:translateX(-120%) rotate(var(--rot,8deg));opacity:0}}
   .diff-flame{position:absolute;bottom:-8%;width:110px;height:150px;
     background:radial-gradient(ellipse at 50% 100%, #fff2c0 0%, #ffb347 22%, #ff5a2e 48%, transparent 72%);
-    filter:blur(1px);animation:flameFlicker 900ms ease-out forwards;}
-  @keyframes flameFlicker{0%{transform:translateY(20%) scaleY(0.5);opacity:0}
-    25%{opacity:.95}55%{transform:translateY(-4%) scaleY(1.05);}100%{transform:translateY(-30%) scaleY(0.85);opacity:0}}
+    filter:blur(1px);animation:flameFlicker 2.2s ease-in-out infinite;animation-delay:calc(var(--i,0) * -0.6s);}
+  @keyframes flameFlicker{0%,100%{transform:translateY(0) scaleY(1) scaleX(1);opacity:.85}
+    30%{transform:translateY(-6%) scaleY(1.12) scaleX(0.95);opacity:1}
+    60%{transform:translateY(2%) scaleY(0.92) scaleX(1.05);opacity:.8}}
   .title-shake{animation:titleShake 420ms ease-out;}
   @keyframes titleShake{0%,100%{transform:translate(0,0);}
     15%{transform:translate(-6px,3px);}30%{transform:translate(5px,-4px);}
@@ -391,6 +398,43 @@
   .rec-log{font-family:var(--mono);font-size:11.5px;color:var(--dim);padding:5px 8px;border-bottom:1px solid #1a2333;display:flex;gap:10px;flex-wrap:wrap;}
   .rec-log .w{color:var(--good);font-weight:700;} .rec-log .l{color:var(--red);font-weight:700;}
   .t-btn.settings{border-color:var(--gold);} .t-btn.settings b{color:var(--gold);} .t-btn.settings:hover{box-shadow:0 0 18px #ffce5a44;}
+  .t-btn.roadmap{border-color:var(--cyan);} .t-btn.roadmap b{color:var(--cyan);} .t-btn.roadmap:hover{box-shadow:0 0 18px #5ff0e044;}
+  .t-btn.cosmetics{border-color:var(--purple);} .t-btn.cosmetics b{color:var(--purple);} .t-btn.cosmetics:hover{box-shadow:0 0 18px #c9a0ff44;}
+  .t-btn.rivals{border-color:var(--red);} .t-btn.rivals b{color:var(--red);} .t-btn.rivals:hover{box-shadow:0 0 18px #ff5a4a44;}
+
+  /* ── RIVALS MODE ── */
+  .rival-card{background:var(--panel);border:1.5px solid var(--line);border-radius:10px;padding:12px;text-align:left;}
+  .rival-card.defeated{opacity:.75;}
+  .rival-glyph{font-size:22px;display:block;margin-bottom:4px;}
+  .rival-nm{font-weight:800;font-size:13px;color:var(--ink);margin-bottom:3px;}
+  .rival-rec{font-family:var(--mono);font-size:11px;color:var(--dim);margin-bottom:4px;}
+  .rival-bias{font-size:10.5px;color:var(--faint);margin-bottom:2px;}
+  .rival-fight{width:100%;}
+
+  /* ── COSMETICS ── */
+  .cos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:16px;}
+  .cos-item{background:var(--panel);border:1.5px solid var(--line);border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;transition:.1s;}
+  .cos-item:hover{border-color:var(--purple);transform:translateY(-2px);}
+  .cos-item.on{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold) inset;}
+  .cos-item.locked{opacity:.4;cursor:not-allowed;}
+  .cos-item.locked:hover{transform:none;border-color:var(--line);}
+  .cos-glyph{display:block;font-size:24px;margin-bottom:4px;}
+  .cos-nm{display:block;font-size:11.5px;font-weight:700;color:var(--ink);margin-bottom:3px;}
+  .cos-lvl{display:block;font-size:9px;font-weight:800;letter-spacing:.5px;color:var(--faint);text-transform:uppercase;}
+  .cos-item.on .cos-lvl{color:var(--gold);}
+
+  /* ── REWARDS ROADMAP ── */
+  .road-now{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:16px;}
+  .road-now-badge{font-size:26px;}
+  .road-now-bar{flex:1;height:10px;background:#0008;border-radius:5px;overflow:hidden;}
+  .road-now-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--gold));border-radius:5px;}
+  .road-now-txt{font-family:var(--mono);font-size:11.5px;color:var(--dim);white-space:nowrap;}
+  .road-rung{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:9px;
+    padding:8px 12px;margin-bottom:6px;font-size:12.5px;opacity:.5;}
+  .road-rung.done{opacity:1;border-color:var(--cyan);}
+  .road-rung-lvl{font-family:var(--mono);font-weight:800;color:var(--dim);white-space:nowrap;min-width:82px;}
+  .road-rung.done .road-rung-lvl{color:var(--cyan);}
+  .road-rung-rewards{color:var(--ink);}
 
   /* ── FIELD MANUAL / WIKI ── */
   #manual{justify-content:flex-start;padding-top:52px;}
@@ -651,6 +695,7 @@
       </div>
     </div>
     <div id="hbwrap">
+      <div id="quickbar"></div>
       <div id="hbtabs"></div>
       <div id="hotbar"></div>
     </div>
@@ -679,6 +724,9 @@
     <div class="nb-feed"></div>
     <div class="nb-foot">FRONTLINE NEWS NETWORK · all reports simulated</div>
   </div>
+
+  <!-- difficulty ambience layer — shared by the title screen and the skirmish menu -->
+  <div id="diff-fx"></div>
 
   <!-- MAIN MENU -->
   <div class="screen hidden" id="menu">
@@ -725,7 +773,6 @@
   <!-- TITLE / ATTRACT SCREEN -->
   <div class="screen hidden" id="title">
     <div id="title-scrim"></div>
-    <div id="diff-fx"></div>
     <div id="title-inner">
       <div class="title-logo">⚔ <b>FRONTLINE</b><br><span>COMMANDER</span></div>
       <div class="title-tag" id="title-tag">Bank the points. Break the line. Take the war.</div>
@@ -736,9 +783,12 @@
       </div>
       <div class="title-btns2">
         <button class="t-btn war" id="t-war"><b>🗺 War Mode</b><small>conquer the map</small></button>
+        <button class="t-btn rivals" id="t-rivals"><b>⚔ Rivals</b><small>a roster that learns you</small></button>
         <button class="t-btn tut" id="t-tut"><b>🎓 Tutorial</b><small>learn the ropes</small></button>
         <button class="t-btn manual" id="t-manual"><b>📖 Field Manual</b><small>how everything works</small></button>
         <button class="t-btn record" id="t-record"><b>🎖 Service Record</b><small>your career &amp; rivals</small></button>
+        <button class="t-btn roadmap" id="t-roadmap"><b>🏆 Roadmap</b><small>rank rewards &amp; unlocks</small></button>
+        <button class="t-btn cosmetics" id="t-cosmetics"><b>🎖 Cosmetics</b><small>equip badge &amp; title</small></button>
         <button class="t-btn settings" id="t-settings"><b>⚙ Settings</b><small>audio &amp; motion</small></button>
       </div>
       <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span> · <span id="t-ver">v1.0.0</span></div>
@@ -775,6 +825,30 @@
     <h1>🎖 <b>SERVICE RECORD</b></h1>
     <div class="tag" style="margin-bottom:6px">Your whole career — every battle is remembered, and so are your rivals.</div>
     <div class="man-wrap"><div class="man-body" id="rec-body"></div></div>
+  </div>
+
+  <!-- REWARDS ROADMAP -->
+  <div class="screen hidden" id="roadmap">
+    <button class="back-btn" id="road-back">◀ Title</button>
+    <h1>🏆 <b>REWARDS ROADMAP</b></h1>
+    <div class="tag" style="margin-bottom:6px">Every rank pays off — titles, HQ badges, doctrines, commander powers. Here's the whole ladder and where you stand.</div>
+    <div class="man-wrap"><div class="man-body" id="road-body"></div></div>
+  </div>
+
+  <!-- COSMETICS -->
+  <div class="screen hidden" id="cosmetics">
+    <button class="back-btn" id="cos-back">◀ Title</button>
+    <h1>🎖 <b>COSMETICS</b></h1>
+    <div class="tag" style="margin-bottom:6px">Pick which earned badge and title you fly — anything you've reached Rank for is fair game, doesn't have to be your newest.</div>
+    <div class="man-wrap"><div class="man-body" id="cos-body"></div></div>
+  </div>
+
+  <!-- RIVALS MODE -->
+  <div class="screen hidden" id="rivals">
+    <button class="back-btn" id="rivals-back">◀ Title</button>
+    <h1>⚔ <b>RIVALS</b></h1>
+    <div class="tag" style="margin-bottom:6px">Five named commanders. Beat one and they'll come back adapted to whatever you threw at them — sometimes they escape a loss and live to fight again. Defeat every rival for real and the roster pays out.</div>
+    <div class="man-wrap"><div class="man-body" id="rivals-body"></div></div>
   </div>
 
   <!-- SETTINGS MODAL -->
@@ -924,7 +998,7 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   chaosMode:false,
   gagChatter:true,gagGolden:true,gagVictory:true,
   history:[],career:{battles:0,wins:0,losses:0,kills:0,deploys:0,cpSpent:0,strikes:0,units:{},dmgDealt:0,timePlayed:0},
-  rivalry:{}};
+  rivalry:{}, equippedBadge:null, equippedTitle:null, rivals:{}, rivalsBadgeEarned:false};
 let SAVE=load();
 SAVE.news=false; // live news wire archived for now (kept in code, off by default)
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
@@ -947,6 +1021,21 @@ const HQ_BADGES=[
 ];
 function commanderTitle(lvl){ let t=COMMANDER_TITLES[0]; for(const e of COMMANDER_TITLES)if(lvl>=e.lvl)t=e; return t.title; }
 function currentBadge(lvl){ let b=HQ_BADGES[0]; for(const e of HQ_BADGES)if(lvl>=e.lvl)b=e; return b; }
+// equipped cosmetic accessors — player can pin any badge/title they've already earned instead of
+// always showing the newest one; falls back to the highest unlocked if nothing's equipped (or the
+// equipped pick got outdated, e.g. a reset-rank dropped them below what they'd chosen)
+function equippedBadge(){
+  if(SAVE.equippedBadge!=null){
+    if(typeof SAVE.equippedBadge==='string'){ const sb=SPECIAL_BADGES.find(e=>e.id===SAVE.equippedBadge); if(sb&&sb.requires())return sb; }
+    else { const b=HQ_BADGES.find(e=>e.lvl===SAVE.equippedBadge); if(b&&SAVE.lvl>=b.lvl)return b; }
+  }
+  return currentBadge(SAVE.lvl);
+}
+function equippedTitleEntry(){
+  if(SAVE.equippedTitle!=null){ const t=COMMANDER_TITLES.find(e=>e.lvl===SAVE.equippedTitle); if(t&&SAVE.lvl>=t.lvl)return t; }
+  let t=COMMANDER_TITLES[0]; for(const e of COMMANDER_TITLES)if(SAVE.lvl>=e.lvl)t=e; return t;
+}
+function equippedTitleStr(){ return equippedTitleEntry().title; }
 function rankRewardsAtLevel(lvl){ // anything that unlocks on exactly this level-up, for the rank-up screen
   const out=[];
   const t=COMMANDER_TITLES.find(e=>e.lvl===lvl); if(t)out.push('New title: "'+t.title+'"');
@@ -1065,9 +1154,9 @@ const UNIT_MINAGE={rifle:0,ifv:0,medic:0, atgm:1,tank:1,aa:1, sniper:2,arty:2,ja
 /* ── PRODUCTION SPAWNERS — expensive structures built just ahead of your HQ that
    pump out a unit on a timer. A long-term economy investment. Capped per side. ── */
 const SPAWNERS={
-  barracks:{name:'Barracks',glyph:'⌂',unit:'rifle',cost:200,interval:3.0,col:'#8fd0ff',desc:'pumps out riflemen'},
-  motorpool:{name:'Motor Pool',glyph:'▣',unit:'ifv',cost:300,interval:5.2,col:'#ffc766',desc:'pumps out IFVs'},
-  dronebay:{name:'Drone Bay',glyph:'⬟',unit:'drone',cost:260,interval:4.4,col:'#ffdf7f',desc:'pumps out kamikaze drones'},
+  barracks:{name:'Barracks',glyph:'⌂',unit:'rifle',cost:200,interval:3.0,col:'#8fd0ff',hp:260,desc:'pumps out riflemen'},
+  motorpool:{name:'Motor Pool',glyph:'▣',unit:'ifv',cost:300,interval:5.2,col:'#ffc766',hp:340,desc:'pumps out IFVs'},
+  dronebay:{name:'Drone Bay',glyph:'⬟',unit:'drone',cost:260,interval:4.4,col:'#ffdf7f',hp:300,desc:'pumps out kamikaze drones'},
 };
 const SPAWNER_KEYS=Object.keys(SPAWNERS);
 const MAX_SPAWNERS=4;
@@ -1143,6 +1232,28 @@ const GENERAL_DEFAULT={name:'Unknown Commander',glyph:'☭',col:'#ff5a4a',
   taunts:["You'll regret that push.","Hold... hold... now!","Not bad. Not good enough."],
   lose:["...Unacceptable.","We'll be back.","This isn't finished."]};
 
+/* ── RIVALS MODE — a dedicated roster fight. Each rival remembers your last loadout against
+   THEM specifically and leans their composition to counter it next time (nemesis-style). ── */
+const RIVAL_COUNTER={armor:'atgm',air:'aa',infantry:'mlrs'}; // what the AI leans into vs each style
+function dominantCategory(built){ // classify what the player leaned on this fight, from deploy tally
+  let arm=0,air=0,inf=0;
+  for(const k in built){ const u=UNITS[k]; if(!u)continue; const n=built[k];
+    if(u.cat==='veh'||u.cat==='arty')arm+=n; else if(u.cat==='air'||u.cat==='dro')air+=n; else inf+=n; }
+  if(arm>=air&&arm>=inf&&arm>0)return 'armor';
+  if(air>=arm&&air>=inf&&air>0)return 'air';
+  if(inf>0)return 'infantry';
+  return null;
+}
+const SPECIAL_BADGES=[
+  {id:'rivals_champion',glyph:'🏆',name:'Rivals Champion',requires:()=>!!SAVE.rivalsBadgeEarned},
+];
+function rivalBiasFor(name){ // their own signature weapon the first time; a counter to your last loadout after that
+  const gen=GENERALS.find(g=>g.name===name);
+  const rd=SAVE.rivals&&SAVE.rivals[name];
+  if(rd&&rd.dominant&&RIVAL_COUNTER[rd.dominant])return RIVAL_COUNTER[rd.dominant];
+  return gen?gen.bias:'tank';
+}
+
 /* ── MODES & DIFFICULTY ── */
 const MODES={
   skirmish:{name:'Skirmish',desc:'Standard battle. Destroy the enemy HQ before they destroy yours. The main event.'},
@@ -1210,6 +1321,21 @@ const CAMPAIGN=[
     starTest:g=>g.hqFloor==null||g.hqFloor>=0.4},
   {id:4,name:'Last Stand at the Capital',weather:'storm',diff:'legendary',ecpMul:1.35,openEnemy:6,boss:true,star:'Win — that is the whole star',
     brief:"This is it. Everything they have, thrown at the capital, in the teeth of a storm. You start outnumbered and it gets worse. There is no clever trick left — only whether the line holds. Make it hold, Commander. History is the audience.",
+    starTest:g=>g.result==='B'},
+  {id:5,name:'Close Quarters',weather:'clear',diff:'elite',ecpMul:1.2,star:'Land a 6-kill combo',
+    brief:"New toy for you, Commander — flamethrower teams, straight from depot. Brutal up close, useless at range, and the enemy hasn't fought them before. Let them get in close, then light up whatever's dumb enough to bunch together.",
+    starTest:g=>g.bestCombo>=6},
+  {id:6,name:'Iron Corridor',weather:'night',diff:'elite',ecpMul:1.25,enemyBias:'mlrs',star:'Deal 800+ damage to their HQ',
+    brief:"Voss's rocket batteries own this corridor. Every few minutes the whole sky opens up on one lane — don't be standing in it. Punch through while they're reloading and put real damage on that HQ.",
+    starTest:g=>g.dmgDealt>=800},
+  {id:7,name:'Sky Full of Steel',weather:'storm',diff:'legendary',ecpMul:1.3,enemyBias:'heli',star:'Win in under 4 minutes',
+    brief:"Bakr's gunships own this sky and he knows it. Air defence up in every lane, or this ends before it starts. Storm cover won't save you twice — hit their HQ hard and hit it now.",
+    starTest:g=>g.result==='B'&&g.t<=240},
+  {id:8,name:'The Gauntlet',weather:'fog',diff:'legendary',ecpMul:1.4,openEnemy:6,star:'Kill 60 enemy units',
+    brief:"No clever angle left, Commander — just volume. Wave after wave, fog thick enough to hide their reserves. Feed the line, counter what comes, and don't stop killing. Attrition wins this one.",
+    starTest:g=>g.kills>=60},
+  {id:9,name:'The Reckoning',weather:'storm',diff:'legendary',ecpMul:1.5,openEnemy:8,star:'Win — that is the whole star',
+    brief:"Every general who's ever lost to you sent something for this fight. Steel, drones, guns, rockets, gunships — all of it, all at once, in the worst storm this front has seen. Beat this and there's nothing left to throw at you. Take the war, Commander.",
     starTest:g=>g.result==='B'},
 ];
 
@@ -1839,8 +1965,12 @@ function newGame(){
     aiSmart:!!diff.smart,
     announceT:0, idleTauntT:20,
   };
-  // rival enemy general — flavor + drives the AI's unit-composition bias
-  if(G.enemyBias){ G.general=GENERALS.find(x=>x.bias===G.enemyBias)||GENERAL_DEFAULT; }
+  // rival enemy general — flavor + drives the AI's unit-composition bias.
+  // Rivals Mode picks the general by identity (not by bias) — enemyBias there is the
+  // *adaptive counter* to what the player fielded against them last time, not their flavour weapon.
+  G.rivalMode=!!(L&&L.type==='rival');
+  if(G.rivalMode){ G.general=GENERALS.find(g=>g.name===L.rival)||GENERAL_DEFAULT; }
+  else if(G.enemyBias){ G.general=GENERALS.find(x=>x.bias===G.enemyBias)||GENERAL_DEFAULT; }
   else { G.general=pick(GENERALS); G.enemyBias=G.general.bias; }
   G.rivalTauntT=rnd(20,28);
   // troop stance (behaviour only) + game speed
@@ -2202,6 +2332,7 @@ function playCutscene(){
   el.querySelector('.cs-cap').textContent=pick(CUT_CAPTIONS)(who);
   el.querySelector('.cs-sub').textContent=(G.warName||(G.mission&&G.mission.name)||'the front').toUpperCase();
   el.classList.add('show');
+  G.cutsceneSlowT=2.6; // ease combat way down while the overlay covers the field, so it can't blindside you
   SND.combo(4);
   clearTimeout(_cutT); _cutT=setTimeout(()=>{ el.classList.remove('show'); }, 2600);
 }
@@ -2281,7 +2412,8 @@ function tryBuildSpawner(type,lane){
   if(G.spawners.filter(s=>s.side==='B').length>=MAX_SPAWNERS){ announce('MAX FACTORIES','you\'re at the cap','#ff5a4a'); return false; }
   if(G.cp<sp.cost){ announce('NEED '+sp.cost+' CP','build a factory','#ff5a4a'); return false; }
   G.cp-=sp.cost;
-  G.spawners.push({side:'B',type,lane,x:W*0.135,y:G.laneY[lane]*H,t:sp.interval*0.5,pulse:0});
+  G.spawners.push({side:'B',type,lane,x:W*0.135,y:G.laneY[lane]*H,t:sp.interval*0.5,pulse:0,
+    isSpawner:true,alive:true,hp:sp.hp,maxHp:sp.hp,r:14,armorClass:'struct',hitFlash:0});
   announce(sp.name.toUpperCase()+' BUILT','now producing','#3fd07a'); SND.deploy();
   return true;
 }
@@ -2289,16 +2421,18 @@ function spawnerTick(dt){
   if(!G.spawners||!G.spawners.length)return;
   for(const s of G.spawners){
     if(s.pulse>0)s.pulse-=dt;
+    if(s.hitFlash>0)s.hitFlash-=dt*4;
     s.t-=dt;
     if(s.t<=0){ const sp=SPAWNERS[s.type]; s.t=sp.interval; s.pulse=0.3;
       spawn(s.side,sp.unit,s.lane, s.side==='B'?s.x+14:s.x-14);
     }
   }
+  G.spawners=G.spawners.filter(s=>s.alive!==false);
 }
 function drawSpawners(){
   if(!G.spawners)return;
-  for(const s of G.spawners){
-    const sp=SPAWNERS[s.type], col=sp.col;
+  for(const s of G.spawners){ if(s.alive===false)continue;
+    const sp=SPAWNERS[s.type], col=(s.hitFlash>0)?'#ffffff':sp.col;
     cx.fillStyle='rgba(0,0,0,0.32)';cx.beginPath();cx.ellipse(s.x,s.y+12,15,4,0,0,6.28);cx.fill();
     // building body
     const w=24,h=22,bx=s.x-w/2,by=s.y-h/2;
@@ -2311,7 +2445,11 @@ function drawSpawners(){
     cx.fillText(sp.glyph,s.x,s.y+1);cx.textBaseline='alphabetic';
     // production timer pip
     const sp2=SPAWNERS[s.type]; const frac=1-clamp(s.t/sp2.interval,0,1);
-    cx.strokeStyle=col;cx.lineWidth=2;cx.beginPath();cx.arc(s.x,s.y,w*0.7,-Math.PI/2,-Math.PI/2+frac*6.28);cx.stroke();
+    cx.strokeStyle=sp.col;cx.lineWidth=2;cx.beginPath();cx.arc(s.x,s.y,w*0.7,-Math.PI/2,-Math.PI/2+frac*6.28);cx.stroke();
+    // hp bar — only shown once it's taken damage, so an untouched factory stays uncluttered
+    if(s.hp<s.maxHp){ const bw=w+4,hpp=Math.max(0,s.hp/s.maxHp);
+      cx.fillStyle='#000a';cx.fillRect(s.x-bw/2,by-9,bw,3);
+      cx.fillStyle=hpp>0.5?'#3fd07a':hpp>0.25?'#ffab40':'#ff5a4a';cx.fillRect(s.x-bw/2,by-9,bw*hpp,3); }
   }
 }
 
@@ -2357,6 +2495,12 @@ function grantVetXP(u){
 }
 function killUnit(u,src){
   if(!u.alive)return; u.alive=false;
+  if(u.isSpawner){ // a factory ground down by the enemy — its own short cleanup, none of the unit-kill side effects apply
+    explode(u.x,u.y,30,u.side,22); SND.boom();
+    floatText(u.x,u.y-18,'FACTORY DESTROYED','#ff5a4a');
+    if(src&&src.alive)grantVetXP(src);
+    return;
+  }
   explode(u.x,u.y,u.r*2+6,u.side, u.cat==='veh'||u.cat==='arty'?26:12);
   if(u.cat==='veh'||u.cat==='arty'||u.cat==='air')SND.boom();
   // morale shock — watching a comrade die suppresses nearby friendlies
@@ -2588,6 +2732,14 @@ function nearestEnemy(u){
     if(d<bd){bd=d;best=o;}
     if(o.flies&&d<bad){bad=d;bestAir=o;}
   }
+  // enemy ground units can grind down a factory if it's the closest thing around — flying
+  // units bypass it and go straight for the HQ, same as they always have
+  if(u.side==='R' && !u.flies && G.spawners){
+    for(const s of G.spawners){ if(s.side!=='B'||!s.alive)continue;
+      const d=dist(u.x,u.y,s.x,s.y);
+      if(d<bd){bd=d;best=s;}
+    }
+  }
   // interceptors are air-superiority hunters — they prioritise enemy aircraft
   if(u.hunter&&bestAir)return {tgt:bestAir,d:bad};
   return {tgt:best,d:bd};
@@ -2653,9 +2805,12 @@ function interceptorTick(u,dt){
     u.orad=Math.min(W*0.32,320)*(0.85+Math.random()*0.2); }
   // wide orbit over the middle; vertical sweep spans all three lanes
   const vspan=Math.max(90,(G.laneY[2]-G.laneY[0])*H*0.62);
-  u.ang += dt*0.9*(u.side==='B'?1:-1);
+  const angDir=(u.side==='B'?1:-1);
+  u.ang += dt*0.9*angDir;
   u.x=u.cx+Math.cos(u.ang)*u.orad;
   u.y=u.cy+Math.sin(u.ang)*vspan + Math.sin(u.bob)*2;
+  // heading = tangent of the ellipse it's tracing, so the sprite actually points where it's flying
+  u.heading=Math.atan2(Math.cos(u.ang)*vspan*angDir,-Math.sin(u.ang)*u.orad*angDir);
   u.bob+=dt*6;
   u.cd-=dt;
   if(u.cd<=0){
@@ -2686,7 +2841,7 @@ function updateUnits(dt){
     if(u.support)supportTick(u,dt);
     // kamikaze diving
     if(u.diving){ const t=u.diving; if(!t.alive){u.diving=null;}
-      else{ const a=Math.atan2(t.y-u.y,t.x-u.x); u.x+=Math.cos(a)*u.spd*2.4*dt; u.y+=Math.sin(a)*u.spd*2.4*dt;
+      else{ const a=Math.atan2(t.y-u.y,t.x-u.x); u.heading=a; u.x+=Math.cos(a)*u.spd*2.4*dt; u.y+=Math.sin(a)*u.spd*2.4*dt;
         if(dist(u.x,u.y,t.x,t.y)<t.r+u.r){ explode(u.x,u.y,u.splash+8,u.side,20);
           for(const o of G.units)if(o.alive&&o.side!==u.side&&dist(o.x,o.y,u.x,u.y)<u.splash+8)damage(o,u.dmg,u);
           u.alive=false; SND.boom(); G.shake=Math.max(G.shake,6); }
@@ -2719,6 +2874,7 @@ function updateUnits(dt){
       if(u.kamikaze){ fire(u,tgt); }
       else if(u.cd<=0 && supp<0.85)fire(u,tgt);
     } else {
+      const x0=u.x,y0=u.y;
       const step=dir(u.side)*u.spd*spdMul*stMul*dt;
       if(holdLine!=null && dir(u.side)>0){
         if(u.x>holdLine) u.x=Math.max(holdLine,u.x-u.spd*spdMul*dt); // dug in ahead of the line? fall back to it
@@ -2729,6 +2885,7 @@ function updateUnits(dt){
           const maxDy=u.spd*spdMul*dt*1.4;
           u.y+=clamp(tgt.y-u.y,-maxDy,maxDy);
         } else u.y+=Math.sin(u.bob)*0.3;
+        if(u.kamikaze&&(u.x!==x0||u.y!==y0))u.heading=Math.atan2(u.y-y0,u.x-x0);
       }
     }
     if(u.cd>0)u.cd-=dt;
@@ -2769,6 +2926,8 @@ function updateProjs(dt){
         G.shake=Math.max(G.shake,SAVE.reduceMotion?4:9); if(p.side==='R')SND.boom(); else SND.boom();
         for(const o of G.units){ if(o.alive&&o.side!==p.side){ const dd=dist(o.x,o.y,p.ix,p.iy);
           if(dd<p.splash)damage(o,p.dmg*(dd<p.splash*0.5?1:0.6),p.src); } }
+        if(G.spawners)for(const s of G.spawners){ if(s.alive&&s.side!==p.side){ const dd=dist(s.x,s.y,p.ix,p.iy);
+          if(dd<p.splash)damage(s,p.dmg*(dd<p.splash*0.5?1:0.6),p.src); } }
       }
       continue;
     }
@@ -2781,6 +2940,7 @@ function updateProjs(dt){
       p.dead=true;
       if(p.splash>0){ explode(p.x,p.y,p.splash,p.side,10);
         for(const o of G.units)if(o.alive&&o.side!==p.side&&dist(o.x,o.y,p.x,p.y)<p.splash)damage(o,p.dmg*(o===p.tgt?1:0.6),p.src);
+        if(G.spawners)for(const s of G.spawners)if(s.alive&&s.side!==p.side&&dist(s.x,s.y,p.x,p.y)<p.splash)damage(s,p.dmg*(s===p.tgt?1:0.6),p.src);
       } else if(p.tgt&&p.tgt.alive){ damage(p.tgt,p.dmg,p.src); }
     }
   }
@@ -3000,7 +3160,12 @@ function drawUnitSprite(u,px,py){
   const f=u.side==='B'?1:-1, k=u.r/8;
   const col=u.hitFlash>0?'#ffffff':u.col;
   const dk=shade(col,0.60), lt=shade(col,1.30), steel='#3a4250', dsteel='#232a34', gun='#1c2029';
-  cx.save(); cx.translate(px,py); cx.scale(f*k,k); cx.lineJoin='round'; cx.lineWidth=1.1/k;
+  cx.save(); cx.translate(px,py);
+  // drones (mid-dive) and the orbiting interceptor actually change direction mid-flight, so they
+  // rotate to their real heading instead of just mirroring by side like the rest of the roster
+  if(u.heading!=null && (u.key==='drone'||u.key==='interceptor')){ cx.rotate(u.heading); cx.scale(k,k); }
+  else cx.scale(f*k,k);
+  cx.lineJoin='round'; cx.lineWidth=1.1/k;
   const key=u.key, cat=u.cat;
   if(cat==='inf'){
     // legs — a light scissoring gait tied to the unit's bob phase, so the squad reads as marching, not gliding
@@ -3307,12 +3472,46 @@ const HB_GROUP_END={sniper:1,ifv:1,mlrs:1,drone:1,jammer:1};
 const HB_TABS=[
   {id:'ground',label:'⚔ Ground',units:new Set(['rifle','atgm','sniper','tank','ifv','arty','mlrs','flame'])},
   {id:'air',label:'✈ Air & AD',units:new Set(['aa','heli','drone','interceptor','gunship'])},
-  {id:'support',label:'🛠 Support',units:new Set(['medic','jammer']),abilities:true},
-  {id:'strikes',label:'💥 Strikes',strikes:true},
+  {id:'support',label:'🛠 Support',units:new Set(['medic','jammer'])},
   {id:'production',label:'🏭 Production',spawners:true},
 ];
 let hbTab='ground';
+// strikes + recon + EMP live in their own always-visible row (never behind a tab click) — they're
+// the "break glass" commander powers, so burying them a click away defeats the point
+function buildQuickbar(){
+  const qb=document.getElementById('quickbar'); if(!qb)return; qb.innerHTML='';
+  for(const type of STRIKE_KEYS){ const s=STRIKES[type];
+    const el=document.createElement('div');
+    el.className='card'; el.id='card-'+type; el.style.borderColor=s.col;
+    el.innerHTML=`<span class="key">${s.key}</span><div class="glyph" style="color:${s.col}">${s.glyph}</div>
+      <div class="nm">${s.name}</div><div class="cost" style="color:${s.col}">FREE</div>
+      <div class="cd" style="display:none"></div>`;
+    el.title=s.desc;
+    el.onclick=()=>{G.selCard=type;showLaneHint();};
+    qb.appendChild(el);
+  }
+  // recon flare — free, exposes a whole lane through the fog for a few seconds
+  const rc=document.createElement('div');
+  rc.className='card'; rc.id='card-recon'; rc.style.borderColor='var(--cyan)';
+  rc.innerHTML=`<span class="key">R</span><div class="glyph" style="color:var(--cyan)">📡</div>
+    <div class="nm">Recon Flare</div><div class="cost" style="color:var(--cyan)">FREE</div>
+    <div class="cd" style="display:none"></div>`;
+  rc.title='Reveals every enemy in a lane through fog/weather for a few seconds.';
+  rc.onclick=()=>{G.selCard='recon';showLaneHint();};
+  qb.appendChild(rc);
+  // emp pulse — rank 3, jams (near-fully suppresses) a whole lane briefly
+  const empLocked=SAVE.lvl<3;
+  const ec=document.createElement('div');
+  ec.className='card'+(empLocked?' cant':''); ec.id='card-emp'; ec.style.borderColor='var(--purple)';
+  ec.innerHTML=`<span class="key">F</span><div class="glyph" style="color:var(--purple)">${empLocked?'🔒':'⚡'}</div>
+    <div class="nm">EMP Pulse</div><div class="cost" style="color:var(--purple)">${empLocked?'Rank 3':'FREE'}</div>
+    <div class="cd" style="display:none"></div>`;
+  ec.title=empLocked?'Unlocks at Rank 3.':'Jams every enemy in a lane — they can barely fire or advance for a few seconds.';
+  ec.onclick=()=>{ if(empLocked)return; G.selCard='emp';showLaneHint();};
+  qb.appendChild(ec);
+}
 function buildHotbar(){
+  buildQuickbar();
   const tabsEl=document.getElementById('hbtabs'); tabsEl.innerHTML='';
   for(const t of HB_TABS){
     const tb=document.createElement('button'); tb.className='hbtab'+(hbTab===t.id?' on':'');
@@ -3351,38 +3550,6 @@ function buildHotbar(){
     hb.appendChild(el);
     if(HB_GROUP_END[key]){ const sep=document.createElement('div'); sep.className='hb-sep'; hb.appendChild(sep); }
   });
-  // AIR SUPPORT — three off-map strike cards (gunship run / rolling barrage / precision)
-  if(tab.strikes)for(const type of STRIKE_KEYS){ const s=STRIKES[type];
-    const el=document.createElement('div');
-    el.className='card'; el.id='card-'+type; el.style.borderColor=s.col;
-    el.innerHTML=`<span class="key">${s.key}</span><div class="glyph" style="color:${s.col}">${s.glyph}</div>
-      <div class="nm">${s.name}</div><div class="cost" style="color:${s.col}">FREE</div>
-      <div class="cd" style="display:none"></div>`;
-    el.title=s.desc;
-    el.onclick=()=>{G.selCard=type;showLaneHint();};
-    hb.appendChild(el);
-  }
-  if(tab.abilities){
-  // recon flare — free, exposes a whole lane through the fog for a few seconds
-  const rc=document.createElement('div');
-  rc.className='card'; rc.id='card-recon'; rc.style.borderColor='var(--cyan)';
-  rc.innerHTML=`<span class="key">R</span><div class="glyph" style="color:var(--cyan)">📡</div>
-    <div class="nm">Recon Flare</div><div class="cost" style="color:var(--cyan)">FREE</div>
-    <div class="cd" style="display:none"></div>`;
-  rc.title='Reveals every enemy in a lane through fog/weather for a few seconds.';
-  rc.onclick=()=>{G.selCard='recon';showLaneHint();};
-  hb.appendChild(rc);
-  // emp pulse — rank 3, jams (near-fully suppresses) a whole lane briefly
-  const empLocked=SAVE.lvl<3;
-  const ec=document.createElement('div');
-  ec.className='card'+(empLocked?' cant':''); ec.id='card-emp'; ec.style.borderColor='var(--purple)';
-  ec.innerHTML=`<span class="key">F</span><div class="glyph" style="color:var(--purple)">${empLocked?'🔒':'⚡'}</div>
-    <div class="nm">EMP Pulse</div><div class="cost" style="color:var(--purple)">${empLocked?'Rank 3':'FREE'}</div>
-    <div class="cd" style="display:none"></div>`;
-  ec.title=empLocked?'Unlocks at Rank 3.':'Jams every enemy in a lane — they can barely fire or advance for a few seconds.';
-  ec.onclick=()=>{ if(empLocked)return; G.selCard='emp';showLaneHint();};
-  hb.appendChild(ec);
-  }
   // production spawners — high-cost factories placed just ahead of your HQ
   if(tab.spawners)for(const type of SPAWNER_KEYS){ const sp=SPAWNERS[type];
     const el=document.createElement('div');
@@ -3901,6 +4068,23 @@ function recordBattle(won,score){
   // rivalry memory — the enemy generals remember you
   if(G.general){ const r=SAVE.rivalry[G.general.name]||(SAVE.rivalry[G.general.name]={w:0,l:0});
     if(won)r.w++; else r.l++; }
+  // Rivals Mode — nemesis-style adaptation + roster-clear tracking
+  G.rivalOutcome=null;
+  if(G.rivalMode&&G.general){
+    if(!SAVE.rivals)SAVE.rivals={};
+    const name=G.general.name;
+    const rv=SAVE.rivals[name]||(SAVE.rivals[name]={w:0,l:0,defeated:false,dominant:null});
+    rv.dominant=dominantCategory(G.built||{}); // what you leaned on this fight — shapes their counter next time
+    let justDefeated=false, escaped=false;
+    if(won){ rv.w++;
+      if(!rv.defeated){ if(Math.random()<0.7){ rv.defeated=true; justDefeated=true; } else escaped=true; }
+    } else rv.l++;
+    let rosterCleared=false, bonusXp=0;
+    if(!SAVE.rivalsBadgeEarned && GENERALS.every(g=>SAVE.rivals[g.name]&&SAVE.rivals[g.name].defeated)){
+      SAVE.rivalsBadgeEarned=true; rosterCleared=true; bonusXp=2500; addXP(bonusXp);
+    }
+    G.rivalOutcome={name, won, justDefeated, escaped, alreadyDefeated:rv.defeated&&!justDefeated, rosterCleared, bonusXp};
+  }
 }
 const MEDALS={
   first_win:{n:'First Blood',d:'Win your first battle'},
@@ -3927,6 +4111,7 @@ function kindLabel(){
   if(G.kind==='tutorial')return 'TRAINING';
   if(G.kind==='war')return 'WAR · '+(G.warName||'front');
   if(G.kind==='evolution')return 'EVOLUTION · '+AGES[G.age].name;
+  if(G.kind==='rival')return 'RIVALS · '+(G.general?G.general.name:'');
   return MODES[G.mode].name;
 }
 function showResults(won,reason,score,xpGain,leveled){
@@ -3940,6 +4125,13 @@ function showResults(won,reason,score,xpGain,leveled){
     const gotStar=won&&SAVE.campaignStars[G.mission.id];
     campExtra=`<div class="res-xp" style="color:${gotStar?'var(--gold)':'var(--dim)'}">★ ${G.mission.star} — ${gotStar?'EARNED':'not this time'}</div>`;
     if(won&&G.mission.id+1<CAMPAIGN.length)nextMission=CAMPAIGN[G.mission.id+1];
+  }
+  // rivals mode outcome — escape/defeat + roster-clear banner
+  let rivalExtra='';
+  if(G.rivalOutcome){ const ro=G.rivalOutcome;
+    if(ro.justDefeated)rivalExtra=`<div class="res-xp" style="color:var(--gold)">🏆 ${ro.name} — DEFEATED. They won't trouble you again.</div>`;
+    else if(ro.escaped)rivalExtra=`<div class="res-xp" style="color:var(--warn)">💨 ${ro.name} broke off and escaped — they'll be back, adapted to what you just threw at them.</div>`;
+    if(ro.rosterCleared)rivalExtra+=`<div class="res-xp" style="color:var(--cyan);font-weight:800">👑 ALL RIVALS DEFEATED — +${ro.bonusXp} XP and the 🏆 Rivals Champion badge are yours. Equip it from Cosmetics.</div>`;
   }
   const wxLine=G.wx?` · ${G.wx.glyph} ${G.wx.name}`:'';
   r.innerHTML=`
@@ -3956,10 +4148,11 @@ function showResults(won,reason,score,xpGain,leveled){
     ${isTut?'':`<div class="res-xp">+${xpGain} XP${leveled?`  ·  ⬆ RANK UP → ${SAVE.lvl}`:''}</div>`}
     ${(!isTut&&G.built&&Object.keys(G.built).length)?`<div class="res-aar">AAR — force committed: ${Object.keys(G.built).sort((a,b)=>G.built[b]-G.built[a]).slice(0,5).map(k=>`<b style="color:${UNITS[k].col}">${G.built[k]}×</b> ${unitName(k,G.country)}`).join(' · ')} · <span style="color:var(--faint)">${Math.round(G.spent)} CP spent · ${G.strikeUsedCount||0} strikes${G.general?' · vs '+G.general.name:''}</span></div>`:''}
     ${campExtra}
+    ${rivalExtra}
     <div class="btn-row">
       ${G.kind==='war'?`<button class="sbtn prim" id="r-war">🗺 War Map</button>`:
         nextMission?`<button class="sbtn prim" id="r-next">▶ Next Mission</button>`:
-        `<button class="sbtn prim" id="r-again">▶ ${isTut?'Play a Battle':'Rematch'}</button>`}
+        `<button class="sbtn prim" id="r-again">▶ ${isTut?'Play a Battle':G.kind==='rival'?'Fight Again':'Rematch'}</button>`}
       <button class="sbtn" id="r-menu">☰ Menu</button>
     </div>
     ${leveled?renderUnlockNote():''}
@@ -3976,7 +4169,8 @@ function showResults(won,reason,score,xpGain,leveled){
   }
   if(G.kind==='war'){ document.getElementById('r-war').onclick=()=>{r.classList.add('hidden');showWarMap();}; }
   else if(nextMission){ document.getElementById('r-next').onclick=()=>{r.classList.add('hidden');launchCampaign(nextMission.id);}; }
-  else { const ra=document.getElementById('r-again'); if(ra)ra.onclick=()=>{r.classList.add('hidden'); if(isTut){LAUNCH=null;openMenu();} else start();}; }
+  else { const ra=document.getElementById('r-again'); if(ra)ra.onclick=()=>{r.classList.add('hidden'); if(isTut){LAUNCH=null;openMenu();}
+    else { if(LAUNCH&&LAUNCH.type==='rival')LAUNCH.enemyBias=rivalBiasFor(LAUNCH.rival); start(); } }; }
   document.getElementById('r-menu').onclick=()=>{r.classList.add('hidden');openMenu();};
   document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
@@ -4028,6 +4222,14 @@ function launchTutorial(){
   tutStart();
 }
 function launchEvolution(){ LAUNCH=null; sel.mode='evolution'; if(!DIFFS[sel.diff])sel.diff='veteran'; start(); }
+function launchRival(name){
+  const gen=GENERALS.find(g=>g.name===name); if(!gen)return;
+  const idx=GENERALS.indexOf(gen); const diffTiers=['veteran','elite','elite','legendary','legendary'];
+  const rd=(SAVE.rivals&&SAVE.rivals[name])||{w:0};
+  LAUNCH={type:'rival', rival:name, diff:diffTiers[idx]||'elite', weather:pick(WEATHER_KEYS),
+    ecpMul:1.1+Math.min(0.3,(rd.w||0)*0.03), enemyBias:rivalBiasFor(name)};
+  start();
+}
 
 /* ═══ TUTORIAL — a narrated, gated first fight ═══
    Most steps FREEZE the field (units just idle-breathe in place, no combat, no
@@ -4132,8 +4334,8 @@ function buildMenu(){
     b.onclick=()=>{sel.mode=k;buildMenu();};mOpt.appendChild(b);}
   document.getElementById('mode-desc').textContent=MODES[sel.mode].desc;
   // diff
-  const fOpt=document.getElementById('diff-opts');fOpt.innerHTML='';
-  for(const k in DIFFS){const b=mkOpt(DIFFS[k].name,sel.diff===k);if(sel.diff===k)b.style.background=DIFFS[k].col;b.onclick=()=>{sel.diff=k;buildMenu();};fOpt.appendChild(b);}
+  buildDiffChips(document.getElementById('diff-opts'));
+  renderDiffAmbient(sel.diff);
   // progression
   document.getElementById('m-lvl').textContent=SAVE.lvl;
   document.getElementById('m-xp').style.width=(SAVE.xp/xpForLevel(SAVE.lvl)*100)+'%';
@@ -4171,6 +4373,7 @@ function announceLocked(d){document.getElementById('doc-desc').innerHTML=`<b sty
 /* ═══ START / LOOP ═══ */
 function start(){
   stopWarFx();
+  hideDiffAmbient();
   document.getElementById('menu').classList.add('hidden');
   document.getElementById('title').classList.add('hidden');
   document.getElementById('warmap').classList.add('hidden');
@@ -4186,7 +4389,7 @@ function start(){
   musicStart('battle');
   if(!G.attract)ambientStart();
   syncStanceUI(); syncSpeedUI();
-  const hqLbl=document.getElementById('hqB-lbl'); if(hqLbl)hqLbl.textContent=currentBadge(SAVE.lvl).glyph+' YOUR HQ';
+  const hqLbl=document.getElementById('hqB-lbl'); if(hqLbl)hqLbl.textContent=equippedBadge().glyph+' YOUR HQ';
   const big=(G.kind==='campaign'&&G.mission)?G.mission.name:((MODES[G.mode]&&MODES[G.mode].name)||G.kind);
   if(G.prep>0)announce('⏳ PREP · '+String(big).toUpperCase(),'queue your opening wave — enemy frozen','#5ff0e0');
   else announce(String(big).toUpperCase(),DOCTRINES[G.doc].name+' · '+DIFFS[G.diff].name+' · '+G.wx.name,DOCTRINES[G.doc].col);
@@ -4204,7 +4407,8 @@ function loop(now){
   const raw=Math.min(0.05,(now-last)/1000); last=now;
   if(G&&G.attract&&G.over){ startAttract(); }           // endless attract loop behind the title
   if(G&&!G.paused&&!G.over){
-    const sp=G.speed||1;
+    if(G.cutsceneSlowT>0)G.cutsceneSlowT-=raw; // decremented in real time, independent of the slow-mo it causes
+    const sp=(G.speed||1)*(G.cutsceneSlowT>0?0.22:1);
     if(sp>=2){ step(raw); if(!G.over)step(raw); }      // 2× = two capped sub-steps (no tunnelling)
     else step(raw*sp);                                  // 0.5× / 1× = scaled single step
   }
@@ -4290,8 +4494,8 @@ function togglePause(){
 /* ═══ TOPBAR BUTTONS ═══ */
 function refreshTopbar(){
   document.getElementById('tb-lvl').textContent=SAVE.lvl;
-  document.getElementById('tb-title').textContent=commanderTitle(SAVE.lvl);
-  document.getElementById('tb-badge').textContent=currentBadge(SAVE.lvl).glyph;
+  document.getElementById('tb-title').textContent=equippedTitleStr();
+  document.getElementById('tb-badge').textContent=equippedBadge().glyph;
   document.getElementById('tb-best').textContent=SAVE.best.toLocaleString();
   document.getElementById('btn-stream').classList.toggle('on',!!SAVE.streamOn);
   document.getElementById('stream').classList.toggle('on',!!SAVE.streamOn);
@@ -4413,9 +4617,10 @@ document.getElementById('fr-no').onclick=()=>{document.getElementById('firstrun'
 const DMGTYPE_LABEL={sa:'Small Arms',ap:'Armour-Piercing',he:'High Explosive',aa:'Anti-Air'};
 const ARMORCLASS_LABEL={inf:'Infantry',light:'Light',heavy:'Heavy',air:'Air',struct:'Structure'};
 function openManual(tab){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','record'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','settings','record','roadmap','cosmetics','rivals'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('manual').classList.remove('hidden');
+  hideDiffAmbient();
   buildManualTabs(tab||'basics');
 }
 const MAN_TABS=[
@@ -4573,8 +4778,9 @@ function renderManualBody(tab){
 
 /* ═══ SETTINGS MODAL ═══ */
 function openSettings(){
-  ['title','menu','warmap','results','hud','pauseScreen','manual','record'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','manual','record','roadmap','cosmetics','rivals'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('settings').classList.remove('hidden');
+  hideDiffAmbient();
   renderSettings();
 }
 function settingRow(label,sub,control){
@@ -4607,7 +4813,10 @@ function renderSettings(){
     settingRow('Golden Drone','A rare CP piñata crosses the field — shoot it down',`<button id="set-gag-gold" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.gagGolden)}</button>`)+
     settingRow('Victory Flyover','Confetti & a jet flypast on the win screen',`<button id="set-gag-vic" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.gagVictory)}</button>`)+
     `<div style="font-size:13px;font-weight:800;color:var(--red);letter-spacing:.5px;margin:6px 2px -2px">🤪 CHAOS MODE <span style="color:var(--faint);font-size:9px">BETA</span></div>`+
-    settingRow('Chaos / Meme Mode','Nonstop explosions, free spawns, rapid events & mayhem — built for clips. Turn on, then start any battle.',`<button id="set-chaos" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.chaosMode)}</button>`);
+    settingRow('Chaos / Meme Mode','Nonstop explosions, free spawns, rapid events & mayhem — built for clips. Turn on, then start any battle.',`<button id="set-chaos" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.chaosMode)}</button>`)+
+    `<div style="font-size:13px;font-weight:800;color:var(--faint);letter-spacing:.5px;margin:10px 2px -2px">⚠ PROGRESS</div>`+
+    settingRow('Reset Rank &amp; Level','Currently Rank '+SAVE.lvl+' — sets you back to Rank 1 and reverts doctrine unlocks. Career stats, medals and rivalries are untouched.',
+      `<button id="set-reset-rank" style="padding:8px 14px;border-radius:8px;border:1px solid var(--red);background:none;color:var(--red);font-weight:700;font-size:12px;cursor:pointer">Reset</button>`);
   const bind=(id,fn)=>{const b=document.getElementById(id); if(b)b.onclick=()=>{fn();renderSettings();};};
   bind('set-music',()=>{ SAVE.music=!SAVE.music; persist(); if(SAVE.music)musicStart(musicContextTheme()); else musicStop(); refreshTopbar(); });
   bind('set-sound',()=>{ SAVE.sound=!SAVE.sound; persist(); });
@@ -4624,6 +4833,13 @@ function renderSettings(){
   bind('set-gag-chat',()=>{ SAVE.gagChatter=!SAVE.gagChatter; persist(); });
   bind('set-gag-gold',()=>{ SAVE.gagGolden=!SAVE.gagGolden; persist(); });
   bind('set-gag-vic',()=>{ SAVE.gagVictory=!SAVE.gagVictory; persist(); });
+  const resetBtn=document.getElementById('set-reset-rank');
+  if(resetBtn)resetBtn.onclick=()=>{
+    if(!confirm('Reset your Rank back to 1? This reverts doctrine unlocks tied to level. Career stats, medals and rivalries stay.'))return;
+    SAVE.lvl=1; SAVE.xp=0;
+    SAVE.unlocked=Object.keys(DOCTRINES).filter(k=>DOCTRINES[k].unlock<=1);
+    persist(); refreshTopbar(); renderSettings();
+  };
   const vol=document.getElementById('set-vol');
   if(vol)vol.oninput=()=>{ SAVE.musicVol=(+vol.value)/100; persist();
     try{ if(MUSIC.master&&MUSIC.ctx)MUSIC.master.gain.setTargetAtTime(SAVE.musicVol,MUSIC.ctx.currentTime,0.1); }catch(e){}
@@ -4631,9 +4847,10 @@ function renderSettings(){
 }
 /* ═══ SERVICE RECORD — the career backend surfaced ═══ */
 function openRecord(){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','manual'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','roadmap','cosmetics','rivals'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('record').classList.remove('hidden');
+  hideDiffAmbient();
   renderRecord();
 }
 function fmtDur(s){ if(s>=3600)return Math.floor(s/3600)+'h '+Math.floor(s%3600/60)+'m'; if(s>=60)return Math.floor(s/60)+'m '+(s%60)+'s'; return s+'s'; }
@@ -4683,8 +4900,114 @@ function renderRecord(){
   } else if(!c.battles){ h+=`<p>No battles on record yet. The front is waiting, Commander.</p>`; }
   el.innerHTML=h; el.scrollTop=0;
 }
+function openRoadmap(){
+  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','cosmetics','rivals'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('btn-pause').classList.add('hidden');
+  document.getElementById('roadmap').classList.remove('hidden');
+  hideDiffAmbient();
+  renderRoadmap();
+}
+function renderRoadmap(){
+  const el=document.getElementById('road-body'); if(!el)return;
+  const lvl=SAVE.lvl, xp=SAVE.xp, need=xpForLevel(lvl);
+  let h=`<h2>Rank ${lvl} — ${commanderTitle(lvl)}</h2>`+
+    `<div class="road-now"><span class="road-now-badge">${currentBadge(lvl).glyph}</span>`+
+    `<div class="road-now-bar"><i style="width:${Math.min(100,Math.round(xp/need*100))}%"></i></div>`+
+    `<span class="road-now-txt">${xp}/${need} XP to Rank ${lvl+1}</span></div>`;
+  h+=`<h2>The Ladder</h2><div class="tag" style="margin-bottom:10px">Win battles, earn XP, climb the ranks — every rung below unlocks something permanent.</div>`;
+  // max rung is the highest level anything unlocks at, across titles/badges/doctrines/powers
+  const maxLvl=Math.max(...COMMANDER_TITLES.map(t=>t.lvl),...HQ_BADGES.map(b=>b.lvl),...Object.values(DOCTRINES).map(d=>d.unlock),3);
+  for(let l=1;l<=maxLvl;l++){
+    const rewards=rankRewardsAtLevel(l);
+    if(!rewards.length)continue;
+    const reached=lvl>=l;
+    h+=`<div class="road-rung${reached?' done':''}">`+
+      `<span class="road-rung-lvl">${reached?'✓':'🔒'} RANK ${l}</span>`+
+      `<span class="road-rung-rewards">${rewards.join(' · ')}</span></div>`;
+  }
+  el.innerHTML=h; el.scrollTop=0;
+}
+function openCosmetics(){
+  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','rivals'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('btn-pause').classList.add('hidden');
+  document.getElementById('cosmetics').classList.remove('hidden');
+  hideDiffAmbient();
+  renderCosmetics();
+}
+function equipBadge(val){
+  if(typeof val==='number'){ if(SAVE.lvl<val)return; }
+  else { const sb=SPECIAL_BADGES.find(e=>e.id===val); if(!sb||!sb.requires())return; }
+  SAVE.equippedBadge=val; persist(); renderCosmetics(); refreshTopbar();
+}
+function equipTitle(lvl){ if(SAVE.lvl<lvl)return; SAVE.equippedTitle=lvl; persist(); renderCosmetics(); refreshTopbar(); }
+function renderCosmetics(){
+  const el=document.getElementById('cos-body'); if(!el)return;
+  const eqBadge=equippedBadge(), eqT=equippedTitleEntry().lvl;
+  let h=`<h2>HQ Badge</h2><div class="cos-grid">`;
+  for(const b of HQ_BADGES){ const locked=SAVE.lvl<b.lvl, on=eqBadge.lvl===b.lvl&&eqBadge.name===b.name;
+    h+=`<div class="cos-item${on?' on':''}${locked?' locked':''}" data-eq="badge" data-lvl="${b.lvl}">`+
+      `<span class="cos-glyph">${locked?'🔒':b.glyph}</span><span class="cos-nm">${b.name}</span>`+
+      `<span class="cos-lvl">${locked?'Rank '+b.lvl:(on?'EQUIPPED':'Rank '+b.lvl)}</span></div>`;
+  }
+  for(const sb of SPECIAL_BADGES){ const unlocked=sb.requires(), on=SAVE.equippedBadge===sb.id;
+    h+=`<div class="cos-item${on?' on':''}${unlocked?'':' locked'}" data-eq="badge" data-lvl="${sb.id}">`+
+      `<span class="cos-glyph">${unlocked?sb.glyph:'🔒'}</span><span class="cos-nm">${sb.name}</span>`+
+      `<span class="cos-lvl">${unlocked?(on?'EQUIPPED':'Rivals Champion'):'Beat all Rivals'}</span></div>`;
+  }
+  h+=`</div><h2>Commander Title</h2><div class="cos-grid">`;
+  for(const t of COMMANDER_TITLES){ const locked=SAVE.lvl<t.lvl, on=t.lvl===eqT;
+    h+=`<div class="cos-item${on?' on':''}${locked?' locked':''}" data-eq="title" data-lvl="${t.lvl}">`+
+      `<span class="cos-glyph">${locked?'🔒':'🎖'}</span><span class="cos-nm">${t.title}</span>`+
+      `<span class="cos-lvl">${locked?'Rank '+t.lvl:(on?'EQUIPPED':'Rank '+t.lvl)}</span></div>`;
+  }
+  h+=`</div>`;
+  el.innerHTML=h; el.scrollTop=0;
+  el.querySelectorAll('.cos-item').forEach(it=>{
+    it.onclick=()=>{ const raw=it.dataset.lvl, lvl=isNaN(+raw)?raw:+raw; if(it.dataset.eq==='badge')equipBadge(lvl); else equipTitle(lvl); };
+  });
+}
+function openRivals(){
+  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','cosmetics'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('btn-pause').classList.add('hidden');
+  document.getElementById('rivals').classList.remove('hidden');
+  hideDiffAmbient();
+  renderRivals();
+}
+function renderRivals(){
+  const el=document.getElementById('rivals-body'); if(!el)return;
+  const defeatedCount=GENERALS.filter(g=>SAVE.rivals&&SAVE.rivals[g.name]&&SAVE.rivals[g.name].defeated).length;
+  let h='';
+  if(SAVE.rivalsBadgeEarned){
+    h+=`<div class="road-now"><span class="road-now-badge">🏆</span><span class="road-now-txt" style="flex:1">RIVALS CHAMPION — every rival on the roster has fallen. The 🏆 badge is yours to equip from Cosmetics.</span></div>`;
+  } else {
+    h+=`<div class="road-now"><span class="road-now-badge">⚔</span><div class="road-now-bar"><i style="width:${Math.round(defeatedCount/GENERALS.length*100)}%"></i></div><span class="road-now-txt">${defeatedCount}/${GENERALS.length} rivals defeated</span></div>`;
+  }
+  h+=`<div class="cos-grid" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr))">`;
+  GENERALS.forEach((g,gi)=>{
+    const rv=(SAVE.rivals&&SAVE.rivals[g.name])||{w:0,l:0,defeated:false,dominant:null};
+    const status=rv.defeated?'✓ DEFEATED':'ACTIVE';
+    const domTxt=rv.dominant?`leaning ${RIVAL_COUNTER[rv.dominant]} to counter your ${rv.dominant}`:`signature: ${g.bias}`;
+    h+=`<div class="rival-card${rv.defeated?' defeated':''}" data-idx="${gi}" style="border-color:${g.col}">`+
+      `<span class="rival-glyph" style="color:${g.col}">${g.glyph}</span>`+
+      `<div class="rival-nm">${escapeHtml(g.name)}</div>`+
+      `<div class="rival-rec">${rv.w}–${rv.l} · <span style="color:${rv.defeated?'var(--good)':g.col}">${status}</span></div>`+
+      `<div class="rival-bias">${domTxt}</div>`+
+      `<button class="sbtn prim rival-fight" style="margin-top:8px;font-size:12px">⚔ Fight</button></div>`;
+  });
+  h+=`</div>`;
+  el.innerHTML=h; el.scrollTop=0;
+  el.querySelectorAll('.rival-fight').forEach(btn=>{
+    btn.onclick=()=>{ const idx=+btn.closest('.rival-card').dataset.idx; leaveTitle(); launchRival(GENERALS[idx].name); };
+  });
+}
 document.getElementById('t-record').onclick=()=>openRecord();
 document.getElementById('rec-back').onclick=()=>showTitle();
+document.getElementById('t-roadmap').onclick=()=>openRoadmap();
+document.getElementById('road-back').onclick=()=>showTitle();
+document.getElementById('t-cosmetics').onclick=()=>openCosmetics();
+document.getElementById('cos-back').onclick=()=>showTitle();
+document.getElementById('t-rivals').onclick=()=>openRivals();
+document.getElementById('rivals-back').onclick=()=>showTitle();
 document.getElementById('man-back').onclick=()=>showTitle();
 document.getElementById('t-manual').onclick=()=>openManual('basics');
 document.getElementById('set-back').onclick=()=>showTitle();
@@ -4765,9 +5088,15 @@ function runLoader(){
 function startAttract(){
   narrStop();
   LAUNCH=null;
+  // newGame() reads sel.* directly and has no override params, so the demo battle
+  // has to borrow it briefly — restore the player's real picks right after, or every
+  // attract-loop replay (background demo ends every ~30-60s) would silently reset
+  // whatever difficulty/doctrine they'd chosen on the title screen behind their back.
+  const savedSel={...sel};
   const docs=Object.keys(DOCTRINES).filter(k=>DOCTRINES[k].unlock<=2);
   sel.mode='skirmish'; sel.doctrine=pick(docs); sel.diff='veteran';
   resize(); newGame();
+  Object.assign(sel,savedSel);
   G.attract=true; G.techMode=false; for(const k of HOTBAR)G.unlocked[k]=true;
   G.cpRate=16; G.ecpRate=16; G._atkT=0.4; G.prep=0; G.frozen=false;
   document.getElementById('hud').classList.add('hidden');
@@ -4783,10 +5112,10 @@ function attractTick(dt){
 /* ── TITLE SCREEN ── */
 function showTitle(){
   ambientStop(); infoClear();
-  ['menu','warmap','results','hud','pauseScreen','manual','settings','record'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['menu','warmap','results','hud','pauseScreen','manual','settings','record','roadmap','cosmetics','rivals'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('title').classList.remove('hidden');
-  document.getElementById('t-rank').textContent=currentBadge(SAVE.lvl).glyph+' Rank '+SAVE.lvl+' '+commanderTitle(SAVE.lvl);
+  document.getElementById('t-rank').textContent=equippedBadge().glyph+' Rank '+SAVE.lvl+' '+equippedTitleStr();
   document.getElementById('t-best').textContent='Best '+SAVE.best.toLocaleString();
   const tv=document.getElementById('t-ver'); if(tv)tv.textContent='v'+GAME_VERSION;
   document.getElementById('title-tag').textContent=pick(TITLE_TAGS);
@@ -4798,23 +5127,51 @@ function showTitle(){
 }
 function leaveTitle(){ document.getElementById('title').classList.add('hidden'); G=null; window.G=null; }
 // global difficulty chips on the title — set sel.diff so Play, Evolution & the rest all honour it
-function buildTitleDiff(){
-  const host=document.getElementById('td-chips'); if(!host)return; host.innerHTML='';
+// shared "fun" difficulty chip builder — used by both the title screen and the
+// skirmish menu so picking a tier looks and feels identical in both places.
+function buildDiffChips(host){
+  if(!host)return; host.innerHTML='';
   if(!DIFFS[sel.diff])sel.diff='veteran';
   for(const k in DIFFS){ const d=DIFFS[k];
     const b=document.createElement('button'); b.className='td-chip'+(sel.diff===k?' on':'');
     b.innerHTML=`<span class="td-ic">${d.glyph}</span>${d.name}`;
     b.style.borderColor=d.col; if(sel.diff===k){b.style.background=d.col;b.style.color='#0a0e14';} else b.style.color=d.col;
-    b.onclick=()=>{ if(sel.diff!==k)diffFx(k); sel.diff=k; buildTitleDiff(); if(typeof buildMenu==='function')buildMenu(); };
+    b.onclick=()=>{ const changed=sel.diff!==k; sel.diff=k; if(changed)diffFxBurst(k); renderDiffAmbient(k);
+      buildTitleDiff(); if(typeof buildMenu==='function')buildMenu(); };
     host.appendChild(b);
   }
 }
-// screen effect when the difficulty pick changes — severity scales with the tier's fx level
-// (0 recruit … 3 legendary): more/bigger crossing tracers and flame plumes at the top end.
-function diffFx(key){
+function buildTitleDiff(){ buildDiffChips(document.getElementById('td-chips')); renderDiffAmbient(sel.diff); }
+// persistent ambience for the current pick — stays up (looping) on any pre-battle screen
+// until the difficulty changes or you leave for battle/another screen (hideDiffAmbient()).
+function renderDiffAmbient(key){
+  const d=DIFFS[key]; const host=document.getElementById('diff-fx'); if(!d||!host)return;
+  host.innerHTML='';
+  if(SAVE.reduceMotion){ host.classList.remove('show'); return; }
+  const sev=d.fx||0;
+  if(sev>=1){ // a slow, sparse looping tracer or two even at low severity, just to feel alive
+    const n=sev>=2?sev:1;
+    for(let i=0;i<n;i++){
+      const t=document.createElement('div'); t.className='diff-tracer loop'+(i%2?' rev':'');
+      t.style.top=(10+Math.random()*76)+'%'; t.style.setProperty('--rot',(rnd(-10,10))+'deg');
+      t.style.setProperty('--i',i); host.appendChild(t);
+    }
+  }
+  if(sev>=2){
+    const flameCount=sev===3?6:2;
+    for(let i=0;i<flameCount;i++){
+      const f=document.createElement('div'); f.className='diff-flame';
+      f.style.left=(6+Math.random()*84)+'%'; f.style.setProperty('--i',i);
+      host.appendChild(f);
+    }
+  }
+  host.classList.add('show');
+}
+function hideDiffAmbient(){ const host=document.getElementById('diff-fx'); if(host)host.classList.remove('show'); }
+// one-shot flourish the instant the pick actually changes — extra crossing tracers + a title shake at the top tier
+function diffFxBurst(key){
   const d=DIFFS[key]; if(!d||SAVE.reduceMotion)return;
   const host=document.getElementById('diff-fx'); if(!host)return;
-  host.innerHTML=''; host.classList.remove('show'); void host.offsetWidth;
   const sev=d.fx||0;
   const tracerCount=1+sev*2;
   for(let i=0;i<tracerCount;i++){
@@ -4823,22 +5180,15 @@ function diffFx(key){
     t.style.setProperty('--rot',(rnd(-10,10))+'deg');
     t.style.animationDelay=(Math.random()*180)+'ms';
     host.appendChild(t);
+    setTimeout(()=>{try{t.remove();}catch(e){}},700);
   }
-  if(sev>=2){
-    const flameCount=sev===3?6:2;
-    for(let i=0;i<flameCount;i++){
-      const f=document.createElement('div'); f.className='diff-flame';
-      f.style.left=(6+Math.random()*84)+'%';
-      f.style.animationDelay=(Math.random()*220)+'ms';
-      host.appendChild(f);
-    }
-  }
-  host.classList.add('show');
   if(sev>=3){
     const ti=document.getElementById('title-inner'); if(ti){ ti.classList.remove('title-shake'); void ti.offsetWidth; ti.classList.add('title-shake'); }
     if(typeof SND!=='undefined'&&SAVE.sound)SND.boom(true);
   } else if(sev===2 && typeof SND!=='undefined'&&SAVE.sound) SND.combo(2);
 }
+// debug-panel entry point: preview a tier's full effect (burst + ambient) on demand
+function diffFx(key){ diffFxBurst(key); renderDiffAmbient(key); }
 
 /* ═══════════════════════════════════════════════════════════════════════
    WAR MODE — a conquest map. Each node is a battle; taking one cuts supply
@@ -4877,9 +5227,10 @@ function warDiffFor(str){ return str>=80?'legendary':str>=62?'elite':str>=44?'ve
 let warSel=null;
 function showWarMap(){
   ambientStop();
-  ['title','menu','results','hud','pauseScreen'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','results','hud','pauseScreen','roadmap','cosmetics','rivals'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('warmap').classList.remove('hidden');
+  hideDiffAmbient();
   G=null; window.G=null; narrStop();
   musicStart('menu'); musicSetTheme('menu');
   if(!SAVE.war) genWar();
