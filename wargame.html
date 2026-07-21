@@ -2665,6 +2665,7 @@ function weightedPick(arr){ let t=0;for(const[,w]of arr)t+=w; let r=Math.random(
 function step(dt){
   if(G.paused||G.over)return;
   G.t+=dt;
+  updateAmbientMotes(dt); // purely decorative background drift — keeps running through prep/attract too
   // ── 10-second prep: the field is frozen while you queue your opening wave ──
   if(G.prep>0){
     G.frozen=true; G.prep-=dt; G.cp=Math.min(G.cpMax,G.cp+G.cpRate*dt); // CP still flows so you can stage units
@@ -2972,6 +2973,7 @@ function draw(){
   cx.save();
   if(G&&G.shake>0&&!SAVE.reduceMotion){const s=G.shake;cx.translate(rnd(-s,s),rnd(-s,s));}
   drawField();
+  drawAmbientMotes();
   if(G){
     // lane guides
     drawBases();
@@ -3027,6 +3029,56 @@ function buildScenery(){
     for(let k=0;k<20;k++)G.scenery.grass.push({x:rnd(70,W-70),y:y+rnd(-20,22),s:rnd(3,7)});
   }
   G._sceneryNight=night;
+  buildAmbientMotes();
+}
+/* ── ambient background flair — floating dust/embers/fireflies + night stars, drawn behind the
+   fight so the empty sky/ground space never feels static. Purely cosmetic; skipped entirely under
+   Reduce Motion, same convention as screen shake/parallax/flashes. ── */
+function buildAmbientMotes(){
+  const wx=G.wxKey, night=wx==='night';
+  G.motes=[]; G.stars=[];
+  if(SAVE.reduceMotion)return;
+  const moteCol = wx==='storm'?'255,220,140' : wx==='fog'?'200,220,235' : wx==='rain'?'170,200,230'
+    : night?'150,200,255' : '255,236,190';
+  const count = wx==='fog'?30 : 42;
+  for(let i=0;i<count;i++){
+    const depth=rnd(0.25,1); // 0=distant/slow/dim, 1=near/fast/bright
+    G.motes.push({x:rnd(0,W),y:rnd(0,H*0.92),depth,
+      r:rnd(1.4,3.6)*(0.5+depth*0.7), baseA:rnd(0.2,0.5)*(0.5+depth*0.6),
+      vy:-rnd(4,11)*(0.4+depth), sway:rnd(6,16), swaySpd:rnd(0.3,0.8), phase:rnd(0,6.28), col:moteCol});
+  }
+  if(night)for(let i=0;i<50;i++)G.stars.push({x:rnd(0,W),y:rnd(0,H*0.32),r:rnd(0.5,1.6),
+    baseA:rnd(0.25,0.75),twSpd:rnd(0.6,2.2),phase:rnd(0,6.28)});
+}
+function updateAmbientMotes(dt){
+  if(!G||SAVE.reduceMotion){ return; }
+  if(!G.motes)buildAmbientMotes();
+  for(const m of G.motes){
+    m.phase+=dt*m.swaySpd;
+    m.y+=m.vy*dt;
+    if(m.y<-10){ m.y=H*0.92+rnd(0,20); m.x=rnd(0,W); }
+  }
+  if(G.stars)for(const s of G.stars)s.phase+=dt*s.twSpd;
+}
+function drawAmbientMotes(){
+  if(!G||SAVE.reduceMotion||!G.motes)return;
+  if(G.stars)for(const s of G.stars){
+    const a=s.baseA*(0.55+0.45*Math.sin(s.phase));
+    cx.globalAlpha=a; cx.fillStyle='#dfe8ff'; cx.beginPath(); cx.arc(s.x,s.y,s.r,0,6.28); cx.fill();
+  }
+  cx.globalAlpha=1;
+  for(const m of G.motes){
+    const x=m.x+Math.sin(m.phase)*m.sway;
+    const a=m.baseA*(0.7+0.3*Math.sin(m.phase*1.7));
+    const gr=m.r*3.2;
+    const g=cx.createRadialGradient(x,m.y,0,x,m.y,gr);
+    g.addColorStop(0,'rgba('+m.col+','+a+')');
+    g.addColorStop(0.4,'rgba('+m.col+','+(a*0.5)+')');
+    g.addColorStop(1,'rgba('+m.col+',0)');
+    cx.fillStyle=g; cx.beginPath(); cx.arc(x,m.y,gr,0,6.28); cx.fill();
+    cx.globalAlpha=Math.min(1,a*1.6); cx.fillStyle='rgb('+m.col+')';
+    cx.beginPath(); cx.arc(x,m.y,m.r*0.5,0,6.28); cx.fill(); cx.globalAlpha=1;
+  }
 }
 function drawField(){
   const night=G&&G.wxKey==='night';
@@ -4378,6 +4430,10 @@ function start(){
   document.getElementById('title').classList.add('hidden');
   document.getElementById('warmap').classList.add('hidden');
   document.getElementById('results').classList.add('hidden');
+  // secondary screens (record/manual/settings/roadmap/cosmetics/rivals) normally route through
+  // showTitle() before a battle starts, but Rivals' "Fight" button launches straight from its own
+  // screen — hide them all here too so the HUD/canvas is never left buried under a leftover overlay
+  ['record','manual','settings','roadmap','cosmetics','rivals'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
   document.getElementById('hud').classList.remove('hidden');
   document.getElementById('btn-pause').classList.remove('hidden');
   document.getElementById('tut-skip').classList.add('hidden');
