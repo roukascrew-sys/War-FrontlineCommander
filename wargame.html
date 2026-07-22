@@ -15,6 +15,7 @@
 <meta name="twitter:title" content="FRONTLINE COMMANDER — a fast war game">
 <meta name="twitter:description" content="A free, zero-install lane-battler, playable straight in the browser.">
 <meta name="robots" content="index,follow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self' https://api.elevenlabs.io wss://irc-ws.chat.twitch.tv; object-src 'none'; base-uri 'none'">
 <style>
   :root{
     --bg:#0a0e14; --panel:#121824; --panel2:#1a2333; --line:#26324a;
@@ -45,6 +46,11 @@
   .tb-btn:hover{color:var(--ink);border-color:var(--blue);transform:translateY(-1px);}
   .tb-btn:active{transform:translateY(0) scale(0.95);}
   .tb-btn.on{color:var(--bg);background:var(--gold);border-color:var(--gold);}
+  #playtest-link{padding:6px 11px;border:1px solid var(--good);border-radius:6px;background:var(--panel2);
+    color:var(--good);font-size:12px;font-weight:700;text-decoration:none;letter-spacing:.2px;
+    transition:.12s;white-space:nowrap;}
+  #playtest-link:hover{background:var(--good);color:var(--bg);box-shadow:0 0 14px #3fd07a55;transform:translateY(-1px);}
+  #playtest-link:active{transform:translateY(0) scale(0.95);}
   /* topbar buttons colour-keyed to what they do */
   #btn-stream:hover,#btn-twitch:hover{border-color:var(--purple);color:var(--purple);}
   #btn-narr:hover,#btn-voice:hover{border-color:var(--gold);color:var(--gold);}
@@ -643,6 +649,7 @@
 <body>
 
 <div id="topbar">
+  <a id="playtest-link" href="https://docs.google.com/forms/d/e/1FAIpQLSe3f5r4bGuWzFGjz2QhG8sVaX08j1kSUDy9KVNVHA29NCz8QQ/viewform?usp=dialog" target="_blank" rel="noopener noreferrer">🧪 Playtest Feedback</a>
   <div class="logo">⚔ <b>FRONTLINE</b> COMMANDER</div>
   <div class="hstat" id="tb-rank">Rank <b id="tb-lvl">1</b> <span id="tb-title" style="color:var(--faint);font-weight:600"></span> <span id="tb-badge"></span></div>
   <div class="hstat">Best <b id="tb-best">0</b></div>
