@@ -415,6 +415,7 @@
   .t-btn.roadmap{border-color:var(--cyan);} .t-btn.roadmap b{color:var(--cyan);} .t-btn.roadmap:hover{box-shadow:0 0 18px #5ff0e044;}
   .t-btn.cosmetics{border-color:var(--purple);} .t-btn.cosmetics b{color:var(--purple);} .t-btn.cosmetics:hover{box-shadow:0 0 18px #c9a0ff44;}
   .t-btn.rivals{border-color:var(--red);} .t-btn.rivals b{color:var(--red);} .t-btn.rivals:hover{box-shadow:0 0 18px #ff5a4a44;}
+  .t-btn.patchnotes{border-color:var(--good);} .t-btn.patchnotes b{color:var(--good);} .t-btn.patchnotes:hover{box-shadow:0 0 18px #3fd07a44;}
 
   /* ── RIVALS MODE ── */
   .rival-card{background:var(--panel);border:1.5px solid var(--line);border-radius:10px;padding:12px;text-align:left;}
@@ -804,9 +805,10 @@
         <button class="t-btn record" id="t-record"><b>🎖 Service Record</b><small>your career &amp; rivals</small></button>
         <button class="t-btn roadmap" id="t-roadmap"><b>🏆 Roadmap</b><small>rank rewards &amp; unlocks</small></button>
         <button class="t-btn cosmetics" id="t-cosmetics"><b>🎖 Cosmetics</b><small>equip badge &amp; title</small></button>
+        <button class="t-btn patchnotes" id="t-patchnotes"><b>📋 Patch Notes</b><small>what's new</small></button>
         <button class="t-btn settings" id="t-settings"><b>⚙ Settings</b><small>audio &amp; motion</small></button>
       </div>
-      <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span> · <span id="t-ver">v1.0.0</span></div>
+      <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span> · <span id="t-ver" style="cursor:pointer;text-decoration:underline dotted;">v1.0.0</span></div>
     </div>
   </div>
 
@@ -864,6 +866,14 @@
     <h1>⚔ <b>RIVALS</b></h1>
     <div class="tag" style="margin-bottom:6px">Five named commanders. Beat one and they'll come back adapted to whatever you threw at them — sometimes they escape a loss and live to fight again. Defeat every rival for real and the roster pays out.</div>
     <div class="man-wrap"><div class="man-body" id="rivals-body"></div></div>
+  </div>
+
+  <!-- PATCH NOTES -->
+  <div class="screen hidden" id="patchnotes">
+    <button class="back-btn" id="pn-back">◀ Title</button>
+    <h1>📋 <b>PATCH NOTES</b></h1>
+    <div class="tag" style="margin-bottom:6px">The quick version of everything that's shipped, newest first.</div>
+    <div class="man-wrap"><div class="man-body" id="pn-body"></div></div>
   </div>
 
   <!-- SETTINGS MODAL -->
@@ -1294,7 +1304,77 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.0.0'; // ⭐ launch build
+const GAME_VERSION='1.7.0';
+// ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
+// "what changed" skim, not a full commit log. ──
+const PATCH_NOTES=[
+  {v:'1.7.0',notes:[
+    'Fixed Rivals Mode not showing the battle after clicking Fight (screen stayed hidden behind the roster)',
+    'Fog & rain now visually obscure distant terrain around your own forces; storms briefly black out the whole field — toggle in Settings',
+    'Legendary difficulty is meaningfully harder: stronger economy/quality, faster AI decisions, occasional coordinated lane pushes',
+    'Added floating ambient particles to fill the empty sky/field space during battle',
+    'Added 3 extremely rare hidden events (with Debug triggers to preview them) — no spoilers here',
+  ]},
+  {v:'1.6.0',notes:[
+    'Strikes/Recon/EMP moved out of the hotbar tabs into a permanent always-visible quickbar',
+    'Added Rewards Roadmap screen — the full rank ladder with your progress highlighted',
+    'Added Cosmetics screen — equip any earned HQ badge or commander title, not just the newest',
+    'Added Rivals Mode — 5 named generals that adapt to your last loadout against them, occasionally escape a loss, and pay out a badge once the whole roster is beaten',
+  ]},
+  {v:'1.5.0',notes:[
+    'Difficulty picker: effects now persist properly and match between title & skirmish menu; fixed a bug where clicking Play silently reset your difficulty',
+    'Added a Reset Rank & Level button (Settings)',
+    'Cutscenes now slow the game down instead of fully freezing the view',
+    '5 new campaign missions with narrator briefings',
+    'Factories (production spawners) can now be destroyed by the enemy',
+    'Units now visually face the direction they\'re flying/attacking',
+  ]},
+  {v:'1.4.0',notes:[
+    'Premium ElevenLabs narrator voice: fixed key/voice handling',
+    'Fixed hotbar and 3rd lane visibility on smaller screens',
+    'Difficulty selector visual flair, screen shake on artillery/HQ hits, sprite polish pass',
+    'Fixed a drone targeting bug and rare chaos-mode decals',
+    'Added a Debug panel to manually trigger scripted events',
+    'Added the Flame Trooper unit (short range, sets targets ablaze)',
+    'Rank-up rewards + a proper rank-up screen',
+  ]},
+  {v:'1.3.0',notes:[
+    'Beta Chaos/Meme mode — nonstop explosions and rapid-fire events, built for clips',
+    'Difficulty selector added to the title screen',
+    'Representational unit sprites replacing plain glyphs',
+    'A-10 gun run + AC-130 gunship audio',
+    'Information-warfare chat effects (phantoms, gaslight, fog, ghost ping, and more)',
+    'Service Record screen — career stats, unit usage, rivalry history, battle log',
+    'Toggleable gags (unit chatter, golden drone, victory flyover)',
+  ]},
+  {v:'1.2.0',notes:[
+    'Field Manual / Wiki screen — full roster, counters, doctrines and tips generated from live data',
+    'Settings modal (music volume, reduce motion) + Twitch chat hype meter',
+    'Per-weapon combat audio + ambient battlefield backdrop',
+    'Random battlefield events engine with individual on/off toggles',
+    '10-second prep phase to queue your opening wave',
+    'Difficulty rebalance across all four tiers; narrator voice made less robotic',
+    'Replaced the old bomb strike with three distinct air-support abilities',
+    'Added the Gunship (with the Interceptor as its hard counter)',
+  ]},
+  {v:'1.1.0',notes:[
+    'War Mode — a conquest map where battles affect neighboring territory',
+    'Combat depth: damage-type vs. armor-class matrix, crits, kill-bounty economy',
+    'Evolution mode — 5 ages, evolve through kills, age-gated unlocks, base turrets',
+    'Country selection reskins your roster with nation-specific equipment names',
+    'Visual polish pass: vignette, projectile glow, muzzle flash, deploy ripple',
+    'Original procedural music score + ambient war-front sound',
+    'Fake news ticker reacting to battle state',
+  ]},
+  {v:'1.0.0',notes:[
+    'Launch build — skirmish, blitz and survival modes',
+    'Doctrines, tech-tree hotbar, escalating campaign with narrated briefings',
+    'Weather, morale/suppression, unit veterancy, per-lane terrain modifiers',
+    'Commander Powers (Recon Flare, EMP Pulse), named rival enemy generals',
+    'Game speed control, troop stances, in-battle tech unlocks',
+    'Optional live Twitch chat integration — viewers vote on in-game events',
+  ]},
+];
 
 /* ── WEATHER (from the simulator's environment layer — shapes range, tempo & spotting) ── */
 const WEATHERS={
@@ -4953,7 +5033,7 @@ document.getElementById('fr-no').onclick=()=>{document.getElementById('firstrun'
 const DMGTYPE_LABEL={sa:'Small Arms',ap:'Armour-Piercing',he:'High Explosive',aa:'Anti-Air'};
 const ARMORCLASS_LABEL={inf:'Infantry',light:'Light',heavy:'Heavy',air:'Air',struct:'Structure'};
 function openManual(tab){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','record','roadmap','cosmetics','rivals'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','settings','record','roadmap','cosmetics','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('manual').classList.remove('hidden');
   hideDiffAmbient();
@@ -5114,7 +5194,7 @@ function renderManualBody(tab){
 
 /* ═══ SETTINGS MODAL ═══ */
 function openSettings(){
-  ['title','menu','warmap','results','hud','pauseScreen','manual','record','roadmap','cosmetics','rivals'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','manual','record','roadmap','cosmetics','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('settings').classList.remove('hidden');
   hideDiffAmbient();
   renderSettings();
@@ -5185,7 +5265,7 @@ function renderSettings(){
 }
 /* ═══ SERVICE RECORD — the career backend surfaced ═══ */
 function openRecord(){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','roadmap','cosmetics','rivals'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','roadmap','cosmetics','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('record').classList.remove('hidden');
   hideDiffAmbient();
@@ -5239,7 +5319,7 @@ function renderRecord(){
   el.innerHTML=h; el.scrollTop=0;
 }
 function openRoadmap(){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','cosmetics','rivals'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','cosmetics','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('roadmap').classList.remove('hidden');
   hideDiffAmbient();
@@ -5266,7 +5346,7 @@ function renderRoadmap(){
   el.innerHTML=h; el.scrollTop=0;
 }
 function openCosmetics(){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','rivals'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('cosmetics').classList.remove('hidden');
   hideDiffAmbient();
@@ -5305,7 +5385,7 @@ function renderCosmetics(){
   });
 }
 function openRivals(){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','cosmetics'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','cosmetics','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('rivals').classList.remove('hidden');
   hideDiffAmbient();
@@ -5338,6 +5418,23 @@ function renderRivals(){
     btn.onclick=()=>{ const idx=+btn.closest('.rival-card').dataset.idx; leaveTitle(); launchRival(GENERALS[idx].name); };
   });
 }
+function openPatchNotes(){
+  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','cosmetics','rivals'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('btn-pause').classList.add('hidden');
+  document.getElementById('patchnotes').classList.remove('hidden');
+  hideDiffAmbient();
+  renderPatchNotes();
+}
+function renderPatchNotes(){
+  const el=document.getElementById('pn-body'); if(!el)return;
+  let h='';
+  PATCH_NOTES.forEach((p,i)=>{
+    h+=`<h2>v${p.v}${i===0?' <span style="color:var(--good);font-size:11px;font-weight:800;letter-spacing:.5px">CURRENT</span>':''}</h2><ul>`;
+    for(const n of p.notes)h+=`<li>${escapeHtml(n)}</li>`;
+    h+=`</ul>`;
+  });
+  el.innerHTML=h; el.scrollTop=0;
+}
 document.getElementById('t-record').onclick=()=>openRecord();
 document.getElementById('rec-back').onclick=()=>showTitle();
 document.getElementById('t-roadmap').onclick=()=>openRoadmap();
@@ -5346,6 +5443,9 @@ document.getElementById('t-cosmetics').onclick=()=>openCosmetics();
 document.getElementById('cos-back').onclick=()=>showTitle();
 document.getElementById('t-rivals').onclick=()=>openRivals();
 document.getElementById('rivals-back').onclick=()=>showTitle();
+document.getElementById('t-patchnotes').onclick=()=>openPatchNotes();
+document.getElementById('pn-back').onclick=()=>showTitle();
+const tVerEl=document.getElementById('t-ver'); if(tVerEl)tVerEl.onclick=()=>openPatchNotes();
 document.getElementById('man-back').onclick=()=>showTitle();
 document.getElementById('t-manual').onclick=()=>openManual('basics');
 document.getElementById('set-back').onclick=()=>showTitle();
@@ -5450,7 +5550,7 @@ function attractTick(dt){
 /* ── TITLE SCREEN ── */
 function showTitle(){
   ambientStop(); infoClear();
-  ['menu','warmap','results','hud','pauseScreen','manual','settings','record','roadmap','cosmetics','rivals'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['menu','warmap','results','hud','pauseScreen','manual','settings','record','roadmap','cosmetics','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('title').classList.remove('hidden');
   document.getElementById('t-rank').textContent=equippedBadge().glyph+' Rank '+SAVE.lvl+' '+equippedTitleStr();
@@ -5565,7 +5665,7 @@ function warDiffFor(str){ return str>=80?'legendary':str>=62?'elite':str>=44?'ve
 let warSel=null;
 function showWarMap(){
   ambientStop();
-  ['title','menu','results','hud','pauseScreen','roadmap','cosmetics','rivals'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','results','hud','pauseScreen','roadmap','cosmetics','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('warmap').classList.remove('hidden');
   hideDiffAmbient();
