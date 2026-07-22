@@ -222,6 +222,20 @@
   #cutscene.show .cs-inner{transform:scale(1);}
   #cutscene .cs-sub{font-size:12px;font-weight:800;letter-spacing:4px;color:var(--gold);margin-bottom:8px;text-shadow:0 2px 10px #000;}
   #cutscene .cs-cap{font-size:clamp(20px,4vw,34px);font-weight:900;color:#fff;letter-spacing:1px;text-shadow:0 3px 18px #000,0 0 30px #000;max-width:80vw;line-height:1.2;}
+  /* ── 🕵 mythic rare event: error cascade — a fake system-corruption glitch, purely visual,
+     always reverts completely after exactly 3s (see triggerErrorCascade in JS) ── */
+  #glitch-fx{position:absolute;inset:0;z-index:210;pointer-events:none;display:none;overflow:hidden;font-family:var(--mono);}
+  #glitch-fx.show{display:block;}
+  #glitch-fx .gl-scan{position:absolute;left:0;right:0;height:3px;background:rgba(255,255,255,0.55);mix-blend-mode:overlay;animation:glScan 0.9s linear infinite;}
+  #glitch-fx .gl-block{position:absolute;background:#0ff;mix-blend-mode:difference;animation:glBlockShift 0.22s steps(2) infinite;}
+  #glitch-fx .gl-err{position:absolute;color:#ff2a4a;font-weight:800;font-size:12px;text-shadow:2px 0 #0ff,-2px 0 #f0f;white-space:nowrap;animation:glFlicker 0.18s steps(2) infinite;}
+  #glitch-fx .gl-tint{position:absolute;inset:0;mix-blend-mode:color-dodge;animation:glTint 0.3s steps(3) infinite;}
+  @keyframes glScan{0%{transform:translateY(-4px)}100%{transform:translateY(101vh)}}
+  @keyframes glBlockShift{0%{transform:translateX(0)}50%{transform:translateX(14px) scaleY(2.4)}100%{transform:translateX(-9px)}}
+  @keyframes glFlicker{0%,100%{opacity:1}50%{opacity:0.2}}
+  @keyframes glTint{0%{background:rgba(255,0,80,0.07)}33%{background:rgba(0,255,200,0.07)}66%{background:rgba(120,0,255,0.09)}}
+  #game.glitch-canvas{animation:glCanvasJitter 0.1s steps(2) infinite;filter:contrast(1.3) saturate(1.9) hue-rotate(8deg);}
+  @keyframes glCanvasJitter{0%{transform:translate(0,0)}25%{transform:translate(-4px,2px)}50%{transform:translate(3px,-3px)}75%{transform:translate(-2px,-2px)}100%{transform:translate(0,0)}}
   /* ── 🧠 INFORMATION WARFARE overlays ── */
   body.iw-gray #hud, body.iw-gray #cv{filter:grayscale(1) contrast(1.05);}
   .card.iw-fakeready{box-shadow:0 0 0 2px #3fd07a inset,0 0 14px #3fd07a99;animation:iwglow .8s ease-in-out infinite;}
@@ -648,6 +662,7 @@
 <div id="stage">
   <canvas id="game"></canvas>
   <div id="fx-flash"></div>
+  <div id="glitch-fx"></div>
 
   <!-- HUD -->
   <div id="hud" class="hidden">
@@ -998,7 +1013,8 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   chaosMode:false,
   gagChatter:true,gagGolden:true,gagVictory:true,
   history:[],career:{battles:0,wins:0,losses:0,kills:0,deploys:0,cpSpent:0,strikes:0,units:{},dmgDealt:0,timePlayed:0},
-  rivalry:{}, equippedBadge:null, equippedTitle:null, rivals:{}, rivalsBadgeEarned:false};
+  rivalry:{}, equippedBadge:null, equippedTitle:null, rivals:{}, rivalsBadgeEarned:false,
+  weatherVis:true, voidSlayerEarned:false};
 let SAVE=load();
 SAVE.news=false; // live news wire archived for now (kept in code, off by default)
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
@@ -1113,6 +1129,9 @@ const UNITS={
   // close-quarters DOT specialist — dangerous to close with, brutal once it does
   flame:{name:'Flame Trooper',glyph:'♨',cat:'inf',cost:34,cd:1.2,hp:30,dmg:8,rof:0.9,rng:34,spd:22,col:'#ff7a3c',
     aa:false,splash:0,r:7,burnDps:9,burnDur:3.5,desc:'very short range but sets targets ablaze — brutal vs infantry, weak vs armour'},
+  // 🕵 mythic rare-event boss — never in the hotbar, only ever appears via triggerVoidRift()
+  voidwarden:{name:'The Void Warden',glyph:'⛧',cat:'boss',cost:0,cd:0,hp:3600,dmg:34,rof:1.0,rng:140,spd:0.35,col:'#c9a0ff',
+    aa:false,splash:24,r:34,armor:true,desc:'a rift-born horror — secret encounter'},
 };
 // appended at the end rather than grouped with the other infantry so every existing
 // number-hotkey (1-9) and tutorial "press N" instruction keeps pointing at the same unit
@@ -1135,8 +1154,8 @@ const DMG_MATRIX={           //  vs: inf   light  heavy  air    struct
   he:{inf:1.30,light:1.15,heavy:0.72,air:0.30,struct:1.45}, // high explosive
   aa:{inf:0.35,light:0.50,heavy:0.30,air:2.40,struct:0.20}, // anti-air
 };
-const UNIT_DMGTYPE={rifle:'sa',atgm:'ap',sniper:'sa',tank:'ap',ifv:'sa',arty:'he',mlrs:'he',aa:'aa',heli:'ap',drone:'ap',medic:null,jammer:null,interceptor:'aa',gunship:'he',flame:'sa'};
-const UNIT_ARMORCLASS={rifle:'inf',atgm:'inf',sniper:'inf',medic:'inf',tank:'heavy',ifv:'light',arty:'light',mlrs:'light',aa:'light',jammer:'light',heli:'air',drone:'air',interceptor:'air',gunship:'air',flame:'inf'};
+const UNIT_DMGTYPE={rifle:'sa',atgm:'ap',sniper:'sa',tank:'ap',ifv:'sa',arty:'he',mlrs:'he',aa:'aa',heli:'ap',drone:'ap',medic:null,jammer:null,interceptor:'aa',gunship:'he',flame:'sa',voidwarden:'he'};
+const UNIT_ARMORCLASS={rifle:'inf',atgm:'inf',sniper:'inf',medic:'inf',tank:'heavy',ifv:'light',arty:'light',mlrs:'light',aa:'light',jammer:'light',heli:'air',drone:'air',interceptor:'air',gunship:'air',flame:'inf',voidwarden:'heavy'};
 const UNIT_CRIT={sniper:0.24}; // precision units land the occasional double-damage hit
 function dmgMul(dt,ac){ return (dt&&DMG_MATRIX[dt]&&DMG_MATRIX[dt][ac||'inf'])||1; }
 
@@ -1246,6 +1265,7 @@ function dominantCategory(built){ // classify what the player leaned on this fig
 }
 const SPECIAL_BADGES=[
   {id:'rivals_champion',glyph:'🏆',name:'Rivals Champion',requires:()=>!!SAVE.rivalsBadgeEarned},
+  {id:'void_slayer',glyph:'🕳',name:'Void Slayer',requires:()=>!!SAVE.voidSlayerEarned},
 ];
 function rivalBiasFor(name){ // their own signature weapon the first time; a counter to your last loadout after that
   const gen=GENERALS.find(g=>g.name===name);
@@ -1265,11 +1285,13 @@ const MODES={
 // interval multiplier (higher = slower/dumber) · open: opening enemy count ·
 // smart: enables focus-fire / hard-countering / budget-hoarding AI ·
 // playerCp: a leg-up on the player's income so the low tiers feel generous.
+// aggr: AI aggression knob (0-1) — how tightly it commits budget and punches your weak lane;
+// only elite+ read it (recruit/veteran stay loose and readable, that's the point of the low tiers).
 const DIFFS={
-  recruit:  {name:'Recruit',  cpMul:0.52, qualMul:0.72, think:1.7,  open:2, smart:false, playerCp:1.25, col:'#3fd07a', glyph:'🪖', fx:0},
-  veteran:  {name:'Veteran',  cpMul:1.00, qualMul:1.04, think:1.0,  open:3, smart:false, playerCp:1.02, col:'#ffce5a', glyph:'🎖️', fx:1},
-  elite:    {name:'Elite',    cpMul:1.36, qualMul:1.24, think:0.76, open:4, smart:true,  playerCp:1.0,  col:'#ff9f40', glyph:'⚔️', fx:2},
-  legendary:{name:'Legendary',cpMul:1.90, qualMul:1.60, think:0.48, open:6, smart:true,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
+  recruit:  {name:'Recruit',  cpMul:0.52, qualMul:0.72, think:1.7,  open:2, smart:false, aggr:0,    playerCp:1.25, col:'#3fd07a', glyph:'🪖', fx:0},
+  veteran:  {name:'Veteran',  cpMul:1.00, qualMul:1.04, think:1.0,  open:3, smart:false, aggr:0,    playerCp:1.02, col:'#ffce5a', glyph:'🎖️', fx:1},
+  elite:    {name:'Elite',    cpMul:1.36, qualMul:1.24, think:0.76, open:4, smart:true,  aggr:0.55, playerCp:1.0,  col:'#ff9f40', glyph:'⚔️', fx:2},
+  legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
 const GAME_VERSION='1.0.0'; // ⭐ launch build
@@ -1430,6 +1452,7 @@ const SND={
   combo:(n)=>beep(500+n*60,0.1,'square',0.07),
   win:()=>{[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,0.14,'triangle',0.08),i*90));},
   lose:()=>{[300,240,180,120].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'sawtooth',0.08),i*110));},
+  glitch:()=>{ noiseHit(0.35,0.15,200,5200); [80,600,90,700,60].forEach((f,i)=>setTimeout(()=>beep(f,0.05,'sawtooth',0.05),i*45)); },
 };
 
 // ── AMBIENT BATTLEFIELD — a low rumble bed + sporadic distant gunfire/shelling,
@@ -2337,6 +2360,179 @@ function playCutscene(){
   clearTimeout(_cutT); _cutT=setTimeout(()=>{ el.classList.remove('show'); }, 2600);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   🕵 MYTHIC RARE EVENTS — three extremely low-probability easter eggs, built
+   to be the game's "cryptid" — almost nobody sees one in normal play, but
+   they're 100% real and 100% reproducible from the Debug panel. None of them
+   touch match state or the outcome of a battle; they're spectacle only. ── */
+const GLITCH_ERR_LINES=[
+  '0xC0000005: ACCESS_VIOLATION',
+  'FATAL: unit_state desynced @ frame 0x4F2A',
+  'NULL_REFERENCE: G.hq is undefined',
+  'STACK_OVERFLOW in aiStep()',
+  'MEMORY LEAK DETECTED — 14.2GB / ∞',
+  'render_thread panic: cannot borrow *G as mutable',
+  'WARNING: reality.dll failed to load',
+  'ERR_HQ_NOT_FOUND (retry 1/∞)',
+  'UNKNOWN ENTITY DETECTED IN UNIT BUFFER',
+  'SEGFAULT: core dumped at 0x00000000',
+  'WHO IS WATCHING THE FRONT LINE',
+];
+let _glitchT=null;
+function triggerErrorCascade(){
+  const el=document.getElementById('glitch-fx'); if(!el||el.classList.contains('show'))return;
+  el.innerHTML='';
+  for(let i=0;i<6;i++){ const s=document.createElement('div'); s.className='gl-scan';
+    s.style.top=rnd(0,100)+'%'; s.style.animationDelay=rnd(0,0.5)+'s'; el.appendChild(s); }
+  for(let i=0;i<10;i++){ const b=document.createElement('div'); b.className='gl-block';
+    b.style.left=rnd(0,90)+'%'; b.style.top=rnd(0,90)+'%'; b.style.width=rnd(30,220)+'px'; b.style.height=rnd(4,26)+'px';
+    b.style.opacity=rnd(0.15,0.4); el.appendChild(b); }
+  const lines=GLITCH_ERR_LINES.slice().sort(()=>Math.random()-0.5).slice(0,6);
+  lines.forEach((t,i)=>{ const e=document.createElement('div'); e.className='gl-err'; e.textContent=t;
+    e.style.left=rnd(2,55)+'%'; e.style.top=(6+i*15)+'%'; e.style.animationDelay=rnd(0,0.15)+'s'; el.appendChild(e); });
+  const tint=document.createElement('div'); tint.className='gl-tint'; el.appendChild(tint);
+  el.classList.add('show');
+  const cv=document.getElementById('game'); if(cv)cv.classList.add('glitch-canvas');
+  try{SND.glitch();}catch(e){}
+  clearTimeout(_glitchT);
+  _glitchT=setTimeout(()=>{ el.classList.remove('show'); el.innerHTML=''; if(cv)cv.classList.remove('glitch-canvas'); },3000);
+}
+
+/* ── mythic event 2: the shadow — a black silhouette that spawns in a screen corner, twitches
+   erratically for 5s, then vanishes. Never touches a real unit, never targetable, never seen
+   by the AI — a cameo, not a combatant. ── */
+function triggerShadowEntity(){
+  if(!G||G.shadow)return;
+  const corners=[{x:60,y:56},{x:W-60,y:56},{x:60,y:H-64},{x:W-60,y:H-64}];
+  const c=pick(corners);
+  G.shadow={x:c.x,y:c.y,homeX:c.x,homeY:c.y,vx:0,vy:0,jitterT:0,age:0,duration:5,seed:rnd(0,1000)};
+  try{ noiseHit(0.7,0.05,50,700); }catch(e){}
+  if(SAVE.evVoice&&SAVE.narrator&&Math.random()<0.35)setTimeout(()=>{ if(G&&G.shadow)say(pick(["...did you see that?","Anyone else see that in sector four?","...it's nothing. Eyes front."]),'grim',3); },900);
+}
+function updateShadowEntity(dt){
+  const s=G&&G.shadow; if(!s)return;
+  s.age+=dt;
+  if(s.age>=s.duration){ G.shadow=null; return; }
+  s.jitterT-=dt;
+  if(s.jitterT<=0){ s.vx=rnd(-150,150); s.vy=rnd(-100,100); s.jitterT=rnd(0.07,0.2); }
+  s.x=clamp(s.x+s.vx*dt, s.homeX-95, s.homeX+95);
+  s.y=clamp(s.y+s.vy*dt, s.homeY-75, s.homeY+75);
+}
+function drawShadowEntity(){
+  const s=G&&G.shadow; if(!s)return;
+  const flick=0.75+0.25*Math.sin(performance.now()/65+s.seed);
+  cx.save(); cx.translate(s.x,s.y); cx.scale(1.9,1.9); cx.globalAlpha=flick;
+  // faint dark aura so it reads at a glance, not just a speck in the corner
+  const g=cx.createRadialGradient(0,-14,2,0,-14,46);
+  g.addColorStop(0,'rgba(10,4,20,0.55)'); g.addColorStop(1,'rgba(10,4,20,0)');
+  cx.fillStyle=g; cx.beginPath(); cx.arc(0,-14,46,0,6.28); cx.fill();
+  cx.fillStyle='#070510';
+  cx.beginPath(); cx.arc(0,-34,10,0,6.28); cx.fill();
+  cx.beginPath(); cx.moveTo(-13,-22); cx.lineTo(13,-22); cx.lineTo(8,30); cx.lineTo(-8,30); cx.closePath(); cx.fill();
+  cx.globalAlpha=flick*0.95; cx.fillStyle='#ff2a2a';
+  cx.beginPath(); cx.arc(-3,-35,1.6,0,6.28); cx.fill();
+  cx.beginPath(); cx.arc(3,-35,1.6,0,6.28); cx.fill();
+  cx.restore();
+}
+
+/* ── mythic event 3: the void rift — screen-tearing streaks announce something crashing through,
+   then THE VOID WARDEN spawns: a secret, deliberately brutal boss encounter riding the normal
+   combat pipeline (real unit, real HP bar, killable with real firepower) plus two bespoke
+   mechanics — a telegraphed lane-wide pulse and periodic adds — so it can't just be tanked. ── */
+let _riftT=null,_riftLines=null;
+function triggerVoidRift(){
+  if(!G||G.voidBoss||G.riftStreakT>0)return;
+  G.riftStreakT=1.8; _riftLines=null;
+  announce('⛧ A RIFT TEARS OPEN','something is coming through','#c9a0ff');
+  try{ noiseHit(0.9,0.2,80,3000); thump(60,90,0.9,0.08); }catch(e){}
+  clearTimeout(_riftT);
+  _riftT=setTimeout(()=>{ if(G)spawnVoidWarden(); },1800);
+}
+function spawnVoidWarden(){
+  if(!G||G.voidBoss)return;
+  const lane=1;
+  spawn('R','voidwarden',lane,W*0.58);
+  const w=G.units[G.units.length-1];
+  w.isVoidBoss=true; w.boss=true; w.spotted=true; w.stealth=false;
+  w.voidPulseT=rnd(9,12); w.voidAddsT=rnd(6,9); w.born=G.t;
+  G.voidBoss=w;
+  announce('⛧ THE VOID WARDEN','kill it before the rift closes','#ff5a4a');
+  if(SAVE.evVoice&&SAVE.narrator)say("...that's not one of ours. All units, converge!",'grim',3);
+}
+function voidBossTick(dt){
+  if(G.riftStreakT>0)G.riftStreakT=Math.max(0,G.riftStreakT-dt);
+  const w=G.voidBoss; if(!w)return;
+  if(!w.alive){ G.voidBoss=null; return; }
+  // the rift stays open ~110s — if the Warden isn't put down by then, it withdraws (no reward, no penalty)
+  if(G.t-w.born>110){ w.alive=false; explode(w.x,w.y,40,w.side,20);
+    G.units=G.units.filter(u=>u!==w); G.voidBoss=null;
+    announce('THE RIFT CLOSES','it withdrew — it will be back','#c9a0ff'); return; }
+  w.voidPulseT-=dt;
+  if(w.voidPulseT<=0){
+    w.voidPulseT=rnd(11,15);
+    announce('⚠ VOID PULSE','clear '+['top','mid','bottom'][w.lane]+' lane — NOW','#ff5a4a');
+    G.shake=Math.max(G.shake,SAVE.reduceMotion?6:16);
+    setTimeout(()=>{
+      if(!G||!G.voidBoss||!G.voidBoss.alive)return;
+      const wb=G.voidBoss;
+      for(const u of G.units){ if(u.side==='B'&&u.alive){
+        const laneMatch=u.lane===wb.lane;
+        if(laneMatch)damage(u,140,wb);
+        else if(dist(u.x,u.y,wb.x,wb.y)<260)damage(u,55,wb);
+      } }
+      explode(wb.x,wb.y,90,wb.side,30); try{SND.boom(true);}catch(e){}
+    },1300);
+  }
+  w.voidAddsT-=dt;
+  if(w.voidAddsT<=0){ w.voidAddsT=rnd(7,11);
+    const addKey=Math.random()<0.5?'tank':'drone';
+    spawn('R',addKey,(Math.random()*3)|0);
+  }
+}
+function drawRiftStreaks(){
+  if(!G||!(G.riftStreakT>0))return;
+  const t=G.riftStreakT,full=1.8;
+  if(!_riftLines){ _riftLines=[]; for(let i=0;i<40;i++)_riftLines.push({a:rnd(0,6.28),len:rnd(220,640),spd:rnd(500,1200),off:rnd(0,1)}); }
+  const cx0=W*0.58, cy0=H*0.5;
+  cx.save();
+  for(const l of _riftLines){
+    const prog=((performance.now()/1000*l.spd/260)+l.off)%1;
+    const x1=cx0+Math.cos(l.a)*prog*l.len, y1=cy0+Math.sin(l.a)*prog*l.len*0.6;
+    const x2=cx0+Math.cos(l.a)*(prog*l.len+46), y2=cy0+Math.sin(l.a)*(prog*l.len+46)*0.6;
+    cx.strokeStyle='rgba(201,160,255,'+(0.55*t/full)+')'; cx.lineWidth=2;
+    cx.beginPath(); cx.moveTo(x1,y1); cx.lineTo(x2,y2); cx.stroke();
+  }
+  const g=cx.createRadialGradient(cx0,cy0,0,cx0,cy0,240);
+  g.addColorStop(0,'rgba(180,120,255,'+(0.4*(1-t/full))+')'); g.addColorStop(1,'rgba(180,120,255,0)');
+  cx.fillStyle=g; cx.fillRect(0,0,W,H);
+  cx.restore();
+}
+// natural spawn roll — independent of the Settings "Random Events" toggle on purpose: these are
+// meant to be an always-lurking possibility a player might genuinely never see across dozens of
+// hours of real play, discoverable for real via the Debug panel. Roughly one check a minute, each
+// branch a fraction-of-a-percent chance — the math for "basically never, but it did happen to you."
+function mythicEventTick(dt){
+  if(!G||G.attract||G.tutorial||G.over)return;
+  if(G.mythicCheckT==null)G.mythicCheckT=rnd(50,70);
+  G.mythicCheckT-=dt;
+  if(G.mythicCheckT>0)return;
+  G.mythicCheckT=rnd(50,70);
+  const roll=Math.random();
+  if(roll<0.0006){ if(!SAVE.reduceMotion)triggerErrorCascade(); }
+  else if(roll<0.0012)triggerShadowEntity();
+  else if(roll<0.0016)triggerVoidRift();
+}
+function voidWardenDefeated(u,src){
+  G.voidBoss=null;
+  setTimeout(()=>{ if(!G)return; explode(u.x,u.y,70,u.side,40); try{SND.boom(true);}catch(e){} },200);
+  announce('👑 THE VOID WARDEN FALLS','the rift seals behind it','#c9a0ff');
+  if(SAVE.evVoice&&SAVE.narrator)say("...it's down. Command, are you seeing this?",'hype',3);
+  if(!SAVE.voidSlayerEarned){ SAVE.voidSlayerEarned=true; addXP(1500); persist();
+    setTimeout(()=>{ if(G)announce('🏆 VOID SLAYER','+1500 XP and a badge — equip it from Cosmetics','#ffce5a'); },1800);
+  }
+  if(src&&src.alive)grantVetXP(src);
+}
+
 /* ── AGE OF WAR: evolution, enemy aging, and base turrets ── */
 const AGE_INTERVAL={recruit:58,veteran:44,elite:35,legendary:28};
 function ageTick(dt){
@@ -2503,6 +2699,7 @@ function killUnit(u,src){
   }
   explode(u.x,u.y,u.r*2+6,u.side, u.cat==='veh'||u.cat==='arty'?26:12);
   if(u.cat==='veh'||u.cat==='arty'||u.cat==='air')SND.boom();
+  if(u.isVoidBoss){ voidWardenDefeated(u,src); return; }
   // morale shock — watching a comrade die suppresses nearby friendlies
   for(const o of G.units){ if(o.alive&&o.side===u.side&&o!==u&&dist(o.x,o.y,u.x,u.y)<70){ o.sup=Math.min(1,(o.sup||0)+0.16); } }
   const killer=src&&src.side;
@@ -2619,15 +2816,20 @@ function aiStep(dt){
   if(!choices.length)choices=[['rifle',1]];
   // what's the AI most worried about? (drives the readout)
   const threat = (airThreat>=pArmor&&airThreat>=pInf&&airThreat>0)?'AIR' : (pArmor>=pInf&&pArmor>0)?'ARMOR' : (pInf>0)?'INFANTRY':'nothing yet';
-  // smart AI (elite+) commits more of its budget and picks lanes deliberately;
-  // the low tiers spend loosely and scatter — easier to read and to beat.
-  const commit = G.aiSmart? rnd(0.78,1.0) : rnd(0.45,0.9);
+  // smart AI (elite+) commits more of its budget and picks lanes deliberately, scaling with
+  // the tier's aggr knob; the low tiers spend loosely and scatter — easier to read and to beat.
+  const aggr=(G.diffMul&&G.diffMul.aggr)||0;
+  // legendary occasionally banks discipline and dumps an oversized coordinated push instead of
+  // its usual spend — the spike a good player has to actually react to, not just out-DPS.
+  const surging=G.diff==='legendary'&&budget>110&&Math.random()<0.14;
+  const commit = G.aiSmart? (surging?1:rnd(0.75+0.2*aggr,1.0)) : rnd(0.45,0.9);
   let spend=Math.min(budget, G.mode==='survival'?budget: commit*budget);
-  // smart lane choice: half the time pile onto the player's WEAKEST lane (punch through),
-  // otherwise contest their strongest. Dumb AI just scatters at random.
+  // smart lane choice: pile onto the player's WEAKEST lane (punch through) more often the higher
+  // the aggression, otherwise contest their strongest. Dumb AI just scatters at random.
   const weakLane=laneStr.indexOf(Math.min(...laneStr)), strongLane=laneStr.indexOf(Math.max(...laneStr));
-  const pickLane=()=> G.aiSmart ? (Math.random()<0.55?weakLane:strongLane) : ((Math.random()*3)|0);
-  let guard=0, built=[]; const maxUnits=G.aiSmart?8:6;
+  const pickLane=()=> surging ? weakLane : (G.aiSmart ? (Math.random()<(0.5+0.3*aggr)?weakLane:strongLane) : ((Math.random()*3)|0));
+  let guard=0, built=[]; const maxUnits=G.aiSmart?Math.round(7+aggr*5+(surging?4:0)):6;
+  if(surging&&!G.tutorial&&!G.attract)announce('⚠ ENEMY SURGE','they\'re throwing everything at '+['top','mid','bottom'][weakLane]+' — brace','#ff5a4a');
   while(spend>14&&guard++<maxUnits){
     const key=weightedPick(choices);
     const c=UNITS[key].cost*0.9;
@@ -2678,6 +2880,10 @@ function step(dt){
   if(G.attract)attractTick(dt);
   // tutorial script
   if(G.tutorial&&!G.tutDone)tutTick(dt);
+  if(!G.attract&&!G.tutorial)visFxTick(dt); // weather visibility — fog/rain reveal-radius + storm blackout pulses
+  updateShadowEntity(dt); // mythic event 2 — no-op unless one is currently active
+  if(!G.attract&&!G.tutorial)voidBossTick(dt); // mythic event 3 — no-op unless a rift/boss is active
+  mythicEventTick(dt); // extremely rare natural roll for all 3 mythic events
   // cooldowns
   for(const k in G.cds)if(G.cds[k]>0)G.cds[k]=Math.max(0,G.cds[k]-dt);
   for(const t in G.strikeCds)if(G.strikeCds[t]>0)G.strikeCds[t]=Math.max(0,G.strikeCds[t]-dt);
@@ -2988,9 +3194,12 @@ function draw(){
     drawParts();
     drawDrops();
     drawGunrun();
+    drawShadowEntity(); // 🕵 mythic event — a rare cameo, purely cosmetic
+    drawRiftStreaks();  // 🕵 mythic event — void rift tear before the boss lands
     drawInfoFog();     // 🌫 schrödinger fog (world space)
     drawPowerFX();
     drawWeather();
+    drawVisibilityFog();  // 🌫 fog/rain reveal-radius around your own forces
   }
   cx.restore();
   drawInfoPing();      // ⚠ ghost ping (screen space)
@@ -2998,10 +3207,61 @@ function draw(){
   const vg=cx.createRadialGradient(W/2,H*0.52,H*0.32,W/2,H*0.52,H*0.82);
   vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,0.34)');
   cx.fillStyle=vg;cx.fillRect(0,0,W,H);
+  drawStormBlackout();   // ⛈ storm surge — brief full blackout, screen-space so shake can't peek around it
   // flash overlay handled via DOM
   const flashEl=document.getElementById('fx-flash');
   if(G&&G.flash>0){flashEl.style.opacity=G.flash*(SAVE.reduceMotion?0.18:0.5);flashEl.style.background=G.hqFlashCol||'#ff3020';}
   else flashEl.style.opacity=0;
+}
+/* ── weather visibility modifiers — fog/rain reveal only a radius around your own forces,
+   storms periodically black out the whole field for a few seconds. Purely visual: the
+   underlying combat pipeline (targeting/damage) is completely unaffected. Toggleable. ── */
+function visFxTick(dt){
+  if(!G||!SAVE.weatherVis||G.wxKey!=='storm')return;
+  if(G.stormNextT==null)G.stormNextT=rnd(20,32);
+  if(G.stormBlindT>0){ G.stormBlindT=Math.max(0,G.stormBlindT-dt); return; }
+  G.stormNextT-=dt;
+  if(G.stormNextT<=0){
+    G.stormBlindMax=rnd(2.6,3.6); G.stormBlindT=G.stormBlindMax; G.stormNextT=rnd(32,58);
+    announce('⛈ STORM SURGE','visibility zero — hold your nerve','#c9d8ff');
+    if(SAVE.evVoice&&Math.random()<0.5)say("Storm's rolling right over us — can't see a thing out there!",'grim',1);
+  }
+}
+let _fogCanvas=null,_fogCx=null;
+function drawVisibilityFog(){
+  if(!G||!SAVE.weatherVis)return;
+  const wx=G.wxKey; if(wx!=='fog'&&wx!=='rain')return;
+  // punch reveal-holes on an OFFSCREEN buffer, not the live canvas — destination-out on the
+  // main canvas would erase straight through the already-drawn battlefield beneath the fog
+  // (composite ops act on the whole pixel buffer, not "just this layer"), leaving void holes
+  // instead of clear terrain. Compositing the finished fog+holes buffer back with one drawImage
+  // avoids that entirely.
+  if(!_fogCanvas||_fogCanvas.width!==W||_fogCanvas.height!==H){
+    _fogCanvas=document.createElement('canvas'); _fogCanvas.width=W; _fogCanvas.height=H; _fogCx=_fogCanvas.getContext('2d');
+  }
+  const fc=_fogCx;
+  fc.clearRect(0,0,W,H);
+  const col=wx==='fog'?'196,202,212':'46,60,86', baseA=wx==='fog'?0.58:0.4;
+  fc.globalCompositeOperation='source-over';
+  fc.fillStyle='rgba('+col+','+baseA+')'; fc.fillRect(0,0,W,H);
+  fc.globalCompositeOperation='destination-out';
+  const reveal=(x,y,r)=>{ const g=fc.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0,'rgba(0,0,0,0.95)'); g.addColorStop(0.65,'rgba(0,0,0,0.55)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    fc.fillStyle=g; fc.beginPath(); fc.arc(x,y,r,0,6.28); fc.fill(); };
+  reveal(40,H*0.5,175); // home HQ always visible
+  for(const u of G.units){ if(u.side==='B'&&u.alive)reveal(u.x,u.y,105); }
+  fc.globalCompositeOperation='source-over';
+  cx.drawImage(_fogCanvas,0,0);
+}
+function drawStormBlackout(){
+  if(!G||!SAVE.weatherVis||!(G.stormBlindT>0))return;
+  const elapsed=G.stormBlindMax-G.stormBlindT;
+  let a; const rampIn=0.6, rampOut=1.0;
+  if(elapsed<rampIn)a=elapsed/rampIn; else if(G.stormBlindT<rampOut)a=G.stormBlindT/rampOut; else a=1;
+  a=clamp(a,0,1);
+  cx.fillStyle='rgba(8,10,16,'+(a*0.94)+')'; cx.fillRect(0,0,W,H);
+  if(a>0.5){ cx.globalAlpha=(a-0.5)*1.4; cx.fillStyle='#c8d7ff'; cx.font='bold 22px var(--mono)'; cx.textAlign='center';
+    cx.fillText('⛈ ZERO VISIBILITY',W/2,H*0.5); cx.globalAlpha=1; }
 }
 let _wxStreaks=null;
 function drawWeather(){
@@ -3303,6 +3563,21 @@ function drawUnitSprite(u,px,py){
     cx.fillStyle=dk;cx.fillRect(-9,-5.5,16,1.8);
     cx.fillStyle=steel;for(const ex of [-7,-2.5,2]){cx.fillRect(ex,-4.6,2.6,1.8);}
     cx.strokeStyle=gun;cx.lineWidth=1.7;for(const gx of [-4,-0.5,3]){cx.beginPath();cx.moveTo(gx,2);cx.lineTo(gx+1.4,5.6);cx.stroke();}
+  } else if(key==='voidwarden'){
+    // a jagged, writhing dark mass with a molten purple core — deliberately nothing like the
+    // rest of the roster, so it reads as wrong the instant it's on screen
+    const pulse=(Math.sin(performance.now()/220)+1)/2, tnow=performance.now();
+    const rg=cx.createRadialGradient(0,0,2,0,0,13);
+    rg.addColorStop(0,'rgba(154,95,255,'+(0.5+0.3*pulse)+')');
+    rg.addColorStop(0.6,'rgba(90,20,140,0.35)'); rg.addColorStop(1,'rgba(20,5,40,0)');
+    cx.fillStyle=rg; cx.beginPath(); cx.arc(0,0,13,0,6.28); cx.fill();
+    cx.fillStyle='#0a0512'; cx.beginPath();
+    for(let i=0;i<12;i++){ const a=i/12*6.28, r2=6+(i%2?2.6:0)+Math.sin(tnow/180+i)*0.9;
+      const px2=Math.cos(a)*r2, py2=Math.sin(a)*r2;
+      if(i===0)cx.moveTo(px2,py2); else cx.lineTo(px2,py2); }
+    cx.closePath(); cx.fill();
+    cx.strokeStyle='#c9a0ff'; cx.lineWidth=0.9; cx.globalAlpha=0.6+0.4*pulse; cx.stroke(); cx.globalAlpha=1;
+    cx.fillStyle=col; cx.beginPath(); cx.arc(0,0,2.6,0,6.28); cx.fill();
   } else {
     // fallback: shaded disc + glyph (should not happen for known units)
     cx.fillStyle=col;cx.beginPath();cx.arc(0,0,u.r*0.9,0,6.28);cx.fill();cx.strokeStyle=dk;cx.stroke();
@@ -4641,6 +4916,11 @@ function DEBUG_GROUPS(){ // built lazily so it always sees the latest REVENTS/DI
     ]},
     {name:'Difficulty Change FX (title screen only)',actions:
       Object.keys(DIFFS).map(k=>dbgAction(DIFFS[k].glyph+' '+DIFFS[k].name, ()=>diffFx(k)))},
+    {name:'🕵 Mythic Events (extremely rare in real play)',actions:[
+      dbgAction('👾 Error Cascade',()=>triggerErrorCascade()),
+      dbgAction('👤 The Shadow',()=>triggerShadowEntity()),
+      dbgAction('⛧ Void Rift + Boss',()=>triggerVoidRift()),
+    ]},
   ];
 }
 function buildDebugModal(){
@@ -4857,6 +5137,7 @@ function renderSettings(){
     settingRow('Narrator','The Iron Marshal war-room voice',`<button id="set-narr" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.narrator)}</button>`)+
     settingRow('Battlefield Ambience','Distant gunfire & artillery rumble under the fight',`<button id="set-amb" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.ambient)}</button>`)+
     settingRow('Reduce Motion','Calm screen shake, flashes & parallax',`<button id="set-motion" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.reduceMotion)}</button>`)+
+    settingRow('Visibility Modifiers','Fog & rain hide distant terrain around your own forces; storms briefly black out the whole field',`<button id="set-vismod" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.weatherVis)}</button>`)+
     `<div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.5px;margin:6px 2px -2px">🎲 RANDOM EVENTS</div>`+
     settingRow('Random Events','Master switch for battlefield surprises',`<button id="set-rev" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.randomEvents)}</button>`)+
     settingRow('· Supply Drops','Air-dropped crates grant CP or reinforcements',`<button id="set-ev-supply" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evSupply)}</button>`)+
@@ -4879,6 +5160,7 @@ function renderSettings(){
   bind('set-narr',()=>{ SAVE.narrator=!SAVE.narrator; persist(); if(!SAVE.narrator)narrStop(); });
   bind('set-amb',()=>{ SAVE.ambient=!SAVE.ambient; persist(); if(!SAVE.ambient)ambientStop(); });
   bind('set-motion',()=>{ SAVE.reduceMotion=!SAVE.reduceMotion; persist(); });
+  bind('set-vismod',()=>{ SAVE.weatherVis=!SAVE.weatherVis; persist(); });
   bind('set-rev',()=>{ SAVE.randomEvents=!SAVE.randomEvents; persist(); });
   bind('set-ev-supply',()=>{ SAVE.evSupply=!SAVE.evSupply; persist(); });
   bind('set-ev-voice',()=>{ SAVE.evVoice=!SAVE.evVoice; persist(); });
