@@ -52,7 +52,7 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   gagChatter:true,gagGolden:true,gagVictory:true,
   history:[],career:{battles:0,wins:0,losses:0,kills:0,deploys:0,cpSpent:0,strikes:0,units:{},dmgDealt:0,timePlayed:0},
   rivalry:{}, equippedBadge:null, equippedTitle:null, rivals:{}, rivalsBadgeEarned:false,
-  weatherVis:true, voidSlayerEarned:false};
+  weatherVis:true, voidSlayerEarned:false, debugUnlockAll:false};
 let SAVE=load();
 SAVE.news=false; // live news wire archived for now (kept in code, off by default)
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
@@ -102,22 +102,62 @@ function clearTtsKey(){
   else if(SAVE.ttsKeyEnc){ ttsKeyPlain=await decryptSecret(SAVE.ttsKeyEnc); }
 })();
 
+const MAX_LVL=100;
 function xpForLevel(l){return 100+l*80;}
-function addXP(n){ SAVE.xp+=n; let up=false; while(SAVE.xp>=xpForLevel(SAVE.lvl)){SAVE.xp-=xpForLevel(SAVE.lvl);SAVE.lvl++;up=true;} persist(); return up; }
+function addXP(n){
+  if(SAVE.lvl>=MAX_LVL){ SAVE.xp=0; persist(); return false; } // rank is maxed — nothing left to grind for
+  SAVE.xp+=n; let up=false;
+  while(SAVE.lvl<MAX_LVL && SAVE.xp>=xpForLevel(SAVE.lvl)){ SAVE.xp-=xpForLevel(SAVE.lvl); SAVE.lvl++; up=true; }
+  if(SAVE.lvl>=MAX_LVL)SAVE.xp=0;
+  persist(); return up;
+}
 
-/* ── RANK REWARDS — cosmetic only, everyone plays the full roster/modes from rank 1.
-   A title + an HQ badge unlock automatically as you level; both are just flavour. ── */
+/* ── RANK REWARDS — titles/badges/commendations are cosmetic only; the unit roster and
+   doctrines are unlocked early (by rank 8). A few whole MODES (Domination, Chaos, War)
+   are gated to later ranks to give the climb to 100 some teeth — Settings' "Unlock All"
+   (debug) bypasses every gate below for playtesting. ── */
 const COMMANDER_TITLES=[
   {lvl:1,title:'Recruit'},{lvl:3,title:'Private First Class'},{lvl:5,title:'Corporal'},
   {lvl:8,title:'Sergeant'},{lvl:12,title:'Lieutenant'},{lvl:16,title:'Captain'},
-  {lvl:20,title:'Major'},{lvl:25,title:'Colonel'},{lvl:30,title:'General'},
+  {lvl:20,title:'Major'},{lvl:25,title:'Colonel'},{lvl:30,title:'Brigadier General'},
+  {lvl:35,title:'Major General'},{lvl:40,title:'Lieutenant General'},{lvl:45,title:'General'},
+  {lvl:50,title:'General of the Army'},{lvl:55,title:'Theater Commander'},
+  {lvl:60,title:'Joint Force Commander'},{lvl:65,title:'War Council Chair'},
+  {lvl:70,title:'Supreme Allied Commander'},{lvl:75,title:'Field Marshal'},
+  {lvl:80,title:'Grand Marshal'},{lvl:85,title:'Warlord'},{lvl:90,title:'Iron Marshal'},
+  {lvl:95,title:'Legend of the Line'},{lvl:100,title:'Five-Star Legend'},
 ];
 const HQ_BADGES=[
   {lvl:1,glyph:'⚔',name:'Crossed Sabers'},{lvl:4,glyph:'🛡',name:'Iron Shield'},
   {lvl:7,glyph:'🐺',name:'Lone Wolf'},{lvl:10,glyph:'🦅',name:'Eagle Eye'},
   {lvl:15,glyph:'🔥',name:'Scorched Earth'},{lvl:20,glyph:'👑',name:'Crown'},
   {lvl:25,glyph:'☠',name:'Reaper'},{lvl:30,glyph:'🌟',name:'Living Legend'},
+  {lvl:35,glyph:'🦂',name:'Desert Scorpion'},{lvl:40,glyph:'🐉',name:"Dragon's Breath"},
+  {lvl:45,glyph:'⚡',name:'Thunderstrike'},{lvl:50,glyph:'🗡',name:'Warbringer'},
+  {lvl:55,glyph:'🧊',name:'Frostbite'},{lvl:60,glyph:'🌋',name:'Eruption'},
+  {lvl:65,glyph:'🦁',name:'Lionheart'},{lvl:70,glyph:'🕸',name:'Web of Steel'},
+  {lvl:75,glyph:'🎇',name:'Starfall'},{lvl:80,glyph:'🌪',name:'Cyclone'},
+  {lvl:85,glyph:'🩸',name:'Bloodmoon'},{lvl:90,glyph:'👁',name:'All-Seeing'},
+  {lvl:95,glyph:'🛰',name:'Orbital Eye'},{lvl:100,glyph:'💠',name:'Apex Commander'},
 ];
+/* ── COMMENDATIONS — fill every rank that isn't already a title/badge/doctrine/mode rung,
+   so the ladder to 100 always has something at every rung. Cosmetic flavour only; shown in
+   the Roadmap and Service Record. The same curated name resurfaces at a higher tier as you
+   climb rather than needing 70+ hand-written one-offs. ── */
+const COMMENDATION_NAMES=[
+  'Marksmanship','Fire Discipline','Rapid Deployment','Combined Arms','Logistics Excellence',
+  'Forward Observer','Armor Doctrine','Air Superiority','Night Operations','Signals Intelligence',
+  'Field Engineering','Close Support','Counter-Battery','Deep Strike','Vanguard',
+  'Iron Discipline','Coordinated Assault','Breakthrough','Steel Nerve','Relentless Advance',
+];
+const ROMAN=['I','II','III','IV','V','VI','VII','VIII','IX','X'];
+function commendationAt(lvl){
+  const i=(lvl-1)%COMMENDATION_NAMES.length, tier=Math.min(ROMAN.length,Math.floor((lvl-1)/COMMENDATION_NAMES.length)+1);
+  return '🎗 '+COMMENDATION_NAMES[i]+' Commendation — Tier '+ROMAN[tier-1];
+}
+/* ── MODE GATES — whole modes unlock at these ranks (Domination/Chaos/War). ── */
+const MODE_GATES={domination:{lvl:6,name:'Domination Mode'},chaos:{lvl:10,name:'Chaos / Meme Mode'},war:{lvl:15,name:'War Mode'}};
+function rankGateOk(lvl){ return !!SAVE.debugUnlockAll || SAVE.lvl>=lvl; }
 function commanderTitle(lvl){ let t=COMMANDER_TITLES[0]; for(const e of COMMANDER_TITLES)if(lvl>=e.lvl)t=e; return t.title; }
 function currentBadge(lvl){ let b=HQ_BADGES[0]; for(const e of HQ_BADGES)if(lvl>=e.lvl)b=e; return b; }
 // equipped cosmetic accessors — player can pin any badge/title they've already earned instead of
@@ -141,6 +181,8 @@ function rankRewardsAtLevel(lvl){ // anything that unlocks on exactly this level
   const b=HQ_BADGES.find(e=>e.lvl===lvl); if(b)out.push('New HQ badge: '+b.glyph+' '+b.name);
   for(const k in DOCTRINES)if(DOCTRINES[k].unlock===lvl)out.push('New doctrine: '+DOCTRINES[k].name);
   if(lvl===3)out.push('EMP Pulse commander power unlocked');
+  for(const mk in MODE_GATES)if(MODE_GATES[mk].lvl===lvl)out.push('Mode unlocked: '+MODE_GATES[mk].name);
+  if(!out.length)out.push(commendationAt(lvl)); // every rank rewards SOMETHING — never an empty rung
   return out;
 }
 
@@ -363,6 +405,7 @@ const MODES={
   evolution:{name:'Evolution',desc:'Age-of-War style. Kills earn Evolution points — advance through 5 ages to unlock new units, harden your HQ, and build base turrets. Out-tech them or die in the trenches.'},
   blitz:{name:'Blitz (2:00)',desc:'Two-minute clock. Whoever has dealt the most HQ damage when time runs out wins. Fast and aggressive.'},
   survival:{name:'Survival',desc:'Endless enemy waves that get harder every 30s. No enemy HQ to kill — just see how long your line holds.'},
+  domination:{name:'Domination',desc:'Forget the HQ — hold the capture zone in the middle of all three lanes at once and keep it long enough to lock it down. Lose a zone and it slips back into contest, so defend what you take. (HQ kills still win too, if you\'d rather just go for the throat.)'},
 };
 // cpMul: enemy economy · qualMul: enemy unit stat multiplier · think: AI decision
 // interval multiplier (higher = slower/dumber) · open: opening enemy count ·
@@ -377,10 +420,17 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.7.0';
+const GAME_VERSION='1.8.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 const PATCH_NOTES=[
+  {v:'1.8.0',notes:[
+    'Fixed the narrator subtitle covering up the bottom lane mid-battle — it now sits in the gap above the field instead',
+    'Rank cap raised to 100, with a full title/badge/commendation ladder all the way there and a visual rank-progression map on the Roadmap screen',
+    'Added Domination mode: hold all 3 capture zones at once to win outright, no HQ kill required (Rank 6)',
+    'War Mode now unlocks at Rank 15; Chaos Mode at Rank 10 — added a "Debug: Unlock All" toggle on the title screen for testers',
+    'Chaos Mode now has its own button on the title screen so it isn\'t buried in Settings anymore',
+  ]},
   {v:'1.7.0',notes:[
     'Fixed Rivals Mode not showing the battle after clicking Fight (screen stayed hidden behind the roster)',
     'Fog & rain now visually obscure distant terrain around your own forces; storms briefly black out the whole field — toggle in Settings',
@@ -1090,8 +1140,8 @@ let G=null;
 let LAUNCH=null; // set by campaign/daily/tutorial launchers; null = plain skirmish/blitz/survival
 function newGame(){
   const L=LAUNCH; // context override (campaign mission / daily / tutorial)
-  const kind = L? L.type : sel.mode;                 // wrapper: skirmish/blitz/survival/campaign/daily/tutorial
-  const mode = (kind==='blitz'||kind==='survival')? kind : 'skirmish'; // underlying ruleset
+  const kind = L? L.type : sel.mode;                 // wrapper: skirmish/blitz/survival/domination/campaign/daily/tutorial
+  const mode = (kind==='blitz'||kind==='survival'||kind==='domination')? kind : 'skirmish'; // underlying ruleset
   const diffKey = L&&L.diff ? L.diff : sel.diff;
   const doc=DOCTRINES[sel.doctrine], perk=doc.perk, diff=DIFFS[diffKey];
   const laneY=[0.30,0.5,0.70];
@@ -1117,6 +1167,8 @@ function newGame(){
     cdMul:(L&&L.cdMul)||1,
     t:0, over:false, result:null, paused:false,
     laneY, laneCount:3,
+    // Domination mode: per-lane control, -100 (enemy secured) .. +100 (you secured), 0=neutral
+    zoneCtrl:[0,0,0],
     laneTerrain:kind==='tutorial'?['open','open','open']:[pick(TERRAIN_KEYS),pick(TERRAIN_KEYS),pick(TERRAIN_KEYS)],
     units:[], projs:[], parts:[], floats:[], rings:[], drops:[],
     revT:rnd(24,42), revCount:0, // random-events clock
@@ -1390,7 +1442,7 @@ function tryRecon(lane){
 }
 function tryEmp(lane){
   if(iwGaslightBlock())return false;
-  if(!G||G.empCd>0||G.over||G.paused||SAVE.lvl<3)return false;
+  if(!G||G.empCd>0||G.over||G.paused||!rankGateOk(3))return false;
   G.empCd=G.empMax;
   G.empLane=lane; G.empT=3.4;
   const y=G.laneY[lane]*H;
@@ -2055,6 +2107,7 @@ function step(dt){
   // mode clocks
   if(G.mode==='blitz'){ G.clock-=dt; if(G.clock<=0){G.clock=0; endGame(G.dmgDealt>=G.dmgTaken?'B':'R','time'); } }
   if(G.mode==='survival'){ G.waveT+=dt; if(G.waveT>=G.waveInterval){G.waveT=0;G.wave++;G.aiThink=Math.max(0.5,G.aiThink*0.9);announce('WAVE '+(G.wave+1),'incoming','#ff5a4a');chatReact('wave',G.wave+1);narr('wave');} }
+  if(G.mode==='domination')dominationTick(dt);
   // idle taunt when the player is sitting on empty coffers
   G.idleTauntT-=dt; if(G.idleTauntT<=0){ G.idleTauntT=18; if(G.cp<25&&G.t>18&&!G.tutorial)narr('lowCp'); }
   // rival general periodic taunts
@@ -2322,8 +2375,38 @@ function updateFX(dt){
 function checkWin(){
   if(G.attract){ if(G.hq.B<=0||G.hq.R<=0)G.over=true; return; } // attract loop restarts in loop()
   if(G.mode==='survival'){ if(G.hq.B<=0)endGame('R','overrun'); return; }
+  // Domination: securing all 3 zones is an outright win, but an HQ kill still works too —
+  // fall through to the normal HQ check below if nobody's locked down the whole map yet.
+  if(G.mode==='domination'&&G.zoneCtrl){
+    if(G.zoneCtrl.every(c=>c>=100)){ endGame('B','domination'); return; }
+    if(G.zoneCtrl.every(c=>c<=-100)){ endGame('R','domination'); return; }
+  }
   if(G.hq.R<=0)endGame('B','hq');
   else if(G.hq.B<=0)endGame('R','hq');
+}
+/* ── DOMINATION MODE — a capture zone at mid-field on each of the 3 lanes.
+   Whichever side has more weighted "presence" near a zone pulls its control meter toward
+   itself each tick; an empty or evenly-contested zone slowly decays back to neutral. Reaching
+   ±100 secures it. Securing all 3 at once (checkWin) wins outright, without touching the HQ. ── */
+const DOM_ZONE_R=95, DOM_FILL=15, DOM_DECAY=5;
+function dominationTick(dt){
+  if(!G.zoneCtrl)G.zoneCtrl=[0,0,0];
+  const zx=W*0.5;
+  for(let ln=0;ln<3;ln++){
+    const zy=G.laneY[ln]*H;
+    let bStr=0,rStr=0;
+    for(const u of G.units){
+      if(!u.alive||u.lane!==ln)continue;
+      if(dist(u.x,u.y,zx,zy)>DOM_ZONE_R)continue;
+      const w=u.maxHp*0.015+u.dmg*0.08+1;
+      if(u.side==='B')bStr+=w; else rStr+=w;
+    }
+    let c=G.zoneCtrl[ln];
+    if(bStr>rStr*1.15) c=Math.min(100,c+DOM_FILL*dt);
+    else if(rStr>bStr*1.15) c=Math.max(-100,c-DOM_FILL*dt);
+    else c += c>0?-Math.min(c,DOM_DECAY*dt):(c<0?Math.min(-c,DOM_DECAY*dt):0); // contested/empty — drift to neutral
+    G.zoneCtrl[ln]=c;
+  }
 }
 
 /* ═══ RENDER ═══ */
@@ -2336,6 +2419,7 @@ function draw(){
   if(G){
     // lane guides
     drawBases();
+    if(G.mode==='domination')drawDominationZones();
     drawTurrets();
     drawSpawners();
     // sort: ground first, fliers on top
@@ -2586,6 +2670,30 @@ function drawTurrets(){
     cx.fillStyle='#0a0e14';cx.font='bold 10px var(--mono)';cx.textAlign='center';cx.textBaseline='middle';
     cx.fillText('⌖',t.x,t.y);cx.textBaseline='alphabetic';
     if(t.muzzle>0){cx.fillStyle='rgba(255,220,120,0.9)';cx.beginPath();cx.arc(t.x+dir*15,t.y,4,0,6.28);cx.fill();}
+  }
+}
+/* ── Domination mode: a capture-zone marker at mid-field on each lane. Outer ring is the
+   contest boundary; the inner disc grows toward whichever side controls it and glows gold
+   once secured (matches the ±100 threshold dominationTick() uses to actually win the lane). ── */
+function drawDominationZones(){
+  const zx=W*0.5;
+  for(let ln=0;ln<3;ln++){
+    const zy=G.laneY[ln]*H, c=(G.zoneCtrl&&G.zoneCtrl[ln])||0;
+    const secured=Math.abs(c)>=100;
+    const col = c>0?'#4aa8ff':c<0?'#ff5a4a':'#5a6a86';
+    const outerR=DOM_ZONE_R*0.6;
+    cx.save();
+    cx.strokeStyle=col; cx.globalAlpha=0.55; cx.lineWidth=1.5; cx.setLineDash([5,5]);
+    cx.beginPath(); cx.arc(zx,zy,outerR,0,6.28); cx.stroke();
+    cx.setLineDash([]);
+    const innerR=outerR*Math.max(0.14,Math.abs(c)/100);
+    cx.globalAlpha=secured?0.75:0.45;
+    cx.fillStyle=col;
+    cx.beginPath(); cx.arc(zx,zy,innerR,0,6.28); cx.fill();
+    if(secured){ cx.globalAlpha=0.9; cx.shadowColor=col; cx.shadowBlur=16; cx.beginPath(); cx.arc(zx,zy,outerR+2,0,6.28); cx.strokeStyle=col; cx.lineWidth=2.5; cx.stroke(); cx.shadowBlur=0; }
+    cx.globalAlpha=1; cx.font='bold 11px monospace'; cx.textAlign='center'; cx.fillStyle=secured?col:'#cfe0f5';
+    cx.fillText(secured?(c>0?'SECURED':'LOST'):Math.round(Math.abs(c))+'%',zx,zy+outerR+15);
+    cx.restore();
   }
 }
 function drawBases(){
@@ -2863,6 +2971,9 @@ function syncHUD(){
   if(G.kind==='blitz'){const m=Math.floor(G.clock/60),s=Math.floor(G.clock%60);
     ob=`<div class="big">⏱ ${m}:${s<10?'0':''}${s}</div>dmg you ${Math.round(G.dmgDealt)} · them ${Math.round(G.dmgTaken)}`;}
   else if(G.kind==='survival'){ob=`<div class="big">WAVE ${G.wave+1}</div>held ${Math.floor(G.t)}s`;}
+  else if(G.kind==='domination'){ const secured=(G.zoneCtrl||[]).filter(c=>c>=100).length,
+      lost=(G.zoneCtrl||[]).filter(c=>c<=-100).length;
+    ob=`<div class="big" style="color:#5ff0e0">${secured}/3 ZONES SECURED</div>${lost?lost+' held by them · ':''}lock all 3 to win outright`;}
   else if(G.kind==='campaign'&&G.mission){ob=`<div class="big">${G.mission.name}</div>★ ${G.mission.star}`;}
   else if(G.kind==='daily'){ob=`<div class="big">DAILY</div>${G.daily?G.daily.mut.name:''}`;}
   else if(G.kind==='tutorial'){ob=`<div class="big">TRAINING</div>learn the ropes`;}
@@ -2920,7 +3031,7 @@ function syncHUD(){
   }
   // emp pulse button (rank-gated)
   const ec=document.getElementById('card-emp');
-  if(ec){const cdEl=ec.querySelector('.cd'); const locked=SAVE.lvl<3;
+  if(ec){const cdEl=ec.querySelector('.cd'); const locked=!rankGateOk(3);
     if(locked){cdEl.style.display='none';ec.classList.add('cant');}
     else if(G.empCd>0){cdEl.style.display='flex';cdEl.textContent=Math.ceil(G.empCd);ec.classList.add('cant');}
     else{cdEl.style.display='none';ec.classList.remove('cant');}
@@ -2980,7 +3091,7 @@ function buildQuickbar(){
   rc.onclick=()=>{G.selCard='recon';showLaneHint();};
   qb.appendChild(rc);
   // emp pulse — rank 3, jams (near-fully suppresses) a whole lane briefly
-  const empLocked=SAVE.lvl<3;
+  const empLocked=!rankGateOk(3);
   const ec=document.createElement('div');
   ec.className='card'+(empLocked?' cant':''); ec.id='card-emp'; ec.style.borderColor='var(--purple)';
   ec.innerHTML=`<span class="key">F</span><div class="glyph" style="color:var(--purple)">${empLocked?'🔒':'⚡'}</div>
@@ -3600,7 +3711,7 @@ function kindLabel(){
 }
 function showResults(won,reason,score,xpGain,leveled){
   const r=document.getElementById('results');
-  const reasonTxt={hq:'enemy HQ destroyed',time:'time expired',overrun:'your line was overrun'}[reason]||'';
+  const reasonTxt={hq:'enemy HQ destroyed',time:'time expired',overrun:'your line was overrun',domination:'all three capture zones locked down'}[reason]||'';
   // tutorial gets a friendlier screen
   const isTut=G.kind==='tutorial';
   // campaign star + next mission
@@ -3787,7 +3898,7 @@ function openMenu(){
 function buildMenu(){
   // doctrine options
   const dOpt=document.getElementById('doc-opts'); dOpt.innerHTML='';
-  for(const k in DOCTRINES){const d=DOCTRINES[k];const unlocked=SAVE.unlocked.includes(k);
+  for(const k in DOCTRINES){const d=DOCTRINES[k];const unlocked=SAVE.unlocked.includes(k)||rankGateOk(d.unlock);
     const b=document.createElement('button');
     b.className='opt-doc'+(sel.doctrine===k?' sel':'')+(unlocked?'':' lock');
     b.textContent=(unlocked?'':'🔒 ')+d.name;
@@ -3811,19 +3922,23 @@ function buildMenu(){
   }
   // modes
   const mOpt=document.getElementById('mode-opts');mOpt.innerHTML='';
-  const MODECOL={skirmish:'#ffce5a',evolution:'#c9a0ff',blitz:'#ffab40',survival:'#ff5a4a'};
-  for(const k in MODES){const b=mkOpt(MODES[k].name,sel.mode===k);
+  const MODECOL={skirmish:'#ffce5a',evolution:'#c9a0ff',blitz:'#ffab40',survival:'#ff5a4a',domination:'#5ff0e0'};
+  for(const k in MODES){
+    const gate=MODE_GATES[k], modeOk=!gate||rankGateOk(gate.lvl);
+    const b=mkOpt((modeOk?'':'🔒 ')+MODES[k].name,sel.mode===k);
+    if(!modeOk)b.classList.add('lock');
     if(sel.mode===k&&MODECOL[k]){b.style.background=MODECOL[k];b.style.color='#0a0e14';b.style.borderColor=MODECOL[k];}
-    else if(MODECOL[k]){b.style.borderColor=MODECOL[k];b.style.color=MODECOL[k];}
-    b.onclick=()=>{sel.mode=k;buildMenu();};mOpt.appendChild(b);}
+    else if(MODECOL[k]){b.style.borderColor=MODECOL[k];b.style.color=modeOk?MODECOL[k]:'var(--faint)';}
+    b.onclick=()=>{ if(!modeOk){showLockToast(gate.name+' unlocks at Rank '+gate.lvl+' — you are Rank '+SAVE.lvl+'.');return;} sel.mode=k;buildMenu();};
+    mOpt.appendChild(b);}
   document.getElementById('mode-desc').textContent=MODES[sel.mode].desc;
   // diff
   buildDiffChips(document.getElementById('diff-opts'));
   renderDiffAmbient(sel.diff);
   // progression
   document.getElementById('m-lvl').textContent=SAVE.lvl;
-  document.getElementById('m-xp').style.width=(SAVE.xp/xpForLevel(SAVE.lvl)*100)+'%';
-  document.getElementById('m-xptext').textContent=SAVE.xp+'/'+xpForLevel(SAVE.lvl);
+  document.getElementById('m-xp').style.width=(SAVE.lvl>=MAX_LVL?100:SAVE.xp/xpForLevel(SAVE.lvl)*100)+'%';
+  document.getElementById('m-xptext').textContent=SAVE.lvl>=MAX_LVL?'MAX RANK':SAVE.xp+'/'+xpForLevel(SAVE.lvl);
   document.getElementById('m-wins').textContent=SAVE.wins;
   document.getElementById('m-losses').textContent=SAVE.losses;
   // medals
@@ -4211,7 +4326,7 @@ function renderManualBody(tab){
     <p><b>Crits:</b> precision units (the sniper) land the occasional double-damage hit. <b>Terrain</b> and <b>veterancy</b> layer on top of these numbers.</p>`;
   } else if(tab==='doctrines'){
     h=`<p>Pick a doctrine before a Play-mode battle. It bends your whole army one way — cheaper armour, more infantry, harder-hitting fires, a tougher HQ. Higher doctrines unlock as you rank up.</p><div class="man-cardrow">`;
-    for(const k in DOCTRINES){ const d=DOCTRINES[k]; const locked=SAVE.lvl<d.unlock;
+    for(const k in DOCTRINES){ const d=DOCTRINES[k]; const locked=!rankGateOk(d.unlock);
       h+=`<div class="man-doc" style="border-left:3px solid ${d.col}">
         <div class="md-h"><span style="color:${d.col}">${d.glyph}</span>${d.name}</div>
         <div class="md-d">${d.desc}</div>
@@ -4234,7 +4349,8 @@ function renderManualBody(tab){
     <ul>
       <li><b>▶ Play</b> — a quick battle. Pick a doctrine, country, mode and difficulty. Buy your way up the tech tiers mid-fight.</li>
       <li><b>🧬 Evolution</b> — Age of War. Evolve through five ages, gate your roster by age, race the enemy up the tech tree.</li>
-      <li><b>🗺 War Mode</b> — a conquest map. Every node is a battle; take one and you cut supply to its neighbours, lose and the enemy pushes back. Win by taking the enemy capital.</li>
+      <li><b>🚩 Domination</b> (Rank 6) — forget the HQ. Hold the capture zone at mid-field on all three lanes at once and lock them down to win outright; lose control of one and it slips back into contest. HQ kills still count too.</li>
+      <li><b>🗺 War Mode</b> (Rank 15) — a conquest map. Every node is a battle; take one and you cut supply to its neighbours, lose and the enemy pushes back. Win by taking the enemy capital.</li>
       <li><b>🎓 Tutorial</b> — a short narrated walkthrough of the core loop.</li>
     </ul>
     <h2>Countries</h2>
@@ -4288,6 +4404,7 @@ function renderSettings(){
   const el=document.getElementById('set-body');
   const toggle=(on)=>`<span style="display:inline-block;width:46px;height:24px;border-radius:13px;background:${on?'var(--good)':'#2a3550'};position:relative;transition:.15s;">
     <span style="position:absolute;top:2px;left:${on?'24px':'2px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:.15s;"></span></span>`;
+  const chaosOk=rankGateOk(MODE_GATES.chaos.lvl);
   el.innerHTML=
     settingRow('Music','Original orchestral score',`<button id="set-music" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.music)}</button>`)+
     `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;">
@@ -4310,7 +4427,9 @@ function renderSettings(){
     settingRow('Golden Drone','A rare CP piñata crosses the field — shoot it down',`<button id="set-gag-gold" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.gagGolden)}</button>`)+
     settingRow('Victory Flyover','Confetti & a jet flypast on the win screen',`<button id="set-gag-vic" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.gagVictory)}</button>`)+
     `<div style="font-size:13px;font-weight:800;color:var(--red);letter-spacing:.5px;margin:6px 2px -2px">🤪 CHAOS MODE <span style="color:var(--faint);font-size:9px">BETA</span></div>`+
-    settingRow('Chaos / Meme Mode','Nonstop explosions, free spawns, rapid events & mayhem — built for clips. Turn on, then start any battle.',`<button id="set-chaos" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.chaosMode)}</button>`)+
+    settingRow('Chaos / Meme Mode','Nonstop explosions, free spawns, rapid events & mayhem — built for clips. Turn on, then start any battle.',
+      chaosOk?`<button id="set-chaos" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.chaosMode)}</button>`
+        :`<span style="font-size:11px;font-weight:800;color:var(--faint);white-space:nowrap">🔒 Rank ${MODE_GATES.chaos.lvl}</span>`)+
     `<div style="font-size:13px;font-weight:800;color:var(--faint);letter-spacing:.5px;margin:10px 2px -2px">⚠ PROGRESS</div>`+
     settingRow('Reset Rank &amp; Level','Currently Rank '+SAVE.lvl+' — sets you back to Rank 1 and reverts doctrine unlocks. Career stats, medals and rivalries are untouched.',
       `<button id="set-reset-rank" style="padding:8px 14px;border-radius:8px;border:1px solid var(--red);background:none;color:var(--red);font-weight:700;font-size:12px;cursor:pointer">Reset</button>`);
@@ -4407,23 +4526,52 @@ function openRoadmap(){
 }
 function renderRoadmap(){
   const el=document.getElementById('road-body'); if(!el)return;
-  const lvl=SAVE.lvl, xp=SAVE.xp, need=xpForLevel(lvl);
-  let h=`<h2>Rank ${lvl} — ${commanderTitle(lvl)}</h2>`+
+  const lvl=SAVE.lvl, xp=SAVE.xp, need=xpForLevel(lvl), maxed=lvl>=MAX_LVL;
+  let h=`<h2>Rank ${lvl}${maxed?' — MAX RANK':''} — ${commanderTitle(lvl)}</h2>`+
     `<div class="road-now"><span class="road-now-badge">${currentBadge(lvl).glyph}</span>`+
-    `<div class="road-now-bar"><i style="width:${Math.min(100,Math.round(xp/need*100))}%"></i></div>`+
-    `<span class="road-now-txt">${xp}/${need} XP to Rank ${lvl+1}</span></div>`;
-  h+=`<h2>The Ladder</h2><div class="tag" style="margin-bottom:10px">Win battles, earn XP, climb the ranks — every rung below unlocks something permanent.</div>`;
-  // max rung is the highest level anything unlocks at, across titles/badges/doctrines/powers
-  const maxLvl=Math.max(...COMMANDER_TITLES.map(t=>t.lvl),...HQ_BADGES.map(b=>b.lvl),...Object.values(DOCTRINES).map(d=>d.unlock),3);
-  for(let l=1;l<=maxLvl;l++){
+    `<div class="road-now-bar"><i style="width:${maxed?100:Math.min(100,Math.round(xp/need*100))}%"></i></div>`+
+    `<span class="road-now-txt">${maxed?'Every rung climbed — Rank 100':xp+'/'+need+' XP to Rank '+(lvl+1)}</span></div>`;
+  h+=`<h2>The Ladder</h2><div class="tag" style="margin-bottom:10px">Win battles, earn XP, climb the ranks — every rung from 1 to ${MAX_LVL} unlocks something.</div>`;
+  for(let l=1;l<=MAX_LVL;l++){
     const rewards=rankRewardsAtLevel(l);
-    if(!rewards.length)continue;
     const reached=lvl>=l;
     h+=`<div class="road-rung${reached?' done':''}">`+
       `<span class="road-rung-lvl">${reached?'✓':'🔒'} RANK ${l}</span>`+
       `<span class="road-rung-rewards">${rewards.join(' · ')}</span></div>`;
   }
   el.innerHTML=h; el.scrollTop=0;
+  renderRoadPath();
+}
+/* ── visual rank-progression PATH: a scrollable strip of connected nodes, 1→100.
+   Titles/badges/mode-unlocks render as bigger glowing "milestone" nodes; the player's
+   current rank pulses and auto-scrolls into view. Purely visual — the flat ladder list
+   above/below stays the source of truth for exact reward text. ── */
+function renderRoadPath(){
+  const el=document.getElementById('road-path'); if(!el)return;
+  const lvl=SAVE.lvl;
+  const modeList=Object.values(MODE_GATES);
+  let h='';
+  for(let l=1;l<=MAX_LVL;l++){
+    const t=COMMANDER_TITLES.find(e=>e.lvl===l);
+    const b=HQ_BADGES.find(e=>e.lvl===l);
+    const mode=modeList.find(m=>m.lvl===l);
+    const milestone=t||b||mode;
+    const reached=lvl>=l, isCurrent=lvl===l;
+    const glyph=b?b.glyph:(mode?'🔓':(t?'🎖':''));
+    const label=b?b.name:(mode?mode.name:(t?t.title:''));
+    h+=`<div class="rp-node${milestone?' milestone':''}${reached?' reached':''}${isCurrent?' current':''}" data-rank="${l}" title="Rank ${l}${label?' — '+escapeHTML(label):''}">`+
+      (isCurrent?'<span class="rp-tip">YOU</span>':'')+
+      (milestone?glyph:l)+
+      `</div>`;
+  }
+  el.innerHTML=h;
+  // center the current-rank node in the horizontal strip without disturbing outer page scroll —
+  // scrollIntoView() also nudges ancestor scroll containers (the vertical screen body), so
+  // compute and set el.scrollLeft directly instead. Deferred a tick so layout has settled.
+  setTimeout(()=>{
+    const cur=el.querySelector('.rp-node.current'); if(!cur)return;
+    el.scrollLeft=Math.max(0,(cur.offsetLeft+cur.offsetWidth/2)-el.clientWidth/2);
+  },0);
 }
 function openCosmetics(){
   ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
@@ -4433,16 +4581,16 @@ function openCosmetics(){
   renderCosmetics();
 }
 function equipBadge(val){
-  if(typeof val==='number'){ if(SAVE.lvl<val)return; }
+  if(typeof val==='number'){ if(!rankGateOk(val))return; }
   else { const sb=SPECIAL_BADGES.find(e=>e.id===val); if(!sb||!sb.requires())return; }
   SAVE.equippedBadge=val; persist(); renderCosmetics(); refreshTopbar();
 }
-function equipTitle(lvl){ if(SAVE.lvl<lvl)return; SAVE.equippedTitle=lvl; persist(); renderCosmetics(); refreshTopbar(); }
+function equipTitle(lvl){ if(!rankGateOk(lvl))return; SAVE.equippedTitle=lvl; persist(); renderCosmetics(); refreshTopbar(); }
 function renderCosmetics(){
   const el=document.getElementById('cos-body'); if(!el)return;
   const eqBadge=equippedBadge(), eqT=equippedTitleEntry().lvl;
   let h=`<h2>HQ Badge</h2><div class="cos-grid">`;
-  for(const b of HQ_BADGES){ const locked=SAVE.lvl<b.lvl, on=eqBadge.lvl===b.lvl&&eqBadge.name===b.name;
+  for(const b of HQ_BADGES){ const locked=!rankGateOk(b.lvl), on=eqBadge.lvl===b.lvl&&eqBadge.name===b.name;
     h+=`<div class="cos-item${on?' on':''}${locked?' locked':''}" data-eq="badge" data-lvl="${b.lvl}">`+
       `<span class="cos-glyph">${locked?'🔒':b.glyph}</span><span class="cos-nm">${b.name}</span>`+
       `<span class="cos-lvl">${locked?'Rank '+b.lvl:(on?'EQUIPPED':'Rank '+b.lvl)}</span></div>`;
@@ -4453,7 +4601,7 @@ function renderCosmetics(){
       `<span class="cos-lvl">${unlocked?(on?'EQUIPPED':'Rivals Champion'):'Beat all Rivals'}</span></div>`;
   }
   h+=`</div><h2>Commander Title</h2><div class="cos-grid">`;
-  for(const t of COMMANDER_TITLES){ const locked=SAVE.lvl<t.lvl, on=t.lvl===eqT;
+  for(const t of COMMANDER_TITLES){ const locked=!rankGateOk(t.lvl), on=t.lvl===eqT;
     h+=`<div class="cos-item${on?' on':''}${locked?' locked':''}" data-eq="title" data-lvl="${t.lvl}">`+
       `<span class="cos-glyph">${locked?'🔒':'🎖'}</span><span class="cos-nm">${t.title}</span>`+
       `<span class="cos-lvl">${locked?'Rank '+t.lvl:(on?'EQUIPPED':'Rank '+t.lvl)}</span></div>`;
@@ -4534,9 +4682,45 @@ document.getElementById('t-settings').onclick=()=>openSettings();
 // title screen
 document.getElementById('t-play').onclick=()=>{leaveTitle();openMenu();};
 document.getElementById('t-evo').onclick=()=>{leaveTitle();launchEvolution();};
-document.getElementById('t-war').onclick=()=>{leaveTitle();showWarMap();};
+document.getElementById('t-war').onclick=()=>{
+  if(!rankGateOk(MODE_GATES.war.lvl)){ showLockToast('War Mode unlocks at Rank '+MODE_GATES.war.lvl+' — you are Rank '+SAVE.lvl+'. Debug: Unlock All bypasses this for testing.'); return; }
+  leaveTitle();showWarMap();
+};
 document.getElementById('t-tut').onclick=()=>{leaveTitle();launchTutorial();};
 document.getElementById('menu-back').onclick=()=>showTitle();
+// Chaos Mode is a Settings toggle, not its own screen — this title-screen entry exists purely
+// so players actually discover it exists (several playtesters never found it buried in Settings).
+document.getElementById('t-chaos')?.addEventListener('click',()=>openSettings());
+document.getElementById('t-debugunlock')?.addEventListener('click',()=>{ SAVE.debugUnlockAll=!SAVE.debugUnlockAll; persist(); refreshTitleLocks(); });
+/* ── lock toast — brief non-blocking feedback for clicking a rank-gated button ── */
+let _lockToastT=null;
+function showLockToast(msg){
+  const el=document.getElementById('locktoast'); if(!el)return;
+  el.innerHTML='🔒 '+escapeHTML(msg);
+  el.classList.add('show');
+  clearTimeout(_lockToastT);
+  _lockToastT=setTimeout(()=>el.classList.remove('show'),2600);
+}
+/* ── refresh the title screen's rank-gated buttons (War Mode lock, Chaos mention, debug toggle) ── */
+function refreshTitleLocks(){
+  const warBtn=document.getElementById('t-war');
+  if(warBtn){ const ok=rankGateOk(MODE_GATES.war.lvl);
+    warBtn.classList.toggle('locked',!ok);
+    const b=warBtn.querySelector('b'), s=warBtn.querySelector('small');
+    if(b)b.textContent=(ok?'🗺 War Mode':'🔒 War Mode');
+    if(s)s.textContent=ok?'conquer the map':'unlocks at Rank '+MODE_GATES.war.lvl;
+  }
+  const chaosBtn=document.getElementById('t-chaos');
+  if(chaosBtn){ const ok=rankGateOk(MODE_GATES.chaos.lvl);
+    chaosBtn.classList.toggle('locked',!ok);
+    const s=chaosBtn.querySelector('small');
+    if(s)s.textContent=ok?(SAVE.chaosMode?'ON — mayhem in Settings':'flip it on in Settings'):'unlocks at Rank '+MODE_GATES.chaos.lvl;
+  }
+  const dbg=document.getElementById('t-debugunlock');
+  if(dbg){ dbg.classList.toggle('on',!!SAVE.debugUnlockAll);
+    dbg.textContent=SAVE.debugUnlockAll?'🧪 Debug: ALL UNLOCKED (click to revert)':'🧪 Debug: Unlock All (testing only)';
+  }
+}
 // war map
 document.getElementById('war-back').onclick=()=>showTitle();
 document.getElementById('war-new').onclick=()=>{ if(confirm('Abandon this war and generate a fresh map?')){genWar();warSel=null;renderWarMap();} };
@@ -4638,6 +4822,7 @@ function showTitle(){
   const tv=document.getElementById('t-ver'); if(tv)tv.textContent='v'+GAME_VERSION;
   document.getElementById('title-tag').textContent=pick(TITLE_TAGS);
   buildTitleDiff();
+  refreshTitleLocks();
   startAttract();
   musicStart('menu');
   if(!SAVE.seenTut){ setTimeout(()=>{ if(!document.getElementById('title').classList.contains('hidden'))

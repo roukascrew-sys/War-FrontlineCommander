@@ -20,6 +20,7 @@
 </head>
 <body>
 
+<div id="locktoast"></div>
 <div id="topbar">
   <a id="playtest-link" href="https://docs.google.com/forms/d/e/1FAIpQLSe3f5r4bGuWzFGjz2QhG8sVaX08j1kSUDy9KVNVHA29NCz8QQ/viewform?usp=dialog" target="_blank" rel="noopener noreferrer">🧪 Playtest Feedback</a>
   <div class="logo">⚔ <b>FRONTLINE</b> COMMANDER</div>
@@ -178,6 +179,7 @@
       </div>
       <div class="title-btns2">
         <button class="t-btn war" id="t-war"><b>🗺 War Mode</b><small>conquer the map</small></button>
+        <button class="t-btn chaos" id="t-chaos"><b>🤪 Chaos Mode</b><small>flip it on in Settings</small></button>
         <button class="t-btn rivals" id="t-rivals"><b>⚔ Rivals</b><small>a roster that learns you</small></button>
         <button class="t-btn tut" id="t-tut"><b>🎓 Tutorial</b><small>learn the ropes</small></button>
         <button class="t-btn manual" id="t-manual"><b>📖 Field Manual</b><small>how everything works</small></button>
@@ -188,6 +190,7 @@
         <button class="t-btn settings" id="t-settings"><b>⚙ Settings</b><small>audio &amp; motion</small></button>
       </div>
       <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span> · <span id="t-ver" style="cursor:pointer;text-decoration:underline dotted;">v1.0.0</span></div>
+      <button id="t-debugunlock" title="For playtesters: bypasses every rank gate (modes, cosmetics) without touching your actual Rank/XP">🧪 Debug: Unlock All (testing only)</button>
     </div>
   </div>
 
@@ -227,7 +230,8 @@
   <div class="screen hidden" id="roadmap">
     <button class="back-btn" id="road-back">◀ Title</button>
     <h1>🏆 <b>REWARDS ROADMAP</b></h1>
-    <div class="tag" style="margin-bottom:6px">Every rank pays off — titles, HQ badges, doctrines, commander powers. Here's the whole ladder and where you stand.</div>
+    <div class="tag" style="margin-bottom:6px">Every rank pays off — titles, HQ badges, doctrines, commander powers, whole modes. Here's the whole ladder to Rank 100 and where you stand.</div>
+    <div id="road-path-wrap"><div class="road-path-hint">Your climb, visualized — scroll to see every rank →</div><div id="road-path"></div></div>
     <div class="man-wrap"><div class="man-body" id="road-body"></div></div>
   </div>
 

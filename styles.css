@@ -403,6 +403,22 @@
   .t-btn.cosmetics{border-color:var(--purple);} .t-btn.cosmetics b{color:var(--purple);} .t-btn.cosmetics:hover{box-shadow:0 0 18px #c9a0ff44;}
   .t-btn.rivals{border-color:var(--red);} .t-btn.rivals b{color:var(--red);} .t-btn.rivals:hover{box-shadow:0 0 18px #ff5a4a44;}
   .t-btn.patchnotes{border-color:var(--good);} .t-btn.patchnotes b{color:var(--good);} .t-btn.patchnotes:hover{box-shadow:0 0 18px #3fd07a44;}
+  .t-btn.chaos{border-color:#ff5ad6;} .t-btn.chaos b{color:#ff5ad6;} .t-btn.chaos:hover{box-shadow:0 0 18px #ff5ad644;}
+  /* rank-gated title buttons (War Mode, Chaos below its rank) — dimmed, no hover lift */
+  .t-btn.locked{opacity:.45;filter:grayscale(.4);}
+  .t-btn.locked:hover{transform:none;box-shadow:none;}
+  /* playtest-only bypass — deliberately styled apart from real game buttons (dashed, warning color) */
+  #t-debugunlock{margin-top:12px;padding:7px 16px;border-radius:8px;border:1.5px dashed var(--warn);
+    background:#1a1408cc;color:var(--warn);font-size:11px;font-weight:700;letter-spacing:.3px;
+    cursor:pointer;transition:.12s;}
+  #t-debugunlock:hover{background:#241c08dd;transform:translateY(-1px);}
+  #t-debugunlock.on{border-style:solid;background:var(--warn);color:var(--bg);}
+  /* brief toast feedback when clicking something still rank-locked */
+  #locktoast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(10px);max-width:min(520px,86vw);
+    background:linear-gradient(180deg,#1c1014ee,#0b0708ee);border:1px solid var(--red2);border-left:3px solid var(--red);
+    border-radius:8px;padding:10px 16px;font-size:12.5px;color:var(--ink);opacity:0;pointer-events:none;
+    transition:opacity .2s,transform .2s;z-index:300;text-align:center;}
+  #locktoast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
   /* ── RIVALS MODE ── */
   .rival-card{background:var(--panel);border:1.5px solid var(--line);border-radius:10px;padding:12px;text-align:left;}
@@ -437,6 +453,27 @@
   .road-rung-lvl{font-family:var(--mono);font-weight:800;color:var(--dim);white-space:nowrap;min-width:82px;}
   .road-rung.done .road-rung-lvl{color:var(--cyan);}
   .road-rung-rewards{color:var(--ink);}
+
+  /* ── rank progression PATH — a visual "map" of the climb from Rank 1 to 100 ── */
+  .road-path-hint{font-size:11px;color:var(--faint);margin-bottom:4px;letter-spacing:.3px;}
+  #road-path-wrap{width:min(920px,95vw);background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:18px;padding:2px 0;}
+  #road-path{position:relative;display:flex;align-items:center;gap:20px;overflow-x:auto;overflow-y:hidden;
+    padding:28px 22px 32px;-webkit-overflow-scrolling:touch;}
+  #road-path::-webkit-scrollbar{height:7px;}
+  #road-path::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+  .rp-node{position:relative;flex:0 0 auto;width:26px;height:26px;border-radius:50%;
+    background:var(--panel2);border:2px solid var(--line);display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:8.5px;font-weight:800;color:var(--faint);}
+  .rp-node::after{content:'';position:absolute;left:100%;top:50%;width:20px;height:2px;background:var(--line);transform:translateY(-50%);}
+  .rp-node:last-child::after{display:none;}
+  .rp-node.reached{background:var(--blue2);border-color:var(--blue);color:#fff;}
+  .rp-node.reached::after{background:var(--blue2);}
+  .rp-node.milestone{width:38px;height:38px;font-size:15px;}
+  .rp-node.milestone.reached{background:var(--gold);border-color:var(--gold);color:var(--bg);box-shadow:0 0 14px #ffce5a66;}
+  .rp-node.current{border-color:#fff;box-shadow:0 0 0 4px #ffffff33,0 0 18px var(--gold);animation:rpPulse 1.4s infinite;z-index:1;}
+  @keyframes rpPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.12);}}
+  .rp-tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:5px;
+    font-size:8.5px;font-weight:800;letter-spacing:.5px;white-space:nowrap;color:var(--gold);}
 
   /* ── FIELD MANUAL / WIKI ── */
   #manual{justify-content:flex-start;padding-top:52px;}
@@ -566,9 +603,12 @@
   .sbtn.prim{background:var(--gold);color:var(--bg);border-color:var(--gold);}
   .sbtn.prim:hover{color:var(--bg);box-shadow:0 6px 20px #ffce5a4d;}
 
-  /* ── narrator subtitle ── */
-  #narrator{position:absolute;left:50%;bottom:112px;transform:translateX(-50%) translateY(8px);
-    max-width:min(680px,92vw);background:linear-gradient(180deg,#121824ee,#0b0f18ee);border:1px solid var(--line);
+  /* ── narrator subtitle ──
+     Anchored in the gap between the top HUD (CP bar / HQ health / scoreboard, which end by
+     ~y80px) and lane 1 (laneY[0]=0.30 of the field) — NOT over the bottom lane, which a
+     bottom-anchored version used to sit directly on top of and made the enemy hard to see. */
+  #narrator{position:absolute;left:50%;top:84px;transform:translateX(-50%) translateY(-8px);
+    max-width:min(480px,78vw);background:linear-gradient(180deg,#121824ee,#0b0f18ee);border:1px solid var(--line);
     border-left:3px solid var(--gold);border-radius:8px;padding:7px 14px;opacity:0;pointer-events:none;
     transition:opacity .2s,transform .2s;z-index:11;font-size:13.5px;line-height:1.4;}
   #narrator.show{opacity:1;transform:translateX(-50%) translateY(0);}
