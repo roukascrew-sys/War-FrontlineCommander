@@ -16,10 +16,13 @@
 <meta name="twitter:description" content="A free, zero-install lane-battler, playable straight in the browser.">
 <meta name="robots" content="index,follow">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self' https://api.elevenlabs.io wss://irc-ws.chat.twitch.tv; object-src 'none'; base-uri 'none'">
+<!-- boot-guard.js loads first and on its own — see the comment at the top of that file for why -->
+<script src="boot-guard.js"></script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
+<noscript><div style="position:fixed;inset:0;z-index:99999;background:#05070c;color:#e8eef7;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:sans-serif;">This game needs JavaScript enabled to run — please enable it and reload the page.</div></noscript>
 <div id="locktoast"></div>
 <div id="topbar">
   <a id="playtest-link" href="https://docs.google.com/forms/d/e/1FAIpQLSe3f5r4bGuWzFGjz2QhG8sVaX08j1kSUDy9KVNVHA29NCz8QQ/viewform?usp=dialog" target="_blank" rel="noopener noreferrer">🧪 Playtest Feedback</a>

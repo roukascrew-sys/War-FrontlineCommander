@@ -799,7 +799,7 @@ function musicSetTheme(name){
 }
 function musicStart(name){
   if(!SAVE.music)return;
-  musicInit(); if(!MUSIC.ctx)return;
+  musicInit(); if(!MUSIC.ctx||!MUSIC.master)return; // some sandboxed webviews allow the context but reject a node on it
   try{ if(MUSIC.ctx.state==='suspended')MUSIC.ctx.resume(); }catch(e){}
   musicSetTheme(name||MUSIC.themeName||'menu');
   if(!MUSIC.running){ MUSIC.running=true; MUSIC.nextT=MUSIC.ctx.currentTime+0.08; MUSIC.step=0;
