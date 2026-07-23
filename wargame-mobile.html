@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>FRONTLINE COMMANDER — mobile</title>
+<meta name="description" content="Frontline Commander: a free, zero-install lane-battler where a live counter web, doctrines, and a narrated Iron Marshal meet Twitch chat sabotage. No download, no signup — click and fight.">
+<meta name="theme-color" content="#0a0e14">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<!-- Open Graph / Twitter card — fill in og:url once the page has a live domain -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="FRONTLINE COMMANDER — a fast war game">
+<meta property="og:description" content="A free, zero-install lane-battler: a live counter web, doctrines, and a narrated Iron Marshal, playable straight in the browser.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="FRONTLINE COMMANDER — a fast war game">
+<meta name="twitter:description" content="A free, zero-install lane-battler, playable straight in the browser.">
+<meta name="robots" content="index,follow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self' https://api.elevenlabs.io wss://irc-ws.chat.twitch.tv; object-src 'none'; base-uri 'none'">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles-mobile.css">
+</head>
+<body>
+
+<div id="topbar">
+  <a id="playtest-link" href="https://docs.google.com/forms/d/e/1FAIpQLSe3f5r4bGuWzFGjz2QhG8sVaX08j1kSUDy9KVNVHA29NCz8QQ/viewform?usp=dialog" target="_blank" rel="noopener noreferrer">🧪 Playtest Feedback</a>
+  <div class="logo">⚔ <b>FRONTLINE</b> COMMANDER</div>
+  <div class="hstat" id="tb-rank">Rank <b id="tb-lvl">1</b> <span id="tb-title" style="color:var(--faint);font-weight:600"></span> <span id="tb-badge"></span></div>
+  <div class="hstat">Best <b id="tb-best">0</b></div>
+  <div class="spacer"></div>
+  <button class="tb-btn" id="btn-stream">📺 Streamer Mode</button>
+  <button class="tb-btn" id="btn-twitch">📡 Live Chat</button>
+  <button class="tb-btn" id="btn-narr">🎙 Narrator</button>
+  <button class="tb-btn" id="btn-voice">🔑 Voice</button>
+  <button class="tb-btn" id="btn-sound">🔊 Sound</button>
+  <button class="tb-btn" id="btn-music">🎵 Music</button>
+  <button class="tb-btn hidden" id="btn-news">📰 News</button>
+  <button class="tb-btn" id="btn-ai">🧠 AI Debug</button>
+  <button class="tb-btn" id="btn-debug">🐞 Debug</button>
+  <button class="tb-btn hidden" id="btn-pause">⏸ Pause</button>
+  <button class="tb-btn" id="btn-menu">☰ Menu</button>
+</div>
+
+<div id="stage">
+  <canvas id="game"></canvas>
+  <div id="fx-flash"></div>
+  <div id="glitch-fx"></div>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div id="scoreboard"></div>
+    <div id="rivalbox"><span class="rp">📡 <span id="rival-name"></span></span><span class="rt"></span></div>
+    <div id="objbar"></div>
+    <div id="basebars">
+      <div class="bhp blue"><div class="lbl" id="hqB-lbl">YOUR HQ</div><div class="track"><div class="fill" id="hpB"></div></div></div>
+      <div class="bhp red"><div class="lbl">ENEMY HQ</div><div class="track"><div class="fill" id="hpR"></div></div></div>
+    </div>
+    <div id="cpwrap">
+      <div id="cpbar"><div id="cpfill"></div></div>
+      <div id="cptext"><span id="cpnum">0</span> CP <small id="cprate"></small></div>
+    </div>
+    <div id="combo"><div class="n">x2</div><div class="l">COMBO</div></div>
+    <div id="killfeed"></div>
+    <div id="announce"><div class="txt"></div><div class="sub"></div></div>
+    <div id="prepbanner"><div class="pb-t">PREP PHASE</div><div class="pb-n">10</div><div class="pb-s">queue your opening wave — the enemy is frozen · <b>SKIP ▸</b></div></div>
+    <div id="lanehint">▲ click a lane to deploy</div>
+    <!-- stance + speed controls -->
+    <div id="ctrlbar">
+      <div class="ctrl-grp" id="stancebar">
+        <span class="ctrl-lbl">STANCE</span>
+        <button class="ctrl-b on" id="stance-assault" title="Assault (Z) — push for the enemy HQ">⚔</button>
+        <button class="ctrl-b" id="stance-defend" title="Defend (X) — hold behind the line, shields up">⛨</button>
+        <button class="ctrl-b" id="stance-skirmish" title="Skirmish (C) — poke from range, fall back">➹</button>
+      </div>
+      <div class="ctrl-grp" id="speedbar">
+        <span class="ctrl-lbl">SPEED</span>
+        <button class="ctrl-b" id="speed-0" title="0.5× slow-mo">½×</button>
+        <button class="ctrl-b on" id="speed-1" title="Normal speed">1×</button>
+        <button class="ctrl-b" id="speed-2" title="2× fast">2×</button>
+      </div>
+    </div>
+    <div id="votebar"></div>
+    <!-- AI thinking debug readout -->
+    <div id="aidebug"></div>
+    <!-- Age of War evolution panel -->
+    <div id="agepanel">
+      <div class="ap-h" id="ap-age">⚔ Trench Era</div>
+      <div class="ap-evo"><i id="ap-evobar"></i></div>
+      <div class="ap-btns">
+        <button id="ap-evolve">⬆ EVOLVE <b>—</b></button>
+        <button id="ap-turret">⌖ TURRET <b>0/0</b></button>
+      </div>
+    </div>
+    <div id="hbwrap">
+      <div id="quickbar"></div>
+      <div id="hbtabs"></div>
+      <div id="hotbar"></div>
+    </div>
+    <!-- narrator subtitle -->
+    <div id="narrator"><span class="np">🎙 IRON MARSHAL</span><span class="nt"></span></div>
+    <!-- tutorial coach mark -->
+    <div id="tutbox"><span class="tl">▮ TRAINING</span><span class="tt"></span></div>
+    <button id="tut-skip" class="hidden">Skip training ▸</button>
+  </div>
+
+  <!-- streamer overlay -->
+  <div id="stream">
+    <div id="streamtag">● LIVE — FRONTLINE COMMANDER</div>
+    <div id="chatbox"><div class="ch-h"><span class="dot"></span>STREAM CHAT</div><div id="chatfeed"></div></div>
+    <div id="clipbanner">★ CLIP THAT! ★</div>
+  </div>
+  <!-- combat cutscene overlay (random event) -->
+  <div id="cutscene"><div class="cs-bar top"></div><div class="cs-inner"><div class="cs-sub"></div><div class="cs-cap"></div></div><div class="cs-bar bot"></div></div>
+  <!-- 🧠 information-warfare overlays (streamer gaslighting) -->
+  <div id="iw-tunnel"></div>
+  <div id="iw-donate"><div class="iwd-head">💸 NEW DONATION</div><div class="iwd-amt">viewer donated $5</div><div class="iwd-msg">"gg"</div></div>
+
+  <!-- generated news sidebar -->
+  <div id="newsbar">
+    <div class="nb-h"><span class="nb-dot"></span>WAR WIRE — LIVE</div>
+    <div class="nb-feed"></div>
+    <div class="nb-foot">FRONTLINE NEWS NETWORK · all reports simulated</div>
+  </div>
+
+  <!-- difficulty ambience layer — shared by the title screen and the skirmish menu -->
+  <div id="diff-fx"></div>
+
+  <!-- MAIN MENU -->
+  <div class="screen hidden" id="menu">
+    <button class="back-btn" id="menu-back">◀ Title</button>
+    <h1>⚔ <b>FRONTLINE</b> COMMANDER</h1>
+    <div class="tag">Pick a doctrine, pick a fight. Bank Command Points, slam units into three lanes, and crack the enemy HQ before they crack yours. Fast, loud, and built to stream.</div>
+    <div class="prog-row">
+      <span>Rank <b id="m-lvl">1</b></span>
+      <div class="xpbar"><i id="m-xp"></i></div>
+      <span><b id="m-xptext">0/100</b> XP</span>
+      <span>Career <b id="m-wins">0</b>W / <b id="m-losses">0</b>L</span>
+    </div>
+    <div class="menu-cols">
+      <div class="mcard">
+        <h3>① DOCTRINE</h3>
+        <div class="opt" id="doc-opts"></div>
+        <div class="doc-desc" id="doc-desc"></div>
+        <h3 style="margin-top:16px">🌐 NATION</h3>
+        <div class="opt" id="country-opts"></div>
+        <div class="doc-desc" id="country-desc" style="min-height:0;margin-top:6px"></div>
+      </div>
+      <div class="mcard">
+        <h3>② GAME MODE</h3>
+        <div class="opt" id="mode-opts"></div>
+        <div class="doc-desc" id="mode-desc"></div>
+        <h3 style="margin-top:16px">③ DIFFICULTY</h3>
+        <div class="opt" id="diff-opts"></div>
+      </div>
+      <div class="mcard">
+        <h3>④ CAMPAIGN</h3>
+        <div class="camp-list" id="camp-opts"></div>
+        <div class="doc-desc" id="daily-info" style="min-height:0;margin-top:6px"></div>
+        <div class="opt" style="margin-top:8px">
+          <button id="btn-daily" style="padding:8px 12px;border:1px solid var(--cyan);border-radius:8px;background:var(--panel2);font-size:12px;font-weight:700;color:var(--cyan)">🎯 Daily Challenge</button>
+          <button id="btn-tutorial" style="padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:12px;font-weight:700;color:var(--dim)">🎓 Tutorial</button>
+        </div>
+      </div>
+    </div>
+    <button class="play-btn" id="btn-play">▶ DEPLOY</button>
+    <div class="medal-row" id="medal-row"></div>
+    <div class="hint">Deploy: click a card (or press 1–9) then a lane · 0 = missile strike · R = recon flare · F = EMP (Rank 3) · Q/W/E = quick-deploy to top/mid/bottom · Z/X/C = Assault/Defend/Skirmish stance · SPEED ½×–2× &amp; STANCE controls sit on the battlefield · In Skirmish/Blitz/Survival you buy your way up the tech tree mid-fight · 📡 Live Chat lets Twitch viewers command the enemy · SPACE = pause.</div>
+  </div>
+
+  <!-- TITLE / ATTRACT SCREEN -->
+  <div class="screen hidden" id="title">
+    <div id="title-scrim"></div>
+    <div id="title-inner">
+      <div class="title-logo">⚔ <b>FRONTLINE</b><br><span>COMMANDER</span></div>
+      <div class="title-tag" id="title-tag">Bank the points. Break the line. Take the war.</div>
+      <div class="title-diff" id="title-diff"><span class="td-lbl">DIFFICULTY</span><span class="td-chips" id="td-chips"></span></div>
+      <div class="title-btns">
+        <button class="hero-btn play" id="t-play"><span class="hb-ic">▶</span><span class="hb-tx"><b>PLAY</b><small>quick battle · pick doctrine &amp; mode</small></span></button>
+        <button class="hero-btn evo" id="t-evo"><span class="hb-ic">🧬</span><span class="hb-tx"><b>EVOLUTION</b><small>Age of War · evolve through 5 ages</small></span></button>
+      </div>
+      <div class="title-btns2">
+        <button class="t-btn war" id="t-war"><b>🗺 War Mode</b><small>conquer the map</small></button>
+        <button class="t-btn rivals" id="t-rivals"><b>⚔ Rivals</b><small>a roster that learns you</small></button>
+        <button class="t-btn tut" id="t-tut"><b>🎓 Tutorial</b><small>learn the ropes</small></button>
+        <button class="t-btn manual" id="t-manual"><b>📖 Field Manual</b><small>how everything works</small></button>
+        <button class="t-btn record" id="t-record"><b>🎖 Service Record</b><small>your career &amp; rivals</small></button>
+        <button class="t-btn roadmap" id="t-roadmap"><b>🏆 Roadmap</b><small>rank rewards &amp; unlocks</small></button>
+        <button class="t-btn cosmetics" id="t-cosmetics"><b>🎖 Cosmetics</b><small>equip badge &amp; title</small></button>
+        <button class="t-btn patchnotes" id="t-patchnotes"><b>📋 Patch Notes</b><small>what's new</small></button>
+        <button class="t-btn settings" id="t-settings"><b>⚙ Settings</b><small>audio &amp; motion</small></button>
+      </div>
+      <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span> · <span id="t-ver" style="cursor:pointer;text-decoration:underline dotted;">v1.0.0</span></div>
+    </div>
+  </div>
+
+  <!-- WAR MODE — conquest map -->
+  <div class="screen hidden" id="warmap">
+    <button class="back-btn" id="war-back">◀ Title</button>
+    <h1 style="font-size:26px;margin-bottom:2px">🗺 THEATER OF WAR</h1>
+    <div class="tag" id="war-sub" style="margin-bottom:10px">Every node is a battle. Take one and you cut supply to its neighbours; lose and the enemy pushes back. Win the map by taking the enemy capital.</div>
+    <div id="war-board"><svg id="war-edges"></svg><div id="war-nodes"></div></div>
+    <div id="war-info"></div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="sbtn" id="war-new">↻ New War</button>
+      <button class="sbtn" id="war-fight" disabled>⚔ Attack Selected</button>
+    </div>
+  </div>
+
+  <!-- FIELD MANUAL / WIKI -->
+  <div class="screen hidden" id="manual">
+    <button class="back-btn" id="man-back">◀ Title</button>
+    <h1>📖 <b>FIELD MANUAL</b></h1>
+    <div class="tag" style="margin-bottom:6px">Everything you need to command the frontline — the roster, the counter web, doctrines, ages, modes and hard-won tips.</div>
+    <div class="man-wrap">
+      <div class="man-tabs" id="man-tabs"></div>
+      <div class="man-body" id="man-body"></div>
+    </div>
+  </div>
+
+  <!-- SERVICE RECORD -->
+  <div class="screen hidden" id="record">
+    <button class="back-btn" id="rec-back">◀ Title</button>
+    <h1>🎖 <b>SERVICE RECORD</b></h1>
+    <div class="tag" style="margin-bottom:6px">Your whole career — every battle is remembered, and so are your rivals.</div>
+    <div class="man-wrap"><div class="man-body" id="rec-body"></div></div>
+  </div>
+
+  <!-- REWARDS ROADMAP -->
+  <div class="screen hidden" id="roadmap">
+    <button class="back-btn" id="road-back">◀ Title</button>
+    <h1>🏆 <b>REWARDS ROADMAP</b></h1>
+    <div class="tag" style="margin-bottom:6px">Every rank pays off — titles, HQ badges, doctrines, commander powers. Here's the whole ladder and where you stand.</div>
+    <div class="man-wrap"><div class="man-body" id="road-body"></div></div>
+  </div>
+
+  <!-- COSMETICS -->
+  <div class="screen hidden" id="cosmetics">
+    <button class="back-btn" id="cos-back">◀ Title</button>
+    <h1>🎖 <b>COSMETICS</b></h1>
+    <div class="tag" style="margin-bottom:6px">Pick which earned badge and title you fly — anything you've reached Rank for is fair game, doesn't have to be your newest.</div>
+    <div class="man-wrap"><div class="man-body" id="cos-body"></div></div>
+  </div>
+
+  <!-- RIVALS MODE -->
+  <div class="screen hidden" id="rivals">
+    <button class="back-btn" id="rivals-back">◀ Title</button>
+    <h1>⚔ <b>RIVALS</b></h1>
+    <div class="tag" style="margin-bottom:6px">Five named commanders. Beat one and they'll come back adapted to whatever you threw at them — sometimes they escape a loss and live to fight again. Defeat every rival for real and the roster pays out.</div>
+    <div class="man-wrap"><div class="man-body" id="rivals-body"></div></div>
+  </div>
+
+  <!-- PATCH NOTES -->
+  <div class="screen hidden" id="patchnotes">
+    <button class="back-btn" id="pn-back">◀ Title</button>
+    <h1>📋 <b>PATCH NOTES</b></h1>
+    <div class="tag" style="margin-bottom:6px">The quick version of everything that's shipped, newest first.</div>
+    <div class="man-wrap"><div class="man-body" id="pn-body"></div></div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div class="screen hidden" id="settings">
+    <button class="back-btn" id="set-back">◀ Back</button>
+    <h1>⚙ <b>SETTINGS</b></h1>
+    <div class="tag">Tune the experience. Changes save automatically.</div>
+    <div id="set-body" style="width:min(440px,92vw);display:flex;flex-direction:column;gap:14px;text-align:left;"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="screen hidden" id="results"></div>
+
+  <!-- RANK-UP SCREEN — shown before results when a battle ends in a level-up -->
+  <div id="rankup">
+    <div class="ru-card">
+      <div class="ru-badge" id="ru-badge">⚔</div>
+      <div class="ru-h">RANK UP</div>
+      <div class="ru-sub" id="ru-sub">Rank 2 — Recruit</div>
+      <div class="ru-rewards" id="ru-rewards"></div>
+      <button class="sbtn prim" id="ru-continue">Continue ▸</button>
+    </div>
+  </div>
+
+  <!-- LOADING SCREEN -->
+  <div id="loader">
+    <div class="ld-logo">⚔ <b>FRONTLINE</b> COMMANDER</div>
+    <div class="ld-scene"><div class="ld-tank">◼</div><div class="ld-dust"></div></div>
+    <div class="ld-barwrap"><div class="ld-bar" id="ld-bar"></div></div>
+    <div class="ld-pct" id="ld-pct">0%</div>
+    <div class="ld-tip" id="ld-tip"></div>
+  </div>
+
+  <!-- PAUSE -->
+  <div class="screen hidden" id="pauseScreen">
+    <h1 style="font-size:30px">PAUSED</h1>
+    <div class="btn-row">
+      <button class="sbtn prim" id="btn-resume">▶ Resume</button>
+      <button class="sbtn" id="btn-quit">✕ Abandon</button>
+    </div>
+  </div>
+
+  <!-- FIRST-RUN PROMPT -->
+  <div id="firstrun">
+    <div class="fr-card">
+      <div class="fr-h">🎙 New here, Commander?</div>
+      <div class="fr-p">The Iron Marshal will walk you through your first fight — economy, counters, and the missile strike. Two minutes, no pressure.</div>
+      <div class="btn-row" style="justify-content:center">
+        <button class="sbtn prim" id="fr-yes">🎓 Start Tutorial</button>
+        <button class="sbtn" id="fr-no">Skip — I know war</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TWITCH LIVE CHAT MODAL -->
+  <div id="twitchmodal">
+    <div class="fr-card" style="max-width:480px;text-align:left">
+      <div class="fr-h" style="text-align:center">📡 Live Stream Chat</div>
+      <div class="fr-p" style="text-align:center">Connect a Twitch channel and your viewers steer the <b>enemy</b>. It's read-only and anonymous — no login, no password. Type a channel below and hit Connect.</div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px">TWITCH CHANNEL</label>
+        <input id="tw-channel" type="text" placeholder="e.g. your_channel_name" autocomplete="off" maxlength="25" pattern="[a-zA-Z0-9_]+" title="Letters, numbers and underscores only" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-family:var(--mono);font-size:13px">
+      </div>
+      <div id="tw-status" style="font-size:12px;color:var(--dim);min-height:18px;margin-bottom:10px">Not connected — simulated chat is active in Streamer Mode.</div>
+      <div style="font-size:11.5px;color:var(--faint);line-height:1.6;margin-bottom:14px">
+        Viewer commands:<br>• <b style="color:var(--ink)">top</b> / <b style="color:var(--ink)">mid</b> / <b style="color:var(--ink)">bot</b> — vote a lane; the winner gets an enemy surge on a timer.<br>• <b style="color:var(--ink)">boss</b> — enough votes summon a chat boss.<br>• <b style="color:var(--good)">drop</b> — rally votes to airdrop a supply crate for the streamer.<br>• <b style="color:var(--purple)">chaos</b> — roll a random battlefield event.<br>• <b style="color:var(--gold)">hype</b> / pog / W — feed the hype meter.<br><b style="color:var(--red)">Big chants (many unique chatters):</b> <b style="color:var(--good)">fortify</b> (16) heals your army · <b style="color:var(--warn)">storm</b> (22) shells all lanes · <b style="color:var(--blue)">blitz</b> (26) free wave · <b style="color:var(--red)">nuke</b> (50) glasses the whole field.
+      </div>
+      <div class="btn-row" style="justify-content:center">
+        <button class="sbtn prim" id="tw-connect">🔌 Connect</button>
+        <button class="sbtn" id="tw-disconnect">✕ Disconnect</button>
+        <button class="sbtn" id="tw-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VOICE SETTINGS MODAL -->
+  <div id="voicemodal">
+    <div class="fr-card" style="max-width:480px;text-align:left">
+      <div class="fr-h" style="text-align:center">🎙 Narrator Voice</div>
+      <div class="fr-p" style="text-align:center">Free by default: a styled browser voice over a radio-static bed. Optionally plug in an ElevenLabs API key for a real neural voice — your key stays in this browser and is only ever sent to elevenlabs.io.</div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px">ELEVENLABS API KEY (optional)</label>
+        <input id="vm-key" type="password" placeholder="sk_..." autocomplete="off" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-family:var(--mono);font-size:13px">
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px">VOICE</label>
+        <div class="opt" id="vm-voices"></div>
+      </div>
+      <div id="vm-custom-wrap" style="margin-bottom:16px;display:none">
+        <label style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px">CUSTOM VOICE ID</label>
+        <input id="vm-custom-id" type="text" placeholder="e.g. paste Thaddeus's Voice ID from ElevenLabs → My Voices" autocomplete="off" maxlength="64" pattern="[a-zA-Z0-9]+" title="Letters and numbers only" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-family:var(--mono);font-size:13px">
+        <div class="fr-p" style="text-align:left;font-size:11.5px;margin:6px 0 0">Find it in ElevenLabs under My Voices (or Voice Library) → the voice's ⋯ menu → Copy Voice ID.</div>
+      </div>
+      <div id="vm-status" style="font-size:12px;color:var(--dim);min-height:18px;margin-bottom:10px"></div>
+      <div class="btn-row" style="justify-content:center">
+        <button class="sbtn prim" id="vm-test">▶ Test Voice</button>
+        <button class="sbtn" id="vm-save">💾 Save</button>
+        <button class="sbtn" id="vm-clear">🗑 Clear Key</button>
+        <button class="sbtn" id="vm-close">✕ Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEBUG MODE — manually fire any scripted event for testing/showcasing -->
+  <div id="debugmodal">
+    <div class="fr-card" style="max-width:620px;text-align:left">
+      <div class="fr-h" style="text-align:center">🐞 Debug — Trigger Events</div>
+      <div class="fr-p" style="text-align:center">Fires the real event function directly — same code path as when it happens naturally. Most need a live battle running.</div>
+      <div id="dbg-groups"></div>
+      <div class="btn-row" style="justify-content:center;margin-top:10px">
+        <button class="sbtn" id="dbg-close">✕ Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>

@@ -4,12 +4,33 @@
    Self-contained. No dependencies. Borrows the doctrine/combined-arms
    CONCEPTS from the WAR simulator but tuned entirely for FUN and SHOW.
    ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── LOADER FAILSAFE (registered first, on purpose) ──
+   A stuck loading screen must never trap a playtester. runLoader() is the very
+   last statement in this file, so ANY uncaught throw in the init code above it
+   (some mobile browsers are stricter, e.g. no crypto.subtle over http, storage
+   blocked in private mode) would abort the script before the loader ever starts
+   and leave the page frozen on "loading". These three lines are defined before
+   any risky code runs, so they still fire even if evaluation dies later:
+     • a window 'error' hook that force-clears the loader,
+     • a hard timeout that clears it no matter what,
+   guaranteeing the player always reaches the game. */
+function _forceLoaderGone(){
+  try{ const l=document.getElementById('loader'); if(l&&!l.classList.contains('gone')){ l.classList.add('gone'); setTimeout(()=>{ if(l)l.style.display='none'; },600); } }catch(e){}
+}
+window.addEventListener('error',_forceLoaderGone);
+window.addEventListener('unhandledrejection',_forceLoaderGone);
+setTimeout(_forceLoaderGone,9000); // never sit on the loading screen past ~9s
+
 const cv=document.getElementById('game'), cx=cv.getContext('2d');
 const DPR=Math.min(2,window.devicePixelRatio||1);
 let W=0,H=0;
 function resize(){ const r=cv.parentElement.getBoundingClientRect(); W=r.width;H=r.height;
   cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';cx.setTransform(DPR,0,0,DPR,0,0); }
 window.addEventListener('resize',resize);
+// mobile: a rotation fires 'orientationchange'; some browsers report stale sizes
+// for a beat, so reflow the canvas + layout again just after the turn settles.
+window.addEventListener('orientationchange',()=>{ setTimeout(()=>{ try{resize();}catch(e){} },150); });
 
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -4575,7 +4596,7 @@ function runLoader(){
     p=Math.min(100,p+rnd(7,20));
     bar.style.width=p+'%'; pct.textContent=Math.floor(p)+'%';
     if(p>=100){ clearInterval(iv); clearInterval(tipIv);
-      setTimeout(()=>{ document.getElementById('loader').classList.add('gone'); showTitle();
+      setTimeout(()=>{ document.getElementById('loader').classList.add('gone'); try{ showTitle(); }catch(e){ console.error('showTitle',e); }
         setTimeout(()=>{const l=document.getElementById('loader'); if(l)l.style.display='none';},600); },380);
     }
   },170);
@@ -4920,16 +4941,20 @@ function frontNews(text,key,cd){ if(!SAVE.news)return; const now=performance.now
   pushNews(text,'front'); }
 
 /* ═══ BOOT ═══ */
-// unlock by level on load
-for(const k in DOCTRINES)if(SAVE.lvl>=DOCTRINES[k].unlock&&!SAVE.unlocked.includes(k))SAVE.unlocked.push(k);
+// Every step is isolated: a failure in any one subsystem must not stop the others
+// from running — and above all must not stop runLoader() from dismissing the loader.
+try{ for(const k in DOCTRINES)if(SAVE.lvl>=DOCTRINES[k].unlock&&!SAVE.unlocked.includes(k))SAVE.unlocked.push(k); }catch(e){ console.error('unlock',e); }
 // start music on the first real user gesture (browsers block audio before that)
 function _musicKick(){ if(SAVE.music){ musicInit(); try{ if(MUSIC.ctx&&MUSIC.ctx.state==='suspended')MUSIC.ctx.resume(); }catch(e){} if(!MUSIC.running)musicStart(musicContextTheme()); } }
 window.addEventListener('pointerdown',_musicKick,true);
 window.addEventListener('keydown',_musicKick,true);
 // world news keeps ticking on the menu / title / war map too (in-battle newsTick adds the rest)
 setInterval(()=>{ if(SAVE.news && (!G || G.over || G.attract)) pushNews(genWorldNews(),'world'); }, 19000);
-// seed the wire so the sidebar isn't empty
-pushNews(genWorldNews(),'world'); pushNews(genWorldNews(),'world'); renderNews();
-resize(); refreshTopbar(); buildMenu();
-requestAnimationFrame(loop);
-runLoader(); // loading screen → dynamic title (with attract battle) → menu / war
+try{ pushNews(genWorldNews(),'world'); pushNews(genWorldNews(),'world'); renderNews(); }catch(e){ console.error('news',e); }
+try{ resize(); }catch(e){ console.error('resize',e); }
+try{ refreshTopbar(); }catch(e){ console.error('topbar',e); }
+try{ buildMenu(); }catch(e){ console.error('menu',e); }
+try{ requestAnimationFrame(loop); }catch(e){ console.error('loop',e); }
+// loading screen → dynamic title (with attract battle) → menu / war.
+// If runLoader itself somehow throws, still clear the loader and show the title.
+try{ runLoader(); }catch(e){ console.error('runLoader',e); _forceLoaderGone(); try{ showTitle(); }catch(e2){} }
