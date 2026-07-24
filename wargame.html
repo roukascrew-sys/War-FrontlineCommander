@@ -1703,10 +1703,17 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.8.0';
+const GAME_VERSION='1.9.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
+// PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
+// v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
+// for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.9.0',notes:[
+    '── Phase 2 begins: Website / Lite-Version — see PHASES.md ──',
+    'Fixed a soft-lock: leaving a paused battle via the topbar ☰ Menu button could strand the PAUSED overlay on top of the main menu with no way to click through or resume',
+  ]},
   {v:'1.8.0',notes:[
     'Fixed the narrator subtitle covering up the bottom lane mid-battle — it now sits in the gap above the field instead',
     'Rank cap raised to 100, with a full title/badge/commendation ladder all the way there and a visual rank-progression map on the Roadmap screen',
@@ -5172,6 +5179,7 @@ function openMenu(){
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('results').classList.add('hidden');
   document.getElementById('tut-skip').classList.add('hidden');
+  document.getElementById('pauseScreen').classList.add('hidden'); // guard: leaving via the topbar Menu button while paused must not strand the pause overlay on top of the menu
   narrStop(); hideTut();
   document.getElementById('rivalbox').classList.remove('show');
   G=null; window.G=null; LAUNCH=null;
@@ -6009,7 +6017,7 @@ document.getElementById('war-back').onclick=()=>showTitle();
 document.getElementById('war-new').onclick=()=>{ if(confirm('Abandon this war and generate a fresh map?')){genWar();warSel=null;renderWarMap();} };
 document.getElementById('war-fight').onclick=()=>warFight();
 document.getElementById('btn-resume').onclick=togglePause;
-document.getElementById('btn-quit').onclick=()=>{G.paused=false;document.getElementById('pauseScreen').classList.add('hidden');openMenu();};
+document.getElementById('btn-quit').onclick=()=>{if(G)G.paused=false;document.getElementById('pauseScreen').classList.add('hidden');openMenu();};
 
 /* stance + speed controls */
 document.getElementById('stance-assault').onclick=()=>setStance('assault');
@@ -6427,6 +6435,14 @@ try{ requestAnimationFrame(loop); }catch(e){ console.error('loop',e); }
 // If runLoader itself somehow throws, still clear the loader and show the title.
 try{ runLoader(); }catch(e){ console.error('runLoader',e); _forceLoaderGone(); try{ showTitle(); }catch(e2){} }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   PHASE 2 — WEBSITE / LITE-VERSION ADDITIONS BELOW THIS LINE
+   Everything above this banner was written during Phase 1 (Alpha &
+   Playtesting). New code for turning the game into a hosted website
+   (analytics, hosting-specific glue, etc.) gets appended below it, in its
+   own clearly-commented block. See PHASES.md at the repo root for the
+   full convention.
+   ═══════════════════════════════════════════════════════════════════════ */
 </script>
 </body>
 </html>
