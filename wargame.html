@@ -15,7 +15,7 @@
 <meta name="twitter:title" content="FRONTLINE COMMANDER — a fast war game">
 <meta name="twitter:description" content="A free, zero-install lane-battler, playable straight in the browser.">
 <meta name="robots" content="index,follow">
-<meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://api.elevenlabs.io wss://irc-ws.chat.twitch.tv; object-src 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://api.elevenlabs.io wss://irc-ws.chat.twitch.tv https://*.goatcounter.com; img-src 'self' data: https://*.goatcounter.com; object-src 'none'; base-uri 'none'">
 <script>
 /* BOOT GUARD — deliberately written in plain ES5 and kept tiny, and loaded as the very
    first script in <head>, before styles.css or game.js. Its only job is to guarantee a
@@ -452,6 +452,11 @@
   #title-figs.reduce .tfig,#title-figs.reduce .tf-art,#title-figs.reduce .tf-eye{animation:none!important;}
   /* the flanking figures are a wide-desktop flourish — hide them where they'd crowd the buttons */
   @media (max-width:960px){ #title-figs{display:none;} }
+  /* difficulty skull under the skirmish-menu picker — reuses the .tf-* skull art at a smaller size */
+  #menu-skull{display:flex;flex-direction:column;align-items:center;gap:5px;margin-top:12px;pointer-events:none;}
+  #menu-skull .tf-art{font-size:46px;filter:drop-shadow(0 4px 10px #000a);}
+  #menu-skull .tf-cap{font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 2px 5px #000;}
+  #menu-skull.reduce .tf-art,#menu-skull.reduce .tf-eye{animation:none!important;}
   .title-btns{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:12px;}
   /* global difficulty picker on the title (applies to Play, Evolution, etc.) */
   .title-diff{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
@@ -789,6 +794,15 @@
   .camp-btn.lock{opacity:.4;cursor:not-allowed;}
   .camp-btn .cn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .camp-btn .cs{color:var(--gold);font-size:13px;white-space:nowrap;}
+  .camp-btn .cdl{display:inline-block;min-width:15px;text-align:center;font-weight:800;font-size:10px;
+    border:1px solid currentColor;border-radius:4px;padding:0 2px;margin-right:5px;letter-spacing:0;line-height:14px;vertical-align:1px;}
+  .camp-btn .ttchip{display:inline-block;font-size:10px;font-weight:800;color:var(--cyan);border:1px solid var(--cyan);
+    border-radius:10px;padding:0 6px;margin-right:6px;line-height:15px;transition:.1s;}
+  .camp-btn .ttchip:hover{background:var(--cyan);color:var(--bg);}
+  .camp-btn .ttchip.done{color:var(--gold);border-color:var(--gold);}
+  .camp-btn.secret-btn{border-color:#ff5ad6;background:#1a0f1acc;color:#ff9adf;margin-top:6px;}
+  .camp-btn.secret-btn:hover{border-color:#ff5ad6;box-shadow:0 0 14px #ff5ad655;}
+  .camp-btn.secret-btn .cs{color:#ff5ad6;font-weight:800;}
   /* ── first-run prompt ── */
   #firstrun,#voicemodal,#twitchmodal,#debugmodal{position:absolute;inset:0;z-index:40;background:#080b11e0;display:none;align-items:center;justify-content:center;padding:24px;}
   #firstrun.show,#voicemodal.show,#twitchmodal.show,#debugmodal.show{display:flex;}
@@ -1008,7 +1022,7 @@
       <div class="ctrl-grp" id="stancebar">
         <span class="ctrl-lbl">STANCE</span>
         <button class="ctrl-b on" id="stance-assault" title="Assault (Z) — push for the enemy HQ">⚔</button>
-        <button class="ctrl-b" id="stance-defend" title="Defend (X) — hold behind the line, shields up">⛨</button>
+        <button class="ctrl-b" id="stance-defend" title="Defend (X) — hold the centre line, shields up (contests the Domination zone)">⛨</button>
         <button class="ctrl-b" id="stance-skirmish" title="Skirmish (C) — poke from range, fall back">➹</button>
       </div>
       <div class="ctrl-grp" id="speedbar">
@@ -1090,6 +1104,8 @@
         <div class="doc-desc" id="mode-desc"></div>
         <h3 style="margin-top:16px">③ DIFFICULTY</h3>
         <div class="opt" id="diff-opts"></div>
+        <!-- difficulty skull — gets more menacing as the chosen difficulty rises -->
+        <div id="menu-skull" aria-hidden="true"></div>
       </div>
       <div class="mcard">
         <h3>④ CAMPAIGN</h3>
@@ -1398,7 +1414,12 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   gagChatter:true,gagGolden:true,gagVictory:true,
   history:[],career:{battles:0,wins:0,losses:0,kills:0,deploys:0,cpSpent:0,strikes:0,units:{},dmgDealt:0,timePlayed:0},
   rivalry:{}, equippedBadge:null, equippedTitle:null, rivals:{}, rivalsBadgeEarned:false,
-  weatherVis:true, voidSlayerEarned:false, debugUnlockAll:false};
+  weatherVis:true, voidSlayerEarned:false, debugUnlockAll:false,
+  // ── time trials + the hidden "Glitch Front" secret level ──
+  timeTrials:{},          // mission id -> best clear time (s); presence means that trial is PASSED
+  secretUnlocked:false,   // true once every campaign time trial has been beaten
+  secretDone:false,       // true once the secret level is cleared (unlocks the Drone Swarm + Rods from God)
+  secretBadgeEarned:false};
 let SAVE=load();
 SAVE.news=false; // live news wire archived for now (kept in code, off by default)
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
@@ -1600,16 +1621,21 @@ const UNITS={
   // close-quarters DOT specialist — dangerous to close with, brutal once it does
   flame:{name:'Flame Trooper',glyph:'♨',cat:'inf',cost:34,cd:1.2,hp:30,dmg:8,rof:0.9,rng:34,spd:22,col:'#ff7a3c',
     aa:false,splash:0,r:7,burnDps:9,burnDur:3.5,desc:'very short range but sets targets ablaze — brutal vs infantry, weak vs armour'},
+  // ⁂ SECRET UNLOCK — the Drone Swarm. One deploy releases a whole cloud of kamikaze micro-drones.
+  // Earned by clearing the hidden Glitch Front. cost covers the ENTIRE swarm (swarmN drones).
+  swarm:{name:'Drone Swarm',glyph:'⁂',cat:'dro',cost:66,cd:6,hp:9,dmg:16,rof:99,rng:46,spd:66,col:'#a0ffe0',
+    aa:false,flies:true,lowAir:true,splash:6,r:6,kamikaze:true,vsArmor:2.2,swarmN:5,
+    desc:'SECRET UNLOCK — deploys a cloud of kamikaze micro-drones in one go; drowns armour, but EW & rapid fire shred them'},
   // 🕵 mythic rare-event boss — never in the hotbar, only ever appears via triggerVoidRift()
   voidwarden:{name:'The Void Warden',glyph:'⛧',cat:'boss',cost:0,cd:0,hp:3600,dmg:34,rof:1.0,rng:140,spd:0.35,col:'#c9a0ff',
     aa:false,splash:24,r:34,armor:true,desc:'a rift-born horror — secret encounter'},
 };
 // appended at the end rather than grouped with the other infantry so every existing
 // number-hotkey (1-9) and tutorial "press N" instruction keeps pointing at the same unit
-const HOTBAR=['rifle','atgm','sniper','tank','ifv','arty','mlrs','aa','heli','drone','medic','jammer','interceptor','gunship','flame'];
+const HOTBAR=['rifle','atgm','sniper','tank','ifv','arty','mlrs','aa','heli','drone','medic','jammer','interceptor','gunship','flame','swarm'];
 
 /* ── IN-BATTLE TECH TIERS — in normal modes you buy your way up the tree mid-fight ── */
-const UNIT_TIER={rifle:1,atgm:1,ifv:1, sniper:2,tank:2,aa:2,arty:2,drone:2,medic:2,flame:2, heli:3,mlrs:3,jammer:3,interceptor:3,gunship:3};
+const UNIT_TIER={rifle:1,atgm:1,ifv:1,swarm:1, sniper:2,tank:2,aa:2,arty:2,drone:2,medic:2,flame:2, heli:3,mlrs:3,jammer:3,interceptor:3,gunship:3};
 const TIER_UNLOCK={1:0,2:60,3:130}; // CP paid once per battle to open a tier's units
 function unitTier(key){return UNIT_TIER[key]||1;}
 function tierUnlockCost(key){return TIER_UNLOCK[unitTier(key)]||0;}
@@ -1625,8 +1651,8 @@ const DMG_MATRIX={           //  vs: inf   light  heavy  air    struct
   he:{inf:1.30,light:1.15,heavy:0.72,air:0.30,struct:1.45}, // high explosive
   aa:{inf:0.35,light:0.50,heavy:0.30,air:2.40,struct:0.20}, // anti-air
 };
-const UNIT_DMGTYPE={rifle:'sa',atgm:'ap',sniper:'sa',tank:'ap',ifv:'sa',arty:'he',mlrs:'he',aa:'aa',heli:'ap',drone:'ap',medic:null,jammer:null,interceptor:'aa',gunship:'he',flame:'sa',voidwarden:'he'};
-const UNIT_ARMORCLASS={rifle:'inf',atgm:'inf',sniper:'inf',medic:'inf',tank:'heavy',ifv:'light',arty:'light',mlrs:'light',aa:'light',jammer:'light',heli:'air',drone:'air',interceptor:'air',gunship:'air',flame:'inf',voidwarden:'heavy'};
+const UNIT_DMGTYPE={rifle:'sa',atgm:'ap',sniper:'sa',tank:'ap',ifv:'sa',arty:'he',mlrs:'he',aa:'aa',heli:'ap',drone:'ap',swarm:'ap',medic:null,jammer:null,interceptor:'aa',gunship:'he',flame:'sa',voidwarden:'he'};
+const UNIT_ARMORCLASS={rifle:'inf',atgm:'inf',sniper:'inf',medic:'inf',tank:'heavy',ifv:'light',arty:'light',mlrs:'light',aa:'light',jammer:'light',heli:'air',drone:'air',swarm:'air',interceptor:'air',gunship:'air',flame:'inf',voidwarden:'heavy'};
 const UNIT_CRIT={sniper:0.24}; // precision units land the occasional double-damage hit
 function dmgMul(dt,ac){ return (dt&&DMG_MATRIX[dt]&&DMG_MATRIX[dt][ac||'inf'])||1; }
 
@@ -1669,7 +1695,7 @@ const STANCES={
   assault:{name:'Assault',glyph:'⚔',key:'Z',col:'#ff9f40',
     desc:'Push hard for the enemy HQ — advance and engage as you go.'},
   defend:{name:'Defend',glyph:'⛨',key:'X',col:'#3fd07a',
-    desc:'Hold behind the centre line. Move up slowly, dig in, and fire from cover with shields raised.'},
+    desc:'Advance to the centre line and hold it — shields up, firing from cover. Sits right on the Domination capture zone, so it\'s the stance for contesting the middle.'},
   skirmish:{name:'Skirmish',glyph:'➹',key:'C',col:'#5ff0e0',
     desc:'Keep your distance. Poke from max range and fall back when they close in.'},
 };
@@ -1737,6 +1763,7 @@ function dominantCategory(built){ // classify what the player leaned on this fig
 const SPECIAL_BADGES=[
   {id:'rivals_champion',glyph:'🏆',name:'Rivals Champion',requires:()=>!!SAVE.rivalsBadgeEarned},
   {id:'void_slayer',glyph:'🕳',name:'Void Slayer',requires:()=>!!SAVE.voidSlayerEarned},
+  {id:'glitch_breaker',glyph:'▓',name:'Glitch-Breaker',requires:()=>!!SAVE.secretBadgeEarned},
 ];
 function rivalBiasFor(name){ // their own signature weapon the first time; a counter to your last loadout after that
   const gen=GENERALS.find(g=>g.name===name);
@@ -1766,13 +1793,24 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.9.0';
+const GAME_VERSION='1.10.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.10.0',notes:[
+    'Campaign time trials: beat any cleared mission under par (time scales with its difficulty) — clear every trial to reveal a hidden level',
+    'NEW hidden level — The Glitch Front: fight for 30s, then a warhead glasses the board and the battle continues on a glitchy wasteland where the lanes keep swapping under an imposing enemy HQ. Clearing it unlocks the ⁂ Drone Swarm unit, the 🛰 Rods from God orbital strike, and the Glitch-Breaker badge',
+    'Each campaign mission now shows a difficulty letter (R/V/E/L); mission 5 (Last Stand) rebalanced to Elite so it isn\'t a wall',
+    'Tutorial expanded: it now teaches speed controls, all three stances, every deck tab, and the extra specials',
+    'Defend stance now advances to and holds the centre line — much more useful for contesting the Domination zone',
+    'Deploy cooldowns are waived during the frozen prep phase, so you can pre-queue your whole opening wave freely',
+    'Narrator subtitles stay on screen noticeably longer so they\'re easier to read',
+    'The title/skirmish skull now reflects the chosen difficulty (the recruit still tracks your Rank); the old difficulty "gunfire" is gone from the skirmish menu, replaced by that skull',
+    'Site analytics (GoatCounter, privacy-friendly) wired in for the hosted version; hardening: capped the Hype Train CP bonus and clamped deploy lanes',
+  ]},
   {v:'1.9.0',notes:[
     '── Phase 2 begins: Website / Lite-Version — see PHASES.md ──',
     'Fixed a pause soft-lock: pressing SPACE on the title screen paused the background attract battle and stranded the PAUSED overlay with no way out — pause now only works during a real battle',
@@ -1900,8 +1938,8 @@ const CAMPAIGN=[
   {id:3,name:'Fog of War',weather:'fog',diff:'elite',ecpMul:1.15,enemyBias:'drone',star:'Never let your HQ drop below 40%',
     brief:"Fog's swallowed the valley. Their drones are using it to slip past our line. You won't see them coming — so build a wall that doesn't need to. Air defence forward. Hold the whole front.",
     starTest:g=>g.hqFloor==null||g.hqFloor>=0.4},
-  {id:4,name:'Last Stand at the Capital',weather:'storm',diff:'legendary',ecpMul:1.35,openEnemy:6,boss:true,star:'Win — that is the whole star',
-    brief:"This is it. Everything they have, thrown at the capital, in the teeth of a storm. You start outnumbered and it gets worse. There is no clever trick left — only whether the line holds. Make it hold, Commander. History is the audience.",
+  {id:4,name:'Last Stand at the Capital',weather:'storm',diff:'elite',ecpMul:1.15,openEnemy:4,boss:true,star:'Win — that is the whole star',
+    brief:"This is it. Everything they have, thrown at the capital, in the teeth of a storm. You start on the back foot — but the line can hold. There is no clever trick left, only grit. Make it hold, Commander. History is the audience.",
     starTest:g=>g.result==='B'},
   {id:5,name:'Close Quarters',weather:'clear',diff:'elite',ecpMul:1.2,star:'Land a 6-kill combo',
     brief:"New toy for you, Commander — flamethrower teams, straight from depot. Brutal up close, useless at range, and the enemy hasn't fought them before. Let them get in close, then light up whatever's dumb enough to bunch together.",
@@ -1919,6 +1957,9 @@ const CAMPAIGN=[
     brief:"Every general who's ever lost to you sent something for this fight. Steel, drones, guns, rockets, gunships — all of it, all at once, in the worst storm this front has seen. Beat this and there's nothing left to throw at you. Take the war, Commander.",
     starTest:g=>g.result==='B'},
 ];
+
+// one-letter difficulty tag shown next to each campaign mission (R/V/E/L)
+const DIFF_LETTER={recruit:'R',veteran:'V',elite:'E',legendary:'L'};
 
 let sel={doctrine:'blitzkrieg',mode:'skirmish',diff:'veteran',country:'generic'};
 
@@ -2257,7 +2298,11 @@ function showNarr(text){
   el.querySelector('.nt').textContent=text;
   el.classList.add('show');
   clearTimeout(narrHideT);
-  const ms=Math.max(2400,Math.min(7000,text.length*58));
+  // Captions linger longer now so they're comfortably readable. This can't cause overlap: the
+  // subtitle is a single element whose text is replaced (and the pending hide-timer cleared) each
+  // time a new line comes in — lines never stack, they just hand off, and a line with no successor
+  // simply stays up longer before fading. ~95ms/char, floor 4s, ceiling 12s.
+  const ms=Math.max(4000,Math.min(12000,text.length*95));
   narrHideT=setTimeout(()=>el.classList.remove('show'),ms);
 }
 
@@ -2515,6 +2560,8 @@ function newGame(){
     mission:(L&&L.type==='campaign')?L.mission:null,
     daily:(L&&L.type==='daily')?L.daily:null,
     warName:(L&&L.type==='war')?L.warName:null, attract:false,
+    timeTrial:(L&&L.timeTrial)||false, parTime:(L&&L.parTime)||0,       // ⏱ campaign time trial
+    secret:(L&&L.secret)||false, nukeDone:false, wasteland:false, swapT:14, glitchT:0, secVoiceT:8, // ☢ secret level
     tutorial:kind==='tutorial', tutStep:0, tutDone:false,
     wxKey, wx, wxRng:wx.rngMul, wxSpd:wx.spdMul, wxSpot:spotMul,
     spotBase:230, // px; scaled by weather+doctrine
@@ -2657,15 +2704,22 @@ function tryUnlock(key){
 }
 function tryDeploy(key,lane){
   if(G.over||G.paused)return false;
+  lane=Math.max(0,Math.min(2,(lane|0))); // guard: only 3 lanes exist — never spawn a unit at an out-of-range (NaN) position
   if(G.banned&&G.banned.indexOf(key)>=0){ flashCard(key,'cant'); return false; }
   if(!G.unlocked[key]){ flashCard(key,'cant'); return false; } // must buy the tier first
   const cost=unitCost(key);
   if(G.cp<cost){ flashCard(key,'cant'); return false; }
-  if(G.cds[key]>0){ return false; }
+  // During the frozen prep phase, deploy cooldowns are waived so you can pre-queue your whole
+  // opening wave freely. The moment the battle un-freezes, normal cooldowns apply again.
+  const inPrep = G.prep>0 && G.frozen;
+  if(!inPrep && G.cds[key]>0){ return false; }
   G.cp-=cost; G.spent+=cost; G.deploys++;
   if(!G.built)G.built={}; G.built[key]=(G.built[key]||0)+1; // per-unit career tally
-  G.cds[key]=unitCD(key)*(G.cdMul||1);
+  if(!inPrep) G.cds[key]=unitCD(key)*(G.cdMul||1);
   spawn('B',key,lane);
+  // Drone Swarm — one deploy releases a whole cloud; the cost above already covered the swarm
+  const sw=UNITS[key].swarmN;
+  if(sw>1){ for(let n=1;n<sw;n++){ spawn('B',key,lane); const ex=G.units[G.units.length-1]; if(ex){ ex.x+=rnd(-26,4); ex.y+=rnd(-14,14); } } }
   SND.deploy();
   // 🗣 unit chatter gag — a quick quip from the fresh deployment (toggleable)
   if(SAVE.gagChatter&&!G.attract&&Math.random()<0.22){ const u=G.units[G.units.length-1];
@@ -2686,8 +2740,12 @@ const STRIKES={
     desc:'A creeping barrage walks up all three lanes over a full minute — devastating but slow.'},
   precision:{name:'Precision Munitions',glyph:'🎯', key:'0', col:'#5ff0e0', cd:11,
     desc:'A fast, pinpoint strike on one spot. Less punch than a barrage, but reloads quickly.'},
+  // SECRET UNLOCK — earned by clearing the Glitch Front. Gated in buildQuickbar until then.
+  rods:{name:'Rods from God', glyph:'🛰', key:'T', col:'#9fd0ff', cd:55,
+    desc:'SECRET UNLOCK — a kinetic bombardment from orbit. A salvo of tungsten rods walks down an entire lane at hypervelocity, obliterating everything in a wide strip. No explosives, just physics.'},
 };
 const STRIKE_KEYS=Object.keys(STRIKES);
+const AI_STRIKE_KEYS=STRIKE_KEYS.filter(k=>k!=='rods'); // the AI & attract battles never use the player-only Rods from God
 function strikeCdMax(type){ const base=STRIKES[type].cd; return base*(G&&G.perk&&G.perk.strikeCdMul||1); }
 function strikeReady(type){ return G && (G.strikeCds[type]||0)<=0 && !G.over && !G.paused && !G.frozen; }
 // PRECISION — a fast pinpoint munition (the classic strike, tuned down + quick CD)
@@ -2705,6 +2763,29 @@ function tryPrecision(lane,x){
     G.shake=Math.max(G.shake,SAVE.reduceMotion?4:11);
   },i*100);
   announce('🎯 PRECISION STRIKE','pinpoint · danger close','#5ff0e0');
+  return true;
+}
+// RODS FROM GOD — orbital kinetic bombardment. A salvo of tungsten rods walks the whole lane at
+// hypervelocity: no blast type-matching to dodge, just enormous kinetic damage in a wide strip.
+function tryRods(lane){
+  if(iwGaslightBlock())return false;
+  if(!strikeReady('rods'))return false;
+  G.strikeCds.rods=strikeCdMax('rods');
+  const sup=(G.ages?AGES[G.age].sup:1);
+  const ty=G.laneY[lane]*H, rad=52*Math.sqrt(sup), dmg=120*sup;
+  const impacts=9;
+  for(let i=0;i<impacts;i++)setTimeout(()=>{ if(!G||G.over)return;
+    const ix=W*0.30+(W*0.66)*(i/(impacts-1))+rnd(-16,16), iy=ty+rnd(-20,20);
+    // white-hot vertical streak in, then the impact
+    for(let p=0;p<4;p++)G.parts.push({x:ix+rnd(-3,3),y:iy-260,vx:rnd(-6,6),vy:900,life:0.16,age:0,col:'#cfe8ff',sz:3.2});
+    explode(ix,iy,rad,'B',40); G.flash=Math.max(G.flash||0,0.35);
+    try{SND.boom(true);}catch(e){}
+    for(const u of G.units){ if(u.side==='R'&&u.alive&&dist(u.x,u.y,ix,iy)<rad){ damage(u,dmg,{side:'B',dmgType:'ap'}); } }
+    if(G.spawners)for(const s of G.spawners){ if(s.side==='R'&&s.alive&&dist(s.x,s.y,ix,iy)<rad){ damage(s,dmg,{side:'B',dmgType:'ap'}); } }
+    G.shake=Math.max(G.shake,SAVE.reduceMotion?5:14);
+  },i*80);
+  announce('🛰 RODS FROM GOD','orbital kinetic strike — '+['top','middle','bottom'][lane]+' lane','#9fd0ff');
+  if(SAVE.evVoice||SAVE.narrator)say(pick(["Orbital's cleared us hot. Rods away.","Tungsten inbound — nothing survives the middle of that lane.","God's own crowbar, coming down. Danger close."]),'grim',1);
   return true;
 }
 // GUNSHIP RUN — a strafing aircraft sweeps ONE lane with cannon fire over ~2.6s
@@ -2779,6 +2860,7 @@ function tryStrike(type,lane,x){
   let ok;
   if(type==='gunrun')ok=tryGunshipRun(lane);
   else if(type==='barrage')ok=tryBarrage();
+  else if(type==='rods')ok=tryRods(lane);
   else ok=tryPrecision(lane,x);
   if(ok)G.strikeUsedCount=(G.strikeUsedCount||0)+1;
   return ok;
@@ -3464,6 +3546,7 @@ function step(dt){
   if(G.mode==='blitz'){ G.clock-=dt; if(G.clock<=0){G.clock=0; endGame(G.dmgDealt>=G.dmgTaken?'B':'R','time'); } }
   if(G.mode==='survival'){ G.waveT+=dt; if(G.waveT>=G.waveInterval){G.waveT=0;G.wave++;G.aiThink=Math.max(0.5,G.aiThink*0.9);announce('WAVE '+(G.wave+1),'incoming','#ff5a4a');chatReact('wave',G.wave+1);narr('wave');} }
   if(G.mode==='domination')dominationTick(dt);
+  if(G.secret)secretTick(dt);   // ☢ Glitch Front: 30s → nuke → glitchy wasteland
   // idle taunt when the player is sitting on empty coffers
   G.idleTauntT-=dt; if(G.idleTauntT<=0){ G.idleTauntT=18; if(G.cp<25&&G.t>18&&!G.tutorial)narr('lowCp'); }
   // rival general periodic taunts
@@ -3628,7 +3711,7 @@ function updateUnits(dt){
     // player stance — posture is BEHAVIOUR only (pace + positioning), never stats
     let stMul=1, holdLine=null, kite=false; u.shield=false;
     if(u.side==='B'&&!u.support){
-      if(G.stance==='defend'){ stMul=0.5; holdLine=W*0.42; u.shield=true; }
+      if(G.stance==='defend'){ stMul=0.5; holdLine=W*0.5; u.shield=true; } // hold the CENTRE line (sits right on the Domination capture zone)
       else if(G.stance==='skirmish'){ stMul=0.75; kite=true; }
     }
     // acquire & fire (support units never shoot)
@@ -3730,6 +3813,8 @@ function updateFX(dt){
 
 function checkWin(){
   if(G.attract){ if(G.hq.B<=0||G.hq.R<=0)G.over=true; return; } // attract loop restarts in loop()
+  // Glitch Front: neither HQ can fall before the warhead — the level's whole point is the nuke at 30s.
+  if(G.secret&&!G.nukeDone){ G.hq.B=Math.max(G.hq.B,1); G.hq.R=Math.max(G.hq.R,1); return; }
   if(G.mode==='survival'){ if(G.hq.B<=0)endGame('R','overrun'); return; }
   // Domination: securing all 3 zones is an outright win, but an HQ kill still works too —
   // fall through to the normal HQ check below if nobody's locked down the whole map yet.
@@ -3771,6 +3856,12 @@ function draw(){
   cx.save();
   if(G&&G.shake>0&&!SAVE.reduceMotion){const s=G.shake;cx.translate(rnd(-s,s),rnd(-s,s));}
   drawField();
+  // ☢ glitchy-wasteland wash after the nuke: a bruised purple tint + drifting scanlines
+  if(G&&G.wasteland&&!SAVE.reduceMotion){ cx.save();
+    cx.fillStyle='rgba(46,12,54,0.30)'; cx.fillRect(0,0,W,H);
+    cx.fillStyle='rgba(150,90,210,0.05)'; for(let y=((G.t*38)%12);y<H;y+=12)cx.fillRect(0,y,W,1);
+    cx.restore();
+  } else if(G&&G.wasteland){ cx.save(); cx.fillStyle='rgba(46,12,54,0.24)'; cx.fillRect(0,0,W,H); cx.restore(); }
   drawAmbientMotes();
   if(G){
     // lane guides
@@ -4059,11 +4150,15 @@ function drawBases(){
   else { cx.fillStyle='#3a2a2a';cx.fillRect(W-8,H*0.24,8,H*0.62); }
 }
 function drawHQ(x,side,col){
-  const cy=H*0.55, w=26, h=H*0.5;
+  // ☢ Glitch Front: the enemy HQ rises as an imposing, oversized tower with a menacing glow
+  const imposing = side==='R' && G && G.imposingHQ;
+  if(imposing) col='#b03050';
+  const cy=H*0.55, w=imposing?38:26, h=imposing?H*0.66:H*0.5;
   const bx=side==='B'?x-4:x-w+4;
   // soft glow
-  const gl=cx.createRadialGradient(bx+w/2,cy,4,bx+w/2,cy,h*0.7);
-  gl.addColorStop(0,(side==='B'?'rgba(74,168,255,0.14)':'rgba(255,90,74,0.14)'));gl.addColorStop(1,'rgba(0,0,0,0)');
+  const gl=cx.createRadialGradient(bx+w/2,cy,4,bx+w/2,cy,h*(imposing?0.9:0.7));
+  if(imposing){ gl.addColorStop(0,'rgba(255,40,90,'+(0.20+0.08*Math.sin((G.t||0)*3))+')'); gl.addColorStop(1,'rgba(0,0,0,0)'); cx.fillStyle=gl; cx.fillRect(bx-70,cy-h*0.9,w+140,h*1.8); }
+  else { gl.addColorStop(0,(side==='B'?'rgba(74,168,255,0.14)':'rgba(255,90,74,0.14)'));gl.addColorStop(1,'rgba(0,0,0,0)'); }
   cx.fillStyle=gl;cx.fillRect(bx-40,cy-h*0.7,w+80,h*1.4);
   // body with vertical shading
   const bgr=cx.createLinearGradient(bx,0,bx+w,0);
@@ -4418,7 +4513,7 @@ const HB_GROUP_END={sniper:1,ifv:1,mlrs:1,drone:1,jammer:1};
 // Number-key hotkeys (1-9) still map by HOTBAR index regardless of the active tab.
 const HB_TABS=[
   {id:'ground',label:'⚔ Ground',units:new Set(['rifle','atgm','sniper','tank','ifv','arty','mlrs','flame'])},
-  {id:'air',label:'✈ Air & AD',units:new Set(['aa','heli','drone','interceptor','gunship'])},
+  {id:'air',label:'✈ Air & AD',units:new Set(['aa','heli','drone','interceptor','gunship','swarm'])},
   {id:'support',label:'🛠 Support',units:new Set(['medic','jammer'])},
   {id:'production',label:'🏭 Production',spawners:true},
 ];
@@ -4428,6 +4523,7 @@ let hbTab='ground';
 function buildQuickbar(){
   const qb=document.getElementById('quickbar'); if(!qb)return; qb.innerHTML='';
   for(const type of STRIKE_KEYS){ const s=STRIKES[type];
+    if(type==='rods'&&!SAVE.secretDone)continue; // hidden until the secret level is cleared
     const el=document.createElement('div');
     el.className='card'; el.id='card-'+type; el.style.borderColor=s.col;
     el.innerHTML=`<span class="key">${s.key}</span><div class="glyph" style="color:${s.col}">${s.glyph}</div>
@@ -4470,6 +4566,7 @@ function buildHotbar(){
   const hb=document.getElementById('hotbar'); hb.innerHTML='';
   HOTBAR.forEach((key,i)=>{
     if(!tab.units||!tab.units.has(key))return;
+    if(key==='swarm'&&!SAVE.secretDone)return; // hidden until the secret level is cleared
     const u=UNITS[key];
     const el=document.createElement('div');
     el.className='card'; el.id='card-'+key;
@@ -4602,8 +4699,10 @@ function bumpHype(n){
   G.hype=Math.min(100,(G.hype||0)+n);
   if(G.hype>=100){
     G.hype=25; G.hypeTrains=(G.hypeTrains||0)+1;
-    const bonus=60+G.hypeTrains*15;
-    G.cp+=bonus;
+    // Escalating bonus, but capped so a long match (or farming Streamer Mode solo) can't snowball
+    // into runaway CP: the per-train bonus tops out at 120, and the payout is clamped to cpMax.
+    const bonus=Math.min(120,60+G.hypeTrains*15);
+    G.cp=Math.min(G.cpMax,G.cp+bonus);
     announce('🚂 HYPE TRAIN!','chat sends +'+bonus+' CP','#c9a0ff');
     chatReactSafe('combo',6); clipMoment();
     if(SAVE.randomEvents&&SAVE.evSupply&&G.drops)airdrop((Math.random()*3)|0,'B'); // the crowd sends a crate too
@@ -4849,6 +4948,60 @@ function chatNuke(){
   if(typeof clipMoment==='function')clipMoment();
   chatMsgRaw('FRONTLINE','☢☢☢ CHAT DROPPED THE NUKE ☢☢☢','#ff5a4a');
 }
+/* ═══ ☢ THE GLITCH FRONT — the hidden secret level ═══
+   A normal fight for the first 30 seconds; then a warhead glasses the board and the battle
+   resumes on a glitchy wasteland where the lanes themselves keep swapping under an imposing
+   enemy HQ, unique voicelines cutting through the static. Crack that HQ to win — clearing it
+   unlocks the Drone Swarm unit and the Rods from God strike. */
+const SEC_VOICES=[
+  "This ground doesn't obey the map anymore. Watch the lanes.",
+  "My readouts are lying to me. Trust your eyes, Commander.",
+  "It's still out there. The war didn't end — it just... changed.",
+  "Something rewrote the front. Keep pushing. Kill the tower.",
+  "The lanes are sliding again. Don't get caught out of position.",
+  "Whatever that warhead broke, it wasn't just the ground.",
+];
+function secretNuke(){
+  G.nukeDone=true; G.wasteland=true;
+  announce('☢ WARHEAD DETONATION','the front is glass','#ff5a4a');
+  say("Too late to move — brace! Everything on that field is gone.",'grim',3);
+  for(const u of G.units){ if(u.alive){ explode(u.x,u.y,u.r*2+6,u.side,14); u.alive=false; } }
+  if(G.spawners)for(const s of G.spawners){ s.alive=false; }
+  for(let i=0;i<42;i++){ explode(rnd(50,W-50),rnd(H*0.16,H*0.84),rnd(30,76),'B',30); }
+  G.units=G.units.filter(u=>u.alive);
+  G.shake=Math.max(G.shake,SAVE.reduceMotion?12:54); G.flash=1; G.hqFlashCol='#ffd27f';
+  try{ SND.hqhit(); setTimeout(()=>{try{SND.boom(true);}catch(e){}},130); }catch(e){}
+  try{ if(typeof chaosScars==='function'){ chaosScars(); chaosScars(); chaosScars(); } }catch(e){}
+  try{ triggerErrorCascade(); }catch(e){}
+  // the enemy HQ rises again as an imposing tower — tough, but beatable
+  const tough=Math.round((G.hqMax.R||1000)*0.85);
+  G.hqMax.R=tough; G.hq.R=tough; G.imposingHQ=true;
+  G.swapT=rnd(8,12); G.secVoiceT=rnd(6,9); G.glitchT=rnd(4,7); // start the wasteland clocks fresh from the nuke
+  // give the player a moment (and a little CP) to rebuild before the wasteland fight
+  G.cp=Math.max(G.cp,120);
+  setTimeout(()=>{ if(G&&!G.over)say("There — that tower. Everything left is guarding it. Tear it down and this is finally over.",'grim',2); },2800);
+}
+function secretSwapLanes(){
+  // pick two lanes and swap their vertical positions, dragging their units along — a glitchy shuffle
+  const a=(Math.random()*3)|0; let b=(a+1+((Math.random()*2)|0))%3; if(b===a)b=(a+1)%3;
+  const ya=G.laneY[a], yb=G.laneY[b]; G.laneY[a]=yb; G.laneY[b]=ya;
+  for(const u of G.units){ if(!u.alive)continue;
+    if(u.lane===a){u.lane=b;u.y=G.laneY[b]*H+rnd(-8,8);}
+    else if(u.lane===b){u.lane=a;u.y=G.laneY[a]*H+rnd(-8,8);} }
+  G.flash=Math.max(G.flash||0,0.55); G.shake=Math.max(G.shake,SAVE.reduceMotion?3:9);
+}
+function secretTick(dt){
+  if(G.frozen)return;
+  if(!G.nukeDone){
+    if(G.t>=26 && !G._nukeWarned){ G._nukeWarned=true; announce('☢ INBOUND','warhead in 4…','#ff9f40'); say("Sensors just lit up — something enormous is inbound. Get ready to lose the whole board.",'grim',2); }
+    if(G.t>=30) secretNuke();
+    return;
+  }
+  // wasteland phase: the lanes swap on a timer and the Marshal mutters through the static
+  G.swapT-=dt; if(G.swapT<=0){ G.swapT=rnd(11,18); secretSwapLanes(); announce('⟊ LANES SHIFTING','the ground rewrites itself','#c9a0ff'); }
+  G.secVoiceT-=dt; if(G.secVoiceT<=0){ G.secVoiceT=rnd(13,21); if(!G.over)say(pick(SEC_VOICES),'grim',1); }
+  G.glitchT-=dt; if(G.glitchT<=0){ G.glitchT=rnd(7,13); try{ triggerErrorCascade(); }catch(e){} }
+}
 // ⛈ STORM OF STEEL — a barrage rakes every lane at once
 function chatStorm(){
   announce('⛈ STORM OF STEEL','chat calls down fire on all lanes','#ff9f40');
@@ -4897,7 +5050,7 @@ function chaosTick(dt){
   if(G.chaosEvT<=0){ G.chaosEvT=rnd(1.6,4);
     const roll=Math.random();
     if(roll<0.30)fireRandomEvent();
-    else if(roll<0.55)tryStrike(pick(STRIKE_KEYS),(Math.random()*3)|0,rnd(W*0.4,W*0.92));
+    else if(roll<0.55)tryStrike(pick(AI_STRIKE_KEYS),(Math.random()*3)|0,rnd(W*0.4,W*0.92));
     else if(roll<0.70){ // occasionally unleash a chat power for maximum mayhem
       const p=pick([chatStorm,chatBlitz,chatFortify,()=>{if(Math.random()<0.35)chatNuke();else chatStorm();}]);
       try{p();}catch(e){}
@@ -4987,6 +5140,27 @@ function endGame(winner,reason){
       let star=false; try{star=!!G.mission.starTest(G);}catch(e){}
       if(star)SAVE.campaignStars[G.mission.id]=1; }
   }
+  // ── TIME TRIAL: pass by winning under par. Clearing every mission's trial unlocks the secret level ──
+  G.ttResult=null;
+  if(G.kind==='campaign'&&G.mission&&G.timeTrial){
+    if(won&&G.t<=G.parTime){
+      const id=G.mission.id, t=Math.round(G.t*10)/10, prev=SAVE.timeTrials[id];
+      const isPB=(prev==null||t<prev); if(isPB)SAVE.timeTrials[id]=t;
+      const nowUnlock=(!SAVE.secretUnlocked&&allTimeTrialsPassed());
+      if(nowUnlock)SAVE.secretUnlocked=true;
+      G.ttResult={passed:true,t,par:G.parTime,pb:isPB,unlocked:nowUnlock};
+      if(!leveled)addXP(60); // small reward on top of the normal win XP
+    } else {
+      G.ttResult={passed:false,t:Math.round(G.t*10)/10,par:G.parTime};
+    }
+  }
+  // ── SECRET LEVEL ("Glitch Front") cleared: unlock the Drone Swarm + Rods from God, badge + bonus XP ──
+  G.secretClearNow=false;
+  if(G.kind==='secret'&&won){
+    G.secretClearNow=!SAVE.secretDone;
+    if(!SAVE.secretDone){ SAVE.secretDone=true; SAVE.secretBadgeEarned=true; addXP(2000); }
+    else addXP(400);
+  }
   // daily best
   if(G.kind==='daily'){ const dk=todayKey(); if(!SAVE.daily[dk]||score>SAVE.daily[dk])SAVE.daily[dk]=score; }
   // war-mode conquest resolution
@@ -5063,6 +5237,8 @@ function kindLabel(){
   if(G.kind==='war')return 'WAR · '+(G.warName||'front');
   if(G.kind==='evolution')return 'EVOLUTION · '+AGES[G.age].name;
   if(G.kind==='rival')return 'RIVALS · '+(G.general?G.general.name:'');
+  if(G.kind==='secret')return '☢ THE GLITCH FRONT';
+  if(G.kind==='campaign'&&G.timeTrial)return '⏱ TIME TRIAL · '+(G.mission?G.mission.name:'');
   return MODES[G.mode].name;
 }
 function showResults(won,reason,score,xpGain,leveled){
@@ -5084,6 +5260,18 @@ function showResults(won,reason,score,xpGain,leveled){
     else if(ro.escaped)rivalExtra=`<div class="res-xp" style="color:var(--warn)">💨 ${ro.name} broke off and escaped — they'll be back, adapted to what you just threw at them.</div>`;
     if(ro.rosterCleared)rivalExtra+=`<div class="res-xp" style="color:var(--cyan);font-weight:800">👑 ALL RIVALS DEFEATED — +${ro.bonusXp} XP and the 🏆 Rivals Champion badge are yours. Equip it from Cosmetics.</div>`;
   }
+  // ⏱ time trial + ☢ secret level outcomes
+  let secretExtra='';
+  if(G.ttResult){ const tt=G.ttResult;
+    if(tt.passed){ secretExtra+=`<div class="res-xp" style="color:var(--gold)">⏱ TIME TRIAL PASSED — ${tt.t}s (par ${tt.par}s)${tt.pb?' · new best!':''}</div>`;
+      if(tt.unlocked)secretExtra+=`<div class="res-xp" style="color:#ff9adf;font-weight:800">☢ EVERY TIME TRIAL BEATEN — something hidden has opened in the Campaign menu…</div>`; }
+    else secretExtra+=`<div class="res-xp" style="color:var(--dim)">⏱ Time trial: ${tt.t}s — needed under ${tt.par}s. Faster next time, Commander.</div>`;
+  }
+  if(G.kind==='secret'&&won){
+    secretExtra+= G.secretClearNow
+      ? `<div class="res-xp" style="color:#ff9adf;font-weight:800">☢ THE GLITCH FRONT CLEARED — unlocked: ⁂ Drone Swarm unit · 🛰 Rods from God strike · 🕳 the Glitch-Breaker badge · +2000 XP</div>`
+      : `<div class="res-xp" style="color:#ff9adf">☢ Glitch Front cleared again (+400 XP).</div>`;
+  }
   const wxLine=G.wx?` · ${G.wx.glyph} ${G.wx.name}`:'';
   r.innerHTML=`
     <div class="res-verdict" style="color:${won?'var(--good)':'var(--red)'};text-shadow:0 0 30px ${won?'var(--good)':'var(--red)'}">${isTut?(won?'TRAINING PASSED':'TRAINING OVER'):(won?'VICTORY':'DEFEAT')}</div>
@@ -5100,6 +5288,7 @@ function showResults(won,reason,score,xpGain,leveled){
     ${(!isTut&&G.built&&Object.keys(G.built).length)?`<div class="res-aar">AAR — force committed: ${Object.keys(G.built).sort((a,b)=>G.built[b]-G.built[a]).slice(0,5).map(k=>`<b style="color:${UNITS[k].col}">${G.built[k]}×</b> ${unitName(k,G.country)}`).join(' · ')} · <span style="color:var(--faint)">${Math.round(G.spent)} CP spent · ${G.strikeUsedCount||0} strikes${G.general?' · vs '+G.general.name:''}</span></div>`:''}
     ${campExtra}
     ${rivalExtra}
+    ${secretExtra}
     <div class="btn-row">
       ${G.kind==='war'?`<button class="sbtn prim" id="r-war">🗺 War Map</button>`:
         nextMission?`<button class="sbtn prim" id="r-next">▶ Next Mission</button>`:
@@ -5156,6 +5345,24 @@ function launchCampaign(id){
     enemyBias:m.enemyBias||null,openEnemy:m.openEnemy||0};
   start();
 }
+// ── TIME TRIALS — beat a cleared mission under par. Par scales with the mission's difficulty
+//    (harder tiers are given more time). Clearing every trial reveals the secret level. ──
+const TT_PAR={recruit:80,veteran:105,elite:135,legendary:170}; // seconds
+function missionParTime(m){ return TT_PAR[m.diff]||120; }
+function allTimeTrialsPassed(){ return CAMPAIGN.every(m=>SAVE.timeTrials&&SAVE.timeTrials[m.id]!=null); }
+function launchTimeTrial(id){
+  const m=CAMPAIGN[id];
+  LAUNCH={type:'campaign',mission:m,diff:m.diff,weather:m.weather,ecpMul:m.ecpMul,
+    enemyBias:m.enemyBias||null,openEnemy:m.openEnemy||0,
+    timeTrial:true,parTime:missionParTime(m)};
+  start();
+}
+// ── THE GLITCH FRONT — the hidden secret level. See secretTick() for its phases. ──
+function launchSecret(){
+  sel.mode='skirmish';
+  LAUNCH={type:'secret',diff:'legendary',weather:'storm',ecpMul:1.15,secret:true};
+  start();
+}
 function launchDaily(){
   const key=todayKey();
   const rng=mulberry32(hashStr(key)); rng();rng(); // warm up
@@ -5198,6 +5405,11 @@ const TUT_STEPS=[
   {enter:()=>{spawn('R','tank',1);},say:"Here's the lesson that wins wars — counters. I've rolled a Tank at your middle lane. Rifles bounce off its armour. Kill it with an AT Team: press 2, deploy, and watch it work.",mood:'grim',cond:()=>G.kills>=1,freeze:false},
   {say:"That's rock-paper-scissors with guns. AT beats armour, armour crushes infantry, infantry swarms the AT. Read what's coming, send the counter.",mood:'deadpan',wait:7},
   {say:"One more toy — air support. Three free strikes on timers: a gunship run, a rolling barrage, and precision munitions. Press 0 for precision, then tap a lane, and level whatever's standing there.",mood:'hype',cond:()=>(G.strikeUsedCount||0)>=1,freeze:false},
+  {say:"Two more specials on that bar: press R for a Recon Flare to light up a lane through weather, and — once you make Rank 3 — F drops an EMP Pulse that stuns a whole lane. Use them to open a hole, then pour through it.",mood:'deadpan',wait:9},
+  {say:"Your deck's sorted into tabs. GROUND is infantry and armour. AIR & AD is aircraft plus the anti-air that swats them. SUPPORT is your no-weapon helpers — the Medic that heals and the EW Jammer that fries drones. PRODUCTION builds factories that pump out units over time. Every unit lives in one of those four.",mood:'deadpan',wait:11},
+  {say:"See the SPEED control on the left of the field? Half-speed buys you thinking time and cleaner micro; two-times fast-forwards a won fight. And SPACE pauses whenever you need a breather.",mood:'deadpan',wait:8.5},
+  {say:"Right beside it, STANCE. Assault pushes hard for their HQ. Skirmish pokes from max range and falls back. Defend digs in on the centre line — that's your Domination stance, since it holds the middle where the capture zone sits.",mood:'deadpan',wait:10},
+  {say:"That's the whole toolkit. Want the full roster and every counter written out? The Field Manual off the title screen has all of it — but you've got more than enough to win this.",mood:'proud',wait:7.5},
   {say:"That's everything, Commander. Their HQ sits on the right — crack it before they crack yours. I'm releasing their army... now. Good luck. Try not to embarrass us.",mood:'proud',wait:6.5,last:true},
 ];
 function tutStart(){
@@ -5291,7 +5503,7 @@ function buildMenu(){
   document.getElementById('mode-desc').textContent=MODES[sel.mode].desc;
   // diff
   buildDiffChips(document.getElementById('diff-opts'));
-  renderDiffAmbient(sel.diff);
+  renderMenuSkull(); // the enemy skull under the picker (replaces the old difficulty gunfire)
   // progression
   document.getElementById('m-lvl').textContent=SAVE.lvl;
   document.getElementById('m-xp').style.width=(SAVE.lvl>=MAX_LVL?100:SAVE.xp/xpForLevel(SAVE.lvl)*100)+'%';
@@ -5310,11 +5522,33 @@ function buildMenu(){
       const cleared=i<=SAVE.campaignDone;
       const star=SAVE.campaignStars[m.id];
       const b=document.createElement('button'); b.className='camp-btn'+(unlocked?'':' lock');
-      b.innerHTML=`<span class="cn">${cleared?'✔':(unlocked?'▶':'🔒')} ${i+1}. ${m.name}</span>`+
-        `<span class="cs">${star?'★':(cleared?'☆':'')} ${WEATHERS[m.weather].glyph}</span>`;
-      if(unlocked)b.onclick=()=>launchCampaign(i); else b.title='Clear the previous mission first';
+      const dd=DIFFS[m.diff]; const dl=(DIFF_LETTER[m.diff]||'?'); const dcol=(dd&&dd.col)||'var(--dim)';
+      // ⏱ time trial — revealed once the mission is cleared. Beating par (under the difficulty's
+      // time limit) marks it passed; clearing every trial unlocks the secret level.
+      const ttBest=SAVE.timeTrials[m.id]; const ttPassed=ttBest!=null;
+      const ttChip=cleared
+        ? `<span class="ttchip${ttPassed?' done':''}" title="Time Trial — win under ${missionParTime(m)}s${ttPassed?' · best '+ttBest+'s':''}">⏱ ${ttPassed?ttBest+'s':missionParTime(m)+'s'}</span>`
+        : '';
+      b.innerHTML=`<span class="cn"><span class="cdl" title="${dd?dd.name:''} difficulty" style="color:${dcol};border-color:${dcol}">${dl}</span>${cleared?'✔':(unlocked?'▶':'🔒')} ${i+1}. ${m.name}</span>`+
+        `<span class="cs">${ttChip}${star?'★':(cleared?'☆':'')} ${WEATHERS[m.weather].glyph}</span>`;
+      if(unlocked)b.onclick=(e)=>{ if(e.target.closest('.ttchip'))launchTimeTrial(i); else launchCampaign(i); };
+      else b.title='Clear the previous mission first';
       co.appendChild(b);
     });
+    // ☢ THE GLITCH FRONT — the hidden secret level, revealed once every time trial is beaten
+    if(SAVE.secretUnlocked){
+      const sb=document.createElement('button'); sb.className='camp-btn secret-btn';
+      sb.innerHTML=`<span class="cn">☢ ${SAVE.secretDone?'✔ ':''}THE GLITCH FRONT</span><span class="cs">${SAVE.secretDone?'CLEARED':'NEW'}</span>`;
+      sb.title='A hidden battle unlocked by beating every time trial. You have been warned.';
+      sb.onclick=()=>launchSecret();
+      co.appendChild(sb);
+    } else if(SAVE.campaignDone>=0){
+      const hint=document.createElement('div');
+      hint.style.cssText='font-size:10px;color:var(--faint);margin-top:4px;text-align:center;letter-spacing:.5px;';
+      const done=CAMPAIGN.filter(m=>SAVE.timeTrials[m.id]!=null).length;
+      hint.textContent=`⏱ Time trials beaten: ${done}/${CAMPAIGN.length} — clear them all to reveal something hidden`;
+      co.appendChild(hint);
+    }
   }
   // daily info
   const di=document.getElementById('daily-info');
@@ -5402,9 +5636,9 @@ window.addEventListener('keydown',e=>{
   if(k==='z'){setStance('assault');return;}
   if(k==='x'){setStance('defend');return;}
   if(k==='c'){setStance('skirmish');return;}
-  // V evolve · T build turret (Evolution mode)
+  // V evolve · T build turret (Evolution mode) / Rods from God strike (secret unlock, other modes)
   if(k==='v'){ if(G.ages)tryEvolve(); return; }
-  if(k==='t'){ if(G.ages)tryBuildTurret(); return; }
+  if(k==='t'){ if(G.ages){tryBuildTurret();} else if(SAVE.secretDone){G.selCard='rods';showLaneHint();} return; }
   // ` toggles the AI thinking debug readout
   if(k==='`'){ SAVE.aiDebug=!SAVE.aiDebug; persist(); refreshTopbar(); return; }
   // Q/W/E quick-deploy selected card into a lane
@@ -6171,7 +6405,7 @@ function attractTick(dt){
   G._atkT-=dt;
   if(G._atkT<=0){ G._atkT=rnd(0.45,0.95);
     G.cp=240; tryDeploy(pick(HOTBAR.filter(k=>k!=='gunship')),(Math.random()*3)|0);
-    if(Math.random()<0.12)tryStrike(pick(STRIKE_KEYS),(Math.random()*3)|0,W*0.6);
+    if(Math.random()<0.12)tryStrike(pick(AI_STRIKE_KEYS),(Math.random()*3)|0,W*0.6);
   }
 }
 
@@ -6208,12 +6442,34 @@ function buildDiffChips(host){
     host.appendChild(b);
   }
 }
-function buildTitleDiff(){ buildDiffChips(document.getElementById('td-chips')); renderTitleFigures(); renderDiffAmbient(sel.diff); }
+function buildTitleDiff(){ buildDiffChips(document.getElementById('td-chips')); renderTitleFigures(); renderMenuSkull(); }
 // is the big title screen the one currently showing?
 function titleActive(){ const t=document.getElementById('title'); return !!t && !t.classList.contains('hidden'); }
-/* ── TITLE FLANKING FIGURES — a recruit (left) and a skull (right) that grow more hardened as your
-   Commander Rank climbs. These replace the old looping tracer/flame ambience on the title, which
-   could get stuck and read as unnatural. Five tiers keyed to Rank. Purely cosmetic. ── */
+
+/* ── DIFFICULTY SKULL — the enemy's face. Grows more menacing as the chosen difficulty rises,
+   from a silent skull (Recruit) to a cackling, cigar-chomping inferno (Legendary). Shared markup
+   used by the title's right-hand figure and the skull under the skirmish-menu difficulty picker. ── */
+const SKULL_CAPS=['SILENT DEAD','SCARRED','SMOULDERING','INFERNAL']; // by difficulty severity 0..3
+function diffMenace(){ const d=DIFFS[sel.diff]; return d?Math.max(0,Math.min(3,d.fx||0)):0; } // recruit0 · veteran1 · elite2 · legendary3
+function skullMarkup(menace){
+  const scar=menace>=1, eyes=menace>=2, laugh=menace>=3, cigar=menace>=3;
+  return `<div class="tf-art tf-sk${laugh?' laugh':''}">`
+    + `<span class="tf-base">💀</span>`
+    + (eyes?`<span class="tf-eye l"></span><span class="tf-eye r"></span>`:'')
+    + (scar?`<span class="tf-scar"></span>`:'')
+    + (cigar?`<span class="tf-cigar">🚬</span>`:'')
+    + `</div>`;
+}
+// the small skull tucked under the skirmish-menu difficulty picker (replaces the old diff "gunfire")
+function renderMenuSkull(){
+  const host=document.getElementById('menu-skull'); if(!host)return;
+  const d=DIFFS[sel.diff]||DIFFS.veteran; const m=diffMenace();
+  host.classList.toggle('reduce',!!SAVE.reduceMotion);
+  host.innerHTML = skullMarkup(m) + `<div class="tf-cap" style="color:${d.col}">${d.name} · ${SKULL_CAPS[m]}</div>`;
+}
+
+/* ── TITLE FLANKING FIGURES — a recruit on the left (hardens with YOUR Commander Rank) and a skull
+   on the right (the enemy — hardens with the chosen DIFFICULTY). Purely cosmetic. ── */
 function titleHardenTier(){ const l=SAVE.lvl||1; return l>=80?4 : l>=50?3 : l>=25?2 : l>=10?1 : 0; }
 function renderTitleFigures(){
   const rec=document.getElementById('tfig-recruit'), sk=document.getElementById('tfig-skull');
@@ -6222,8 +6478,7 @@ function renderTitleFigures(){
   const tier=titleHardenTier();
   const recFaces=['🙂','😐','😤','😠','😎'];               // green rookie → cool, battle-worn veteran
   const recCap  =['RAW RECRUIT','BLOODED','HARDENED','GRIZZLED','WAR LEGEND'];
-  const skCap   =['SILENT DEAD','THE FALLEN','SMOULDERING','CACKLING','INFERNAL'];
-  // recruit: helmet + face; scar from tier 2, cigar from tier 3
+  // recruit (YOU) — by rank: helmet + face; scar from tier 2, cigar from tier 3
   rec.innerHTML =
     `<div class="tf-art tf-rec">`
     + `<span class="tf-base">${recFaces[tier]}</span>`
@@ -6231,74 +6486,23 @@ function renderTitleFigures(){
     + (tier>=2?`<span class="tf-scar"></span>`:'')
     + (tier>=3?`<span class="tf-cigar">🚬</span>`:'')
     + `</div><div class="tf-cap">${recCap[tier]}</div><div class="tf-sub">Rank ${SAVE.lvl}</div>`;
-  // skull: scar from tier 1, flame eyes from tier 2, cackling animation from tier 3, cigar from tier 4
-  sk.innerHTML =
-    `<div class="tf-art tf-sk${tier>=3?' laugh':''}">`
-    + `<span class="tf-base">💀</span>`
-    + (tier>=2?`<span class="tf-eye l"></span><span class="tf-eye r"></span>`:'')
-    + (tier>=1?`<span class="tf-scar"></span>`:'')
-    + (tier>=4?`<span class="tf-cigar">🚬</span>`:'')
-    + `</div><div class="tf-cap">${skCap[tier]}</div>`;
+  // skull (THE ENEMY) — by chosen difficulty
+  const d=DIFFS[sel.diff]||DIFFS.veteran, m=diffMenace();
+  sk.innerHTML = skullMarkup(m) + `<div class="tf-cap" style="color:${d.col}">${d.name}</div><div class="tf-sub">${SKULL_CAPS[m]}</div>`;
 }
-// persistent ambience for the current pick — stays up (looping) on any pre-battle screen
-// until the difficulty changes or you leave for battle/another screen (hideDiffAmbient()).
-// NOTE: suppressed on the title screen — the flanking recruit/skull figures own that space now;
-// the difficulty fire still plays on the skirmish menu and anywhere else you pick a tier.
-function renderDiffAmbient(key){
-  const d=DIFFS[key]; const host=document.getElementById('diff-fx'); if(!d||!host)return;
-  if(titleActive()){ host.innerHTML=''; host.classList.remove('show'); return; }
-  host.innerHTML='';
-  if(SAVE.reduceMotion){ host.classList.remove('show'); return; }
-  const sev=d.fx||0;
-  if(sev>=1){ // a slow, sparse looping tracer or two even at low severity, just to feel alive
-    const n=sev>=2?sev:1;
-    for(let i=0;i<n;i++){
-      const t=document.createElement('div'); t.className='diff-tracer loop'+(i%2?' rev':'');
-      t.style.top=(10+Math.random()*76)+'%'; t.style.setProperty('--rot',(rnd(-10,10))+'deg');
-      t.style.setProperty('--i',i); host.appendChild(t);
-    }
-  }
-  if(sev>=2){
-    const flameCount=sev===3?6:2;
-    for(let i=0;i<flameCount;i++){
-      const f=document.createElement('div'); f.className='diff-flame';
-      f.style.left=(6+Math.random()*84)+'%'; f.style.setProperty('--i',i);
-      host.appendChild(f);
-    }
-  }
-  host.classList.add('show');
-}
+// The old difficulty "machine-gun fire" ambience is retired — the skull figures carry the difficulty
+// read now. These stay as no-op shims so any remaining callers (buildMenu, debug panel) are harmless.
+function renderDiffAmbient(key){ const host=document.getElementById('diff-fx'); if(host){ host.innerHTML=''; host.classList.remove('show'); } }
 function hideDiffAmbient(){ const host=document.getElementById('diff-fx'); if(host)host.classList.remove('show'); }
-// one-shot flourish the instant the pick actually changes — extra crossing tracers + a title shake at the top tier
+// flourish the instant the pick changes — pop whichever skull is on screen, keep the Legendary boom
 function diffFxBurst(key){
-  const d=DIFFS[key]; if(!d||SAVE.reduceMotion)return;
-  const host=document.getElementById('diff-fx'); if(!host)return;
-  const sev=d.fx||0;
-  // On the title screen we don't draw the crossing tracers (that's the "machine-gun fire" the
-  // recruit/skull figures replaced) — just give the figures a quick pop, and keep the top-tier
-  // title shake + boom so picking Legendary still feels punchy.
-  if(titleActive()){
-    ['tfig-recruit','tfig-skull'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.classList.remove('tf-pulse'); void el.offsetWidth; el.classList.add('tf-pulse'); } });
-    if(sev>=3){ const ti=document.getElementById('title-inner'); if(ti){ ti.classList.remove('title-shake'); void ti.offsetWidth; ti.classList.add('title-shake'); } if(typeof SND!=='undefined'&&SAVE.sound)SND.boom(true); }
-    else if(sev===2 && typeof SND!=='undefined'&&SAVE.sound) SND.combo(2);
-    return;
-  }
-  const tracerCount=1+sev*2;
-  for(let i=0;i<tracerCount;i++){
-    const t=document.createElement('div'); t.className='diff-tracer'+(i%2?' rev':'');
-    t.style.top=(8+Math.random()*78)+'%';
-    t.style.setProperty('--rot',(rnd(-10,10))+'deg');
-    t.style.animationDelay=(Math.random()*180)+'ms';
-    host.appendChild(t);
-    setTimeout(()=>{try{t.remove();}catch(e){}},700);
-  }
-  if(sev>=3){
-    const ti=document.getElementById('title-inner'); if(ti){ ti.classList.remove('title-shake'); void ti.offsetWidth; ti.classList.add('title-shake'); }
-    if(typeof SND!=='undefined'&&SAVE.sound)SND.boom(true);
-  } else if(sev===2 && typeof SND!=='undefined'&&SAVE.sound) SND.combo(2);
+  const d=DIFFS[key]; if(!d)return; const sev=d.fx||0;
+  if(!SAVE.reduceMotion) ['tfig-recruit','tfig-skull','menu-skull'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.classList.remove('tf-pulse'); void el.offsetWidth; el.classList.add('tf-pulse'); } });
+  if(sev>=3){ if(titleActive()){ const ti=document.getElementById('title-inner'); if(ti&&!SAVE.reduceMotion){ ti.classList.remove('title-shake'); void ti.offsetWidth; ti.classList.add('title-shake'); } } if(typeof SND!=='undefined'&&SAVE.sound)SND.boom(true); }
+  else if(sev===2 && typeof SND!=='undefined'&&SAVE.sound) SND.combo(2);
 }
-// debug-panel entry point: preview a tier's full effect (burst + ambient) on demand
-function diffFx(key){ diffFxBurst(key); renderDiffAmbient(key); }
+// debug-panel entry point: preview a tier's flourish on demand
+function diffFx(key){ diffFxBurst(key); }
 
 /* ═══════════════════════════════════════════════════════════════════════
    WAR MODE — a conquest map. Each node is a battle; taking one cuts supply
@@ -6559,6 +6763,44 @@ try{ runLoader(); }catch(e){ console.error('runLoader',e); _forceLoaderGone(); t
    own clearly-commented block. See PHASES.md at the repo root for the
    full convention.
    ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── ANALYTICS (Phase 2) — GoatCounter ────────────────────────────────────
+   Privacy-friendly, cookieless page + event counts so we can see how many
+   people open and play the hosted lite version. Self-contained: instead of
+   loading GoatCounter's external count.js (which would break the standalone
+   file offline), we fire a tiny image-pixel beacon straight at the /count
+   endpoint. It is a no-op until you paste your site URL below, and it never
+   affects gameplay — every call is wrapped so a blocked/failed beacon is
+   silently ignored.
+
+   SETUP: create a free site at https://www.goatcounter.com/, then set
+   ANALYTICS_SITE to your URL, e.g. 'https://frontline.goatcounter.com'
+   (no trailing slash, no /count). Leave it '' to keep analytics off. */
+const ANALYTICS_SITE = ''; // ← paste your GoatCounter site URL here to enable
+function gcConfigured(){ return typeof ANALYTICS_SITE==='string' && /^https:\/\/[a-z0-9-]+\.goatcounter\.com/i.test(ANALYTICS_SITE); }
+function gcSend(path,title,isEvent){
+  if(!gcConfigured())return;
+  try{
+    const base=ANALYTICS_SITE.replace(/\/+$/,'')+'/count';
+    const q='?p='+encodeURIComponent(path||location.pathname||'/')
+      +'&t='+encodeURIComponent(title||document.title||'Frontline Commander')
+      +(isEvent?'&e=1':'')
+      +'&r='+encodeURIComponent(document.referrer||'')
+      +'&rnd='+Math.random().toString(36).slice(2);
+    const img=new Image(); img.referrerPolicy='no-referrer-when-downgrade'; img.src=base+q;
+  }catch(e){/* analytics must never break the game */}
+}
+function gcEvent(name){ gcSend('event/'+name, name, true); }
+// count the page open once, after boot
+try{ gcSend(); }catch(e){}
+// count the first real battle of each mode as a lightweight engagement event (not attract/tutorial)
+try{
+  const _origStart = start;
+  start = function(){
+    _origStart.apply(this, arguments);
+    try{ if(G && !G.attract && !G.tutorial && !G._gcTracked){ G._gcTracked=true; gcEvent('battle-'+(G.kind||G.mode||'skirmish')); } }catch(e){}
+  };
+}catch(e){}
 </script>
 </body>
 </html>

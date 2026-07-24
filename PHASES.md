@@ -30,11 +30,14 @@ local file: usage analytics/telemetry, hosting-specific glue, and any
 web-only onboarding/marketing surface bolted onto the existing game.
 
 Planned/in-flight items:
-- [ ] Usage analytics (page-load / battle-started tracking) — provider
-      choice pending (leaning GoatCounter for a privacy-friendly free
-      dashboard; alternatives: GA4, Cloudflare Web Analytics, self-hosted
-      counter). Needs a site code/measurement ID from the project owner
-      before it can be wired in.
+- [x] Usage analytics — **GoatCounter** (privacy-friendly, cookieless).
+      Wired in `wargame.html` in the Phase 2 block as a self-contained
+      image-pixel beacon (no external script, so the standalone file still
+      works offline). It counts a page open plus a lightweight per-mode
+      battle-start event. **It is OFF until you paste your site URL:** set
+      `ANALYTICS_SITE` (search the file for it) to your GoatCounter URL,
+      e.g. `https://frontline.goatcounter.com`. The CSP already allows
+      `*.goatcounter.com`.
 - [ ] Hosting setup (domain, static hosting or CDN).
 
 ## How Phase 2 code is marked in `wargame.html`
