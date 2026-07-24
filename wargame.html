@@ -188,10 +188,17 @@
   /* deploy hotbar */
   #hbwrap{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;
     flex-direction:column;align-items:center;gap:6px;width:max-content;max-width:97vw;}
-  /* permanent commander-powers row — strikes/recon/emp, always visible regardless of hbtab */
+  /* permanent commander-powers row — strikes/recon/emp, always visible regardless of hbtab.
+     kept compact (smaller than the unit cards) so this "skills" row doesn't make the deck tall
+     enough to cover the bottom lane. */
   #quickbar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;pointer-events:auto;
-    padding-bottom:6px;border-bottom:1px dashed var(--line);margin-bottom:2px;}
+    padding-bottom:5px;border-bottom:1px dashed var(--line);margin-bottom:2px;}
   #quickbar:empty{display:none;border:none;margin:0;padding:0;}
+  #quickbar .card{width:56px;height:58px;border-radius:8px;}
+  #quickbar .card .glyph{font-size:18px;}
+  #quickbar .card .nm{font-size:8px;}
+  #quickbar .card .cost{font-size:9.5px;}
+  #quickbar .card .key{font-size:8px;top:1px;left:3px;}
   #hbtabs{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;pointer-events:auto;}
   .hbtab{padding:5px 11px;border:1px solid var(--line);border-radius:7px;background:#0b0f18d8;
     font-size:10.5px;font-weight:800;letter-spacing:.6px;color:var(--dim);text-transform:uppercase;transition:.1s;}
@@ -419,6 +426,32 @@
   .title-logo span{color:var(--ink);}
   @keyframes titlepulse{50%{text-shadow:0 0 60px rgba(255,206,90,0.3),0 6px 20px #000;}}
   .title-tag{color:var(--ink);font-size:15px;font-weight:600;letter-spacing:1px;opacity:.9;text-shadow:0 2px 8px #000;}
+  /* ── TITLE FLANKING FIGURES — recruit (left) & skull (right), harden with Rank ── */
+  #title-figs{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden;}
+  .tfig{position:absolute;top:24%;display:flex;flex-direction:column;align-items:center;gap:9px;
+    filter:drop-shadow(0 6px 16px #000d);opacity:.97;}
+  .tfig-l{left:6.5%;} .tfig-r{right:6.5%;}
+  .tf-art{position:relative;font-size:78px;line-height:1;width:1.1em;height:1.1em;display:flex;align-items:center;justify-content:center;}
+  .tf-art .tf-base{position:relative;z-index:1;}
+  .tf-art .tf-helmet{position:absolute;top:-0.30em;left:50%;transform:translateX(-50%) rotate(-4deg);font-size:0.60em;z-index:3;filter:drop-shadow(0 2px 3px #000b);}
+  .tf-art .tf-cigar{position:absolute;bottom:0.20em;right:-0.02em;font-size:0.34em;transform:rotate(-16deg);z-index:4;filter:drop-shadow(0 0 3px #ff8a3a);}
+  .tf-art .tf-scar{position:absolute;top:0.36em;left:0.44em;width:0.26em;height:2px;background:#d0422b;border-radius:2px;transform:rotate(57deg);z-index:5;opacity:.9;box-shadow:0 0.16em 0 -0.5px #d0422b;}
+  .tf-art .tf-eye{position:absolute;top:0.46em;width:0.12em;height:0.12em;border-radius:50%;z-index:4;
+    background:radial-gradient(circle,#ffe08a,#ff6a00 60%,#b52d00);box-shadow:0 0 7px 2px #ff7a1e;animation:tfEye 1.1s ease-in-out infinite;}
+  .tf-art .tf-eye.l{left:0.29em;} .tf-art .tf-eye.r{right:0.29em;}
+  @keyframes tfEye{50%{box-shadow:0 0 11px 3px #ff9a3e;transform:scale(1.18);}}
+  .tf-art.laugh{animation:tfLaugh 1.7s ease-in-out infinite;transform-origin:50% 80%;}
+  @keyframes tfLaugh{0%,100%{transform:rotate(-4deg) translateY(0);}50%{transform:rotate(4deg) translateY(-3px);}}
+  .tfig .tf-cap{font-size:11px;font-weight:800;letter-spacing:2px;color:var(--gold);text-transform:uppercase;text-shadow:0 2px 6px #000;opacity:.9;}
+  .tfig .tf-sub{font-size:8.5px;font-weight:700;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-top:-4px;}
+  .tfig-idle{animation:tfIdle 4.6s ease-in-out infinite;}
+  .tfig-r.tfig-idle{animation-delay:-2.3s;}
+  @keyframes tfIdle{50%{transform:translateY(-7px);}}
+  .tf-pulse{animation:tfPulse 440ms ease;}
+  @keyframes tfPulse{0%{transform:scale(1);}40%{transform:scale(1.14);}100%{transform:scale(1);}}
+  #title-figs.reduce .tfig,#title-figs.reduce .tf-art,#title-figs.reduce .tf-eye{animation:none!important;}
+  /* the flanking figures are a wide-desktop flourish — hide them where they'd crowd the buttons */
+  @media (max-width:960px){ #title-figs{display:none;} }
   .title-btns{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:12px;}
   /* global difficulty picker on the title (applies to Play, Evolution, etc.) */
   .title-diff{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
@@ -1076,6 +1109,13 @@
   <!-- TITLE / ATTRACT SCREEN -->
   <div class="screen hidden" id="title">
     <div id="title-scrim"></div>
+    <!-- flanking figures: a recruit (left) and a skull (right) that harden as your Rank climbs.
+         These replace the old looping "machine-gun fire" ambience on the title. Built by
+         renderTitleFigures(); hidden on small/touch screens to keep the title uncluttered. -->
+    <div id="title-figs" aria-hidden="true">
+      <div class="tfig tfig-l tfig-idle" id="tfig-recruit"></div>
+      <div class="tfig tfig-r tfig-idle" id="tfig-skull"></div>
+    </div>
     <div id="title-inner">
       <div class="title-logo">⚔ <b>FRONTLINE</b><br><span>COMMANDER</span></div>
       <div class="title-tag" id="title-tag">Bank the points. Break the line. Take the war.</div>
@@ -1309,7 +1349,30 @@ const cv=document.getElementById('game'), cx=cv.getContext('2d');
 const DPR=Math.min(2,window.devicePixelRatio||1);
 let W=0,H=0;
 function resize(){ const r=cv.parentElement.getBoundingClientRect(); W=r.width;H=r.height;
-  cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';cx.setTransform(DPR,0,0,DPR,0,0); }
+  // Backing-store safety clamp: some mobile GPUs render a blank canvas once a dimension exceeds
+  // ~4096px, so cap the effective pixel ratio to whatever keeps both sides under that limit.
+  // (DPR is already capped at 2; this only ever lowers it further on very large viewports.)
+  const MAXDIM=4096, safe=Math.max(1,Math.min(DPR, MAXDIM/Math.max(1,W), MAXDIM/Math.max(1,H)));
+  cv.width=Math.round(W*safe);cv.height=Math.round(H*safe);cv.style.width=W+'px';cv.style.height=H+'px';cx.setTransform(safe,0,0,safe,0,0);
+  // keep the 3 lanes clear of the deploy deck after any viewport/orientation change
+  if(typeof G!=='undefined' && G && G.laneY){ try{ G.laneY=fieldLaneY(); }catch(e){} } }
+// ── LANE LAYOUT — lay the 3 lanes into the field ABOVE the deploy deck, so the
+//    bottom lane (and its units/strikes) is never hidden under the hotbar/quickbar.
+//    Measures the live deck height (#hbwrap is already visible when start() calls this),
+//    reserves room for it plus the top HUD, then centres 3 evenly-spaced lanes in what's left. ──
+function fieldLaneY(){
+  const stageH = H>0 ? H : 600;
+  let deckH = 150; // fallback if the deck isn't laid out yet (e.g. attract battle behind the title)
+  try{ const d=document.getElementById('hbwrap'); if(d){ const b=d.getBoundingClientRect(); if(b.height>30) deckH=b.height; } }catch(e){}
+  let bot = deckH + 52;                       // deck + clearance for unit sprites & HP bars below the 3rd lane
+  let top = Math.max(52, stageH*0.15);        // room for the top HUD (CP bar, base bars, narrator)
+  let usable = stageH - top - bot;
+  if(usable < 90){ top = Math.max(20, top-(90-usable)*0.6); bot = Math.max(deckH+16, bot-(90-usable)*0.4); usable = stageH - top - bot; }
+  usable = Math.max(60, usable);
+  const cy = top + usable/2;                   // vertical centre of the playable field
+  const gap = Math.min(usable/2 - 4, stageH*0.19); // keep lanes from spreading too far apart on tall screens
+  return [ (cy-gap)/stageH, cy/stageH, (cy+gap)/stageH ];
+}
 window.addEventListener('resize',resize);
 // mobile: a rotation fires 'orientationchange'; some browsers report stale sizes
 // for a beat, so reflow the canvas + layout again just after the turn settles.
@@ -1712,7 +1775,10 @@ const GAME_VERSION='1.9.0';
 const PATCH_NOTES=[
   {v:'1.9.0',notes:[
     '── Phase 2 begins: Website / Lite-Version — see PHASES.md ──',
-    'Fixed a soft-lock: leaving a paused battle via the topbar ☰ Menu button could strand the PAUSED overlay on top of the main menu with no way to click through or resume',
+    'Fixed a pause soft-lock: pressing SPACE on the title screen paused the background attract battle and stranded the PAUSED overlay with no way out — pause now only works during a real battle',
+    'The 3 lanes now lay out above the deploy deck, so the bottom lane (and its strikes) is never hidden under the hotbar; the Strikes/Recon quick bar is also more compact',
+    'Title screen: replaced the old looping difficulty "gunfire" ambience with a recruit and a skull that grow more hardened as your Rank climbs (the difficulty fire still plays on the skirmish menu)',
+    'Mobile: added a canvas backing-store clamp so very high-DPI phones can\'t blank the battlefield',
   ]},
   {v:'1.8.0',notes:[
     'Fixed the narrator subtitle covering up the bottom lane mid-battle — it now sits in the gap above the field instead',
@@ -2434,7 +2500,7 @@ function newGame(){
   const mode = (kind==='blitz'||kind==='survival'||kind==='domination')? kind : 'skirmish'; // underlying ruleset
   const diffKey = L&&L.diff ? L.diff : sel.diff;
   const doc=DOCTRINES[sel.doctrine], perk=doc.perk, diff=DIFFS[diffKey];
-  const laneY=[0.30,0.5,0.70];
+  const laneY=fieldLaneY(); // deck-aware: 3 lanes laid into the field above the deploy deck
   const hqHP=1000*(perk.hpMul||1);
   // ── weather ──
   let wxKey;
@@ -5380,7 +5446,14 @@ function quickDeploy(lane){
   else tryDeploy(G.selCard,lane);
 }
 function togglePause(){
-  if(!G||G.over)return;
+  // Only a real, live battle can be paused. Guarding G.attract is critical: the title screen keeps
+  // an attract battle running in the background, so without this SPACE would pause it and strand the
+  // PAUSED overlay over the title — and because the attract loop regenerates G (paused=false) the
+  // overlay's Resume/Abandon could desync and you'd be stuck. (Also ignore if a menu/results screen
+  // is up, e.g. between battles.)
+  if(!G||G.over||G.attract)return;
+  const hud=document.getElementById('hud');
+  if(hud&&hud.classList.contains('hidden')){ document.getElementById('pauseScreen').classList.add('hidden'); return; }
   G.paused=!G.paused;
   document.getElementById('pauseScreen').classList.toggle('hidden',!G.paused);
 }
@@ -6135,11 +6208,45 @@ function buildDiffChips(host){
     host.appendChild(b);
   }
 }
-function buildTitleDiff(){ buildDiffChips(document.getElementById('td-chips')); renderDiffAmbient(sel.diff); }
+function buildTitleDiff(){ buildDiffChips(document.getElementById('td-chips')); renderTitleFigures(); renderDiffAmbient(sel.diff); }
+// is the big title screen the one currently showing?
+function titleActive(){ const t=document.getElementById('title'); return !!t && !t.classList.contains('hidden'); }
+/* ── TITLE FLANKING FIGURES — a recruit (left) and a skull (right) that grow more hardened as your
+   Commander Rank climbs. These replace the old looping tracer/flame ambience on the title, which
+   could get stuck and read as unnatural. Five tiers keyed to Rank. Purely cosmetic. ── */
+function titleHardenTier(){ const l=SAVE.lvl||1; return l>=80?4 : l>=50?3 : l>=25?2 : l>=10?1 : 0; }
+function renderTitleFigures(){
+  const rec=document.getElementById('tfig-recruit'), sk=document.getElementById('tfig-skull');
+  const figs=document.getElementById('title-figs'); if(!rec||!sk||!figs)return;
+  figs.classList.toggle('reduce',!!SAVE.reduceMotion);
+  const tier=titleHardenTier();
+  const recFaces=['🙂','😐','😤','😠','😎'];               // green rookie → cool, battle-worn veteran
+  const recCap  =['RAW RECRUIT','BLOODED','HARDENED','GRIZZLED','WAR LEGEND'];
+  const skCap   =['SILENT DEAD','THE FALLEN','SMOULDERING','CACKLING','INFERNAL'];
+  // recruit: helmet + face; scar from tier 2, cigar from tier 3
+  rec.innerHTML =
+    `<div class="tf-art tf-rec">`
+    + `<span class="tf-base">${recFaces[tier]}</span>`
+    + `<span class="tf-helmet">🪖</span>`
+    + (tier>=2?`<span class="tf-scar"></span>`:'')
+    + (tier>=3?`<span class="tf-cigar">🚬</span>`:'')
+    + `</div><div class="tf-cap">${recCap[tier]}</div><div class="tf-sub">Rank ${SAVE.lvl}</div>`;
+  // skull: scar from tier 1, flame eyes from tier 2, cackling animation from tier 3, cigar from tier 4
+  sk.innerHTML =
+    `<div class="tf-art tf-sk${tier>=3?' laugh':''}">`
+    + `<span class="tf-base">💀</span>`
+    + (tier>=2?`<span class="tf-eye l"></span><span class="tf-eye r"></span>`:'')
+    + (tier>=1?`<span class="tf-scar"></span>`:'')
+    + (tier>=4?`<span class="tf-cigar">🚬</span>`:'')
+    + `</div><div class="tf-cap">${skCap[tier]}</div>`;
+}
 // persistent ambience for the current pick — stays up (looping) on any pre-battle screen
 // until the difficulty changes or you leave for battle/another screen (hideDiffAmbient()).
+// NOTE: suppressed on the title screen — the flanking recruit/skull figures own that space now;
+// the difficulty fire still plays on the skirmish menu and anywhere else you pick a tier.
 function renderDiffAmbient(key){
   const d=DIFFS[key]; const host=document.getElementById('diff-fx'); if(!d||!host)return;
+  if(titleActive()){ host.innerHTML=''; host.classList.remove('show'); return; }
   host.innerHTML='';
   if(SAVE.reduceMotion){ host.classList.remove('show'); return; }
   const sev=d.fx||0;
@@ -6167,6 +6274,15 @@ function diffFxBurst(key){
   const d=DIFFS[key]; if(!d||SAVE.reduceMotion)return;
   const host=document.getElementById('diff-fx'); if(!host)return;
   const sev=d.fx||0;
+  // On the title screen we don't draw the crossing tracers (that's the "machine-gun fire" the
+  // recruit/skull figures replaced) — just give the figures a quick pop, and keep the top-tier
+  // title shake + boom so picking Legendary still feels punchy.
+  if(titleActive()){
+    ['tfig-recruit','tfig-skull'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.classList.remove('tf-pulse'); void el.offsetWidth; el.classList.add('tf-pulse'); } });
+    if(sev>=3){ const ti=document.getElementById('title-inner'); if(ti){ ti.classList.remove('title-shake'); void ti.offsetWidth; ti.classList.add('title-shake'); } if(typeof SND!=='undefined'&&SAVE.sound)SND.boom(true); }
+    else if(sev===2 && typeof SND!=='undefined'&&SAVE.sound) SND.combo(2);
+    return;
+  }
   const tracerCount=1+sev*2;
   for(let i=0;i<tracerCount;i++){
     const t=document.createElement('div'); t.className='diff-tracer'+(i%2?' rev':'');
