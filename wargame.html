@@ -636,7 +636,13 @@
   .ru-rewards li::before{content:'✦';position:absolute;left:0;color:var(--gold);}
   .ru-ray{position:absolute;top:50%;left:50%;width:2px;height:60vh;background:linear-gradient(180deg,transparent,#ffce5a33,transparent);
     transform-origin:center;pointer-events:none;}
-  .title-btns2{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;}
+  /* three labelled clusters instead of one flat row of 10 same-weight buttons — a cold web
+     visitor needs "what can I play" visually separated from "my progress" and "app info",
+     even though a warm returning player barely notices the difference either way */
+  .title-grp{margin-top:14px;}
+  .title-grp-lbl{font-size:10px;font-weight:800;letter-spacing:2px;color:var(--faint);
+    text-align:center;margin-bottom:7px;text-transform:uppercase;}
+  .title-btns2{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;}
   /* two headline mode buttons — each keyed to its own accent */
   .hero-btn{display:flex;align-items:center;gap:14px;padding:16px 26px;border-radius:14px;min-width:250px;
     text-align:left;border:2px solid;transition:.14s;background:#0e1622ee;}
@@ -1293,17 +1299,30 @@
         <button class="hero-btn play" id="t-play"><span class="hb-ic">▶</span><span class="hb-tx"><b>PLAY</b><small>quick battle · pick doctrine &amp; mode</small></span></button>
         <button class="hero-btn evo" id="t-evo"><span class="hb-ic">🧬</span><span class="hb-tx"><b>EVOLUTION</b><small>Age of War · evolve through 5 ages</small></span></button>
       </div>
-      <div class="title-btns2">
-        <button class="t-btn war" id="t-war"><b>🗺 War Mode</b><small>conquer the map</small></button>
-        <button class="t-btn chaos" id="t-chaos"><b>🤪 Chaos Mode</b><small>flip it on in Settings</small></button>
-        <button class="t-btn rivals" id="t-rivals"><b>⚔ Rivals</b><small>a roster that learns you</small></button>
-        <button class="t-btn tut" id="t-tut"><b>🎓 Tutorial</b><small>learn the ropes</small></button>
+      <div class="title-grp">
+        <div class="title-grp-lbl">More Modes</div>
+        <div class="title-btns2">
+          <button class="t-btn war" id="t-war"><b>🗺 War Mode</b><small>conquer the map</small></button>
+          <button class="t-btn chaos" id="t-chaos"><b>🤪 Chaos Mode</b><small>flip it on in Settings</small></button>
+          <button class="t-btn rivals" id="t-rivals"><b>⚔ Rivals</b><small>a roster that learns you</small></button>
+          <button class="t-btn tut" id="t-tut"><b>🎓 Tutorial</b><small>learn the ropes</small></button>
+        </div>
+      </div>
+      <div class="title-grp">
+        <div class="title-grp-lbl">Your Progress</div>
+        <div class="title-btns2">
+          <button class="t-btn record" id="t-record"><b>🎖 Service Record</b><small>your career &amp; rivals</small></button>
+          <button class="t-btn roadmap" id="t-roadmap"><b>🏆 Roadmap</b><small>rank rewards &amp; unlocks</small></button>
+          <button class="t-btn cosmetics" id="t-cosmetics"><b>🎖 Cosmetics</b><small>equip badge &amp; title</small></button>
+        </div>
+      </div>
+      <div class="title-grp">
+        <div class="title-grp-lbl">Info</div>
+        <div class="title-btns2">
         <button class="t-btn manual" id="t-manual"><b>📖 Field Manual</b><small>how everything works</small></button>
-        <button class="t-btn record" id="t-record"><b>🎖 Service Record</b><small>your career &amp; rivals</small></button>
-        <button class="t-btn roadmap" id="t-roadmap"><b>🏆 Roadmap</b><small>rank rewards &amp; unlocks</small></button>
-        <button class="t-btn cosmetics" id="t-cosmetics"><b>🎖 Cosmetics</b><small>equip badge &amp; title</small></button>
         <button class="t-btn patchnotes" id="t-patchnotes"><b>📋 Patch Notes</b><small>what's new</small></button>
         <button class="t-btn settings" id="t-settings"><b>⚙ Settings</b><small>audio &amp; motion</small></button>
+        </div>
       </div>
       <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span> · <span id="t-ver" style="cursor:pointer;text-decoration:underline dotted;">v1.0.0</span></div>
       <div class="title-copyright">© 2026 RoukasCrew. All rights reserved.</div>
