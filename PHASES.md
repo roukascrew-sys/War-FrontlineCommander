@@ -50,6 +50,15 @@ Planned/in-flight items:
       still tracked as GoatCounter events (`daily-played`, `daily-cleared`,
       `daily-streak-N`) — visible to us on the dashboard — just not echoed
       back into the game UI until a real backend exists.
+- [x] Committed regression suite (`tests/regression.js`) — boots the game in real
+      Chromium and checks browser-compat guardrails, all 5 modes, deploy sounds,
+      and the loader failsafe under an injected parse error. `tests/README.md`
+      has run instructions. Exits non-zero on failure — wireable into CI.
+- [x] Aggregate crash telemetry — `_logErr()` now also fires a GoatCounter event
+      per distinct error class (kind + source file + line, NEVER the message
+      text) so a broken build is visible on the dashboard instead of only
+      surfacing when a player self-reports through Feedback. Capped at 5
+      distinct events per session.
 - [ ] Hosting setup (domain, static hosting or CDN).
 - [x] Copyright/licensing: added a `LICENSE` file (all-rights-reserved
       placeholder — swap the holder name and get it lawyer-reviewed before a

@@ -1578,9 +1578,21 @@ window.__FC_BOOTED = true;
    exception, so the feedback modal attaches the last few of these automatically. Capped + wrapped
    so it can never grow unbounded or itself throw. ── */
 const ERRLOG=[];
+// Aggregate, privacy-safe crash telemetry: without this a broken build is invisible in
+// production until a player self-reports through Feedback. Sends only the error CLASS
+// (kind + source file + line) as a GoatCounter event name — never the message text, which
+// could contain something a player typed. Deduped and capped at 5 distinct events per
+// session so a tight error loop can't hammer the analytics endpoint. gcEvent() is defined
+// later in this file but already hoisted by the time any real error fires.
+const _errTelemetrySeen=new Set();
 function _logErr(kind,msg,extra){
   try{ ERRLOG.push({t:Math.round(performance.now()/100)/10,kind,msg:String(msg).slice(0,220),at:extra||''});
-    while(ERRLOG.length>8)ERRLOG.shift(); }catch(e){}
+    while(ERRLOG.length>8)ERRLOG.shift();
+    if(typeof gcEvent==='function' && _errTelemetrySeen.size<5){
+      const key=(kind+'-'+(extra||'unknown')).replace(/[^a-z0-9._-]/gi,'_').slice(0,60);
+      if(!_errTelemetrySeen.has(key)){ _errTelemetrySeen.add(key); gcEvent('err-'+key); }
+    }
+  }catch(e){}
 }
 window.addEventListener('error',e=>_logErr('error',e.message,(e.filename||'').split('/').pop()+':'+e.lineno));
 window.addEventListener('unhandledrejection',e=>_logErr('promise',(e.reason&&e.reason.message)||e.reason||'unhandled rejection'));
@@ -5210,7 +5222,6 @@ function iwGaslightBlock(){ if(G&&G.info&&G.info.gaslightT>0){ iwDenied(); if(G)
 const CHATLINK={ ws:null, channel:'', connected:false, connecting:false,
   voteEvery:14, bossThreshold:8, dropThreshold:6, chaosThreshold:8 };
 function escapeHTML(s){return (''+s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-const escapeHtml=escapeHTML; // legacy alias — kept so existing call sites keep working
 function chatStatus(txt,col){ const el=document.getElementById('tw-status'); if(el){el.textContent=txt;el.style.color=col||'var(--dim)';} }
 /* REAL chat line — a genuine message off the Twitch socket (or a FRONTLINE system notice).
    Shows whenever the overlay is up OR a channel is connected, so live messages are never
@@ -5219,7 +5230,7 @@ function chatMsgRaw(user,txt,ucol){
   if(!SAVE.streamOn && !CHATLINK.connected)return;
   const feed=document.getElementById('chatfeed'); if(!feed)return;
   const el=document.createElement('div');el.className='cmsg';
-  el.innerHTML=`<span class="u" style="color:${ucol||pick(['#4aa8ff','#3fd07a','#ffce5a','#c9a0ff','#ff9f40'])}">${escapeHtml(user)}</span>: ${escapeHtml(txt)}`;
+  el.innerHTML=`<span class="u" style="color:${ucol||pick(['#4aa8ff','#3fd07a','#ffce5a','#c9a0ff','#ff9f40'])}">${escapeHTML(user)}</span>: ${escapeHTML(txt)}`;
   feed.appendChild(el);
   while(feed.children.length>9)feed.removeChild(feed.firstChild);
 }
@@ -6732,7 +6743,7 @@ function renderRivals(){
     const domTxt=rv.dominant?`leaning ${RIVAL_COUNTER[rv.dominant]} to counter your ${rv.dominant}`:`signature: ${g.bias}`;
     h+=`<div class="rival-card${rv.defeated?' defeated':''}" data-idx="${gi}" style="border-color:${g.col}">`+
       `<span class="rival-glyph" style="color:${g.col}">${g.glyph}</span>`+
-      `<div class="rival-nm">${escapeHtml(g.name)}</div>`+
+      `<div class="rival-nm">${escapeHTML(g.name)}</div>`+
       `<div class="rival-rec">${rv.w}–${rv.l} · <span style="color:${rv.defeated?'var(--good)':g.col}">${status}</span></div>`+
       `<div class="rival-bias">${domTxt}</div>`+
       `<button class="sbtn prim rival-fight" style="margin-top:8px;font-size:12px">⚔ Fight</button></div>`;
@@ -6755,7 +6766,7 @@ function renderPatchNotes(){
   let h='';
   PATCH_NOTES.forEach((p,i)=>{
     h+=`<h2>v${p.v}${i===0?' <span style="color:var(--good);font-size:11px;font-weight:800;letter-spacing:.5px">CURRENT</span>':''}</h2><ul>`;
-    for(const n of p.notes)h+=`<li>${escapeHtml(n)}</li>`;
+    for(const n of p.notes)h+=`<li>${escapeHTML(n)}</li>`;
     h+=`</ul>`;
   });
   el.innerHTML=h; el.scrollTop=0;
@@ -7248,7 +7259,7 @@ function renderNews(){
   const feed=el.querySelector('.nb-feed'); if(!feed)return;
   feed.innerHTML=NEWS.items.map(n=>{
     const tag=n.tag==='front'?'● FRONT':n.tag==='flash'?'⚡ FLASH':'○ WORLD';
-    return `<div class="nb-item ${n.tag}"><span class="nb-tag">${tag}</span>${escapeHtml(n.text)}</div>`;
+    return `<div class="nb-item ${n.tag}"><span class="nb-tag">${tag}</span>${escapeHTML(n.text)}</div>`;
   }).join('')||'<div class="nb-item"><span class="nb-tag">○ WORLD</span>Awaiting the wire…</div>';
 }
 function newsTick(dt){ if(!SAVE.news)return; NEWS.worldT-=dt; if(NEWS.worldT<=0){ NEWS.worldT=rnd(17,27);
