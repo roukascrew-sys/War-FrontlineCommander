@@ -185,26 +185,37 @@
   .bhp.blue .lbl{color:var(--blue);} .bhp.blue .fill{background:var(--blue);}
   .bhp.red .lbl{color:var(--red);text-align:right;} .bhp.red .fill{background:var(--red);float:right;}
 
-  /* deploy hotbar */
+  /* ── DEPLOY DECK ──────────────────────────────────────────────────────────
+     Laid out as a ROW: the commander specials sit to the LEFT of the unit cards,
+     not stacked above them. That keeps the whole deck a single card-height tall,
+     so the battlefield's three lanes can stay in their classic 30/50/70 slots
+     without the deck ever reaching up into the bottom lane. */
   #hbwrap{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;
-    flex-direction:column;align-items:center;gap:6px;width:max-content;max-width:97vw;}
-  /* permanent commander-powers row — strikes/recon/emp, always visible regardless of hbtab.
-     kept compact (smaller than the unit cards) so this "skills" row doesn't make the deck tall
-     enough to cover the bottom lane. */
-  #quickbar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;pointer-events:auto;
-    padding-bottom:5px;border-bottom:1px dashed var(--line);margin-bottom:2px;}
-  #quickbar:empty{display:none;border:none;margin:0;padding:0;}
-  #quickbar .card{width:56px;height:58px;border-radius:8px;}
-  #quickbar .card .glyph{font-size:18px;}
-  #quickbar .card .nm{font-size:8px;}
-  #quickbar .card .cost{font-size:9.5px;}
+    flex-direction:row;align-items:flex-end;gap:10px;width:max-content;max-width:97vw;}
+  #hbstack{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;}
+  /* permanent commander-powers block — strikes/recon/EMP, always visible regardless of tab.
+     Wraps to 3 per row so it stays two rows tall at most, matching the unit deck's height. */
+  /* explicit 3-wide grid (not flex-wrap) so the column count can never drift with padding and
+     silently grow the deck a row taller — the deck's height is load-bearing for lane clearance. */
+  #quickbar{display:grid;grid-template-columns:repeat(3,56px);gap:5px;align-content:end;
+    pointer-events:auto;flex:0 0 auto;padding-right:9px;border-right:1px dashed var(--line);}
+  #quickbar:empty{display:none;border:none;padding:0;}
+  #quickbar .card{width:56px;height:56px;border-radius:8px;}
+  #quickbar .card .glyph{font-size:17px;}
+  #quickbar .card .nm{font-size:7.5px;}
+  #quickbar .card .cost{font-size:9px;}
   #quickbar .card .key{font-size:8px;top:1px;left:3px;}
   #hbtabs{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;pointer-events:auto;}
-  .hbtab{padding:5px 11px;border:1px solid var(--line);border-radius:7px;background:#0b0f18d8;
-    font-size:10.5px;font-weight:800;letter-spacing:.6px;color:var(--dim);text-transform:uppercase;transition:.1s;}
-  .hbtab:hover{color:var(--ink);border-color:var(--blue);transform:translateY(-1px);}
+  /* Colour-coded tech tabs — each category owns a hue that matches the units inside it, so the
+     tech tree reads at a glance instead of every tab looking identical. --tc is set per tab. */
+  .hbtab{padding:5px 11px;border:1px solid var(--tc,var(--line));border-radius:7px;background:#0b0f18d8;
+    font-size:10.5px;font-weight:800;letter-spacing:.6px;color:var(--tc,var(--dim));text-transform:uppercase;transition:.1s;
+    box-shadow:inset 0 -2px 0 -1px var(--tc,transparent);}
+  .hbtab:hover{color:var(--ink);border-color:var(--tc,var(--blue));transform:translateY(-1px);
+    box-shadow:inset 0 -2px 0 -1px var(--tc,transparent),0 0 10px -2px var(--tc,transparent);}
   .hbtab:active{transform:translateY(0) scale(0.95);}
-  .hbtab.on{background:var(--gold);color:var(--bg);border-color:var(--gold);}
+  .hbtab.on{background:var(--tc,var(--gold));color:#0a0e14;border-color:var(--tc,var(--gold));
+    box-shadow:0 0 12px -3px var(--tc,var(--gold));}
   #hotbar{display:flex;flex-wrap:wrap;
     gap:6px;justify-content:center;pointer-events:auto;}
   .card{width:70px;height:84px;background:var(--panel);border:1.5px solid var(--line);border-radius:10px;
@@ -897,8 +908,13 @@
   .camp-btn.secret-btn:hover{border-color:#ff5ad6;box-shadow:0 0 14px #ff5ad655;}
   .camp-btn.secret-btn .cs{color:#ff5ad6;font-weight:800;}
   /* ── first-run prompt ── */
-  #firstrun,#voicemodal,#twitchmodal,#debugmodal{position:absolute;inset:0;z-index:40;background:#080b11e0;display:none;align-items:center;justify-content:center;padding:24px;}
-  #firstrun.show,#voicemodal.show,#twitchmodal.show,#debugmodal.show{display:flex;}
+  #firstrun,#voicemodal,#twitchmodal,#debugmodal,#feedbackmodal{position:absolute;inset:0;z-index:40;background:#080b11e0;display:none;align-items:center;justify-content:center;padding:24px;}
+  #firstrun.show,#voicemodal.show,#twitchmodal.show,#debugmodal.show,#feedbackmodal.show{display:flex;}
+  .fb-lbl{font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px;}
+  .fb-kind{padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);
+    font-size:12px;font-weight:700;color:var(--dim);transition:.1s;}
+  .fb-kind:hover{color:var(--ink);border-color:var(--cyan);}
+  .fb-kind.sel{background:var(--cyan);color:var(--bg);border-color:var(--cyan);}
   #dbg-groups{max-height:52vh;overflow-y:auto;margin:6px 0 4px;}
   .dbg-grp{margin-bottom:14px;}
   .dbg-grp h4{font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold);margin:0 0 6px;}
@@ -974,11 +990,19 @@
     #announce .txt{font-size:24px!important;}
     #announce .sub{font-size:12px;}
 
-    /* bottom control deck: hotbar (cards) → tabs → quickbar, bottom-anchored.
+    /* bottom control deck: specials on the LEFT, tabs + swipeable unit row on the right.
        Stance/speed sit as one compact row above it; narrator floats just over
        the deck too. Nothing overlaps. */
-    #hbwrap{bottom:6px;gap:4px;width:100%;max-width:100vw;padding:0 4px;}
-    #quickbar{gap:4px;max-width:100vw;}
+    #hbwrap{bottom:6px;gap:5px;width:100%;max-width:100vw;padding:0 4px;align-items:flex-end;}
+    #hbstack{flex:1 1 auto;min-width:0;}
+    /* specials: a tight 3-wide block on touch — small enough that the whole deck stays short
+       enough to clear the bottom lane even on a 390px-tall phone in landscape */
+    #quickbar{grid-template-columns:repeat(3,40px);gap:3px;padding-right:5px;}
+    #quickbar .card{width:40px;height:40px;}
+    #quickbar .card .glyph{font-size:14px;}
+    #quickbar .card .nm{display:none;}
+    #quickbar .card .cost{font-size:7px;}
+    #quickbar .card .key{font-size:7px;}
     #hbtabs{gap:4px;}
     #hbtabs .hbtab{font-size:10px;padding:3px 8px;}
     /* unit hotbar → one swipeable row, so the deck's height is fixed regardless of
@@ -998,8 +1022,6 @@
     .card .lockov span{font-size:6.5px;}
     .card .dtdot{width:6px;height:6px;}
     .card .actag{font-size:6px;}
-    #quickbar .card{width:46px;height:52px;}
-    #quickbar .card .glyph{font-size:17px;}
 
     #ctrlbar{top:auto;left:6px;flex-direction:row;flex-wrap:wrap;
       gap:5px;background:#0b0f18cc;border:1px solid var(--line);border-radius:8px;padding:4px 6px;}
@@ -1056,10 +1078,19 @@
     #cpbar{width:min(30vw,200px);}
   }
   /* very short landscape (small phones sideways) — squeeze a bit more */
+  /* Phone held sideways is the tightest case in the game: ~350px of canvas has to fit three
+     lanes AND the deck. Everything here exists to buy back vertical pixels so the bottom lane
+     stays clear at its fixed 0.70 position. */
   @media (pointer:coarse) and (orientation:landscape) and (max-height:400px){
-    .card{width:44px;height:52px;}
+    .card{width:44px;height:48px;}
     .card .nm{font-size:7.5px;}
-    #hbtabs .hbtab{padding:2px 7px;}
+    #hbtabs .hbtab{padding:1px 7px;font-size:9px;}
+    #hbwrap{bottom:3px;gap:4px;}
+    #hbstack{gap:3px;}
+    #quickbar{grid-template-columns:repeat(3,36px);gap:3px;}
+    #quickbar .card{width:36px;height:36px;}
+    #quickbar .card .glyph{font-size:13px;}
+    #quickbar .card .cost{display:none;}
   }
 
 </style>
@@ -1069,7 +1100,7 @@
 <noscript><div style="position:fixed;inset:0;z-index:99999;background:#05070c;color:#e8eef7;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:sans-serif;">This game needs JavaScript enabled to run — please enable it and reload the page.</div></noscript>
 <div id="locktoast"></div>
 <div id="topbar">
-  <a id="playtest-link" href="https://docs.google.com/forms/d/e/1FAIpQLSe3f5r4bGuWzFGjz2QhG8sVaX08j1kSUDy9KVNVHA29NCz8QQ/viewform?usp=dialog" target="_blank" rel="noopener noreferrer">🧪 Playtest Feedback</a>
+  <button id="playtest-link" title="Report a bug or send feedback — your game state is attached automatically">🧪 Playtest Feedback</button>
   <div class="logo">⚔ <b>FRONTLINE</b> COMMANDER</div>
   <div class="hstat" id="tb-rank">Rank <b id="tb-lvl">1</b> <span id="tb-title" style="color:var(--faint);font-weight:600"></span> <span id="tb-badge"></span></div>
   <div class="hstat">Best <b id="tb-best">0</b></div>
@@ -1137,10 +1168,14 @@
         <button id="ap-turret">⌖ TURRET <b>0/0</b></button>
       </div>
     </div>
+    <!-- Deploy deck. The specials (strikes/recon/EMP) sit to the LEFT of the unit cards rather than
+         stacked above them, so the deck stays one row tall and never reaches up into the bottom lane. -->
     <div id="hbwrap">
       <div id="quickbar"></div>
-      <div id="hbtabs"></div>
-      <div id="hotbar"></div>
+      <div id="hbstack">
+        <div id="hbtabs"></div>
+        <div id="hotbar"></div>
+      </div>
     </div>
     <!-- narrator subtitle -->
     <div id="narrator"><span class="np">🎙 IRON MARSHAL</span><span class="nt"></span></div>
@@ -1407,6 +1442,36 @@
     </div>
   </div>
 
+  <!-- ═══ PLAYTEST FEEDBACK ═══
+       An in-page report form instead of a bare link to an external form. The point is the
+       AUTO-ATTACHED CONTEXT: a tester writing "it broke" is nearly useless, but the same words
+       plus version/browser/viewport/mode/difficulty/rank and the actual exception is actionable.
+       Everything is gathered locally and shown to the player before it goes anywhere. -->
+  <div id="feedbackmodal">
+    <div class="fr-card" style="max-width:560px;text-align:left">
+      <div class="fr-h" style="text-align:center">🧪 Playtest Feedback</div>
+      <div class="fr-p" style="text-align:center;margin-bottom:14px">Tell us what happened. Your current game state is attached automatically — you don't have to remember the details.</div>
+      <div style="margin-bottom:10px">
+        <label class="fb-lbl">WHAT KIND OF REPORT?</label>
+        <div class="opt" id="fb-kinds"></div>
+      </div>
+      <div style="margin-bottom:10px">
+        <label class="fb-lbl">WHAT HAPPENED?</label>
+        <textarea id="fb-text" rows="4" maxlength="1200" placeholder="e.g. The enemy HQ bar vanished after I used the gunship run in the bottom lane..." style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-family:var(--font);font-size:13px;resize:vertical"></textarea>
+      </div>
+      <details style="margin-bottom:12px">
+        <summary style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;cursor:pointer">ATTACHED AUTOMATICALLY — click to review</summary>
+        <pre id="fb-ctx" style="margin:6px 0 0;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:#0b0f18;color:var(--dim);font-family:var(--mono);font-size:10.5px;line-height:1.5;white-space:pre-wrap;max-height:170px;overflow:auto"></pre>
+      </details>
+      <div id="fb-status" style="font-size:12px;color:var(--dim);min-height:18px;margin-bottom:10px"></div>
+      <div class="btn-row" style="justify-content:center">
+        <button class="sbtn prim" id="fb-copy">📋 Copy Report</button>
+        <button class="sbtn" id="fb-form">📤 Open Feedback Form</button>
+        <button class="sbtn" id="fb-close">✕ Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- DEBUG MODE — manually fire any scripted event for testing/showcasing -->
   <div id="debugmodal">
     <div class="fr-card" style="max-width:620px;text-align:left">
@@ -1445,6 +1510,18 @@ window.addEventListener('error',_forceLoaderGone);
 window.addEventListener('unhandledrejection',_forceLoaderGone);
 setTimeout(_forceLoaderGone,9000); // never sit on the loading screen past ~9s
 
+/* ── ERROR RING BUFFER — registered next to the loader guard so it catches faults from the very
+   first line. A playtester saying "it broke" is worth 10× more when the report carries the actual
+   exception, so the feedback modal attaches the last few of these automatically. Capped + wrapped
+   so it can never grow unbounded or itself throw. ── */
+const ERRLOG=[];
+function _logErr(kind,msg,extra){
+  try{ ERRLOG.push({t:Math.round(performance.now()/100)/10,kind,msg:String(msg).slice(0,220),at:extra||''});
+    while(ERRLOG.length>8)ERRLOG.shift(); }catch(e){}
+}
+window.addEventListener('error',e=>_logErr('error',e.message,(e.filename||'').split('/').pop()+':'+e.lineno));
+window.addEventListener('unhandledrejection',e=>_logErr('promise',(e.reason&&e.reason.message)||e.reason||'unhandled rejection'));
+
 const cv=document.getElementById('game'), cx=cv.getContext('2d');
 const DPR=Math.min(2,window.devicePixelRatio||1);
 let W=0,H=0;
@@ -1460,19 +1537,8 @@ function resize(){ const r=cv.parentElement.getBoundingClientRect(); W=r.width;H
 //    bottom lane (and its units/strikes) is never hidden under the hotbar/quickbar.
 //    Measures the live deck height (#hbwrap is already visible when start() calls this),
 //    reserves room for it plus the top HUD, then centres 3 evenly-spaced lanes in what's left. ──
-function fieldLaneY(){
-  const stageH = H>0 ? H : 600;
-  let deckH = 150; // fallback if the deck isn't laid out yet (e.g. attract battle behind the title)
-  try{ const d=document.getElementById('hbwrap'); if(d){ const b=d.getBoundingClientRect(); if(b.height>30) deckH=b.height; } }catch(e){}
-  let bot = deckH + 52;                       // deck + clearance for unit sprites & HP bars below the 3rd lane
-  let top = Math.max(52, stageH*0.15);        // room for the top HUD (CP bar, base bars, narrator)
-  let usable = stageH - top - bot;
-  if(usable < 90){ top = Math.max(20, top-(90-usable)*0.6); bot = Math.max(deckH+16, bot-(90-usable)*0.4); usable = stageH - top - bot; }
-  usable = Math.max(60, usable);
-  const cy = top + usable/2;                   // vertical centre of the playable field
-  const gap = Math.min(usable/2 - 4, stageH*0.19); // keep lanes from spreading too far apart on tall screens
-  return [ (cy-gap)/stageH, cy/stageH, (cy+gap)/stageH ];
-}
+const LANE_Y=[0.30,0.50,0.70]; // the classic three-lane layout — the battlefield's fixed anatomy
+function fieldLaneY(){ return LANE_Y.slice(); }
 window.addEventListener('resize',resize);
 // mobile: a rotation fires 'orientationchange'; some browsers report stale sizes
 // for a beat, so reflow the canvas + layout again just after the turn settles.
@@ -1855,13 +1921,19 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.11.0';
+const GAME_VERSION='1.12.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.12.0',notes:[
+    'Lanes are back in their classic positions — instead of shifting the battlefield, the commander specials now sit to the LEFT of your unit cards, so the deck is one row shorter and never reaches into the bottom lane',
+    'Colour-coded the tech-tree tabs (Ground / Air & AD / Support / Production) so the deck reads at a glance mid-fight',
+    'The 🧪 Feedback button now opens an in-game report form that automatically attaches your version, browser, screen, rank, progress, live battle state and any errors — no more trying to remember what you were doing when it broke',
+    'Added a landing page for the hosted build',
+  ]},
   {v:'1.11.0',notes:[
     'Daily Challenge is now procedurally generated — every day composes a fresh twist, opposition, theater and player boon, so no two days repeat. Guardrails keep it fun: the twist can never ban the counter to that day\'s enemy, the hardest AI always comes with support, and a harshness budget stops "unwinnable" days',
     'Added a daily streak tracker — consecutive clears build a streak (with growing bonus XP) shown in the menu and on the results screen',
@@ -4680,11 +4752,13 @@ const HB_GROUP_END={sniper:1,ifv:1,mlrs:1,drone:1,jammer:1};
 // category tabs — splits ~22 cards across 5 short rows so the bar stays one row
 // tall and never grows up over the third (bottom) lane like the old flat list did.
 // Number-key hotkeys (1-9) still map by HOTBAR index regardless of the active tab.
+// col: the tab's identity colour — chosen to match the units it holds (blue-steel ground, violet
+// air, green support, gold production) so the tech tree is readable at a glance mid-fight.
 const HB_TABS=[
-  {id:'ground',label:'⚔ Ground',units:new Set(['rifle','atgm','sniper','tank','ifv','arty','mlrs','flame'])},
-  {id:'air',label:'✈ Air & AD',units:new Set(['aa','heli','drone','interceptor','gunship','swarm'])},
-  {id:'support',label:'🛠 Support',units:new Set(['medic','jammer'])},
-  {id:'production',label:'🏭 Production',spawners:true},
+  {id:'ground',label:'⚔ Ground',col:'#ffb347',units:new Set(['rifle','atgm','sniper','tank','ifv','arty','mlrs','flame'])},
+  {id:'air',label:'✈ Air & AD',col:'#c9a0ff',units:new Set(['aa','heli','drone','interceptor','gunship','swarm'])},
+  {id:'support',label:'🛠 Support',col:'#3fd07a',units:new Set(['medic','jammer'])},
+  {id:'production',label:'🏭 Production',col:'#5ff0e0',spawners:true},
 ];
 let hbTab='ground';
 // strikes + recon + EMP live in their own always-visible row (never behind a tab click) — they're
@@ -4728,6 +4802,7 @@ function buildHotbar(){
   for(const t of HB_TABS){
     const tb=document.createElement('button'); tb.className='hbtab'+(hbTab===t.id?' on':'');
     tb.textContent=t.label;
+    if(t.col)tb.style.setProperty('--tc',t.col); // drives border/text/glow via the .hbtab rules
     tb.onclick=()=>{hbTab=t.id;buildHotbar();};
     tabsEl.appendChild(tb);
   }
@@ -7002,12 +7077,157 @@ function gcSend(path,title,isEvent){
 function gcEvent(name){ gcSend('event/'+name, name, true); }
 // count the page open once, after boot
 try{ gcSend(); }catch(e){}
-// count the first real battle of each mode as a lightweight engagement event (not attract/tutorial)
+
+/* ── FUNNEL INSTRUMENTATION (Phase 2) ─────────────────────────────────────
+   Raw visit counts tell you almost nothing. What matters for a beta is WHERE
+   PEOPLE FALL OUT, so this tracks the retention funnel as a set of one-shot
+   milestones:
+       load → tutorial-start → tutorial-done → first-battle-done → return-visit
+   Each fires AT MOST ONCE PER PLAYER (flagged in the save), so the numbers read
+   as "how many people reached this step", not "how many times it happened" —
+   which is what makes step-to-step drop-off meaningful. Repeatable engagement
+   signals (daily played/cleared, streak milestones) are tracked separately.
+   Everything is wrapped: analytics must never be able to break the game. ── */
+function funnelOnce(step){
+  try{
+    if(!SAVE.funnel)SAVE.funnel={};
+    if(SAVE.funnel[step])return;          // already counted for this player
+    SAVE.funnel[step]=Date.now(); persist();
+    gcEvent('funnel-'+step);
+  }catch(e){}
+}
 try{
+  funnelOnce('load'); // first ever load
+  // RETURN VISIT — the single most important beta number: did they come back at all?
+  (function(){
+    try{
+      const now=Date.now(), last=SAVE.lastVisit||0;
+      if(last && now-last>6*3600e3){       // a genuinely separate session, not an F5
+        gcEvent('return-visit');
+        if(now-last>20*3600e3)funnelOnce('return-next-day');
+      }
+      SAVE.lastVisit=now; persist();
+    }catch(e){}
+  })();
+  // TUTORIAL — started vs finished is where most first-timers are won or lost
+  if(typeof tutStart==='function'){ const _ts=tutStart; tutStart=function(){ funnelOnce('tutorial-start'); return _ts.apply(this,arguments); }; }
+  if(typeof tutFinish==='function'){ const _tf=tutFinish; tutFinish=function(){ const done=G&&G.tutDone; const r=_tf.apply(this,arguments); if(!done)funnelOnce('tutorial-done'); return r; }; }
+  // BATTLES — first start of each mode, plus the first battle a player ever FINISHES
   const _origStart = start;
   start = function(){
     _origStart.apply(this, arguments);
-    try{ if(G && !G.attract && !G.tutorial && !G._gcTracked){ G._gcTracked=true; gcEvent('battle-'+(G.kind||G.mode||'skirmish')); } }catch(e){}
+    try{ if(G && !G.attract && !G.tutorial && !G._gcTracked){ G._gcTracked=true;
+      gcEvent('battle-'+(G.kind||G.mode||'skirmish'));
+      if(G.kind==='daily')gcEvent('daily-played');
+    } }catch(e){}
+  };
+  const _origEnd = endGame;
+  endGame = function(winner,reason){
+    const wasOver = !!(G&&G.over);
+    const r=_origEnd.apply(this, arguments);
+    try{
+      if(G && !wasOver && !G.attract && !G.tutorial){
+        funnelOnce('first-battle-done');
+        if(winner==='B')funnelOnce('first-win');
+        if(G.kind==='daily'&&winner==='B')gcEvent('daily-cleared');
+        // streak milestones — the retention loop actually working, worth watching
+        const st=SAVE.dailyStreak||0;
+        if(G.kind==='daily'&&winner==='B'&&(st===3||st===7||st===14||st===30))gcEvent('daily-streak-'+st);
+        if(G.kind==='secret'&&winner==='B')funnelOnce('secret-cleared');
+      }
+    }catch(e){}
+    return r;
+  };
+}catch(e){}
+
+/* ── PLAYTEST FEEDBACK (Phase 2) ──────────────────────────────────────────
+   Builds a structured report from what the player typed PLUS the state they were
+   in, so "it broke" becomes reproducible. Nothing is transmitted automatically:
+   the player sees exactly what's attached, then copies it / opens the form. ── */
+const FEEDBACK_FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLSe3f5r4bGuWzFGjz2QhG8sVaX08j1kSUDy9KVNVHA29NCz8QQ/viewform?usp=dialog';
+const FB_KINDS=[{id:'bug',label:'🐞 Bug'},{id:'balance',label:'⚖ Balance'},{id:'idea',label:'💡 Idea'},{id:'praise',label:'❤ Praise'}];
+let fbKind='bug';
+function fbBrowser(){
+  const ua=navigator.userAgent||'';
+  let n='Unknown';
+  if(/Edg\//.test(ua))n='Edge'; else if(/OPR\//.test(ua))n='Opera';
+  else if(/Chrome\//.test(ua))n='Chrome'; else if(/Firefox\//.test(ua))n='Firefox';
+  else if(/Safari\//.test(ua))n='Safari';
+  const m=ua.match(/(?:Edg|OPR|Chrome|Firefox|Version)\/([\d.]+)/);
+  let os='Unknown';
+  if(/Windows/.test(ua))os='Windows'; else if(/Android/.test(ua))os='Android';
+  else if(/iPhone|iPad|iPod/.test(ua))os='iOS'; else if(/Mac OS X/.test(ua))os='macOS';
+  else if(/Linux/.test(ua))os='Linux';
+  return n+(m?' '+m[1].split('.')[0]:'')+' · '+os;
+}
+function fbContext(){
+  const L=[];
+  try{
+    L.push('version:    v'+GAME_VERSION);
+    L.push('browser:    '+fbBrowser());
+    L.push('screen:     '+window.innerWidth+'×'+window.innerHeight+' @'+(window.devicePixelRatio||1)+'x'+
+      (matchMedia('(pointer:coarse)').matches?' · touch':' · mouse'));
+    L.push('rank:       '+SAVE.lvl+' ('+equippedTitleStr()+') · '+SAVE.wins+'W/'+SAVE.losses+'L');
+    L.push('progress:   campaign '+(SAVE.campaignDone+1)+'/'+CAMPAIGN.length+
+      ' · trials '+Object.keys(SAVE.timeTrials||{}).length+'/'+CAMPAIGN.length+
+      ' · secret '+(SAVE.secretDone?'cleared':(SAVE.secretUnlocked?'unlocked':'hidden')));
+    if(G && !G.attract){
+      L.push('IN BATTLE:  '+(G.kind||'?')+'/'+(G.mode||'?')+' · '+(DIFFS[G.diff]?DIFFS[G.diff].name:G.diff)+
+        ' · '+(DOCTRINES[G.doc]?DOCTRINES[G.doc].name:G.doc)+' · '+(G.wx?G.wx.name:'?'));
+      L.push('  state:    t='+Math.round(G.t)+'s cp='+Math.round(G.cp)+' units='+G.units.length+
+        ' kills='+G.kills+' hqB='+Math.round(G.hq.B)+' hqR='+Math.round(G.hq.R)+
+        (G.over?' (ended: '+G.result+')':''));
+      if(G.daily&&G.daily.gen)L.push('  daily:    '+G.daily.gen.mut.name);
+    } else {
+      L.push('IN BATTLE:  no — on a menu/title screen');
+    }
+    L.push('settings:   '+['sound','music','narrator','streamOn','reduceMotion','randomEvents','chaosMode']
+      .filter(k=>SAVE[k]).join(', ')||'all off');
+    if(ERRLOG.length){ L.push('ERRORS ('+ERRLOG.length+'):');
+      ERRLOG.slice(-4).forEach(e=>L.push('  ['+e.t+'s] '+e.kind+': '+e.msg+(e.at?' @'+e.at:''))); }
+    else L.push('errors:     none captured');
+  }catch(e){ L.push('(context capture failed: '+e.message+')'); }
+  return L.join('\n');
+}
+function fbReport(){
+  const kind=(FB_KINDS.find(k=>k.id===fbKind)||FB_KINDS[0]).label;
+  const txt=(document.getElementById('fb-text').value||'').trim();
+  return 'FRONTLINE COMMANDER — PLAYTEST REPORT\n'+kind+'\n\n'+
+    (txt||'(no description given)')+'\n\n--- automatically attached ---\n'+fbContext();
+}
+function buildFeedbackModal(){
+  const kb=document.getElementById('fb-kinds'); if(!kb)return; kb.innerHTML='';
+  for(const k of FB_KINDS){
+    const b=document.createElement('button'); b.className='fb-kind'+(fbKind===k.id?' sel':'');
+    b.textContent=k.label; b.onclick=()=>{fbKind=k.id;buildFeedbackModal();};
+    kb.appendChild(b);
+  }
+  document.getElementById('fb-ctx').textContent=fbContext();
+}
+function openFeedback(){
+  buildFeedbackModal();
+  document.getElementById('fb-status').textContent='';
+  document.getElementById('feedbackmodal').classList.add('show');
+  try{ gcEvent('feedback-opened'); }catch(e){}
+}
+function closeFeedback(){ document.getElementById('feedbackmodal').classList.remove('show'); }
+try{
+  document.getElementById('playtest-link').onclick=openFeedback;
+  document.getElementById('fb-close').onclick=closeFeedback;
+  document.getElementById('fb-copy').onclick=async()=>{
+    const rep=fbReport(), st=document.getElementById('fb-status');
+    try{ await navigator.clipboard.writeText(rep); st.textContent='✔ Report copied — paste it into the form (or straight to us).'; }
+    catch(e){ // clipboard blocked (insecure origin / permissions): fall back to selecting it
+      const ta=document.getElementById('fb-text'); ta.value=rep; ta.select();
+      st.textContent='Clipboard blocked — the full report is in the box above, press Ctrl/Cmd+C.';
+    }
+    try{ gcEvent('feedback-copied'); }catch(e){}
+  };
+  document.getElementById('fb-form').onclick=()=>{
+    try{ navigator.clipboard.writeText(fbReport()); }catch(e){}
+    document.getElementById('fb-status').textContent='Report copied — paste it into the form that just opened.';
+    window.open(FEEDBACK_FORM_URL,'_blank','noopener,noreferrer');
+    try{ gcEvent('feedback-submitted'); }catch(e){}
   };
 }catch(e){}
 </script>

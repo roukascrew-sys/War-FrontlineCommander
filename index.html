@@ -2,14 +2,241 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="refresh" content="0; url=wargame.html">
-<link rel="canonical" href="wargame.html">
-<title>FRONTLINE COMMANDER — a fast war game</title>
-<meta name="description" content="Frontline Commander: a free, zero-install lane-battler where a live counter web, doctrines, and a narrated Iron Marshal meet Twitch chat sabotage.">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTLINE COMMANDER — a fast, free browser war game</title>
+<meta name="description" content="A free three-lane war game you can play instantly in your browser. Real counters, nine doctrines, a narrated war-room, and Twitch chat that fights on the enemy's side. No download, no signup.">
+<meta name="theme-color" content="#0a0e14">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:title" content="FRONTLINE COMMANDER — a fast, free browser war game">
+<meta property="og:description" content="Three lanes. Real counters. A narrated war-room and a chat that fights against you. Free in your browser — no download, no signup.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FRONTLINE COMMANDER — a fast, free browser war game">
+<meta name="twitter:description" content="Three lanes. Real counters. Free in your browser — no download, no signup.">
 <meta name="robots" content="index,follow">
+<meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://*.goatcounter.com; img-src 'self' data: https://*.goatcounter.com; object-src 'none'; base-uri 'none'">
+<style>
+  /* Self-contained on purpose — same rule as the game itself: this page must work when it's the
+     only file on the server, with no build step, no CDN, and no external font. */
+  :root{
+    --bg:#0a0e14; --panel:#121926; --panel2:#0e1520; --line:#26303f;
+    --ink:#e8eef7; --dim:#94a3b8; --faint:#5b6779;
+    --gold:#ffce5a; --blue:#4aa8ff; --red:#ff5a4a; --good:#3fd07a; --purple:#c9a0ff; --cyan:#5ff0e0;
+    --font:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.6;overflow-x:hidden;}
+  a{color:inherit;text-decoration:none;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px;}
+
+  /* ── HERO ─────────────────────────────────────────────────────────────── */
+  header{position:relative;overflow:hidden;border-bottom:1px solid var(--line);
+    background:radial-gradient(ellipse at 50% 0%,#16203100 0%,#0a0e14 70%),linear-gradient(180deg,#101827,#0a0e14);}
+  /* three faint lanes drifting behind the hero — the game's core shape as set dressing */
+  .lanes{position:absolute;inset:0;pointer-events:none;opacity:.5;}
+  .lane{position:absolute;left:-10%;width:120%;height:1px;background:linear-gradient(90deg,transparent,#4aa8ff44 20%,#ff5a4a44 80%,transparent);}
+  .lane:nth-child(1){top:34%;} .lane:nth-child(2){top:50%;} .lane:nth-child(3){top:66%;}
+  .tracer{position:absolute;height:2px;width:90px;border-radius:2px;
+    background:linear-gradient(90deg,transparent,#ffe27a,#fff,transparent);
+    filter:drop-shadow(0 0 5px #ffce5a);animation:fly 5.5s linear infinite;opacity:0;}
+  .tracer.t1{top:34%;animation-delay:0s;} .tracer.t2{top:50%;animation-delay:1.9s;} .tracer.t3{top:66%;animation-delay:3.6s;}
+  @keyframes fly{0%{left:-12%;opacity:0;}8%{opacity:1;}80%{opacity:1;}100%{left:104%;opacity:0;}}
+  .hero{position:relative;z-index:2;text-align:center;padding:78px 0 66px;}
+  .badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:2.4px;text-transform:uppercase;
+    color:var(--cyan);border:1px solid var(--cyan);border-radius:20px;padding:5px 14px;margin-bottom:22px;}
+  h1{font-size:clamp(38px,8.5vw,76px);font-weight:900;letter-spacing:2px;line-height:.98;
+    text-shadow:0 0 46px #000,0 6px 22px #000;}
+  h1 b{color:var(--gold);} h1 span{color:var(--ink);display:block;}
+  .tag{font-size:clamp(15px,2.4vw,20px);color:var(--ink);opacity:.92;margin:20px auto 6px;max-width:660px;font-weight:600;}
+  .sub{font-size:14.5px;color:var(--dim);max-width:610px;margin:0 auto 30px;}
+  .cta-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;}
+  .cta{display:inline-flex;align-items:center;gap:10px;padding:15px 34px;border-radius:12px;font-weight:900;
+    font-size:18px;letter-spacing:.6px;border:2px solid var(--gold);background:var(--gold);color:#0a0e14;
+    transition:.14s;box-shadow:0 8px 30px -8px #ffce5a88;}
+  .cta:hover{transform:translateY(-2px);box-shadow:0 14px 38px -8px #ffce5aaa;}
+  .cta.ghost{background:transparent;color:var(--ink);border-color:var(--line);box-shadow:none;font-size:15px;padding:15px 24px;}
+  .cta.ghost:hover{border-color:var(--blue);color:var(--blue);}
+  .noteline{font-size:12.5px;color:var(--faint);letter-spacing:.4px;}
+  .noteline b{color:var(--good);}
+
+  /* ── SECTIONS ─────────────────────────────────────────────────────────── */
+  section{padding:66px 0;border-bottom:1px solid var(--line);}
+  h2{font-size:clamp(23px,3.6vw,32px);font-weight:900;letter-spacing:.6px;margin-bottom:10px;}
+  h2 em{color:var(--gold);font-style:normal;}
+  .lede{color:var(--dim);font-size:15px;max-width:720px;margin-bottom:34px;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:18px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;transition:.15s;}
+  .card:hover{transform:translateY(-3px);border-color:var(--bc,var(--blue));box-shadow:0 14px 34px -14px #000d;}
+  .card .ic{font-size:26px;display:block;margin-bottom:10px;}
+  .card h3{font-size:16px;font-weight:800;margin-bottom:7px;color:var(--bc,var(--ink));letter-spacing:.3px;}
+  .card p{font-size:13.5px;color:var(--dim);}
+
+  /* counter triangle */
+  .counters{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px;}
+  .ctr{flex:1 1 210px;max-width:280px;background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--cc,var(--gold));
+    border-radius:10px;padding:15px 17px;}
+  .ctr b{color:var(--cc,var(--gold));font-size:14px;display:block;margin-bottom:3px;letter-spacing:.4px;}
+  .ctr span{font-size:13px;color:var(--dim);}
+
+  /* modes list */
+  .modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;}
+  .mode{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+  .mode b{display:block;font-size:14px;color:var(--ink);margin-bottom:3px;}
+  .mode span{font-size:12.5px;color:var(--dim);}
+  .mode .lk{font-size:10px;font-weight:800;letter-spacing:1px;color:var(--faint);text-transform:uppercase;}
+
+  .final{text-align:center;padding:74px 0;}
+  .final h2{margin-bottom:14px;}
+  footer{padding:30px 0 44px;text-align:center;color:var(--faint);font-size:12.5px;}
+  footer a{color:var(--dim);text-decoration:underline dotted;}
+  footer a:hover{color:var(--gold);}
+
+  @media (prefers-reduced-motion:reduce){ .tracer{animation:none;opacity:0;} html{scroll-behavior:auto;} }
+  @media (max-width:640px){ .hero{padding:56px 0 48px;} section{padding:48px 0;} .cta{width:100%;justify-content:center;} }
+</style>
 </head>
 <body>
-<p>Loading Frontline Commander... if nothing happens, <a href="wargame.html">click here</a>.</p>
-<script>location.replace('wargame.html');</script>
+
+<header>
+  <div class="lanes" aria-hidden="true">
+    <div class="lane"></div><div class="lane"></div><div class="lane"></div>
+    <div class="tracer t1"></div><div class="tracer t2"></div><div class="tracer t3"></div>
+  </div>
+  <div class="wrap hero">
+    <div class="badge">Free · In your browser · No signup</div>
+    <h1>⚔ <b>FRONTLINE</b><span>COMMANDER</span></h1>
+    <p class="tag">Three lanes. One war. Bank Command Points, read what's coming, and send the counter — before they crack your HQ.</p>
+    <p class="sub">A fast real-time war game that runs entirely in a browser tab. Pick a doctrine, slam units into three lanes, and break the enemy headquarters. Matches take minutes; the counter web takes longer to master.</p>
+    <div class="cta-row">
+      <a class="cta" href="wargame.html">▶ PLAY NOW</a>
+      <a class="cta ghost" href="#how">How it plays</a>
+    </div>
+    <p class="noteline"><b>Nothing to install.</b> Loads in seconds · works on desktop, tablet and phone · your progress saves in your browser</p>
+  </div>
+</header>
+
+<section id="how">
+  <div class="wrap">
+    <h2>The whole game in <em>thirty seconds</em></h2>
+    <p class="lede">Command Points build up on their own. Everything you deploy spends them. Your units fight by themselves — your job is the decisions above them: what to build, where to commit it, and when to spend a strike.</p>
+    <div class="grid">
+      <div class="card" style="--bc:var(--gold)">
+        <span class="ic">💰</span><h3>Bank &amp; spend</h3>
+        <p>CP ticks up for both sides. Kills pay a bounty, so a good trade funds your next wave. Spend it badly and you're watching their army walk in.</p>
+      </div>
+      <div class="card" style="--bc:var(--blue)">
+        <span class="ic">🛣</span><h3>Three lanes</h3>
+        <p>Top, middle, bottom. Every lane gets a random terrain modifier each match — forest hides infantry, high ground extends artillery. Commit accordingly.</p>
+      </div>
+      <div class="card" style="--bc:var(--red)">
+        <span class="ic">🎯</span><h3>Send the counter</h3>
+        <p>Four damage types against five armour classes. Small arms shred infantry and ping off tanks. Read what's coming and answer it — that's the whole game.</p>
+      </div>
+      <div class="card" style="--bc:var(--purple)">
+        <span class="ic">🛰</span><h3>Call it in</h3>
+        <p>Gunship runs, rolling barrages, precision munitions, recon flares, EMP pulses — free, on cooldown, and often the difference in a lane you're losing.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Rock-paper-scissors, <em>with guns</em></h2>
+    <p class="lede">Fifteen units across infantry, armour, artillery, air and drones. None of them is best — each one beats something and loses to something else.</p>
+    <div class="counters">
+      <div class="ctr" style="--cc:var(--blue)"><b>⊕ AT beats armour</b><span>Anti-tank teams gut a tank, then get overrun by the infantry escorting it.</span></div>
+      <div class="ctr" style="--cc:var(--gold)"><b>◼ Armour beats infantry</b><span>Tanks roll through riflemen and shrug off small arms — until the AT arrives.</span></div>
+      <div class="ctr" style="--cc:var(--good)"><b>▲ Infantry swarm the AT</b><span>Cheap bodies close the distance and bury the specialists. And round it goes.</span></div>
+      <div class="ctr" style="--cc:var(--purple)"><b>⬡ Air over everything</b><span>Helicopters ignore the ground war entirely — until an AA vehicle looks up.</span></div>
+      <div class="ctr" style="--cc:var(--cyan)"><b>◈ EW eats drones</b><span>Cheap drone swarms are brutal in bulk and evaporate against jammers and rapid fire.</span></div>
+      <div class="ctr" style="--cc:var(--red)"><b>⊞ Guns shape the ground</b><span>Artillery owns space it can see. Close the distance fast, or lose the lane to it.</span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Nine ways to <em>keep playing</em></h2>
+    <p class="lede">A quick skirmish is a couple of minutes. Everything else is there for when that stops being enough.</p>
+    <div class="modes">
+      <div class="mode"><b>⚔ Skirmish</b><span>The main event — crack their HQ before they crack yours.</span></div>
+      <div class="mode"><b>🧬 Evolution</b><span>Age-of-War style: kills advance you through five eras of hardware.</span></div>
+      <div class="mode"><b>⏱ Blitz</b><span>A two-minute clock. Most HQ damage wins. No time to think.</span></div>
+      <div class="mode"><b>🌊 Survival</b><span>Endless waves that escalate every 30 seconds. How long do you hold?</span></div>
+      <div class="mode"><b>⬣ Domination</b><span>Forget the HQ — hold the middle of all three lanes at once. <span class="lk">Rank 6</span></span></div>
+      <div class="mode"><b>🗺 War Mode</b><span>A conquest map where each node is a battle and losses cost you ground. <span class="lk">Rank 15</span></span></div>
+      <div class="mode"><b>🎯 Daily Challenge</b><span>A fresh procedurally-built scenario every day — the same fight worldwide. Build a streak.</span></div>
+      <div class="mode"><b>⚔ Rivals</b><span>Five named generals who remember how you beat them and adapt.</span></div>
+      <div class="mode"><b>🎖 Campaign</b><span>Ten escalating missions with briefings, star objectives and time trials.</span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Built to be <em>watched</em></h2>
+    <p class="lede">There's a war-room narrator calling the fight over a radio bed, and if you're streaming, your chat doesn't just spectate.</p>
+    <div class="grid">
+      <div class="card" style="--bc:var(--purple)">
+        <span class="ic">📡</span><h3>Chat fights back</h3>
+        <p>Connect a Twitch channel and viewers command the <b>enemy</b> — surging lanes, calling in bosses, and at fifty unique chatters, dropping a nuke on the whole field. Read-only and anonymous; no login.</p>
+      </div>
+      <div class="card" style="--bc:var(--gold)">
+        <span class="ic">🎙</span><h3>The Iron Marshal</h3>
+        <p>A narrated commander who reacts to the battle, taunts your rivals, and subtitles every line. Runs entirely on your device — no account, no cloud voice.</p>
+      </div>
+      <div class="card" style="--bc:var(--good)">
+        <span class="ic">🏆</span><h3>A hundred ranks</h3>
+        <p>Titles, HQ badges, commendations and whole modes unlock as you climb from Recruit to Five-Star Legend. And there's something hidden for whoever clears every time trial.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2>The front is waiting, <em>Commander</em>.</h2>
+    <p class="sub">Free, instant, and it saves your progress. One click.</p>
+    <div class="cta-row"><a class="cta" href="wargame.html">▶ PLAY FRONTLINE COMMANDER</a></div>
+    <p class="noteline">Currently in open playtesting — there's a 🧪 Feedback button in-game, and we read every report.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    FRONTLINE COMMANDER — made for the web, headed for Steam.<br>
+    All factions, nations and events are fictional. <a href="wargame.html">Play now</a>
+  </div>
+</footer>
+
+<script>
+/* Same privacy-friendly, cookieless counter the game uses, so landing-page views and
+   play-clicks can be compared against each other (that ratio IS the conversion rate).
+   No-ops until ANALYTICS_SITE is filled in — keep it identical to the value in wargame.html. */
+var ANALYTICS_SITE = ''; // ← paste your GoatCounter site URL here (e.g. https://frontline.goatcounter.com)
+function gcSend(path,title,isEvent){
+  if(!/^https:\/\/[a-z0-9-]+\.goatcounter\.com/i.test(ANALYTICS_SITE||''))return;
+  try{
+    var q='?p='+encodeURIComponent(path||location.pathname||'/')
+      +'&t='+encodeURIComponent(title||document.title)
+      +(isEvent?'&e=1':'')
+      +'&r='+encodeURIComponent(document.referrer||'')
+      +'&rnd='+Math.random().toString(36).slice(2);
+    var img=new Image(); img.referrerPolicy='no-referrer-when-downgrade';
+    img.src=ANALYTICS_SITE.replace(/\/+$/,'')+'/count'+q;
+  }catch(e){}
+}
+try{ gcSend(); }catch(e){}
+// count every route into the game so we can measure landing-page → play conversion
+try{
+  document.querySelectorAll('a[href="wargame.html"]').forEach(function(a){
+    a.addEventListener('click',function(){ try{ gcSend('event/landing-play','landing-play',true); }catch(e){} });
+  });
+}catch(e){}
+</script>
 </body>
 </html>
