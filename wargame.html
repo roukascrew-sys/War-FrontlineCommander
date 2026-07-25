@@ -38,6 +38,11 @@
      'unsafe-inline' still blocks an injected <script src="https://evil.example/x.js">, which is
      the realistic bar for a page with no server and no injection sink found in security review. -->
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'; connect-src 'self' wss://irc-ws.chat.twitch.tv https://*.goatcounter.com; img-src 'self' data: https://*.goatcounter.com; object-src 'none'; base-uri 'none'">
+<!-- No-cache: some phones/mail clients aggressively cache a same-named local HTML file and keep
+     serving it after we've pushed a newer build — this rules that out as a source of "old version" reports. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <script>
 /* BOOT GUARD — deliberately written in plain ES5 and kept tiny, and loaded as the very
    first script in <head>, before styles.css or game.js. Its only job is to guarantee a
@@ -1177,7 +1182,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.14.1</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.14.2</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -2095,13 +2100,16 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.14.1';
+const GAME_VERSION='1.14.2';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.14.2',notes:[
+    'Added explicit no-cache headers to both this file and the landing page, and a build number in the landing page footer — if a phone or mail client ever serves a stale cached copy instead of the latest build, this makes it obvious at a glance rather than a silent "why does this look old" mystery.',
+  ]},
   {v:'1.14.1',notes:[
     'FIXED: opening the game straight from an email attachment on iPhone showed a loading bar stuck at 0%, then a black screen with no explanation. That preview window lets the page draw but never runs its timers, which silently disabled every safety net the game had (all of them were timers). There is now a pure-CSS notice that cannot be disabled that way — it explains what happened and how to open the file in a real browser.',
     'The no-JavaScript message is clearer, and both failure screens now show the build number so a stuck copy can be identified at a glance',

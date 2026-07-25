@@ -24,6 +24,12 @@
 <meta name="twitter:image" content="og-image.png">
 <meta name="robots" content="index,follow">
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'; connect-src 'self' https://*.goatcounter.com; img-src 'self' data: https://*.goatcounter.com; object-src 'none'; base-uri 'none'">
+<!-- No-cache: some phones/mail clients aggressively cache a same-named local HTML file and keep
+     serving it after we've pushed a newer build. This costs nothing on a real server (revalidated
+     every load) and helps rule out "why am I seeing an old version" reports. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <style>
   /* Self-contained on purpose — same rule as the game itself: this page must work when it's the
      only file on the server, with no build step, no CDN, and no external font. */
@@ -219,7 +225,8 @@
   <div class="wrap">
     FRONTLINE COMMANDER — made for the web, headed for Steam.<br>
     All factions, nations and events are fictional. <a href="wargame.html">Play now</a><br>
-    <span style="opacity:.7">© 2026 RoukasCrew. All rights reserved.</span>
+    <span style="opacity:.7">© 2026 RoukasCrew. All rights reserved.</span><br>
+    <span style="opacity:.4;font-size:11px">page build 1.14.2 — if the game looks older than this, force-refresh or re-download</span>
   </div>
 </footer>
 

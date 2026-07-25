@@ -124,3 +124,16 @@ To keep phases distinguishable inside that one file:
   screen with no way out. Fixed by having `openMenu()` unconditionally hide
   `#pauseScreen` itself, and hardening the `Abandon` handler against `G`
   already being null.
+
+## v1.14.2 — no-cache headers + visible build stamp
+
+Added explicit `Cache-Control: no-cache, no-store, must-revalidate` (+
+`Pragma`/`Expires`) meta tags to both `index.html` and `wargame.html`, and a
+visible build number in the landing page footer. Motivation: a playtester
+reported the landing page "leading to a much older version" of the game.
+Repo-side investigation found no stale deployment, no service worker, and no
+prior cache directives at all — the leading theory is a phone/mail client
+caching a previously-saved copy of a same-named local file. These headers
+cost nothing (there's no server to burden) and the visible build stamp gives
+a fast way to confirm which build is actually on screen the next time this
+comes up.
