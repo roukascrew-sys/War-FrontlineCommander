@@ -59,6 +59,12 @@ Planned/in-flight items:
       text) so a broken build is visible on the dashboard instead of only
       surfacing when a player self-reports through Feedback. Capped at 5
       distinct events per session.
+- [x] CSP now declares `script-src 'self' 'unsafe-inline'` in both files (previously
+      unset, meaning script execution was completely unrestricted by CSP). Still
+      `'unsafe-inline'` rather than a stricter nonce/hash policy — every line of game
+      logic is deliberately inline for single-file shareability, and a hash policy
+      would need recomputing on every edit. Found via a security review; no XSS sink
+      was found to exploit the previous gap, but it's the wrong kind of "safe by luck."
 - [ ] Hosting setup (domain, static hosting or CDN).
 - [x] Copyright/licensing: added a `LICENSE` file (all-rights-reserved
       placeholder — swap the holder name and get it lawyer-reviewed before a

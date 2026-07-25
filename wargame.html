@@ -23,7 +23,13 @@
 <meta name="twitter:title" content="FRONTLINE COMMANDER — a fast war game">
 <meta name="twitter:description" content="A free, zero-install lane-battler, playable straight in the browser.">
 <meta name="robots" content="index,follow">
-<meta http-equiv="Content-Security-Policy" content="connect-src 'self' wss://irc-ws.chat.twitch.tv https://*.goatcounter.com; img-src 'self' data: https://*.goatcounter.com; object-src 'none'; base-uri 'none'">
+<!-- script-src is 'self' 'unsafe-inline' rather than a stricter nonce/hash policy because every
+     line of game logic is deliberately INLINE (see PHASES.md — splitting into external files
+     previously broke single-file shareability). A hash-based policy would need recomputing on
+     every edit to this file and would silently break the game the first time someone forgot to.
+     'unsafe-inline' still blocks an injected <script src="https://evil.example/x.js">, which is
+     the realistic bar for a page with no server and no injection sink found in security review. -->
+<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'; connect-src 'self' wss://irc-ws.chat.twitch.tv https://*.goatcounter.com; img-src 'self' data: https://*.goatcounter.com; object-src 'none'; base-uri 'none'">
 <script>
 /* BOOT GUARD — deliberately written in plain ES5 and kept tiny, and loaded as the very
    first script in <head>, before styles.css or game.js. Its only job is to guarantee a
