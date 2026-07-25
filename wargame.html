@@ -5253,10 +5253,15 @@ function chatMsgRaw(user,txt,ucol){
    below therefore works in ONE space: coordinates relative to the offset parent. SAVE.chatPos is
    stored in that space too, so a save/restore round-trip is exact. */
 function chatBoxFrame(){
-  const box=document.getElementById('chatbox');
-  const op=box&&box.offsetParent;
-  if(!op)return {ox:0,oy:0,pw:window.innerWidth,ph:window.innerHeight};
-  const r=op.getBoundingClientRect();
+  // Deliberately NOT box.offsetParent: #chatbox lives inside #stream, which is display:none
+  // until a battle actually starts. offsetParent is always null on a hidden element, and the
+  // boot sequence clamps the saved position BEFORE the first battle ever shows #stream — so
+  // relying on offsetParent silently fell back to raw viewport size instead of #stage's real
+  // (topbar-shorter) size, letting a position saved on a tall window render partly off-screen
+  // on a shorter one. #stage itself is never display:none, so it's a stable reference either way.
+  const stage=document.getElementById('stage');
+  if(!stage)return {ox:0,oy:0,pw:window.innerWidth,ph:window.innerHeight};
+  const r=stage.getBoundingClientRect();
   return {ox:r.left,oy:r.top,pw:r.width,ph:r.height};
 }
 function chatBoxClamp(){

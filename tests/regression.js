@@ -109,6 +109,37 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
   ok(failsafe.noticeShown, '[injected parse error] honest "browser too old" notice shown');
   await bad.close();
 
+  // ══ 3b. CHAT PANEL STAYS ON-SCREEN ACROSS A CROSS-SESSION VIEWPORT SHRINK ══
+  // Regression for: chatBoxFrame() used to read box.offsetParent, which is null while #stream
+  // is display:none (i.e. at boot, before any battle has started) and silently fell back to raw
+  // viewport size instead of #stage's real (topbar-shorter) size — so a position saved on a tall
+  // window could render partly off-screen on a shorter one, with no way to drag it back.
+  const shrink = await browser.newContext({ viewport: { width: 1000, height: 520 } });
+  const sp = await shrink.newPage();
+  await sp.addInitScript(() => {
+    localStorage.setItem('FRONTLINE_SAVE_v1', JSON.stringify({
+      xp: 0, lvl: 5, seenTut: true, streamOn: true,
+      chatPos: { x: 20, y: 600 }, // valid on a taller (900px) viewport from a prior session
+    }));
+  });
+  await sp.goto(BASE_URL);
+  await sp.waitForFunction(() => document.getElementById('loader') && document.getElementById('loader').classList.contains('gone'), { timeout: 15000 });
+  await sp.waitForTimeout(500);
+  await sp.evaluate(() => {
+    const fr = document.getElementById('firstrun'); if (fr) fr.classList.remove('show');
+    showTitle(); leaveTitle(); LAUNCH = null; sel.mode = 'skirmish'; start();
+    if (G) { G.tutorial = false; G.prep = 0; G.frozen = false; }
+    refreshTopbar();
+  });
+  await sp.waitForTimeout(400);
+  const chatFit = await sp.evaluate(() => {
+    const box = document.getElementById('chatbox'), stage = document.getElementById('stage');
+    const br = box.getBoundingClientRect(), sr = stage.getBoundingClientRect();
+    return br.top >= sr.top - 1 && br.bottom <= sr.bottom + 1;
+  });
+  ok(chatFit, 'chat panel stays inside #stage after a cross-session viewport shrink');
+  await shrink.close();
+
   // ══ 4. FULL GAMEPLAY REGRESSION ACROSS MODES ══
   const modes = ['skirmish', 'blitz', 'survival', 'domination', 'evolution'];
   for (const m of modes) {
