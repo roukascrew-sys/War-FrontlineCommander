@@ -319,10 +319,17 @@
   /* streamer mode overlay */
   #stream{position:absolute;inset:0;pointer-events:none;z-index:9;display:none;}
   #stream.on{display:block;}
+  /* The chat panel is DRAGGABLE — #stream is pointer-events:none so the battlefield stays
+     clickable through the overlay, which means the chatbox has to opt itself back in. */
   #chatbox{position:absolute;bottom:120px;left:12px;width:270px;height:230px;background:#0b0f18cc;
-    border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;overflow:hidden;}
+    border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;overflow:hidden;
+    pointer-events:auto;}
+  #chatbox.dragging{border-color:var(--purple);box-shadow:0 0 18px #c9a0ff55;user-select:none;}
   #chatbox .ch-h{font-size:10px;font-weight:800;letter-spacing:1px;color:var(--purple);padding:5px 8px;
-    border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px;}
+    border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px;
+    cursor:grab;touch-action:none;}
+  #chatbox.dragging .ch-h{cursor:grabbing;}
+  #chatbox .ch-h .drag-grip{margin-left:auto;color:var(--faint);letter-spacing:0;font-size:12px;}
   #chatbox .ch-h .dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:pulse 1.4s infinite;}
   @keyframes pulse{50%{opacity:.3;}}
   #chatfeed{flex:1;overflow:hidden;padding:5px 8px;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;}
@@ -411,25 +418,6 @@
     border-radius:8px;background:#0b0f18cc;color:var(--dim);font-size:12px;font-weight:600;}
   .back-btn:hover{color:var(--ink);border-color:var(--gold);}
 
-  /* ── LOGIN / CALLSIGN TERMINAL — an old-school green-phosphor console look ── */
-  #login{background:radial-gradient(ellipse at 50% 40%,#0a1410,#04070a);}
-  #login-scan{position:absolute;inset:0;pointer-events:none;opacity:.5;
-    background:repeating-linear-gradient(180deg,#00ff8808 0px,#00ff8808 1px,transparent 2px,transparent 3px);}
-  #login-box{position:relative;z-index:2;width:min(420px,88vw);border:1px solid #2fdf8a55;border-radius:10px;
-    background:#05100acc;padding:26px 26px 20px;text-align:center;box-shadow:0 0 40px #00ff8818,inset 0 0 30px #00110a;}
-  .login-hdr{font-family:var(--mono);font-size:15px;font-weight:800;letter-spacing:2px;color:#4dffab;
-    text-shadow:0 0 10px #22ff9a70;margin-bottom:6px;}
-  .login-sub{font-size:11.5px;color:#7fa898;line-height:1.5;margin-bottom:18px;}
-  .login-row{display:flex;align-items:center;gap:8px;background:#02150dcc;border:1px solid #2fdf8a55;
-    border-radius:7px;padding:9px 12px;margin-bottom:16px;}
-  .login-caret{font-family:var(--mono);color:#4dffab;font-weight:800;}
-  #login-input{flex:1;background:none;border:none;outline:none;font-family:var(--mono);font-size:15px;
-    letter-spacing:2px;color:#c9ffe4;text-transform:uppercase;}
-  #login-input::placeholder{color:#3a6a56;letter-spacing:1.5px;}
-  .login-btns{display:flex;flex-direction:column;gap:8px;}
-  #login-go.hero-btn{border-color:#2fdf8a70;}
-  #login-go.hero-btn .hb-ic{color:#4dffab;}
-  #login-rand{border-color:#2fdf8a40;color:#8fe9c0;}
 
   /* ── LOADING SCREEN ──
      The animation below is a pure-CSS, zero-JS-dependent last resort: if boot-guard.js and
@@ -667,6 +655,7 @@
   .t-btn.tut{border-color:var(--good);} .t-btn.tut b{color:var(--good);} .t-btn.tut:hover{box-shadow:0 0 18px #3fd07a44;}
   .title-foot{font-size:12px;color:var(--dim);text-shadow:0 2px 6px #000;margin-top:10px;}
   .title-copyright{font-size:10px;color:var(--faint);text-shadow:0 2px 6px #000;margin-top:2px;opacity:.75;}
+
   .title-foot b{color:var(--gold);}
   .t-btn.manual{border-color:var(--purple);} .t-btn.manual b{color:var(--purple);} .t-btn.manual:hover{box-shadow:0 0 18px #c9a0ff44;}
   .t-btn.record{border-color:var(--warn);} .t-btn.record b{color:var(--warn);} .t-btn.record:hover{box-shadow:0 0 18px #ffab4044;}
@@ -693,12 +682,13 @@
   /* rank-gated title buttons (War Mode, Chaos below its rank) — dimmed, no hover lift */
   .t-btn.locked{opacity:.45;filter:grayscale(.4);}
   .t-btn.locked:hover{transform:none;box-shadow:none;}
-  /* playtest-only bypass — deliberately styled apart from real game buttons (dashed, warning color) */
-  #t-debugunlock{margin-top:12px;padding:7px 16px;border-radius:8px;border:1.5px dashed var(--warn);
-    background:#1a1408cc;color:var(--warn);font-size:11px;font-weight:700;letter-spacing:.3px;
-    cursor:pointer;transition:.12s;}
-  #t-debugunlock:hover{background:#241c08dd;transform:translateY(-1px);}
-  #t-debugunlock.on{border-style:solid;background:var(--warn);color:var(--bg);}
+  /* dev-tools entry point — deliberately understated so it reads as a tester's door, not a feature.
+     Only lights up (dashed warning styling) while a dev switch is actually left on. */
+  #t-debugunlock{margin-top:10px;padding:5px 12px;border-radius:7px;border:1px solid var(--line);
+    background:#0b0f18aa;color:var(--faint);font-size:10px;font-weight:600;letter-spacing:.3px;
+    cursor:pointer;transition:.12s;opacity:.65;}
+  #t-debugunlock:hover{opacity:1;color:var(--dim);border-color:var(--dim);}
+  #t-debugunlock.on{opacity:1;border:1.5px dashed var(--warn);background:#1a1408cc;color:var(--warn);}
   /* brief toast feedback when clicking something still rank-locked */
   #locktoast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(10px);max-width:min(520px,86vw);
     background:linear-gradient(180deg,#1c1014ee,#0b0708ee);border:1px solid var(--red2);border-left:3px solid var(--red);
@@ -983,7 +973,7 @@
     #topbar .tb-btn{flex:0 0 auto;width:34px;min-width:34px;height:32px;padding:0 0 0 8px;
       overflow:hidden;white-space:nowrap;text-align:left;font-size:16px;line-height:32px;
       letter-spacing:0;border-radius:8px;}
-    #topbar #btn-ai,#topbar #btn-debug{display:none;}
+    #topbar #btn-debug{display:none;} /* dev tools stay reachable from the title screen on touch */
     #topbar #btn-pause,#topbar #btn-menu{font-size:0;text-align:center;padding:0;}
     #topbar #btn-pause::before{content:"⏸";font-size:15px;}
     #topbar #btn-menu::before{content:"☰";font-size:18px;}
@@ -1141,8 +1131,8 @@
   <button class="tb-btn" id="btn-sound">🔊 Sound</button>
   <button class="tb-btn" id="btn-music">🎵 Music</button>
   <button class="tb-btn hidden" id="btn-news">📰 News</button>
-  <button class="tb-btn" id="btn-ai">🧠 AI Debug</button>
-  <button class="tb-btn" id="btn-debug">🐞 Debug</button>
+  <!-- every dev/testing tool lives behind this one button so the topbar stays a player's toolbar -->
+  <button class="tb-btn" id="btn-debug">🐞 Debug/Dev</button>
   <button class="tb-btn hidden" id="btn-pause">⏸ Pause</button>
   <button class="tb-btn" id="btn-menu">☰ Menu</button>
 </div>
@@ -1216,7 +1206,7 @@
   <!-- streamer overlay -->
   <div id="stream">
     <div id="streamtag">● LIVE — FRONTLINE COMMANDER</div>
-    <div id="chatbox"><div class="ch-h"><span class="dot"></span>STREAM CHAT</div><div id="chatfeed"></div></div>
+    <div id="chatbox"><div class="ch-h" id="chatbox-drag"><span class="dot"></span><span id="chatbox-title">STREAM CHAT</span><span class="drag-grip" title="Drag to move">⠿</span></div><div id="chatfeed"></div></div>
     <div id="clipbanner">★ CLIP THAT! ★</div>
   </div>
   <!-- combat cutscene overlay (random event) -->
@@ -1280,24 +1270,6 @@
   </div>
 
   <!-- TITLE / ATTRACT SCREEN -->
-  <!-- LOGIN / CALLSIGN TERMINAL — a local display name, not an account. No server, no password. -->
-  <div class="screen hidden" id="login">
-    <div id="login-scan"></div>
-    <div id="login-box">
-      <div class="login-hdr" id="login-hdr">ENLISTMENT TERMINAL</div>
-      <div class="login-sub">Local profile only — no password, no server, nothing leaves this device.</div>
-      <div class="login-row">
-        <span class="login-caret">&gt;</span>
-        <input id="login-input" maxlength="18" autocomplete="off" spellcheck="false" placeholder="ENTER CALLSIGN">
-      </div>
-      <div class="login-btns">
-        <button class="hero-btn play" id="login-go"><span class="hb-ic">✔</span><span class="hb-tx"><b>ENLIST</b><small>confirm callsign</small></span></button>
-        <button class="t-btn" id="login-rand"><b>🎲 Random</b><small>assign one for me</small></button>
-      </div>
-      <button class="back-btn hidden" id="login-back">◀ Title</button>
-    </div>
-  </div>
-
   <div class="screen hidden" id="title">
     <div id="title-scrim"></div>
     <!-- flanking figures: a recruit (left) and a skull (right) that harden as your Rank climbs.
@@ -1327,9 +1299,9 @@
         <button class="t-btn patchnotes" id="t-patchnotes"><b>📋 Patch Notes</b><small>what's new</small></button>
         <button class="t-btn settings" id="t-settings"><b>⚙ Settings</b><small>audio &amp; motion</small></button>
       </div>
-      <div class="title-foot"><span id="t-callsign" title="Click to change your callsign" style="cursor:pointer;text-decoration:underline dotted;">COMMANDER</span> · <span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span> · <span id="t-ver" style="cursor:pointer;text-decoration:underline dotted;">v1.0.0</span></div>
+      <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span> · <span id="t-ver" style="cursor:pointer;text-decoration:underline dotted;">v1.0.0</span></div>
       <div class="title-copyright">© 2026 RoukasCrew. All rights reserved.</div>
-      <button id="t-debugunlock" title="For playtesters: bypasses every rank gate (modes, cosmetics) without touching your actual Rank/XP">🧪 Debug: Unlock All (testing only)</button>
+      <button id="t-debugunlock" title="Testing tools — rank-gate bypass, AI overlay, event triggers">🐞 Debug/Dev</button>
     </div>
   </div>
 
@@ -1454,12 +1426,12 @@
   <div id="twitchmodal">
     <div class="fr-card" style="max-width:480px;text-align:left">
       <div class="fr-h" style="text-align:center">📡 Live Stream Chat</div>
-      <div class="fr-p" style="text-align:center">Connect a Twitch channel and your viewers steer the <b>enemy</b>. It's read-only and anonymous — no login, no password. Type a channel below and hit Connect.</div>
+      <div class="fr-p" style="text-align:center">Connect a Twitch channel and your <b>real viewers</b> steer the <b>enemy</b>. This reads your actual live chat over Twitch's anonymous IRC — read-only, no login, no password, no token. While you're connected the demo crowd is switched off, so every name in the feed is a real person in your chat.</div>
       <div style="margin-bottom:12px">
         <label style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px">TWITCH CHANNEL</label>
         <input id="tw-channel" type="text" placeholder="e.g. your_channel_name" autocomplete="off" maxlength="25" pattern="[a-zA-Z0-9_]+" title="Letters, numbers and underscores only" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-family:var(--mono);font-size:13px">
       </div>
-      <div id="tw-status" style="font-size:12px;color:var(--dim);min-height:18px;margin-bottom:10px">Not connected — simulated chat is active in Streamer Mode.</div>
+      <div id="tw-status" style="font-size:12px;color:var(--dim);min-height:18px;margin-bottom:10px">Not connected — the demo crowd is standing in until you connect a real channel.</div>
       <div style="font-size:11.5px;color:var(--faint);line-height:1.6;margin-bottom:14px">
         Viewer commands:<br>• <b style="color:var(--ink)">top</b> / <b style="color:var(--ink)">mid</b> / <b style="color:var(--ink)">bot</b> — vote a lane; the winner gets an enemy surge on a timer.<br>• <b style="color:var(--ink)">boss</b> — enough votes summon a chat boss.<br>• <b style="color:var(--good)">drop</b> — rally votes to airdrop a supply crate for the streamer.<br>• <b style="color:var(--purple)">chaos</b> — roll a random battlefield event.<br>• <b style="color:var(--gold)">hype</b> / pog / W — feed the hype meter.<br><b style="color:var(--red)">Big chants (many unique chatters):</b> <b style="color:var(--good)">fortify</b> (16) heals your army · <b style="color:var(--warn)">storm</b> (22) shells all lanes · <b style="color:var(--blue)">blitz</b> (26) free wave · <b style="color:var(--red)">nuke</b> (50) glasses the whole field.
       </div>
@@ -1523,8 +1495,9 @@
   <!-- DEBUG MODE — manually fire any scripted event for testing/showcasing -->
   <div id="debugmodal">
     <div class="fr-card" style="max-width:620px;text-align:left">
-      <div class="fr-h" style="text-align:center">🐞 Debug — Trigger Events</div>
-      <div class="fr-p" style="text-align:center">Fires the real event function directly — same code path as when it happens naturally. Most need a live battle running.</div>
+      <div class="fr-h" style="text-align:center">🐞 Debug / Dev Tools</div>
+      <div class="fr-p" style="text-align:center">Testing tools, kept out of the way of normal play. Event triggers fire the real function directly — the same code path as when it happens naturally — so most need a live battle running.</div>
+      <div id="dbg-toggles"></div>
       <div id="dbg-groups"></div>
       <div class="btn-row" style="justify-content:center;margin-top:10px">
         <button class="sbtn" id="dbg-close">✕ Close</button>
@@ -1532,6 +1505,61 @@
     </div>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     LOADER FAILSAFE — deliberately its OWN <script> block, kept ES5-only.
+
+     A browser parses each <script> separately, so a SyntaxError in the main
+     game script below cannot stop this one from running. That distinction
+     matters: this failsafe used to live at the top of the main script, which
+     protected against runtime throws but NOT against a parse error — and a
+     parse error means literally nothing in that block executes, failsafe
+     included. That is exactly how older iPhones/iPads ended up frozen on the
+     loading screen forever (a regex the WebKit build couldn't parse), with no
+     error anyone could see.
+
+     So: nothing in here may use syntax newer than ES5 — no arrow functions,
+     no const/let, no template strings — or it defeats its own purpose on the
+     very browsers it exists to catch.
+     ══════════════════════════════════════════════════════════════════════ -->
+<script>
+window.__FC_BOOTED = false;   // main script flips this; used to detect a dead parse
+function _forceLoaderGone(){
+  try{
+    var l=document.getElementById('loader');
+    if(l&&l.className.indexOf('gone')<0){
+      l.className+=' gone';
+      setTimeout(function(){ if(l)l.style.display='none'; },600);
+    }
+  }catch(e){}
+}
+window.addEventListener('error',_forceLoaderGone);
+window.addEventListener('unhandledrejection',_forceLoaderGone);
+setTimeout(_forceLoaderGone,9000); // never sit on the loading screen past ~9s
+
+/* If the main script never even parsed, the page would otherwise be a silent black
+   rectangle. Say so honestly instead, and name the actual cause — an out-of-date
+   browser — since that is something the player can act on. */
+setTimeout(function(){
+  if(window.__FC_BOOTED)return;
+  _forceLoaderGone();
+  try{
+    var d=document.createElement('div');
+    d.id='fc-oldbrowser';
+    d.setAttribute('style','position:fixed;inset:0;z-index:9999;background:#0a0e14;color:#e8eef7;'+
+      'display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;'+
+      'font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.6');
+    d.innerHTML='<div style="max-width:460px">'+
+      '<div style="font-size:34px;margin-bottom:10px">⚔</div>'+
+      '<div style="font-size:19px;font-weight:800;letter-spacing:1px;margin-bottom:10px">FRONTLINE COMMANDER</div>'+
+      '<div style="font-size:14px;color:#9fb0c8">This browser is too old to run the game.</div>'+
+      '<div style="font-size:13px;color:#7b8ba3;margin-top:12px">On an iPhone or iPad, open <b>Settings &rsaquo; General &rsaquo; Software Update</b> '+
+      'and install the latest iOS, then reload. Every browser on iOS uses Apple&rsquo;s engine, so switching browsers will not help &mdash; '+
+      'the iOS version itself is what matters.</div></div>';
+    document.body.appendChild(d);
+  }catch(e){}
+},10000);
+</script>
 
 <script>
 "use strict";
@@ -1541,22 +1569,9 @@
    CONCEPTS from the WAR simulator but tuned entirely for FUN and SHOW.
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* ── LOADER FAILSAFE (registered first, on purpose) ──
-   A stuck loading screen must never trap a playtester. runLoader() is the very
-   last statement in this file, so ANY uncaught throw in the init code above it
-   (some mobile browsers are stricter, e.g. no crypto.subtle over http, storage
-   blocked in private mode) would abort the script before the loader ever starts
-   and leave the page frozen on "loading". These three lines are defined before
-   any risky code runs, so they still fire even if evaluation dies later:
-     • a window 'error' hook that force-clears the loader,
-     • a hard timeout that clears it no matter what,
-   guaranteeing the player always reaches the game. */
-function _forceLoaderGone(){
-  try{ const l=document.getElementById('loader'); if(l&&!l.classList.contains('gone')){ l.classList.add('gone'); setTimeout(()=>{ if(l)l.style.display='none'; },600); } }catch(e){}
-}
-window.addEventListener('error',_forceLoaderGone);
-window.addEventListener('unhandledrejection',_forceLoaderGone);
-setTimeout(_forceLoaderGone,9000); // never sit on the loading screen past ~9s
+/* Tell the failsafe block above that this script parsed and is running. Must be the
+   FIRST statement here — if anything above it threw, the "too old" notice is correct. */
+window.__FC_BOOTED = true;
 
 /* ── ERROR RING BUFFER — registered next to the loader guard so it catches faults from the very
    first line. A playtester saying "it broke" is worth 10× more when the report carries the actual
@@ -1621,8 +1636,8 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   // ── daily challenge streaks ──
   dailyStreak:0,          // consecutive days the daily has been beaten
   dailyBestStreak:0,
-  dailyLastWin:null,
-  callsign:null};         // local display name from the login/callsign screen — cosmetic only, no account behind it
+  dailyLastWin:null,      // 'YYYY-MM-DD' of the most recent daily win (drives streak continuity)
+  chatPos:null};          // {x,y} of the dragged stream-chat panel; null = default corner
 let SAVE=load();
 SAVE.news=false; // live news wire archived for now (kept in code, off by default)
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
@@ -1981,16 +1996,22 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.13.0';
+const GAME_VERSION='1.14.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.14.0',notes:[
+    'FIXED: the game would never finish loading on older iPhones and iPads. One regex used a feature Safari only supports from iOS 16.4, and because that breaks the script at PARSE time, nothing ran at all — including the safety net meant to catch exactly this. Rewritten to work on every browser, and the safety net now lives in its own script block so it can never be taken down with the game again. Older devices that still fall over now say so plainly instead of hanging on a loading bar.',
+    'Removed the callsign/login screen — it did not dismiss correctly and the title screen is better without it',
+    'The stream chat panel can now be dragged anywhere by its header (double-click to snap it back), so it never has to sit on top of your deck or a lane',
+    'Connecting a Twitch channel now switches OFF the simulated demo chat, so while you are live every name in the feed is a real viewer',
+    'All dev/testing tools now live behind one 🐞 Debug/Dev panel instead of being spread across the topbar and title screen',
+  ]},
   {v:'1.13.0',notes:[
     'GoatCounter analytics is now live (the site code is wired in)',
-    'Added an Enlistment Terminal — a local callsign screen on first boot, editable anytime from the title screen (no account, nothing leaves your device)',
     'Every deployable unit now has its own placement sound — boots for riflemen, diesel rumble for tanks, rotor spool for helis, radar-lock beeps for AA, and more, instead of one generic click',
     'Doctrine and nation pickers are colour-coded — each doctrine keeps its own colour, and nations now tint with real flag colours',
     'Removed the placeholder "N commanders beaten it today" figure from the Daily panel — it was a fake seeded number, and there is no honest way to show a live real count without a backend, so it is gone rather than misleading',
@@ -2708,8 +2729,20 @@ function radioStop(){
 
 /* split a line into speakable clauses so pitch/rate can drift line-to-line */
 function splitClauses(text){
-  // split on sentence enders AND internal clause breaks so delivery can breathe
-  let parts=text.split(/(?<=[.!?…])\s+|(?<=[,;:—-])\s+/).map(s=>s.trim()).filter(Boolean);
+  // Split AFTER sentence enders and internal clause breaks, so the punctuation stays attached to
+  // the clause it closes and delivery can breathe.
+  //
+  // Written WITHOUT regex lookbehind on purpose. Safari only gained lookbehind support in 16.4,
+  // and a regex literal is compiled when the SCRIPT IS PARSED — so on any older iPhone/iPad this
+  // one character sequence was a SyntaxError that killed this entire <script> block before a
+  // single line ran. That took the loader failsafe down with it, which is why those devices sat
+  // on the loading screen forever instead of failing visibly. Marking the split point with a
+  // sentinel and splitting on that behaves identically and parses everywhere.
+  const MARK='\u0001'; // control char that can never occur in narrator copy
+  let parts=String(text)
+    .replace(/([.!?…,;:—-])\s+/g,'$1'+MARK)   // mark the break, keep the punctuation
+    .split(MARK)
+    .map(s=>s.trim()).filter(Boolean);
   // fold very short fragments back into the previous clause (don't over-chop)
   const out=[]; for(const p of parts){ if(out.length&&p.replace(/[^\w]/g,'').length<7){ out[out.length-1]+=' '+p; } else out.push(p); }
   return out.length?out:[text];
@@ -5000,9 +5033,15 @@ const CHAT_HYPE={
   lose:['F','gg go next','so close','unlucky','rematch!'],
   idle:['first time here, this is sick','doctrine choice matters a lot','what rank is this','love this game','the juice is real','streamer mode looks clean'],
 };
+/* SIMULATED chat line (invented viewer + invented text). This is the offline demo crowd.
+   It is suppressed entirely while a REAL Twitch channel is connected — once you're live, the
+   only usernames that appear in the feed are actual people in your actual chat. Mixing the two
+   would put words in real viewers' mouths on stream. */
 function chatMsg(txt,col){
   if(!SAVE.streamOn)return;
+  if(CHATLINK.connected)return; // live chat is authoritative — never fabricate lines over it
   const feed=document.getElementById('chatfeed');
+  if(!feed)return;
   const el=document.createElement('div');el.className='cmsg';
   el.innerHTML=`<span class="u" style="color:${col||pick(['#4aa8ff','#3fd07a','#ffce5a','#c9a0ff','#ff9f40'])}">${pick(CHAT_USERS)}</span>: ${escapeHTML(txt)}`;
   feed.appendChild(el);
@@ -5173,13 +5212,97 @@ const CHATLINK={ ws:null, channel:'', connected:false, connecting:false,
 function escapeHTML(s){return (''+s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 const escapeHtml=escapeHTML; // legacy alias — kept so existing call sites keep working
 function chatStatus(txt,col){ const el=document.getElementById('tw-status'); if(el){el.textContent=txt;el.style.color=col||'var(--dim)';} }
+/* REAL chat line — a genuine message off the Twitch socket (or a FRONTLINE system notice).
+   Shows whenever the overlay is up OR a channel is connected, so live messages are never
+   swallowed just because Streamer Mode happened to be toggled off. */
 function chatMsgRaw(user,txt,ucol){
-  if(!SAVE.streamOn)return;
+  if(!SAVE.streamOn && !CHATLINK.connected)return;
   const feed=document.getElementById('chatfeed'); if(!feed)return;
   const el=document.createElement('div');el.className='cmsg';
   el.innerHTML=`<span class="u" style="color:${ucol||pick(['#4aa8ff','#3fd07a','#ffce5a','#c9a0ff','#ff9f40'])}">${escapeHtml(user)}</span>: ${escapeHtml(txt)}`;
   feed.appendChild(el);
   while(feed.children.length>9)feed.removeChild(feed.firstChild);
+}
+/* ── DRAGGABLE CHAT PANEL ──
+   The overlay can sit over the deck, the killfeed or a lane depending on screen size, so the
+   streamer gets to put it wherever it doesn't hurt. Drag by the header. Position is stored as a
+   left/top pair in the save and re-clamped on resize, so it can never end up off-screen (which
+   would strand it with no way to drag it back). Pointer Events cover mouse + touch + pen in one
+   path. */
+/* #chatbox is absolutely positioned inside #stage, which starts BELOW the topbar — so its
+   left/top are measured from #stage's corner, not the viewport's. Pointer events give viewport
+   coordinates. Mixing the two silently shifts the panel down by the topbar height every time a
+   stored position is re-applied, so it creeps further down the screen on each reload. Everything
+   below therefore works in ONE space: coordinates relative to the offset parent. SAVE.chatPos is
+   stored in that space too, so a save/restore round-trip is exact. */
+function chatBoxFrame(){
+  const box=document.getElementById('chatbox');
+  const op=box&&box.offsetParent;
+  if(!op)return {ox:0,oy:0,pw:window.innerWidth,ph:window.innerHeight};
+  const r=op.getBoundingClientRect();
+  return {ox:r.left,oy:r.top,pw:r.width,ph:r.height};
+}
+function chatBoxClamp(){
+  const box=document.getElementById('chatbox'); if(!box)return;
+  if(SAVE.chatPos==null)return;                     // never moved — leave the CSS default alone
+  const f=chatBoxFrame();
+  const w=box.offsetWidth||270, h=box.offsetHeight||230;
+  const x=Math.min(Math.max(0,SAVE.chatPos.x),Math.max(0,f.pw-w));
+  const y=Math.min(Math.max(0,SAVE.chatPos.y),Math.max(0,f.ph-h));
+  box.style.left=x+'px'; box.style.top=y+'px';
+  box.style.right='auto'; box.style.bottom='auto';  // dragging switches it to top/left anchoring
+}
+function chatBoxResetPos(){ SAVE.chatPos=null; persist();
+  const box=document.getElementById('chatbox');
+  if(box){ box.style.left=''; box.style.top=''; box.style.right=''; box.style.bottom=''; } }
+(function initChatDrag(){
+  const box=document.getElementById('chatbox'), handle=document.getElementById('chatbox-drag');
+  if(!box||!handle)return;
+  let dragging=false,offX=0,offY=0,moved=false,pid=null;
+  // move/up are bound to WINDOW, not the handle. The header is only ~270×25, so the pointer
+  // leaves it on the first real drag movement — if we listened on the handle we'd be relying
+  // entirely on setPointerCapture to keep the stream coming, and that has been unreliable
+  // (notably in Safari/WebKit, i.e. exactly the phones this needs to work on). Capture is still
+  // requested as a nicety; the window listeners are what actually guarantee the drag.
+  const onMove=e=>{
+    if(!dragging)return;
+    if(pid!=null&&e.pointerId!=null&&e.pointerId!==pid)return; // ignore a second finger
+    moved=true;
+    const f=chatBoxFrame(), w=box.offsetWidth, h=box.offsetHeight;
+    // viewport pointer position -> offset-parent space, then clamp inside the parent
+    const x=Math.min(Math.max(0,(e.clientX-offX)-f.ox),Math.max(0,f.pw-w));
+    const y=Math.min(Math.max(0,(e.clientY-offY)-f.oy),Math.max(0,f.ph-h));
+    box.style.left=x+'px'; box.style.top=y+'px'; box.style.right='auto'; box.style.bottom='auto';
+    e.preventDefault();
+  };
+  const onUp=e=>{
+    if(!dragging)return;
+    dragging=false; box.classList.remove('dragging');
+    try{ if(pid!=null&&handle.hasPointerCapture&&handle.hasPointerCapture(pid))handle.releasePointerCapture(pid); }catch(err){}
+    pid=null;
+    // store in offset-parent space (same space we set left/top in) so restore is exact
+    if(moved){ SAVE.chatPos={x:Math.round(parseFloat(box.style.left)||0),y:Math.round(parseFloat(box.style.top)||0)}; persist(); }
+  };
+  handle.addEventListener('pointerdown',e=>{
+    dragging=true; moved=false; pid=(e.pointerId!=null?e.pointerId:null);
+    const r=box.getBoundingClientRect(); offX=e.clientX-r.left; offY=e.clientY-r.top;
+    box.classList.add('dragging');
+    try{ handle.setPointerCapture(e.pointerId); }catch(err){}
+    e.preventDefault();
+  });
+  window.addEventListener('pointermove',onMove,{passive:false});
+  window.addEventListener('pointerup',onUp);
+  window.addEventListener('pointercancel',onUp);
+  // double-click the header to snap it back to the default corner
+  handle.addEventListener('dblclick',()=>chatBoxResetPos());
+  window.addEventListener('resize',chatBoxClamp);
+  chatBoxClamp();
+})();
+// header text doubles as the connection indicator, so it's obvious whether the feed is real
+function chatBoxTitle(){
+  const t=document.getElementById('chatbox-title'); if(!t)return;
+  t.textContent = CHATLINK.connected ? ('● LIVE #'+CHATLINK.channel) : 'STREAM CHAT (demo)';
+  t.style.color = CHATLINK.connected ? 'var(--good)' : '';
 }
 function chatConnect(channel){
   channel=(channel||'').trim().toLowerCase().replace(/^#/,'');
@@ -5199,13 +5322,15 @@ function chatConnect(channel){
     CHATLINK.connected=true; CHATLINK.connecting=false;
     chatStatus('● LIVE — reading #'+channel,'var(--good)');
     SAVE.twitchChannel=channel; if(!SAVE.streamOn){SAVE.streamOn=true;refreshTopbar();} persist();
+    chatBoxTitle();
+    document.getElementById('chatfeed').innerHTML=''; // clear the demo crowd so only real chat shows
     chatMsgRaw('FRONTLINE','Connected! Commands: top/mid/bot surge a lane · boss · drop · chaos · hype. Big chants: fortify (16) · storm (22) · blitz (26) · NUKE (50) wipes the whole field.','#5ff0e0');
   };
   ws.onmessage=ev=>handleIRC(ev.data);
-  ws.onerror=()=>{ chatStatus('Connection error — check the name / your network.','var(--red)'); CHATLINK.connecting=false; };
-  ws.onclose=()=>{ if(CHATLINK.connected)chatStatus('Disconnected.','var(--dim)'); CHATLINK.connected=false; CHATLINK.ws=null; };
+  ws.onerror=()=>{ chatStatus('Connection error — check the name / your network.','var(--red)'); CHATLINK.connecting=false; chatBoxTitle(); };
+  ws.onclose=()=>{ if(CHATLINK.connected)chatStatus('Disconnected.','var(--dim)'); CHATLINK.connected=false; CHATLINK.ws=null; chatBoxTitle(); };
 }
-function chatDisconnect(){ try{ if(CHATLINK.ws)CHATLINK.ws.close(); }catch(e){} CHATLINK.ws=null; CHATLINK.connected=false; }
+function chatDisconnect(){ try{ if(CHATLINK.ws)CHATLINK.ws.close(); }catch(e){} CHATLINK.ws=null; CHATLINK.connected=false; chatBoxTitle(); }
 function handleIRC(data){
   const lines=(''+data).split('\r\n');
   for(const line of lines){ if(!line)continue;
@@ -6058,12 +6183,12 @@ function refreshTopbar(){
   document.getElementById('btn-narr').classList.toggle('on',!!SAVE.narrator);
   document.getElementById('btn-narr').textContent=(SAVE.narrator?'🎙 Narrator':'🔇 Narrator');
   document.getElementById('btn-twitch').classList.toggle('on',!!CHATLINK.connected);
-  document.getElementById('btn-ai').classList.toggle('on',!!SAVE.aiDebug);
+  // the Debug/Dev button lights up whenever any dev switch is left on, so it's never a silent state
+  document.getElementById('btn-debug').classList.toggle('on',!!SAVE.aiDebug||!!SAVE.debugUnlockAll);
   document.getElementById('btn-music').classList.toggle('on',!!SAVE.music);
   document.getElementById('btn-music').textContent=SAVE.music?'🎵 Music':'🔇 Music';
   document.getElementById('btn-news').classList.toggle('on',!!SAVE.news);
 }
-document.getElementById('btn-ai').onclick=()=>{SAVE.aiDebug=!SAVE.aiDebug;persist();refreshTopbar();};
 document.getElementById('btn-music').onclick=()=>musicToggle();
 document.getElementById('btn-news').onclick=()=>{SAVE.news=!SAVE.news;persist();refreshTopbar();renderNews();};
 document.getElementById('btn-stream').onclick=()=>{SAVE.streamOn=!SAVE.streamOn;persist();refreshTopbar();
@@ -6143,7 +6268,34 @@ function DEBUG_GROUPS(){ // built lazily so it always sees the latest REVENTS/DI
     ]},
   ];
 }
+/* Persistent dev switches (as opposed to the one-shot event triggers below). These used to live
+   on the topbar and the title screen, where they were the first thing a new player saw; they're
+   all consolidated in here now. */
+const DEBUG_TOGGLES=[
+  {key:'debugUnlockAll', label:'Unlock All',
+   desc:'Bypasses every rank gate — modes, doctrines, cosmetics — without touching your real Rank/XP.',
+   after:()=>{ try{ refreshTitleLocks(); if(typeof buildMenu==='function')buildMenu(); }catch(e){} }},
+  {key:'aiDebug', label:'AI Thinking Overlay',
+   desc:"Shows the enemy commander's live state and decision log during a battle (hotkey: `).",
+   after:()=>{ try{ refreshTopbar(); syncAIDebug(); }catch(e){} }},
+];
+function buildDebugToggles(){
+  const host=document.getElementById('dbg-toggles'); if(!host)return; host.innerHTML='';
+  const wrap=document.createElement('div'); wrap.className='dbg-grp';
+  const h=document.createElement('h4'); h.textContent='Dev Toggles'; wrap.appendChild(h);
+  const row=document.createElement('div'); row.className='dbg-row';
+  for(const t of DEBUG_TOGGLES){
+    const b=document.createElement('button'); b.className='dbg-btn';
+    const paint=()=>{ const on=!!SAVE[t.key];
+      b.textContent=(on?'✔ ':'○ ')+t.label; b.title=t.desc;
+      b.style.borderColor=on?'var(--warn)':''; b.style.color=on?'var(--warn)':''; };
+    b.onclick=()=>{ SAVE[t.key]=!SAVE[t.key]; persist(); paint(); try{t.after&&t.after();}catch(e){} };
+    paint(); row.appendChild(b);
+  }
+  wrap.appendChild(row); host.appendChild(wrap);
+}
 function buildDebugModal(){
+  buildDebugToggles();
   const host=document.getElementById('dbg-groups'); if(!host)return; host.innerHTML='';
   for(const g of DEBUG_GROUPS()){
     const wrap=document.createElement('div'); wrap.className='dbg-grp';
@@ -6635,8 +6787,10 @@ document.getElementById('t-tut').onclick=()=>{leaveTitle();launchTutorial();};
 document.getElementById('menu-back').onclick=()=>showTitle();
 // Chaos Mode is a Settings toggle, not its own screen — this title-screen entry exists purely
 // so players actually discover it exists (several playtesters never found it buried in Settings).
-document.getElementById('t-chaos')?.addEventListener('click',()=>openSettings());
-document.getElementById('t-debugunlock')?.addEventListener('click',()=>{ SAVE.debugUnlockAll=!SAVE.debugUnlockAll; persist(); refreshTitleLocks(); });
+var _tc=document.getElementById('t-chaos'); if(_tc)_tc.addEventListener('click',()=>openSettings());
+// the title-screen entry point now opens the consolidated Debug/Dev panel rather than
+// toggling Unlock All directly — that switch lives inside the panel with the other dev tools
+var _td=document.getElementById('t-debugunlock'); if(_td)_td.addEventListener('click',()=>openDebugModal());
 /* ── lock toast — brief non-blocking feedback for clicking a rank-gated button ── */
 let _lockToastT=null;
 function showLockToast(msg){
@@ -6662,8 +6816,9 @@ function refreshTitleLocks(){
     if(s)s.textContent=ok?(SAVE.chaosMode?'ON — mayhem in Settings':'flip it on in Settings'):'unlocks at Rank '+MODE_GATES.chaos.lvl;
   }
   const dbg=document.getElementById('t-debugunlock');
-  if(dbg){ dbg.classList.toggle('on',!!SAVE.debugUnlockAll);
-    dbg.textContent=SAVE.debugUnlockAll?'🧪 Debug: ALL UNLOCKED (click to revert)':'🧪 Debug: Unlock All (testing only)';
+  if(dbg){ const anyOn=!!SAVE.debugUnlockAll||!!SAVE.aiDebug;
+    dbg.classList.toggle('on',anyOn);
+    dbg.textContent=anyOn?'🐞 Debug/Dev — ACTIVE':'🐞 Debug/Dev';
   }
 }
 // war map
@@ -6726,7 +6881,7 @@ function runLoader(){
     bar.style.width=p+'%'; pct.textContent=Math.floor(p)+'%';
     if(p>=100){ clearInterval(iv); clearInterval(tipIv);
       setTimeout(()=>{ document.getElementById('loader').classList.add('gone');
-        try{ if(!SAVE.callsign) showLogin(false); else showTitle(); }catch(e){ console.error('showTitle',e); }
+        try{ showTitle(); }catch(e){ console.error('showTitle',e); }
         setTimeout(()=>{const l=document.getElementById('loader'); if(l)l.style.display='none';},600); },380);
     }
   },170);
@@ -6757,39 +6912,6 @@ function attractTick(dt){
   }
 }
 
-/* ── LOGIN / CALLSIGN TERMINAL ──
-   There is no account behind this — no server, no password, nothing leaves the device. It's a
-   local display name (SAVE.callsign) shown on the title screen and in the AAR/feedback report, so
-   the game doesn't just call you "Commander" forever. Shown once on first-ever boot (gated in
-   runLoader() above); reachable afterwards by clicking the callsign on the title screen to edit it. */
-function randomCallsign(){
-  const adj=['GHOST','IRON','SILENT','CRIMSON','ROGUE','STEEL','SHADOW','LONE','RAPID','GRIM','NIGHT','ARCTIC','VIPER','RUTHLESS','STONE'];
-  const noun=['WOLF','HAWK','REAPER','FOX','BEAR','RAVEN','TALON','SABER','COBRA','SPECTRE','FALCON','JACKAL'];
-  return pick(adj)+'-'+pick(noun)+(1+((Math.random()*98)|0));
-}
-function sanitizeCallsign(s){
-  const c=String(s||'').toUpperCase().replace(/[^A-Z0-9 _\-]/g,'').replace(/\s+/g,' ').trim().slice(0,18);
-  return c||null;
-}
-function showLogin(editing){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
-  document.getElementById('login').classList.remove('hidden');
-  const inp=document.getElementById('login-input');
-  inp.value=editing?(SAVE.callsign||''):'';
-  document.getElementById('login-hdr').textContent=editing?'EDIT CALLSIGN':'ENLISTMENT TERMINAL';
-  document.getElementById('login-back').classList.toggle('hidden',!editing);
-  setTimeout(()=>{ try{inp.focus();}catch(e){} },60);
-}
-function confirmCallsign(raw){
-  SAVE.callsign=sanitizeCallsign(raw)||randomCallsign();
-  persist();
-  showTitle();
-}
-document.getElementById('login-go').onclick=()=>confirmCallsign(document.getElementById('login-input').value);
-document.getElementById('login-rand').onclick=()=>confirmCallsign('');
-document.getElementById('login-back').onclick=()=>showTitle();
-document.getElementById('login-input').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); confirmCallsign(document.getElementById('login-input').value); } });
-
 /* ── TITLE SCREEN ── */
 function showTitle(){
   ambientStop(); infoClear();
@@ -6798,8 +6920,6 @@ function showTitle(){
   document.getElementById('title').classList.remove('hidden');
   document.getElementById('t-rank').textContent=equippedBadge().glyph+' Rank '+SAVE.lvl+' '+equippedTitleStr();
   document.getElementById('t-best').textContent='Best '+SAVE.best.toLocaleString();
-  const tcs=document.getElementById('t-callsign');
-  if(tcs){ tcs.textContent=SAVE.callsign||'COMMANDER'; tcs.onclick=()=>showLogin(true); }
   const tv=document.getElementById('t-ver'); if(tv)tv.textContent='v'+GAME_VERSION;
   document.getElementById('title-tag').textContent=pick(TITLE_TAGS);
   buildTitleDiff();
