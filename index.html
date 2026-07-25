@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- FRONTLINE COMMANDER — Copyright (c) 2026 RoukasCrew. All rights reserved. See LICENSE. -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FRONTLINE COMMANDER — a fast, free browser war game</title>
@@ -209,7 +210,8 @@
 <footer>
   <div class="wrap">
     FRONTLINE COMMANDER — made for the web, headed for Steam.<br>
-    All factions, nations and events are fictional. <a href="wargame.html">Play now</a>
+    All factions, nations and events are fictional. <a href="wargame.html">Play now</a><br>
+    <span style="opacity:.7">© 2026 RoukasCrew. All rights reserved.</span>
   </div>
 </footer>
 
@@ -217,7 +219,7 @@
 /* Same privacy-friendly, cookieless counter the game uses, so landing-page views and
    play-clicks can be compared against each other (that ratio IS the conversion rate).
    No-ops until ANALYTICS_SITE is filled in — keep it identical to the value in wargame.html. */
-var ANALYTICS_SITE = ''; // ← paste your GoatCounter site URL here (e.g. https://frontline.goatcounter.com)
+var ANALYTICS_SITE = 'https://zeusrgr.goatcounter.com'; // kept identical to wargame.html
 function gcSend(path,title,isEvent){
   if(!/^https:\/\/[a-z0-9-]+\.goatcounter\.com/i.test(ANALYTICS_SITE||''))return;
   try{

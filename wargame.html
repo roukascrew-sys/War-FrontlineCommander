@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!--
+  FRONTLINE COMMANDER
+  Copyright (c) 2026 RoukasCrew. All rights reserved.
+  This source is provided for personal/playtest use. Do not redistribute,
+  resell, or publish modified copies without permission. See LICENSE.
+  (Replace "RoukasCrew" above with your real name/studio before public launch
+  if you'd rather it read differently — it's just this file's copyright line.)
+-->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>FRONTLINE COMMANDER — a fast war game</title>
@@ -403,6 +411,26 @@
     border-radius:8px;background:#0b0f18cc;color:var(--dim);font-size:12px;font-weight:600;}
   .back-btn:hover{color:var(--ink);border-color:var(--gold);}
 
+  /* ── LOGIN / CALLSIGN TERMINAL — an old-school green-phosphor console look ── */
+  #login{background:radial-gradient(ellipse at 50% 40%,#0a1410,#04070a);}
+  #login-scan{position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background:repeating-linear-gradient(180deg,#00ff8808 0px,#00ff8808 1px,transparent 2px,transparent 3px);}
+  #login-box{position:relative;z-index:2;width:min(420px,88vw);border:1px solid #2fdf8a55;border-radius:10px;
+    background:#05100acc;padding:26px 26px 20px;text-align:center;box-shadow:0 0 40px #00ff8818,inset 0 0 30px #00110a;}
+  .login-hdr{font-family:var(--mono);font-size:15px;font-weight:800;letter-spacing:2px;color:#4dffab;
+    text-shadow:0 0 10px #22ff9a70;margin-bottom:6px;}
+  .login-sub{font-size:11.5px;color:#7fa898;line-height:1.5;margin-bottom:18px;}
+  .login-row{display:flex;align-items:center;gap:8px;background:#02150dcc;border:1px solid #2fdf8a55;
+    border-radius:7px;padding:9px 12px;margin-bottom:16px;}
+  .login-caret{font-family:var(--mono);color:#4dffab;font-weight:800;}
+  #login-input{flex:1;background:none;border:none;outline:none;font-family:var(--mono);font-size:15px;
+    letter-spacing:2px;color:#c9ffe4;text-transform:uppercase;}
+  #login-input::placeholder{color:#3a6a56;letter-spacing:1.5px;}
+  .login-btns{display:flex;flex-direction:column;gap:8px;}
+  #login-go.hero-btn{border-color:#2fdf8a70;}
+  #login-go.hero-btn .hb-ic{color:#4dffab;}
+  #login-rand{border-color:#2fdf8a40;color:#8fe9c0;}
+
   /* ── LOADING SCREEN ──
      The animation below is a pure-CSS, zero-JS-dependent last resort: if boot-guard.js and
      game.js's own internal failsafe somehow BOTH never ran, this still fades the loader out
@@ -638,6 +666,7 @@
   .t-btn.war{border-color:var(--blue);} .t-btn.war b{color:var(--blue);} .t-btn.war:hover{box-shadow:0 0 18px #4aa8ff44;}
   .t-btn.tut{border-color:var(--good);} .t-btn.tut b{color:var(--good);} .t-btn.tut:hover{box-shadow:0 0 18px #3fd07a44;}
   .title-foot{font-size:12px;color:var(--dim);text-shadow:0 2px 6px #000;margin-top:10px;}
+  .title-copyright{font-size:10px;color:var(--faint);text-shadow:0 2px 6px #000;margin-top:2px;opacity:.75;}
   .title-foot b{color:var(--gold);}
   .t-btn.manual{border-color:var(--purple);} .t-btn.manual b{color:var(--purple);} .t-btn.manual:hover{box-shadow:0 0 18px #c9a0ff44;}
   .t-btn.record{border-color:var(--warn);} .t-btn.record b{color:var(--warn);} .t-btn.record:hover{box-shadow:0 0 18px #ffab4044;}
@@ -1251,6 +1280,24 @@
   </div>
 
   <!-- TITLE / ATTRACT SCREEN -->
+  <!-- LOGIN / CALLSIGN TERMINAL — a local display name, not an account. No server, no password. -->
+  <div class="screen hidden" id="login">
+    <div id="login-scan"></div>
+    <div id="login-box">
+      <div class="login-hdr" id="login-hdr">ENLISTMENT TERMINAL</div>
+      <div class="login-sub">Local profile only — no password, no server, nothing leaves this device.</div>
+      <div class="login-row">
+        <span class="login-caret">&gt;</span>
+        <input id="login-input" maxlength="18" autocomplete="off" spellcheck="false" placeholder="ENTER CALLSIGN">
+      </div>
+      <div class="login-btns">
+        <button class="hero-btn play" id="login-go"><span class="hb-ic">✔</span><span class="hb-tx"><b>ENLIST</b><small>confirm callsign</small></span></button>
+        <button class="t-btn" id="login-rand"><b>🎲 Random</b><small>assign one for me</small></button>
+      </div>
+      <button class="back-btn hidden" id="login-back">◀ Title</button>
+    </div>
+  </div>
+
   <div class="screen hidden" id="title">
     <div id="title-scrim"></div>
     <!-- flanking figures: a recruit (left) and a skull (right) that harden as your Rank climbs.
@@ -1280,7 +1327,8 @@
         <button class="t-btn patchnotes" id="t-patchnotes"><b>📋 Patch Notes</b><small>what's new</small></button>
         <button class="t-btn settings" id="t-settings"><b>⚙ Settings</b><small>audio &amp; motion</small></button>
       </div>
-      <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span> · <span id="t-ver" style="cursor:pointer;text-decoration:underline dotted;">v1.0.0</span></div>
+      <div class="title-foot"><span id="t-callsign" title="Click to change your callsign" style="cursor:pointer;text-decoration:underline dotted;">COMMANDER</span> · <span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span> · <span id="t-ver" style="cursor:pointer;text-decoration:underline dotted;">v1.0.0</span></div>
+      <div class="title-copyright">© 2026 RoukasCrew. All rights reserved.</div>
       <button id="t-debugunlock" title="For playtesters: bypasses every rank gate (modes, cosmetics) without touching your actual Rank/XP">🧪 Debug: Unlock All (testing only)</button>
     </div>
   </div>
@@ -1573,7 +1621,8 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   // ── daily challenge streaks ──
   dailyStreak:0,          // consecutive days the daily has been beaten
   dailyBestStreak:0,
-  dailyLastWin:null};     // 'YYYY-MM-DD' of the most recent daily win (drives streak continuity)
+  dailyLastWin:null,
+  callsign:null};         // local display name from the login/callsign screen — cosmetic only, no account behind it
 let SAVE=load();
 SAVE.news=false; // live news wire archived for now (kept in code, off by default)
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
@@ -1817,6 +1866,17 @@ const COUNTRIES={
 };
 const COUNTRY_KEYS=Object.keys(COUNTRIES);
 function unitName(key,country){ const c=COUNTRIES[country]; return (c&&c.names[key])||UNITS[key].name; }
+// two representative colours per nation, lifted straight from each real flag — used to tint the
+// country picker buttons in buildMenu() so choosing a nation feels like picking a flag, not a label
+const COUNTRY_FLAG_COLORS={
+  generic:['#8a8f9a','#c7ccd6'],
+  usa:['#3c3b6e','#b22234'],       // Old Glory blue / red
+  russia:['#0039a6','#d52b1e'],    // blue / red
+  china:['#de2910','#ffde00'],     // red / gold
+  uk:['#00247d','#cf142b'],        // navy / red
+  germany:['#dd0000','#ffce00'],   // red / gold (black swapped for red so it still reads on a dark UI)
+  japan:['#bc002d','#f2f2f2'],     // crimson / white
+};
 
 /* ── STANCES — on-the-fly posture. Changes BEHAVIOUR only, never stats. ── */
 const STANCES={
@@ -1921,13 +1981,21 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.12.0';
+const GAME_VERSION='1.13.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.13.0',notes:[
+    'GoatCounter analytics is now live (the site code is wired in)',
+    'Added an Enlistment Terminal — a local callsign screen on first boot, editable anytime from the title screen (no account, nothing leaves your device)',
+    'Every deployable unit now has its own placement sound — boots for riflemen, diesel rumble for tanks, rotor spool for helis, radar-lock beeps for AA, and more, instead of one generic click',
+    'Doctrine and nation pickers are colour-coded — each doctrine keeps its own colour, and nations now tint with real flag colours',
+    'Removed the placeholder "N commanders beaten it today" figure from the Daily panel — it was a fake seeded number, and there is no honest way to show a live real count without a backend, so it is gone rather than misleading',
+    'Added a copyright notice + LICENSE file',
+  ]},
   {v:'1.12.0',notes:[
     'Lanes are back in their classic positions — instead of shifting the battlefield, the commander specials now sit to the LEFT of your unit cards, so the deck is one row shorter and never reaches into the bottom lane',
     'Colour-coded the tech-tree tabs (Ground / Air & AD / Support / Production) so the deck reads at a glance mid-fight',
@@ -2179,23 +2247,6 @@ function generateDaily(key){
   };
   return {key,mut,twist,opp,boon,diff:diffPick.diff,weather:wxKey,harsh};
 }
-/* Fake "how many commanders beat it today" figure.
-   ─────────────────────────────────────────────────────────────────────────
-   TODO(live): REPLACE ME BEFORE / SHORTLY AFTER LAUNCH.
-   The game has no backend yet, so there is nothing real to count. This returns
-   a stable, plausible-looking number derived from the date seed (same for every
-   player, drifts through the day like a real counter would) purely so the UI
-   isn't empty during playtesting. It is NOT real data.
-   When a backend exists: fetch the real count (e.g. GET /daily/<key>/clears)
-   and delete this function + its call sites in buildMenu()/showResults().
-   ───────────────────────────────────────────────────────────────────────── */
-function dailyClearsToday(key){
-  const rng=mulberry32(hashStr('clears|'+key));
-  const base=180+Math.floor(rng()*900);                 // the day's "population"
-  const hrs=new Date().getUTCHours()+new Date().getUTCMinutes()/60;
-  return Math.max(1,Math.floor(base*Math.min(1,hrs/24))); // ramps up as the day goes on
-}
-
 /* ── CAMPAIGN — a short escalating war. Each mission is a tuned skirmish with a briefing. ── */
 const CAMPAIGN=[
   {id:0,name:'Border Skirmish',weather:'clear',diff:'recruit',ecpMul:0.8,star:'Win with your HQ above 60%',
@@ -2301,8 +2352,41 @@ function ac130(vol){ const V=vol||0.16;
   cannon(V,true);                           // deep boom body
   thump(78,26,0.6,V*0.8);                   // long rumbling tail
 }
+// a short pitch-swept tone — engine spool-ups, radar-lock beeps, hydraulic whines, drone buzz.
+// separate from thump() (which is always a falling sine "cannon body") so it can rise OR fall
+// and use a brighter waveform (saw/square) for anything electronic or mechanical-whiny.
+function tone(f0,f1,dur,vol,type){ if(!SAVE.sound)return; const c=actx(); if(!c)return;
+  try{ const o=c.createOscillator(),g=c.createGain(); o.type=type||'sine';
+    const t=c.currentTime; o.frequency.setValueAtTime(Math.max(1,f0),t); o.frequency.exponentialRampToValueAtTime(Math.max(1,f1),t+dur);
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+0.02);
+  }catch(e){}
+}
 const SND={
   deploy:()=>beep(420,0.07,'square',0.05),
+  // a distinct little "placement" sound per unit type, so the deck doesn't just click — infantry
+  // thud boots down, tanks growl diesel, aircraft spool rotors/jets, support gear chirps/crackles.
+  deployFor:(key)=>{ if(!SAVE.sound)return;
+    switch(key){
+      case 'rifle': noiseHit(0.05,0.022,700,3200); beep(760,0.05,'square',0.028); break;                  // boots down + rifle click
+      case 'atgm': noiseHit(0.06,0.03,300,1800); thump(160,90,0.08,0.032); break;                          // tripod thunk
+      case 'sniper': beep(1500,0.03,'square',0.024); setTimeout(()=>beep(950,0.03,'square',0.02),45); break; // bolt click-clack
+      case 'tank': thump(95,45,0.24,0.075); noiseHit(0.09,0.03,150,900); break;                            // diesel rumble + track clank
+      case 'ifv': tone(180,260,0.14,0.035,'sawtooth'); noiseHit(0.05,0.02,400,2200); break;                // engine whirr + hydraulic hiss
+      case 'arty': thump(120,50,0.2,0.06); noiseHit(0.07,0.03,120,900); break;                             // heavy carriage thunk
+      case 'mlrs': tone(300,900,0.22,0.032,'sawtooth'); break;                                             // launcher raising, hydraulic whine
+      case 'aa': beep(1550,0.05,'triangle',0.03); setTimeout(()=>beep(1950,0.05,'triangle',0.03),60); break; // radar lock-on beeps
+      case 'heli': tone(60,150,0.32,0.05,'sawtooth'); noiseHit(0.26,0.025,300,2000); break;                // rotor spool-up
+      case 'gunship': tone(48,110,0.4,0.06,'sawtooth'); thump(90,40,0.3,0.05); break;                      // heavy multi-engine spool
+      case 'interceptor': noiseHit(0.18,0.038,600,4500); tone(400,1200,0.18,0.02,'sine'); break;           // jet spool + whoosh
+      case 'drone': tone(900,1900,0.12,0.026,'square'); break;                                             // quick electronic buzz
+      case 'swarm': for(let i=0;i<4;i++)setTimeout(()=>tone(900+i*150,1700+i*150,0.08,0.018,'square'),i*35); break; // a cloud of buzzes
+      case 'medic': beep(700,0.06,'triangle',0.03); setTimeout(()=>beep(980,0.08,'triangle',0.034),90); break; // ascending "help's here" radio chirp
+      case 'jammer': noiseHit(0.12,0.03,1800,6000); break;                                                 // static crackle powering up
+      case 'flame': noiseHit(0.14,0.034,200,1400); break;                                                  // gas hiss
+      default: beep(420,0.07,'square',0.05);
+    }
+  },
   shot:()=>gunshot(0.045,880),
   // dispatch a firing sound matched to the weapon that shot it
   fireFor:(u)=>{ if(!SAVE.sound)return; const k=u.key, dt=UNIT_DMGTYPE[k];
@@ -2949,7 +3033,7 @@ function tryDeploy(key,lane){
   // Drone Swarm — one deploy releases a whole cloud; the cost above already covered the swarm
   const sw=UNITS[key].swarmN;
   if(sw>1){ for(let n=1;n<sw;n++){ spawn('B',key,lane); const ex=G.units[G.units.length-1]; if(ex){ ex.x+=rnd(-26,4); ex.y+=rnd(-14,14); } } }
-  SND.deploy();
+  SND.deployFor(key);
   // 🗣 unit chatter gag — a quick quip from the fresh deployment (toggleable)
   if(SAVE.gagChatter&&!G.attract&&Math.random()<0.22){ const u=G.units[G.units.length-1];
     if(u)floatText(u.x+14,u.y-u.r-12,pick(CHATTER_DEPLOY),'#cfe3ff'); }
@@ -5728,18 +5812,22 @@ function buildMenu(){
     const b=document.createElement('button');
     b.className='opt-doc'+(sel.doctrine===k?' sel':'')+(unlocked?'':' lock');
     b.textContent=(unlocked?'':'🔒 ')+d.name;
-    b.classList.add(); b.style.cssText='padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:12px;font-weight:600;';
-    if(sel.doctrine===k){b.style.background='var(--gold)';b.style.color='var(--bg)';}
-    else b.style.color=unlocked?'var(--dim)':'var(--faint)';
+    b.style.cssText='padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;';
+    // each doctrine keeps its own colour (d.col) so the picker reads at a glance, same idea as the tech-tabs
+    if(sel.doctrine===k){ b.style.background=d.col; b.style.color='#0a0e14'; b.style.border='1px solid '+d.col; b.style.boxShadow='0 0 10px '+d.col+'55'; }
+    else{ b.style.background='var(--panel2)'; b.style.border='1px solid '+(unlocked?d.col+'70':'var(--line)'); b.style.color=unlocked?d.col:'var(--faint)'; }
     b.onclick=()=>{ if(!unlocked){announceLocked(d);return;} sel.doctrine=k;buildMenu();};
     dOpt.appendChild(b);
   }
   const dd=DOCTRINES[sel.doctrine];
   document.getElementById('doc-desc').innerHTML=`<b style="color:${dd.col}">${dd.glyph} ${dd.name}</b> — ${dd.desc}`;
-  // nation
+  // nation — each button picks up that country's real flag colours
   const cOpt=document.getElementById('country-opts');
   if(cOpt){ cOpt.innerHTML='';
-    for(const k of COUNTRY_KEYS){ const c=COUNTRIES[k]; const b=mkOpt(c.flag+' '+(k==='generic'?'Generic':c.name.split(' ')[0]),sel.country===k);
+    for(const k of COUNTRY_KEYS){ const c=COUNTRIES[k]; const cols=COUNTRY_FLAG_COLORS[k]||COUNTRY_FLAG_COLORS.generic;
+      const b=mkOpt(c.flag+' '+(k==='generic'?'Generic':c.name.split(' ')[0]),sel.country===k);
+      if(sel.country===k){ b.style.background=`linear-gradient(100deg, ${cols[0]}, ${cols[1]})`; b.style.color='#fff'; b.style.textShadow='0 1px 3px rgba(0,0,0,.7)'; b.style.borderColor=cols[0]; }
+      else{ b.style.borderColor=cols[0]+'90'; b.style.color=cols[1]; b.style.background='var(--panel2)'; }
       b.onclick=()=>{sel.country=k;buildMenu();}; cOpt.appendChild(b); }
     const cc=COUNTRIES[sel.country];
     document.getElementById('country-desc').innerHTML = sel.country==='generic'
@@ -5818,9 +5906,7 @@ function buildMenu(){
       `<div style="font-size:10.5px;color:var(--faint)">${escapeHTML(DIFFS[d.diff].name)} · ${WEATHERS[d.weather].glyph} ${escapeHTML(WEATHERS[d.weather].name)} · seed <b>${dk}</b> — identical for everyone</div>`+
       `<div style="font-size:10.5px;margin-top:4px">Your best: <b>${best.toLocaleString()}</b>`+
         (streak>0?` · 🔥 Streak <b style="color:var(--gold)">${streak}</b>${bestStreak>streak?` (best ${bestStreak})`:''}`:'')+
-        (wonToday?` · <b style="color:var(--good)">✔ cleared today</b>`:'')+`</div>`+
-      // TODO(live): this figure is FAKE — see dailyClearsToday(). Swap for a real backend count.
-      `<div style="font-size:10.5px;color:var(--faint);margin-top:2px">🌍 <b>${dailyClearsToday(dk).toLocaleString()}</b> commanders have beaten it today</div>`;
+        (wonToday?` · <b style="color:var(--good)">✔ cleared today</b>`:'');
   }
 }
 function mkOpt(txt,sel){const b=document.createElement('button');b.textContent=txt;
@@ -6639,7 +6725,8 @@ function runLoader(){
     p=Math.min(100,p+rnd(7,20));
     bar.style.width=p+'%'; pct.textContent=Math.floor(p)+'%';
     if(p>=100){ clearInterval(iv); clearInterval(tipIv);
-      setTimeout(()=>{ document.getElementById('loader').classList.add('gone'); try{ showTitle(); }catch(e){ console.error('showTitle',e); }
+      setTimeout(()=>{ document.getElementById('loader').classList.add('gone');
+        try{ if(!SAVE.callsign) showLogin(false); else showTitle(); }catch(e){ console.error('showTitle',e); }
         setTimeout(()=>{const l=document.getElementById('loader'); if(l)l.style.display='none';},600); },380);
     }
   },170);
@@ -6670,6 +6757,39 @@ function attractTick(dt){
   }
 }
 
+/* ── LOGIN / CALLSIGN TERMINAL ──
+   There is no account behind this — no server, no password, nothing leaves the device. It's a
+   local display name (SAVE.callsign) shown on the title screen and in the AAR/feedback report, so
+   the game doesn't just call you "Commander" forever. Shown once on first-ever boot (gated in
+   runLoader() above); reachable afterwards by clicking the callsign on the title screen to edit it. */
+function randomCallsign(){
+  const adj=['GHOST','IRON','SILENT','CRIMSON','ROGUE','STEEL','SHADOW','LONE','RAPID','GRIM','NIGHT','ARCTIC','VIPER','RUTHLESS','STONE'];
+  const noun=['WOLF','HAWK','REAPER','FOX','BEAR','RAVEN','TALON','SABER','COBRA','SPECTRE','FALCON','JACKAL'];
+  return pick(adj)+'-'+pick(noun)+(1+((Math.random()*98)|0));
+}
+function sanitizeCallsign(s){
+  const c=String(s||'').toUpperCase().replace(/[^A-Z0-9 _\-]/g,'').replace(/\s+/g,' ').trim().slice(0,18);
+  return c||null;
+}
+function showLogin(editing){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('login').classList.remove('hidden');
+  const inp=document.getElementById('login-input');
+  inp.value=editing?(SAVE.callsign||''):'';
+  document.getElementById('login-hdr').textContent=editing?'EDIT CALLSIGN':'ENLISTMENT TERMINAL';
+  document.getElementById('login-back').classList.toggle('hidden',!editing);
+  setTimeout(()=>{ try{inp.focus();}catch(e){} },60);
+}
+function confirmCallsign(raw){
+  SAVE.callsign=sanitizeCallsign(raw)||randomCallsign();
+  persist();
+  showTitle();
+}
+document.getElementById('login-go').onclick=()=>confirmCallsign(document.getElementById('login-input').value);
+document.getElementById('login-rand').onclick=()=>confirmCallsign('');
+document.getElementById('login-back').onclick=()=>showTitle();
+document.getElementById('login-input').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); confirmCallsign(document.getElementById('login-input').value); } });
+
 /* ── TITLE SCREEN ── */
 function showTitle(){
   ambientStop(); infoClear();
@@ -6678,6 +6798,8 @@ function showTitle(){
   document.getElementById('title').classList.remove('hidden');
   document.getElementById('t-rank').textContent=equippedBadge().glyph+' Rank '+SAVE.lvl+' '+equippedTitleStr();
   document.getElementById('t-best').textContent='Best '+SAVE.best.toLocaleString();
+  const tcs=document.getElementById('t-callsign');
+  if(tcs){ tcs.textContent=SAVE.callsign||'COMMANDER'; tcs.onclick=()=>showLogin(true); }
   const tv=document.getElementById('t-ver'); if(tv)tv.textContent='v'+GAME_VERSION;
   document.getElementById('title-tag').textContent=pick(TITLE_TAGS);
   buildTitleDiff();
@@ -7060,7 +7182,7 @@ try{ runLoader(); }catch(e){ console.error('runLoader',e); _forceLoaderGone(); t
    SETUP: create a free site at https://www.goatcounter.com/, then set
    ANALYTICS_SITE to your URL, e.g. 'https://frontline.goatcounter.com'
    (no trailing slash, no /count). Leave it '' to keep analytics off. */
-const ANALYTICS_SITE = ''; // ← paste your GoatCounter site URL here to enable
+const ANALYTICS_SITE = 'https://zeusrgr.goatcounter.com'; // GoatCounter site — image-pixel beacon (see note above), not the external count.js
 function gcConfigured(){ return typeof ANALYTICS_SITE==='string' && /^https:\/\/[a-z0-9-]+\.goatcounter\.com/i.test(ANALYTICS_SITE); }
 function gcSend(path,title,isEvent){
   if(!gcConfigured())return;

@@ -34,11 +34,34 @@ Planned/in-flight items:
       Wired in `wargame.html` in the Phase 2 block as a self-contained
       image-pixel beacon (no external script, so the standalone file still
       works offline). It counts a page open plus a lightweight per-mode
-      battle-start event. **It is OFF until you paste your site URL:** set
-      `ANALYTICS_SITE` (search the file for it) to your GoatCounter URL,
-      e.g. `https://frontline.goatcounter.com`. The CSP already allows
-      `*.goatcounter.com`.
+      battle-start event. **Live** — `ANALYTICS_SITE` is set to
+      `https://zeusrgr.goatcounter.com` in both `wargame.html` and
+      `index.html`. Note: GoatCounter's own snippet
+      (`<script data-goatcounter=... src="//gc.zgo.at/count.js">`) was
+      intentionally *not* used — it's an external script the page's CSP
+      blocks and it would break the standalone offline copy. The
+      image-pixel beacon hits the same `/count` endpoint and shows up
+      identically on the GoatCounter dashboard.
+- [x] Removed the placeholder "N commanders beaten it today" figure from the
+      Daily panel — it was a seeded fake number (`dailyClearsToday()`), and
+      with GoatCounter now live there's still no *readable* real count on the
+      client (GoatCounter's dashboard API needs a private token, which can't
+      be embedded in a page anyone can view-source). Real daily clears are
+      still tracked as GoatCounter events (`daily-played`, `daily-cleared`,
+      `daily-streak-N`) — visible to us on the dashboard — just not echoed
+      back into the game UI until a real backend exists.
 - [ ] Hosting setup (domain, static hosting or CDN).
+- [x] Copyright/licensing: added a `LICENSE` file (all-rights-reserved
+      placeholder — swap the holder name and get it lawyer-reviewed before a
+      commercial release), a copyright header comment at the top of
+      `wargame.html`/`index.html`, and a visible in-game/landing-page
+      copyright line. **Important limit:** this is a legal/attribution
+      marker, not a technical protection — `wargame.html` is a browser game,
+      so anyone who loads it can always open dev tools / view-source and read
+      the full HTML/CSS/JS. There is no way to make client-side source
+      literally unreadable; minifying/obfuscating it would only make it
+      harder to read, not impossible, and would also break the
+      easy-to-share single-file workflow this project depends on.
 
 ## How Phase 2 code is marked in `wargame.html`
 
