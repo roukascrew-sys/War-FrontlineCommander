@@ -78,7 +78,12 @@ Planned/in-flight items:
       default) survive into a commercial/Steam release, or need a licensing
       conversation. Not a web-launch blocker; becomes materially more
       important the moment paid distribution is on the table.
-- [ ] Hosting setup (domain, static hosting or CDN).
+- [ ] Hosting setup (domain, static hosting or CDN). **CFO guidance:** this is a
+      single static file with no backend — it runs identically on a free tier
+      (GitHub Pages, Cloudflare Pages) as on anything paid. Defer the ~$10-15/yr
+      domain purchase and any paid analytics tier until the funnel telemetry
+      (`load → tutorial-start → first-win → return-visit`) shows people actually
+      come back. Spend after the data justifies it, not before.
 - [x] Copyright/licensing: added a `LICENSE` file (all-rights-reserved
       placeholder — swap the holder name and get it lawyer-reviewed before a
       commercial release), a copyright header comment at the top of
