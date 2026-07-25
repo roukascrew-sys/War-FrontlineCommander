@@ -5998,7 +5998,8 @@ function buildMenu(){
     const cc=COUNTRIES[sel.country];
     document.getElementById('country-desc').innerHTML = sel.country==='generic'
       ? 'Generic designations. Pick a nation to field its real hardware.'
-      : `Fielding <b style="color:var(--ink)">${cc.name}</b> equipment — e.g. ${cc.names.tank}, ${cc.names.ifv}, ${cc.names.mlrs}.`;
+      : `Fielding <b style="color:var(--ink)">${cc.name}</b> equipment — e.g. ${cc.names.tank}, ${cc.names.ifv}, ${cc.names.mlrs}.`
+        +`<div style="font-size:9.5px;color:var(--faint);margin-top:5px">Real equipment names are used for flavour only. Frontline Commander is a fictional, independent game — not affiliated with, endorsed by, or sponsored by any government, military or manufacturer.</div>`;
   }
   // modes
   const mOpt=document.getElementById('mode-opts');mOpt.innerHTML='';
@@ -6492,7 +6493,7 @@ function renderManualBody(tab){
       <li><b>🎓 Tutorial</b> — a short narrated walkthrough of the core loop.</li>
     </ul>
     <h2>Countries</h2>
-    <p>Choosing a country renames the roster to that nation's real equipment — a US tank becomes the <b>M1 Abrams</b>, a Russian one the <b>T-90M</b>. It's flavour only; no stats change.</p>
+    <p>Choosing a country renames the roster to that nation's real equipment — a US tank becomes the <b>M1 Abrams</b>, a Russian one the <b>T-90M</b>. It's flavour only; no stats change. Real equipment names are used for flavour only — Frontline Commander is a fictional, independent game, not affiliated with, endorsed by, or sponsored by any government, military or manufacturer.</p>
     <h2>Streaming</h2>
     <p>Connect <b>📡 Live Chat</b> to a Twitch channel and viewers can vote on lanes, summon bosses, call <b>supply drops</b>, roll <b>chaos</b> events, and drive the on-screen <b>hype meter</b> (a full "hype train" pays out bonus CP and a crate). Big chants take many unique chatters: <b>fortify</b> (16) heals your army, <b>storm</b> (22) shells every lane, <b>blitz</b> (26) drops a free wave, and <b>nuke</b> (50) glasses the whole field. Great for streamers who want the audience in the fight.</p>
     <p><b>🤪 Chaos / Meme Mode (beta)</b> — flip it on in ⚙ Settings, then start any battle for nonstop explosions, free spawns, rapid events and mayhem. Built purely for clips.</p>
@@ -6538,6 +6539,21 @@ function settingRow(label,sub,control){
     <div><div style="font-size:13px;font-weight:700;color:var(--ink)">${label}</div><div style="font-size:11px;color:var(--dim);margin-top:2px">${sub}</div></div>
     <div>${control}</div></div>`;
 }
+/* ── PRIVACY & DATA — a short, honest, accurate account of the three things that touch data at
+   all in this game. Written from the actual data flows, not boilerplate: localStorage (this
+   device only), a cookieless analytics beacon, and an opt-in anonymous Twitch connection. No
+   account system, no email, no payment processing exist in this build, so there's genuinely
+   little else to disclose — but "we collect almost nothing" still needs to be SAID, not assumed. ── */
+function renderPrivacySection(){
+  const row=(label,sub)=>`<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;">
+    <div style="font-size:13px;font-weight:700;color:var(--ink)">${label}</div>
+    <div style="font-size:11px;color:var(--dim);margin-top:2px;line-height:1.5">${sub}</div></div>`;
+  return `<div style="font-size:13px;font-weight:800;color:var(--faint);letter-spacing:.5px;margin:10px 2px -2px">📜 PRIVACY &amp; DATA</div>`+
+    row('Your save data','Rank, unlocks, stats and settings are stored in this browser only (localStorage), never sent anywhere. Clearing your browser data or switching devices resets your progress — there is no account or server-side save.')+
+    row('Analytics','A cookieless page-view/event beacon (GoatCounter) — no personal data, no cross-site tracking, no advertising IDs.')+
+    row('Live Twitch Chat (opt-in)','If you connect a channel, the game reads that channel\'s public chat over an anonymous, read-only connection — no login, no token, and nothing is sent back to Twitch beyond the standard anonymous connection.')+
+    `<div style="font-size:11px;color:var(--faint);padding:2px 4px">No account, no email, no payment processing, no third-party ad or tracking SDKs exist in this build.</div>`;
+}
 function renderSettings(){
   const el=document.getElementById('set-body');
   const toggle=(on)=>`<span style="display:inline-block;width:46px;height:24px;border-radius:13px;background:${on?'var(--good)':'#2a3550'};position:relative;transition:.15s;">
@@ -6570,7 +6586,8 @@ function renderSettings(){
         :`<span style="font-size:11px;font-weight:800;color:var(--faint);white-space:nowrap">🔒 Rank ${MODE_GATES.chaos.lvl}</span>`)+
     `<div style="font-size:13px;font-weight:800;color:var(--faint);letter-spacing:.5px;margin:10px 2px -2px">⚠ PROGRESS</div>`+
     settingRow('Reset Rank &amp; Level','Currently Rank '+SAVE.lvl+' — sets you back to Rank 1 and reverts doctrine unlocks. Career stats, medals and rivalries are untouched.',
-      `<button id="set-reset-rank" style="padding:8px 14px;border-radius:8px;border:1px solid var(--red);background:none;color:var(--red);font-weight:700;font-size:12px;cursor:pointer">Reset</button>`);
+      `<button id="set-reset-rank" style="padding:8px 14px;border-radius:8px;border:1px solid var(--red);background:none;color:var(--red);font-weight:700;font-size:12px;cursor:pointer">Reset</button>`)+
+    renderPrivacySection();
   const bind=(id,fn)=>{const b=document.getElementById(id); if(b)b.onclick=()=>{fn();renderSettings();};};
   bind('set-music',()=>{ SAVE.music=!SAVE.music; persist(); if(SAVE.music)musicStart(musicContextTheme()); else musicStop(); refreshTopbar(); });
   bind('set-sound',()=>{ SAVE.sound=!SAVE.sound; persist(); });

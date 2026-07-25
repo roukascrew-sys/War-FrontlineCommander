@@ -65,6 +65,19 @@ Planned/in-flight items:
       logic is deliberately inline for single-file shareability, and a hash policy
       would need recomputing on every edit. Found via a security review; no XSS sink
       was found to exploit the previous gap, but it's the wrong kind of "safe by luck."
+- [x] Non-affiliation disclaimer added inside the game itself (country picker
+      and Field Manual) — previously it only existed on the marketing landing
+      page, not where the real branded hardware names actually appear.
+- [x] Added a Privacy & Data section to in-game Settings — an honest, accurate
+      account of the three things that touch data at all (localStorage save,
+      cookieless GoatCounter analytics, opt-in anonymous Twitch IRC). No
+      account/email/payment system exists in this build, so there's little
+      else to disclose, but it needed to be stated, not assumed.
+- [ ] **Not yet resolved, flagged for a human decision:** whether real
+      trademarked hardware names (M1 Abrams, F-22 Raptor, etc. — opt-in, not
+      default) survive into a commercial/Steam release, or need a licensing
+      conversation. Not a web-launch blocker; becomes materially more
+      important the moment paid distribution is on the table.
 - [ ] Hosting setup (domain, static hosting or CDN).
 - [x] Copyright/licensing: added a `LICENSE` file (all-rights-reserved
       placeholder — swap the holder name and get it lawyer-reviewed before a
