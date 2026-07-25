@@ -109,6 +109,54 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
   ok(failsafe.noticeShown, '[injected parse error] honest "browser too old" notice shown');
   await bad.close();
 
+  // ══ 3a. BOOT FAILURE WHERE SCRIPTS RUN BUT TIMERS NEVER FIRE ══
+  // This is the iOS email/Files attachment preview case, reported from real video footage:
+  // the page draws and CSS animates, but setTimeout/setInterval callbacks never arrive, so
+  // every timer-based safety net dies silently and the player gets a black screen. The only
+  // thing that can still reach them is the pure-CSS #bootfail notice — verify it appears.
+  const frozen = await browser.newContext();
+  const fp = await frozen.newPage();
+  await fp.addInitScript(() => {
+    // neuter timers before any page script runs, exactly like the preview sandbox does
+    window.setTimeout = function () { return 0; };
+    window.setInterval = function () { return 0; };
+    window.requestAnimationFrame = function () { return 0; };
+  });
+  await fp.goto(BASE_URL);
+  await fp.waitForTimeout(15000); // past the 13s CSS reveal
+  const dead = await fp.evaluate(() => {
+    const el = document.getElementById('bootfail');
+    const cs = el && getComputedStyle(el);
+    return {
+      present: !!el,
+      visible: !!(cs && cs.display !== 'none' && +cs.opacity > 0.5),
+      mentionsFix: !!(el && /Open in Safari|share icon/i.test(el.textContent)),
+      build: (document.getElementById('bootfail-ver') || {}).textContent,
+    };
+  });
+  ok(dead.visible, '[timers dead] pure-CSS boot-failure notice becomes visible');
+  ok(dead.mentionsFix, '[timers dead] notice tells the player how to open it in a real browser');
+  await frozen.close();
+
+  // the notice's build number is hardcoded in HTML (it must survive a dead script), so it can
+  // drift from GAME_VERSION — assert they match rather than trusting anyone to remember
+  const verMatch = await page.evaluate(() => {
+    const el = document.getElementById('bootfail-ver');
+    return { stamped: el && el.textContent.trim(), real: typeof GAME_VERSION !== 'undefined' ? GAME_VERSION : null };
+  });
+  ok(verMatch.stamped === verMatch.real,
+    `boot-failure notice build stamp matches GAME_VERSION (stamped ${verMatch.stamped} / real ${verMatch.real})`);
+
+  // ══ 3b. HEALTHY BOOT MUST NEVER SHOW THE FAILURE NOTICE ══
+  const healthy = await page.evaluate(() => {
+    const el = document.getElementById('bootfail');
+    const cs = el && getComputedStyle(el);
+    return { hidden: !!(cs && (cs.display === 'none' || +cs.opacity < 0.01)),
+             booted: document.documentElement.className.indexOf('fc-booted') >= 0 };
+  });
+  ok(healthy.booted, 'healthy boot sets html.fc-booted (timer-liveness probe fired)');
+  ok(healthy.hidden, 'healthy boot keeps the boot-failure notice hidden');
+
   // ══ 3b. CHAT PANEL STAYS ON-SCREEN ACROSS A CROSS-SESSION VIEWPORT SHRINK ══
   // Regression for: chatBoxFrame() used to read box.offsetParent, which is null while #stream
   // is display:none (i.e. at boot, before any battle has started) and silently fell back to raw

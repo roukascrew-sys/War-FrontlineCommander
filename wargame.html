@@ -444,6 +444,26 @@
     animation:ldAutoHide .6s 12s forwards;}
   #loader.gone{opacity:0;pointer-events:none;}
   @keyframes ldAutoHide{to{opacity:0;pointer-events:none;}}
+
+  /* ── PURE-CSS BOOT-FAILURE NOTICE (see the markup comment near #bootfail) ──
+     Deliberately driven by an animation delay rather than a timer, so it still appears in
+     an environment where scripts run but setTimeout/setInterval never fire. It comes up at
+     13s — after the loader's own 12s CSS fade — so instead of the player being left staring
+     at a black rectangle, they get an explanation and a way out.
+     `html.fc-booted` is set from a setTimeout(...,0): if timers work at all that class lands
+     within a millisecond, long before 13s, and this never becomes visible. */
+  #bootfail{position:fixed;inset:0;z-index:99998;background:#05070c;color:#e8eef7;
+    display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;
+    opacity:0;pointer-events:none;animation:bootfailShow .35s 13s forwards;}
+  html.fc-booted #bootfail{animation:none;display:none;}
+  @keyframes bootfailShow{to{opacity:1;pointer-events:auto;}}
+  #bootfail .bf-in{max-width:430px;line-height:1.6;}
+  #bootfail .bf-sw{font-size:34px;margin-bottom:8px;}
+  #bootfail .bf-h{font-size:19px;font-weight:800;letter-spacing:1px;color:var(--gold);margin-bottom:12px;}
+  #bootfail .bf-m{font-size:15px;font-weight:700;margin-bottom:12px;}
+  #bootfail .bf-s{font-size:13px;color:#9fb0c8;margin-bottom:12px;}
+  #bootfail .bf-fix{background:#0e1520;border:1px solid #26303f;border-radius:10px;padding:12px 14px;color:#c7d3e3;}
+  #bootfail .bf-v{font-size:11px;color:#5b6779;margin-top:4px;}
   .ld-logo{font-size:26px;font-weight:800;letter-spacing:2px;color:var(--ink);}
   .ld-logo b{color:var(--gold);}
   .ld-scene{position:relative;width:260px;height:34px;overflow:hidden;border-bottom:2px solid var(--line);}
@@ -1136,7 +1156,30 @@
 </head>
 <body>
 
-<noscript><div style="position:fixed;inset:0;z-index:99999;background:#05070c;color:#e8eef7;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:sans-serif;">This game needs JavaScript enabled to run — please enable it and reload the page.</div></noscript>
+<!-- ══ BOOT-FAILURE NOTICES ══
+     Two independent nets, because they catch different failures:
+
+     1. <noscript> — fires only when scripting is switched OFF entirely.
+     2. #bootfail  — a PURE CSS notice on an animation delay. This is the important one.
+        Every other safety net in this file (the 9s loader clear, the 10s "too old" notice,
+        the 8s boot-guard) is a setTimeout, so all of them die together in any environment
+        where scripts are allowed to run but timers never fire — which is exactly what an
+        iOS email-attachment preview does. CSS animations keep running there, so this is the
+        only mechanism that still reaches the player. It is suppressed the instant a timer
+        proves it can fire (html.fc-booted, set from a setTimeout(...,0) in the script below),
+        so a healthy boot never shows it.
+     ══ -->
+<noscript><div style="position:fixed;inset:0;z-index:99999;background:#05070c;color:#e8eef7;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;"><div style="max-width:420px"><div style="font-size:34px;margin-bottom:10px">⚔</div><div style="font-size:19px;font-weight:800;letter-spacing:1px;margin-bottom:10px">FRONTLINE COMMANDER</div><div style="font-size:14px;color:#9fb0c8">JavaScript is switched off, so the game can&rsquo;t start.</div><div style="font-size:13px;color:#7b8ba3;margin-top:12px">Turn JavaScript on in your browser settings and reload &mdash; or open this page in Safari or Chrome instead.</div></div></div></noscript>
+<div id="bootfail" aria-hidden="true">
+  <div class="bf-in">
+    <div class="bf-sw">⚔</div>
+    <div class="bf-h">FRONTLINE COMMANDER</div>
+    <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
+    <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
+    <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
+    <div class="bf-v">build <b id="bootfail-ver">1.14.1</b></div>
+  </div>
+</div>
 <div id="locktoast"></div>
 <div id="topbar">
   <button id="playtest-link" title="Report a bug or send feedback — your game state is attached automatically">🧪 Playtest Feedback</button>
@@ -1569,6 +1612,17 @@ function _forceLoaderGone(){
 window.addEventListener('error',_forceLoaderGone);
 window.addEventListener('unhandledrejection',_forceLoaderGone);
 setTimeout(_forceLoaderGone,9000); // never sit on the loading screen past ~9s
+
+/* TIMER-LIVENESS PROBE — the switch that arms/disarms the pure-CSS #bootfail notice.
+   Everything else in this file that recovers from a bad boot is a setTimeout, so none of it
+   helps in an environment that runs scripts but never fires timers (an iOS email/Files
+   attachment preview behaves this way: JS executes, CSS animates, timers never arrive).
+   If this callback runs at all, timers are alive and the game can boot normally, so we
+   disarm the CSS notice. If it never runs, the class is never added and the CSS notice
+   surfaces on its own at 13s — the only path that still reaches the player. */
+setTimeout(function(){
+  try{ document.documentElement.className += ' fc-booted'; }catch(e){}
+},0);
 
 /* If the main script never even parsed, the page would otherwise be a silent black
    rectangle. Say so honestly instead, and name the actual cause — an out-of-date
@@ -2041,13 +2095,17 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.14.0';
+const GAME_VERSION='1.14.1';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.14.1',notes:[
+    'FIXED: opening the game straight from an email attachment on iPhone showed a loading bar stuck at 0%, then a black screen with no explanation. That preview window lets the page draw but never runs its timers, which silently disabled every safety net the game had (all of them were timers). There is now a pure-CSS notice that cannot be disabled that way — it explains what happened and how to open the file in a real browser.',
+    'The no-JavaScript message is clearer, and both failure screens now show the build number so a stuck copy can be identified at a glance',
+  ]},
   {v:'1.14.0',notes:[
     'FIXED: the game would never finish loading on older iPhones and iPads. One regex used a feature Safari only supports from iOS 16.4, and because that breaks the script at PARSE time, nothing ran at all — including the safety net meant to catch exactly this. Rewritten to work on every browser, and the safety net now lives in its own script block so it can never be taken down with the game again. Older devices that still fall over now say so plainly instead of hanging on a loading bar.',
     'Removed the callsign/login screen — it did not dismiss correctly and the title screen is better without it',
