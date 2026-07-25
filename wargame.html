@@ -15,13 +15,21 @@
 <meta name="description" content="Frontline Commander: a free, zero-install lane-battler where a live counter web, doctrines, and a narrated Iron Marshal meet Twitch chat sabotage. No download, no signup — click and fight.">
 <meta name="theme-color" content="#0a0e14">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
-<!-- Open Graph / Twitter card — fill in og:url once the page has a live domain -->
+<!-- Open Graph / Twitter card — fill in og:url once the page has a live domain. og:image/
+     twitter:image use a relative path for now (same caveat as og:url); becomes an absolute
+     https://... URL the same day the domain is set, same file either way (og-image.png, checked
+     into the repo root alongside this file). -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="FRONTLINE COMMANDER — a fast war game">
 <meta property="og:description" content="A free, zero-install lane-battler: a live counter web, doctrines, and a narrated Iron Marshal, playable straight in the browser.">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="FRONTLINE COMMANDER — bank the points, break the line, take the war.">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="FRONTLINE COMMANDER — a fast war game">
 <meta name="twitter:description" content="A free, zero-install lane-battler, playable straight in the browser.">
+<meta name="twitter:image" content="og-image.png">
 <meta name="robots" content="index,follow">
 <!-- script-src is 'self' 'unsafe-inline' rather than a stricter nonce/hash policy because every
      line of game logic is deliberately INLINE (see PHASES.md — splitting into external files
