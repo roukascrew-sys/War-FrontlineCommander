@@ -15,7 +15,7 @@
 <meta name="twitter:title" content="FRONTLINE COMMANDER — a fast war game">
 <meta name="twitter:description" content="A free, zero-install lane-battler, playable straight in the browser.">
 <meta name="robots" content="index,follow">
-<meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://api.elevenlabs.io wss://irc-ws.chat.twitch.tv https://*.goatcounter.com; img-src 'self' data: https://*.goatcounter.com; object-src 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="connect-src 'self' wss://irc-ws.chat.twitch.tv https://*.goatcounter.com; img-src 'self' data: https://*.goatcounter.com; object-src 'none'; base-uri 'none'">
 <script>
 /* BOOT GUARD — deliberately written in plain ES5 and kept tiny, and loaded as the very
    first script in <head>, before styles.css or game.js. Its only job is to guarantee a
@@ -431,17 +431,108 @@
   .tfig{position:absolute;top:24%;display:flex;flex-direction:column;align-items:center;gap:9px;
     filter:drop-shadow(0 6px 16px #000d);opacity:.97;}
   .tfig-l{left:6.5%;} .tfig-r{right:6.5%;}
-  .tf-art{position:relative;font-size:78px;line-height:1;width:1.1em;height:1.1em;display:flex;align-items:center;justify-content:center;}
-  .tf-art .tf-base{position:relative;z-index:1;}
-  .tf-art .tf-helmet{position:absolute;top:-0.30em;left:50%;transform:translateX(-50%) rotate(-4deg);font-size:0.60em;z-index:3;filter:drop-shadow(0 2px 3px #000b);}
-  .tf-art .tf-cigar{position:absolute;bottom:0.20em;right:-0.02em;font-size:0.34em;transform:rotate(-16deg);z-index:4;filter:drop-shadow(0 0 3px #ff8a3a);}
-  .tf-art .tf-scar{position:absolute;top:0.36em;left:0.44em;width:0.26em;height:2px;background:#d0422b;border-radius:2px;transform:rotate(57deg);z-index:5;opacity:.9;box-shadow:0 0.16em 0 -0.5px #d0422b;}
-  .tf-art .tf-eye{position:absolute;top:0.46em;width:0.12em;height:0.12em;border-radius:50%;z-index:4;
-    background:radial-gradient(circle,#ffe08a,#ff6a00 60%,#b52d00);box-shadow:0 0 7px 2px #ff7a1e;animation:tfEye 1.1s ease-in-out infinite;}
-  .tf-art .tf-eye.l{left:0.29em;} .tf-art .tf-eye.r{right:0.29em;}
-  @keyframes tfEye{50%{box-shadow:0 0 11px 3px #ff9a3e;transform:scale(1.18);}}
-  .tf-art.laugh{animation:tfLaugh 1.7s ease-in-out infinite;transform-origin:50% 80%;}
-  @keyframes tfLaugh{0%,100%{transform:rotate(-4deg) translateY(0);}50%{transform:rotate(4deg) translateY(-3px);}}
+  /* Both figures are drawn from layered CSS shapes (no emoji, no images) so they read as real
+     characters and can animate part-by-part: the skull's jaw works, its sockets burn, the
+     recruit breathes and his cigar smokes. Everything is sized in `em` off .tf-art's font-size,
+     so the same markup scales from the 78px title figures to the 46px menu skull. */
+  .tf-art{position:relative;font-size:78px;line-height:1;width:1.05em;height:1.15em;}
+  .tf-art>*{position:absolute;}
+
+  /* ── SKULL ───────────────────────────────────────────────────────────── */
+  .sk-cran{left:11%;top:1%;width:78%;height:60%;border-radius:52% 52% 40% 40%/62% 62% 38% 38%;
+    background:radial-gradient(ellipse at 36% 24%,#efe8d8 0%,#d6cbb5 44%,#ab9f88 80%,#807663 100%);
+    box-shadow:inset -0.055em -0.045em 0.10em #5f5646, inset 0.03em 0.03em 0.06em #fffdf6;}
+  .sk-temple{top:16%;width:12%;height:26%;border-radius:50%;background:#00000024;}
+  .sk-temple.l{left:11%;} .sk-temple.r{right:11%;}
+  .sk-brow{left:15%;top:29%;width:70%;height:11%;border-radius:50% 50% 40% 40%;
+    background:linear-gradient(#00000038,#00000000);}
+  /* deep, slightly angled sockets — the single biggest "menacing vs cute" lever */
+  .sk-socket{top:33%;width:22%;height:20%;border-radius:48% 48% 62% 62%/58% 58% 42% 42%;
+    background:radial-gradient(ellipse at 50% 34%,#161009 0%,#070504 62%,#000 100%);
+    box-shadow:inset 0 0.045em 0.06em #000, 0 0.014em 0.01em #fffbf0b0;}
+  .sk-socket.l{left:16%;transform:rotate(7deg);} .sk-socket.r{right:16%;transform:rotate(-7deg);}
+  .sk-nose{left:50%;top:54%;width:0;height:0;transform:translateX(-50%);
+    border-left:0.055em solid transparent;border-right:0.055em solid transparent;border-bottom:0.10em solid #070504;
+    filter:drop-shadow(0 -0.012em 0 #fffbf0b0);}
+  .sk-cheek{top:48%;width:14%;height:16%;border-radius:50%;background:#0000001c;}
+  .sk-cheek.l{left:9%;} .sk-cheek.r{right:9%;}
+  /* upper maxilla — the tooth row sits on this, above the hinged mandible */
+  .sk-maxilla{left:29%;top:60%;width:42%;height:9%;border-radius:14% 14% 34% 34%;
+    background:linear-gradient(#d8cdb6,#b8ac94);box-shadow:inset 0 -0.015em 0.02em #6f655566;}
+  .sk-teeth{left:31%;top:64%;width:38%;height:0.062em;
+    background:repeating-linear-gradient(90deg,#fffdf5 0 0.040em,#4a4338 0.040em 0.051em);
+    border-radius:0.012em;box-shadow:0 0.012em 0.02em #0007;}
+  /* mandible — hinges from the top so the laugh animation reads as a real jaw drop */
+  .sk-jaw{left:28%;top:68%;width:44%;height:22%;border-radius:12% 12% 44% 44%/10% 10% 90% 90%;
+    background:linear-gradient(#ddd2ba 0%,#bdb199 58%,#8e836f 100%);
+    box-shadow:inset 0 -0.035em 0.05em #5f564688;transform-origin:50% 0%;}
+  /* burning sockets (menace 2+) — smaller + set into the socket, not sitting on the face */
+  .tf-art .tf-eye{top:38%;width:0.105em;height:0.105em;border-radius:50%;z-index:4;
+    background:radial-gradient(circle,#fff3c4 0%,#ffb03a 34%,#ff5a00 64%,#7d1c00 100%);
+    box-shadow:0 0 0.085em 0.022em #ff7a1e,0 0 0.20em 0.06em #ff4d0070;
+    animation:tfEye 1.05s ease-in-out infinite;}
+  .tf-art .tf-eye.l{left:21.5%;} .tf-art .tf-eye.r{right:21.5%;}
+  @keyframes tfEye{0%,100%{opacity:.88;transform:scale(1);}45%{opacity:1;transform:scale(1.22);}70%{opacity:.82;transform:scale(.96);}}
+  /* the laugh: jaw actually chatters, whole skull rocks */
+  .tf-art.laugh{animation:tfLaugh 1.6s ease-in-out infinite;transform-origin:50% 85%;}
+  .tf-art.laugh .sk-jaw{animation:tfJaw 0.42s ease-in-out infinite;}
+  .tf-art.laugh .sk-teeth{animation:tfTeeth 0.42s ease-in-out infinite;}
+  @keyframes tfLaugh{0%,100%{transform:rotate(-3.5deg);}50%{transform:rotate(3.5deg);}}
+  @keyframes tfJaw{0%,100%{transform:translateY(0) scaleY(1);}50%{transform:translateY(0.055em) scaleY(1.16);}}
+  @keyframes tfTeeth{0%,100%{transform:translateY(0);}50%{transform:translateY(0.012em);}}
+
+  /* ── RECRUIT ─────────────────────────────────────────────────────────── */
+  .rc-neck{left:38%;top:74%;width:24%;height:18%;border-radius:12% 12% 26% 26%;
+    background:linear-gradient(#c08a68,#946948);}
+  .rc-collar{left:24%;top:86%;width:52%;height:14%;border-radius:44% 44% 18% 18%;
+    background:linear-gradient(#4a5340,#333b2c);box-shadow:inset 0 0.02em 0.03em #ffffff18;}
+  .rc-face{left:20%;top:22%;width:60%;height:60%;border-radius:46% 46% 48% 48%/38% 38% 62% 62%;
+    background:radial-gradient(ellipse at 38% 30%,#f0c09a 0%,#dda87f 46%,#b98460 82%,#9a6a4a 100%);
+    box-shadow:inset -0.045em -0.03em 0.07em #7d543a88, inset 0.03em 0.02em 0.05em #ffd9b8aa;}
+  .rc-ear{top:46%;width:9%;height:15%;border-radius:50%;background:#c99070;box-shadow:inset 0 0 0.02em #8a5c3e;}
+  .rc-ear.l{left:16%;} .rc-ear.r{right:16%;}
+  .rc-helm{left:11%;top:0%;width:78%;height:41%;border-radius:50% 50% 30% 30%/72% 72% 28% 28%;
+    background:linear-gradient(150deg,#6b7358 0%,#525a42 46%,#3c422f 100%);
+    box-shadow:inset 0.04em 0.035em 0.07em #98a37e88, inset -0.03em -0.02em 0.05em #22261b, 0 0.02em 0.05em #0007;}
+  .rc-helmbrim{left:7%;top:36%;width:86%;height:0.10em;border-radius:0.05em;
+    background:linear-gradient(#5c6449,#343a28);box-shadow:0 0.02em 0.04em #0008;}
+  .rc-strap{left:22%;top:44%;width:0.045em;height:32%;background:#3c422f;transform:rotate(9deg);opacity:.85;}
+  .rc-brow{top:41%;width:17%;height:0.055em;border-radius:0.03em;background:#6d4a31;}
+  .rc-brow.l{left:24%;transform-origin:100% 50%;} .rc-brow.r{right:24%;transform-origin:0 50%;}
+  .rc-eye{top:47%;width:0.10em;height:0.075em;border-radius:50%;
+    background:radial-gradient(circle at 50% 40%,#3a2f26 0%,#1d1712 70%);box-shadow:0 -0.015em 0 #fff6;}
+  .rc-eye.l{left:27%;} .rc-eye.r{right:27%;}
+  .rc-nose{left:50%;top:55%;width:0.06em;height:0.10em;transform:translateX(-50%);
+    border-radius:40% 40% 50% 50%;background:#00000016;box-shadow:-0.015em 0 0.02em #00000018;}
+  .rc-mouth{left:50%;top:68%;width:0.19em;height:0.035em;transform:translateX(-50%);
+    border-radius:0.02em;background:#7a4a33;}
+  .rc-stubble{left:24%;top:62%;width:52%;height:20%;border-radius:0 0 46% 46%/0 0 78% 78%;
+    background:radial-gradient(ellipse at 50% 90%,#4a382c55 0%,#4a382c00 70%);}
+  /* shared details */
+  .tf-art .tf-scar{width:0.20em;height:0.022em;background:linear-gradient(90deg,#c2402b00,#d0553b,#c2402b00);
+    border-radius:0.02em;z-index:6;box-shadow:0 0.035em 0 -0.006em #b8402b99;}
+  .sk-wrap .tf-scar{left:58%;top:22%;transform:rotate(62deg);}
+  .rc-wrap .tf-scar{left:56%;top:44%;transform:rotate(66deg);}
+  .tf-art .tf-cigar{z-index:5;width:0.20em;height:0.038em;border-radius:0.015em;
+    background:linear-gradient(90deg,#4a3524 0%,#6b4d33 55%,#8a6743 100%);transform:rotate(-13deg);
+    box-shadow:0 0.01em 0.02em #0008;}
+  .sk-wrap .tf-cigar{left:60%;top:69%;} .rc-wrap .tf-cigar{left:58%;top:69%;}
+  .tf-art .tf-cigar::after{content:'';position:absolute;right:-0.028em;top:-0.008em;width:0.055em;height:0.055em;
+    border-radius:50%;background:radial-gradient(circle,#fff0b0,#ff7a1e 55%,#c22e00);
+    box-shadow:0 0 0.07em 0.02em #ff7a1e;animation:tfEmber 1.9s ease-in-out infinite;}
+  @keyframes tfEmber{0%,100%{opacity:.75;}50%{opacity:1;box-shadow:0 0 0.11em 0.035em #ff9a3e;}}
+  .tf-smoke{z-index:6;width:0.07em;height:0.07em;border-radius:50%;background:#cfd6e055;
+    filter:blur(0.02em);animation:tfSmoke 3.4s linear infinite;opacity:0;}
+  .sk-wrap .tf-smoke{left:74%;top:74%;} .rc-wrap .tf-smoke{left:75%;top:67%;}
+  .tf-smoke.s2{animation-delay:1.15s;} .tf-smoke.s3{animation-delay:2.3s;}
+  @keyframes tfSmoke{0%{opacity:0;transform:translate(0,0) scale(.5);}
+    18%{opacity:.5;} 100%{opacity:0;transform:translate(0.10em,-0.55em) scale(2.1);}}
+  /* breathing — the recruit's chest/head rises, the skull just sways */
+  .tf-art.breathe{animation:tfBreathe 4.2s ease-in-out infinite;transform-origin:50% 95%;}
+  @keyframes tfBreathe{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-0.018em) scale(1.014);}}
+  .tf-art.sway{animation:tfSway 6.5s ease-in-out infinite;transform-origin:50% 92%;}
+  @keyframes tfSway{0%,100%{transform:rotate(-1.6deg);}50%{transform:rotate(1.6deg);}}
+
   .tfig .tf-cap{font-size:11px;font-weight:800;letter-spacing:2px;color:var(--gold);text-transform:uppercase;text-shadow:0 2px 6px #000;opacity:.9;}
   .tfig .tf-sub{font-size:8.5px;font-weight:700;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-top:-4px;}
   .tfig-idle{animation:tfIdle 4.6s ease-in-out infinite;}
@@ -449,7 +540,9 @@
   @keyframes tfIdle{50%{transform:translateY(-7px);}}
   .tf-pulse{animation:tfPulse 440ms ease;}
   @keyframes tfPulse{0%{transform:scale(1);}40%{transform:scale(1.14);}100%{transform:scale(1);}}
-  #title-figs.reduce .tfig,#title-figs.reduce .tf-art,#title-figs.reduce .tf-eye{animation:none!important;}
+  #title-figs.reduce .tfig,#title-figs.reduce .tf-art,#title-figs.reduce .tf-eye,
+  #title-figs.reduce .tf-smoke,#title-figs.reduce .sk-jaw,#title-figs.reduce .sk-teeth,
+  #title-figs.reduce .tf-cigar::after{animation:none!important;}
   /* the flanking figures are a wide-desktop flourish — hide them where they'd crowd the buttons */
   @media (max-width:960px){ #title-figs{display:none;} }
   /* difficulty skull under the skirmish-menu picker — reuses the .tf-* skull art at a smaller size */
@@ -984,7 +1077,7 @@
   <button class="tb-btn" id="btn-stream">📺 Streamer Mode</button>
   <button class="tb-btn" id="btn-twitch">📡 Live Chat</button>
   <button class="tb-btn" id="btn-narr">🎙 Narrator</button>
-  <button class="tb-btn" id="btn-voice">🔑 Voice</button>
+  <button class="tb-btn" id="btn-voice">🎙 Voice</button>
   <button class="tb-btn" id="btn-sound">🔊 Sound</button>
   <button class="tb-btn" id="btn-music">🎵 Music</button>
   <button class="tb-btn hidden" id="btn-news">📰 News</button>
@@ -1295,29 +1388,20 @@
     </div>
   </div>
 
-  <!-- VOICE SETTINGS MODAL -->
+  <!-- VOICE SETTINGS MODAL — picks which of YOUR BROWSER's built-in voices the Iron Marshal
+       uses. Entirely local: no account, no API key, no network calls, nothing to run out. -->
   <div id="voicemodal">
     <div class="fr-card" style="max-width:480px;text-align:left">
       <div class="fr-h" style="text-align:center">🎙 Narrator Voice</div>
-      <div class="fr-p" style="text-align:center">Free by default: a styled browser voice over a radio-static bed. Optionally plug in an ElevenLabs API key for a real neural voice — your key stays in this browser and is only ever sent to elevenlabs.io.</div>
-      <div style="margin-bottom:12px">
-        <label style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px">ELEVENLABS API KEY (optional)</label>
-        <input id="vm-key" type="password" placeholder="sk_..." autocomplete="off" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-family:var(--mono);font-size:13px">
-      </div>
+      <div class="fr-p" style="text-align:center">The Iron Marshal speaks with a voice built into your browser, played over a command-net radio bed. Pick whichever one sounds most like a war-room announcer to you — it all runs offline on your device.</div>
       <div style="margin-bottom:16px">
-        <label style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px">VOICE</label>
-        <div class="opt" id="vm-voices"></div>
-      </div>
-      <div id="vm-custom-wrap" style="margin-bottom:16px;display:none">
-        <label style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px">CUSTOM VOICE ID</label>
-        <input id="vm-custom-id" type="text" placeholder="e.g. paste Thaddeus's Voice ID from ElevenLabs → My Voices" autocomplete="off" maxlength="64" pattern="[a-zA-Z0-9]+" title="Letters and numbers only" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-family:var(--mono);font-size:13px">
-        <div class="fr-p" style="text-align:left;font-size:11.5px;margin:6px 0 0">Find it in ElevenLabs under My Voices (or Voice Library) → the voice's ⋯ menu → Copy Voice ID.</div>
+        <label style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px">AVAILABLE VOICES</label>
+        <div class="opt" id="vm-voices" style="max-height:230px;overflow-y:auto"></div>
       </div>
       <div id="vm-status" style="font-size:12px;color:var(--dim);min-height:18px;margin-bottom:10px"></div>
       <div class="btn-row" style="justify-content:center">
         <button class="sbtn prim" id="vm-test">▶ Test Voice</button>
-        <button class="sbtn" id="vm-save">💾 Save</button>
-        <button class="sbtn" id="vm-clear">🗑 Clear Key</button>
+        <button class="sbtn" id="vm-auto">✨ Auto-pick Best</button>
         <button class="sbtn" id="vm-close">✕ Close</button>
       </div>
     </div>
@@ -1407,7 +1491,7 @@ function shade(hex,mul){ let h=(hex||'#888').replace('#',''); if(h.length===3)h=
 const SAVE_KEY='FRONTLINE_SAVE_v1';
 const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0,
   unlocked:['blitzkrieg','mass'],medals:{},sound:true,narrator:true,streamOn:false,seenTut:false,
-  campaignDone:-1,campaignStars:{},daily:{},ttsKeyEnc:null,ttsVoice:'custom',ttsVoiceCustomId:'ZR7bgvV5iWuFTdxzb9Y6',ttsVoiceCustomName:'Thaddeus',
+  campaignDone:-1,campaignStars:{},daily:{},narrVoiceURI:null,
   speed:1,twitchChannel:'',war:null,warWins:0,aiDebug:false,music:true,musicVol:0.5,news:false,reduceMotion:false,
   ambient:true,randomEvents:true,evSupply:true,evVoice:true,evCutscene:true,evBarrage:true,evDefector:true,
   chaosMode:false,
@@ -1419,54 +1503,26 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   timeTrials:{},          // mission id -> best clear time (s); presence means that trial is PASSED
   secretUnlocked:false,   // true once every campaign time trial has been beaten
   secretDone:false,       // true once the secret level is cleared (unlocks the Drone Swarm + Rods from God)
-  secretBadgeEarned:false};
+  secretBadgeEarned:false,
+  // ── daily challenge streaks ──
+  dailyStreak:0,          // consecutive days the daily has been beaten
+  dailyBestStreak:0,
+  dailyLastWin:null};     // 'YYYY-MM-DD' of the most recent daily win (drives streak continuity)
 let SAVE=load();
 SAVE.news=false; // live news wire archived for now (kept in code, off by default)
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
 function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(SAVE));}catch(e){}}
 
-/* ── local-only encryption for the ElevenLabs key ──
-   This doesn't defend against code running on this page (that code could just
-   call decryptSecret itself) — it defends against generic malware/scripts that
-   scrape localStorage strings directly, by keeping the key off disk in plaintext.
-   The plaintext key lives only in the in-memory ttsKeyPlain variable, never in SAVE. */
-let ttsKeyPlain='';
-const TTS_KEY_SALT_ID='fc_ks_v1';
-async function ttsCryptoKey(){
-  let saltB64=localStorage.getItem(TTS_KEY_SALT_ID), salt;
-  if(saltB64){ salt=Uint8Array.from(atob(saltB64),c=>c.charCodeAt(0)); }
-  else{ salt=crypto.getRandomValues(new Uint8Array(16)); localStorage.setItem(TTS_KEY_SALT_ID,btoa(String.fromCharCode(...salt))); }
-  const baseKey=await crypto.subtle.importKey('raw',new TextEncoder().encode(location.origin+'|frontline-commander'),{name:'PBKDF2'},false,['deriveKey']);
-  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:100000,hash:'SHA-256'},baseKey,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
-}
-async function encryptSecret(plain){
-  if(!plain)return null;
+/* ── legacy cleanup: the game used to offer an optional ElevenLabs neural voice, which meant
+   storing a user API key. That whole path is gone (a public release would burn through anyone's
+   quota, and it's one less secret to hold), so scrub any key material an older build left behind. */
+(function purgeLegacyTtsKey(){
   try{
-    const key=await ttsCryptoKey(), iv=crypto.getRandomValues(new Uint8Array(12));
-    const data=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(plain));
-    return btoa(String.fromCharCode(...iv))+'.'+btoa(String.fromCharCode(...new Uint8Array(data)));
-  }catch(e){ return null; }
-}
-async function decryptSecret(blob){
-  if(!blob)return '';
-  try{
-    const [ivB64,dataB64]=blob.split('.');
-    const iv=Uint8Array.from(atob(ivB64),c=>c.charCodeAt(0)), data=Uint8Array.from(atob(dataB64),c=>c.charCodeAt(0));
-    const plainBuf=await crypto.subtle.decrypt({name:'AES-GCM',iv},await ttsCryptoKey(),data);
-    return new TextDecoder().decode(plainBuf);
-  }catch(e){ return ''; }
-}
-async function setTtsKey(plain){
-  ttsKeyPlain=plain||'';
-  SAVE.ttsKeyEnc=ttsKeyPlain?await encryptSecret(ttsKeyPlain):null;
-  persist();
-}
-function clearTtsKey(){
-  ttsKeyPlain=''; SAVE.ttsKeyEnc=null; // drop the only in-memory copy + the persisted blob
-}
-(async()=>{
-  if(SAVE.ttsKey){ await setTtsKey(SAVE.ttsKey); delete SAVE.ttsKey; persist(); } // migrate a legacy plaintext key
-  else if(SAVE.ttsKeyEnc){ ttsKeyPlain=await decryptSecret(SAVE.ttsKeyEnc); }
+    delete SAVE.ttsKey; delete SAVE.ttsKeyEnc; delete SAVE.ttsVoice;
+    delete SAVE.ttsVoiceCustomId; delete SAVE.ttsVoiceCustomName;
+    localStorage.removeItem('fc_ks_v1'); // the old PBKDF2 salt
+    persist();
+  }catch(e){}
 })();
 
 const MAX_LVL=100;
@@ -1633,6 +1689,12 @@ const UNITS={
 // appended at the end rather than grouped with the other infantry so every existing
 // number-hotkey (1-9) and tutorial "press N" instruction keeps pointing at the same unit
 const HOTBAR=['rifle','atgm','sniper','tank','ifv','arty','mlrs','aa','heli','drone','medic','jammer','interceptor','gunship','flame','swarm'];
+/* Secret unlocks stay INVISIBLE until earned — not greyed-out-with-a-lock, genuinely absent, so
+   discovering the Glitch Front is a real surprise. Anything that lists the roster (Field Manual,
+   attract battles, chaos spawns, AI picks) filters through here. */
+const SECRET_UNITS=['swarm'];
+function unitRevealed(key){ return SECRET_UNITS.indexOf(key)<0 || !!SAVE.secretDone; }
+function visibleRoster(){ return HOTBAR.filter(unitRevealed); }
 
 /* ── IN-BATTLE TECH TIERS — in normal modes you buy your way up the tree mid-fight ── */
 const UNIT_TIER={rifle:1,atgm:1,ifv:1,swarm:1, sniper:2,tank:2,aa:2,arty:2,drone:2,medic:2,flame:2, heli:3,mlrs:3,jammer:3,interceptor:3,gunship:3};
@@ -1793,13 +1855,22 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.10.0';
+const GAME_VERSION='1.11.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.11.0',notes:[
+    'Daily Challenge is now procedurally generated — every day composes a fresh twist, opposition, theater and player boon, so no two days repeat. Guardrails keep it fun: the twist can never ban the counter to that day\'s enemy, the hardest AI always comes with support, and a harshness budget stops "unwinnable" days',
+    'Added a daily streak tracker — consecutive clears build a streak (with growing bonus XP) shown in the menu and on the results screen',
+    'The daily now shows how many commanders have beaten it today (placeholder figure until the site backend is live)',
+    'Removed the optional ElevenLabs neural-voice integration entirely — the narrator is now 100% on-device, so nothing can be rate-limited or drained on a public build. The 🎙 Voice panel now picks from your browser\'s own voices',
+    'Rods from God reworked: it now rains on ALL THREE lanes (distinct from the single-lane gunship run) and is limited to once per battle',
+    'The Drone Swarm and Rods from God are now fully hidden until the secret level is cleared — including in the Field Manual',
+    'Redrew the title recruit and skull as layered, animated art — the skull\'s jaw works and its sockets burn, the recruit breathes and his cigar smokes',
+  ]},
   {v:'1.10.0',notes:[
     'Campaign time trials: beat any cleared mission under par (time scales with its difficulty) — clear every trial to reveal a hidden level',
     'NEW hidden level — The Glitch Front: fight for 30s, then a warhead glasses the board and the battle continues on a glitchy wasteland where the lanes keep swapping under an imposing enemy HQ. Clearing it unlocks the ⁂ Drone Swarm unit, the 🛰 Rods from God orbital strike, and the Glitch-Breaker badge',
@@ -1914,15 +1985,144 @@ const WEATHER_KEYS=Object.keys(WEATHERS);
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 function todayKey(){return new Date().toISOString().slice(0,10);}
-// daily mutators — a rotating twist that makes each day feel distinct
-const DAILY_MUTATORS=[
-  {id:'flush',name:'Flush Coffers',desc:'CP income doubled for both sides — spend fast, spend big.',apply:g=>{g.cpRate*=2;g.ecpRate*=2;}},
-  {id:'noarty',name:'No Guns',desc:'Artillery is jammed out. Win it with steel and infantry.',ban:['arty','mlrs']},
-  {id:'droneday',name:'Drone Swarm Day',desc:'The enemy leans hard on cheap airframes. Bring AA.',bias:'drone'},
-  {id:'armorday',name:'Steel Storm',desc:'The enemy pushes armour columns. Bring AT.',bias:'tank'},
-  {id:'sudden',name:'Sudden Death',desc:'Both HQs are made of glass — half health. One good push ends it.',apply:g=>{g.hq.B=g.hqMax.B*=0.5;g.hq.R=g.hqMax.R*=0.5;}},
-  {id:'thinair',name:'Thin Air',desc:'Deploy cooldowns are longer. Every commitment counts.',cdMul:1.6},
+/* ═══════════════════════════════════════════════════════════════════════
+   DAILY CHALLENGE — PROCEDURAL GENERATOR
+   Every day composes a fresh scenario from four independent axes (twist ·
+   opposition · theater · boon) instead of replaying one canned mutator, so no
+   two days feel the same. Everything is derived from the date string through a
+   seeded RNG, so every player worldwide gets the identical fight.
+
+   The generator is deliberately opinionated about FUN — a random roll can
+   easily produce "Legendary AI + armour spam + your AT is banned", which isn't
+   a challenge, it's a wall. So the composer enforces:
+     · a HARSHNESS BUDGET — every option carries a harsh score and the day's
+       total is capped; overshoot gets bought back down with player boons.
+     · a COUNTER-LOCK — the twist may never ban the units that counter the
+       enemy's chosen bias (no "armour day, and AT is jammed").
+     · ESCALATION GUARDS — the hardest opposition always comes with a boon and
+       never stacks with a harsh twist.
+     · NO-REPEAT ROTATION — the twist and the enemy bias are drawn from a
+       rotation offset by the day index, so the same combo can't recur for
+       weeks even when the RNG likes a particular option.
+   ═══════════════════════════════════════════════════════════════════════ */
+// TWISTS — the day's headline rule change. `harsh` = how much it taxes the player.
+const DAILY_TWISTS=[
+  {id:'flush',name:'Flush Coffers',desc:'CP income doubled for both sides — spend fast, spend big.',harsh:0,apply:g=>{g.cpRate*=2;g.ecpRate*=2;}},
+  {id:'noarty',name:'No Guns',desc:'Artillery is jammed out. Win it with steel and infantry.',harsh:2,ban:['arty','mlrs']},
+  {id:'sudden',name:'Sudden Death',desc:'Both HQs are made of glass — half health. One good push ends it.',harsh:1,apply:g=>{g.hq.B=g.hqMax.B*=0.5;g.hq.R=g.hqMax.R*=0.5;}},
+  {id:'thinair',name:'Thin Air',desc:'Deploy cooldowns are longer. Every commitment counts.',harsh:2,cdMul:1.6},
+  {id:'grounded',name:'Grounded',desc:'All aircraft are grounded on both sides. This one is settled on the dirt.',harsh:1,ban:['heli','interceptor','gunship']},
+  {id:'shoestring',name:'Shoestring',desc:'Tight budget: CP trickles in for everyone. Every point has to earn its keep.',harsh:2,apply:g=>{g.cpRate*=0.7;g.ecpRate*=0.7;}},
+  {id:'blitzday',name:'Rush Orders',desc:'Deploy cooldowns are slashed — throw units down almost as fast as you can click.',harsh:0,cdMul:0.55},
+  {id:'fortress',name:'Fortress Doctrine',desc:'Both HQs are reinforced to double health. Settle in — this one goes the distance.',harsh:1,apply:g=>{g.hq.B=g.hqMax.B*=2;g.hq.R=g.hqMax.R*=2;}},
+  {id:'infantryonly',name:'Boots on the Ground',desc:'No vehicles. Infantry, drones and guns only — a very different war.',harsh:2,ban:['tank','ifv','aa','jammer']},
+  {id:'attrition',name:'War of Attrition',desc:'Kills pay double. Trade well and your economy snowballs.',harsh:0,apply:g=>{g.bountyMul=2;}},
+  {id:'openfield',name:'Open Ground',desc:'Every lane is bare open field — nowhere to hide, and everyone moves faster.',harsh:1,apply:g=>{g.laneTerrain=['open','open','open'];}},
+  {id:'veterans',name:'Veteran Cadre',desc:'Your whole army starts battle-hardened — every unit you deploy lands as Seasoned.',harsh:0,apply:g=>{g.startVet=1;}},
 ];
+// OPPOSITION — who you're up against. Bias `counters` names what the player needs to answer it.
+const DAILY_OPPOSITION=[
+  {id:'balanced',name:'Combined Arms',bias:null,   counters:[],                 harsh:1,desc:'a balanced order of battle'},
+  {id:'armor',   name:'Steel Storm',  bias:'tank', counters:['atgm','heli'],    harsh:2,desc:'armour columns — bring anti-tank'},
+  {id:'drones',  name:'Locust Swarm', bias:'drone',counters:['aa','jammer'],    harsh:2,desc:'cheap airframes in bulk — bring AA and EW'},
+  {id:'guns',    name:'Long Reach',   bias:'arty', counters:['heli','drone'],   harsh:2,desc:'artillery batteries — close the distance fast'},
+  {id:'rockets', name:'Rolling Thunder',bias:'mlrs',counters:['heli','drone'],  harsh:2,desc:'rocket batteries saturating lanes'},
+  {id:'air',     name:'Sky Reaper',   bias:'heli', counters:['aa','interceptor'],harsh:2,desc:'rotary air power — put AA in every lane'},
+  {id:'infantry',name:'Human Wave',   bias:'rifle',counters:['ifv','arty','flame'],harsh:1,desc:'infantry en masse — splash damage answers it'},
+];
+// BOONS — a player-side gift. The generator spends these to buy the day's harshness back down.
+const DAILY_BOONS=[
+  {id:'none',   name:'No support',      desc:'',                                                              worth:0,apply:null},
+  {id:'warchest',name:'War Chest',      desc:'You open with a full war chest of CP.',                         worth:1,apply:g=>{g.cp+=140;}},
+  {id:'freetech',name:'Open Armoury',   desc:'Every tech tier is already unlocked for you — deploy anything from the first second.', worth:2,apply:g=>{for(const k in UNITS)if(k!=='voidwarden'&&k!=='swarm')g.unlocked[k]=true;}},
+  {id:'fastcd', name:'Forward Depot',   desc:'Your deploy cooldowns are cut by a third.',                     worth:1,apply:g=>{g.cdMul=(g.cdMul||1)*0.66;}},
+  {id:'income', name:'Priority Supply', desc:'Your CP income is boosted by 40%.',                             worth:2,apply:g=>{g.cpRate*=1.4;}},
+  {id:'strikes',name:'Fire Support',    desc:'All your commander strikes start ready and reload 40% faster.', worth:1,apply:g=>{g.strikeCds={};g.perk=Object.assign({},g.perk,{strikeCdMul:(g.perk.strikeCdMul||1)*0.6});}},
+  {id:'armor',  name:'Hardened HQ',     desc:'Your HQ is reinforced by 50%.',                                 worth:1,apply:g=>{g.hqMax.B*=1.5;g.hq.B=g.hqMax.B;}},
+];
+const DAILY_DIFFS=[
+  {diff:'recruit',  harsh:0},
+  {diff:'veteran',  harsh:1},
+  {diff:'elite',    harsh:2},
+  {diff:'legendary',harsh:4},
+];
+const DAILY_WEATHER_HARSH={clear:0,overcast:0,night:1,rain:1,fog:2,storm:2};
+const DAILY_HARSH_BUDGET=6; // tuned so a day is always spicy but never unwinnable
+// how many days since an arbitrary epoch — drives the no-repeat rotation
+function dayIndex(key){ return Math.floor(Date.parse(key+'T00:00:00Z')/86400000); }
+/* Build the whole day. Pure + deterministic: same key ⇒ same scenario, everywhere. */
+function generateDaily(key){
+  const rng=mulberry32(hashStr('frontline-daily|'+key)); for(let i=0;i<4;i++)rng(); // warm up
+  const di=dayIndex(key);
+  const pickRot=(arr,stride)=>arr[(Math.floor(rng()*arr.length)+di*stride)%arr.length]; // rotation-offset pick
+  // 1) opposition + twist, drawn on different strides so the PAIRING also rotates
+  const opp=pickRot(DAILY_OPPOSITION,1);
+  let twist=pickRot(DAILY_TWISTS,3);
+  // ANTI-REPEAT — never hand a player the same headline pairing two days running. Peek at
+  // yesterday's roll and step the twist along if today's would duplicate it.
+  try{
+    const yKey=new Date(Date.parse(key+'T00:00:00Z')-86400000).toISOString().slice(0,10);
+    const yr=mulberry32(hashStr('frontline-daily|'+yKey)); for(let i=0;i<4;i++)yr();
+    const ydi=dayIndex(yKey);
+    const yOpp=DAILY_OPPOSITION[(Math.floor(yr()*DAILY_OPPOSITION.length)+ydi)%DAILY_OPPOSITION.length];
+    const yTwist=DAILY_TWISTS[(Math.floor(yr()*DAILY_TWISTS.length)+ydi*3)%DAILY_TWISTS.length];
+    if(opp.id===yOpp.id && twist.id===yTwist.id)
+      twist=DAILY_TWISTS[(DAILY_TWISTS.indexOf(twist)+1+(di%3))%DAILY_TWISTS.length];
+  }catch(e){}
+  // 2) COUNTER-LOCK — a twist may never ban what answers today's enemy. Re-roll past any that do.
+  if(twist.ban&&opp.counters.length){
+    let guard=0;
+    while(guard++<DAILY_TWISTS.length && twist.ban && twist.ban.some(b=>opp.counters.includes(b))){
+      twist=DAILY_TWISTS[(DAILY_TWISTS.indexOf(twist)+1)%DAILY_TWISTS.length];
+    }
+    // if literally everything collides, fall back to a twist that bans nothing
+    if(twist.ban&&twist.ban.some(b=>opp.counters.includes(b)))twist=DAILY_TWISTS[0];
+  }
+  // 3) difficulty + weather
+  let diffPick=DAILY_DIFFS[Math.floor(rng()*DAILY_DIFFS.length)];
+  const wxKey=WEATHER_KEYS[Math.floor(rng()*WEATHER_KEYS.length)];
+  // 4) ESCALATION GUARD — the top tier never stacks with a harsh twist; step it down if it would
+  if(diffPick.diff==='legendary' && twist.harsh>=2) diffPick=DAILY_DIFFS[2];
+  // 5) HARSHNESS BUDGET — total the day up, then buy it back down with a boon
+  let harsh=diffPick.harsh+twist.harsh+opp.harsh+(DAILY_WEATHER_HARSH[wxKey]||0);
+  const over=harsh-DAILY_HARSH_BUDGET;
+  let boon=DAILY_BOONS[0];
+  if(over>0){
+    // pick the cheapest boon that covers the overage (deterministically), else the biggest one
+    const affordable=DAILY_BOONS.filter(b=>b.worth>=over&&b.worth>0);
+    const pool=affordable.length?affordable:DAILY_BOONS.filter(b=>b.worth>0);
+    boon=pool[Math.floor(rng()*pool.length)];
+  } else if(rng()<0.45){
+    const pool=DAILY_BOONS.filter(b=>b.worth>0);
+    boon=pool[Math.floor(rng()*pool.length)]; // free days sometimes get a gift anyway, for variety
+  }
+  // 6) the legendary tier ALWAYS comes with real support — no naked ultimate-AI days
+  if(diffPick.diff==='legendary'&&boon.worth===0)boon=DAILY_BOONS.find(b=>b.id==='freetech');
+  const mut={
+    id:twist.id+'+'+opp.id,
+    name:twist.name+' · '+opp.name,
+    desc:twist.desc+' Facing '+opp.desc+'.'+(boon.desc?' '+boon.desc:''),
+    ban:twist.ban||[], bias:opp.bias, cdMul:twist.cdMul||1,
+    apply:g=>{ try{ if(twist.apply)twist.apply(g); if(boon.apply)boon.apply(g); }catch(e){} },
+  };
+  return {key,mut,twist,opp,boon,diff:diffPick.diff,weather:wxKey,harsh};
+}
+/* Fake "how many commanders beat it today" figure.
+   ─────────────────────────────────────────────────────────────────────────
+   TODO(live): REPLACE ME BEFORE / SHORTLY AFTER LAUNCH.
+   The game has no backend yet, so there is nothing real to count. This returns
+   a stable, plausible-looking number derived from the date seed (same for every
+   player, drifts through the day like a real counter would) purely so the UI
+   isn't empty during playtesting. It is NOT real data.
+   When a backend exists: fetch the real count (e.g. GET /daily/<key>/clears)
+   and delete this function + its call sites in buildMenu()/showResults().
+   ───────────────────────────────────────────────────────────────────────── */
+function dailyClearsToday(key){
+  const rng=mulberry32(hashStr('clears|'+key));
+  const base=180+Math.floor(rng()*900);                 // the day's "population"
+  const hrs=new Date().getUTCHours()+new Date().getUTCMinutes()/60;
+  return Math.max(1,Math.floor(base*Math.min(1,hrs/24))); // ramps up as the day goes on
+}
 
 /* ── CAMPAIGN — a short escalating war. Each mission is a tuned skirmish with a briefing. ── */
 const CAMPAIGN=[
@@ -2227,16 +2427,14 @@ function musicContextTheme(){
         drift (so delivery breathes instead of reading flat), and a WebAudio
         "command-net radio" bed (static crackle + key-click) plays under him
         to sell the character even though the underlying voice is synthetic.
-     2) PREMIUM (opt-in): a real neural TTS voice via the ElevenLabs API.
-        Needs the player's own API key (stored only in their browser's
-        localStorage, sent only to ElevenLabs). Lines are cached by text so
-        repeats don't re-spend quota. Falls back to the offline path
-        automatically on any failure — missing key, offline, bad request.
-   Every spoken line is mirrored as an on-screen subtitle regardless of path.
+     2) The player can pick WHICH of their browser's voices he uses (🎙 Voice
+        in the topbar); we auto-rank for the most announcer-ish one by default.
+   There is no cloud/API voice path by design — everything runs on-device, so
+   nothing can be rate-limited, billed, or drained no matter how many people play.
+   Every spoken line is mirrored as an on-screen subtitle regardless.
    ═══════════════════════════════════════════════════════════════════════ */
 const NARR={
   voice:null, speaking:false, queue:[], persona:'IRON MARSHAL', cool:{}, gen:0,
-  audioEl:null, cache:{}, // text -> object URL, for premium voice
   // mood → base rate (r) & pitch (p). Jittered per clause.
   moods:{
     grim:{r:0.90,p:0.70}, deadpan:{r:0.98,p:0.80}, hype:{r:1.13,p:1.00},
@@ -2245,11 +2443,13 @@ const NARR={
   },
 };
 /* rank browser voices — favour ones a platform tags as premium/neural, then
-   known deep male voices, before falling back to whatever is first. */
+   known deep male voices, before falling back to whatever is first.
+   A voice the player explicitly picked in the Voice modal always wins. */
 function narrPickVoice(){
   try{
     const ss=window.speechSynthesis; if(!ss)return;
     const vs=ss.getVoices(); if(!vs||!vs.length)return;
+    if(SAVE.narrVoiceURI){ const chosen=vs.find(v=>v.voiceURI===SAVE.narrVoiceURI); if(chosen){ NARR.voice=chosen; return; } }
     const en=vs.filter(v=>/en[-_]?/i.test(v.lang)||/english/i.test(v.name));
     const pool=en.length?en:vs;
     const score=v=>{
@@ -2396,58 +2596,12 @@ function narrSpeakOffline(text,mood){
   NARR.speaking=true;
   speakNext();
 }
-/* ── premium path: ElevenLabs neural TTS, cached per line, auto-fallback ── */
-const ELEVEN_VOICES={
-  arnold:{id:'VR6AewLTigWG4xSOukaG',name:'Arnold — deep & commanding'},
-  adam:{id:'pNInz6obpgDQGcFmaJgB',name:'Adam — resonant & clear'},
-  josh:{id:'TxGEqnHWrfWFTfGW9XjX',name:'Josh — young & sharp'},
-  antoni:{id:'ErXwobaYiN019PkySvjV',name:'Antoni — warm & steady'},
-  custom:{id:'',name:'Custom — paste a Voice ID'}, // any voice from your ElevenLabs library, e.g. Thaddeus
-};
-// voice IDs aren't secret (only the API key is) — Thaddeus's public ID, baked in as the
-// Custom slot's fallback so picking Custom + saving a key works even with the ID field blank
-const THADDEUS_VOICE_ID='ZR7bgvV5iWuFTdxzb9Y6';
-function activeVoiceId(){
-  if(SAVE.ttsVoice==='custom')return SAVE.ttsVoiceCustomId||THADDEUS_VOICE_ID;
-  return (ELEVEN_VOICES[SAVE.ttsVoice]||ELEVEN_VOICES.arnold).id;
-}
-async function narrSpeakPremium(text,mood){
-  const myGen=++NARR.gen; // same supersede-guard pattern as the offline path
-  try{
-    const key=ttsKeyPlain, voiceId=activeVoiceId();
-    if(!key)throw new Error('no key');
-    if(!voiceId)throw new Error('no voice id'); // custom slot selected but never filled in
-    let url=NARR.cache[text];
-    if(!url){
-      const resp=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+voiceId,{
-        method:'POST',
-        headers:{'Content-Type':'application/json','xi-api-key':key,'Accept':'audio/mpeg'},
-        body:JSON.stringify({text,model_id:'eleven_turbo_v2_5',
-          voice_settings:{stability:0.42,similarity_boost:0.8,style:0.35,use_speaker_boost:true}}),
-      });
-      if(!resp.ok)throw new Error('tts http '+resp.status);
-      const blob=await resp.blob();
-      url=URL.createObjectURL(blob);
-      NARR.cache[text]=url;
-    }
-    if(myGen!==NARR.gen)return; // a newer line pre-empted us while we were fetching
-    if(!NARR.audioEl){NARR.audioEl=new Audio();}
-    const a=NARR.audioEl;
-    a.src=url; a.volume=1;
-    a.onended=()=>{ if(myGen!==NARR.gen)return; NARR.speaking=false;drainNarr();};
-    a.onerror=()=>{ if(myGen!==NARR.gen)return; NARR.speaking=false;narrSpeakOffline(text,mood);};
-    NARR.speaking=true;
-    await a.play();
-  }catch(e){
-    if(myGen!==NARR.gen)return;
-    NARR.speaking=false;
-    narrSpeakOffline(text,mood); // graceful fallback — never breaks the game
-  }
-}
+/* The narrator is 100% on-device (Web Speech + our radio bed). There is deliberately no cloud TTS
+   path: a hosted build shared with lots of players would drain whatever account backed it, and it
+   would mean holding someone's API key. Voice selection is just "which of your browser's voices". */
 function narrSpeakNow(text,mood){
   showNarr(text);
   if(!SAVE.narrator){NARR.speaking=false;drainNarr();return;}
-  if(ttsKeyPlain){ narrSpeakPremium(text,mood); return; }
   narrSpeakOffline(text,mood);
 }
 function drainNarr(){ if(NARR.speaking||!NARR.queue.length)return; const it=NARR.queue.shift(); narrSpeakNow(it.text,it.mood); }
@@ -2462,7 +2616,6 @@ function say(text,mood,prio){
 function narrStop(){
   NARR.gen++; // invalidate any in-flight speak chain so a stale callback can never resume
   try{window.speechSynthesis&&window.speechSynthesis.cancel();}catch(e){}
-  try{if(NARR.audioEl){NARR.audioEl.pause();NARR.audioEl.currentTime=0;}}catch(e){}
   radioStop();
   NARR.queue.length=0; NARR.speaking=false;
 }
@@ -2689,6 +2842,10 @@ function spawn(side,key,lane,xOverride){
     stealth:(side==='B'&&p.stealth)||false,spotted:(side==='B'),
     burnDps:u.burnDps||0,burnDur:u.burnDur||0,burnT:0,
     muzzle:0,hitFlash:0,vx:0,bob:rnd(0,6.28),alive:true});
+  // daily "Veteran Cadre" boon: your fresh deployments arrive already blooded
+  if(side==='B'&&G.startVet){ const nu=G.units[G.units.length-1], vr=VET_RANKS[Math.min(G.startVet,VET_RANKS.length-1)];
+    if(nu&&vr){ nu.vetRank=Math.min(G.startVet,VET_RANKS.length-1); nu.vetKills=vr.kills;
+      nu.maxHp=Math.round(nu.baseHp*vr.hpMul); nu.hp=nu.maxHp; nu.dmg=nu.baseDmg*vr.dmgMul; } }
 }
 
 /* ── DEPLOY (player) ── */
@@ -2741,8 +2898,10 @@ const STRIKES={
   precision:{name:'Precision Munitions',glyph:'🎯', key:'0', col:'#5ff0e0', cd:11,
     desc:'A fast, pinpoint strike on one spot. Less punch than a barrage, but reloads quickly.'},
   // SECRET UNLOCK — earned by clearing the Glitch Front. Gated in buildQuickbar until then.
-  rods:{name:'Rods from God', glyph:'🛰', key:'T', col:'#9fd0ff', cd:55,
-    desc:'SECRET UNLOCK — a kinetic bombardment from orbit. A salvo of tungsten rods walks down an entire lane at hypervelocity, obliterating everything in a wide strip. No explosives, just physics.'},
+  // ONCE PER BATTLE: it hits the whole map, so it's a single decisive card to play, not a rotation
+  // piece — that's what keeps it distinct from the (repeatable, single-lane) gunship run.
+  rods:{name:'Rods from God', glyph:'🛰', key:'T', col:'#9fd0ff', cd:9999, once:true,
+    desc:'SECRET UNLOCK · ONCE PER BATTLE — an orbital kinetic bombardment. Tungsten rods rain down ALL THREE lanes at hypervelocity, obliterating everything caught in the open. No explosives, just physics.'},
 };
 const STRIKE_KEYS=Object.keys(STRIKES);
 const AI_STRIKE_KEYS=STRIKE_KEYS.filter(k=>k!=='rods'); // the AI & attract battles never use the player-only Rods from God
@@ -2765,27 +2924,36 @@ function tryPrecision(lane,x){
   announce('🎯 PRECISION STRIKE','pinpoint · danger close','#5ff0e0');
   return true;
 }
-// RODS FROM GOD — orbital kinetic bombardment. A salvo of tungsten rods walks the whole lane at
-// hypervelocity: no blast type-matching to dodge, just enormous kinetic damage in a wide strip.
-function tryRods(lane){
+// RODS FROM GOD — orbital kinetic bombardment across the WHOLE FRONT. Where the gunship run rakes
+// one lane and comes back on a timer, this hits all three lanes at once and is spent for the rest
+// of the battle — a single "break the game open" button rather than a rotation piece.
+function tryRods(){
   if(iwGaslightBlock())return false;
   if(!strikeReady('rods'))return false;
-  G.strikeCds.rods=strikeCdMax('rods');
+  if(G.rodsUsed)return false;              // once per battle
+  G.rodsUsed=true; G.strikeCds.rods=9999;  // spent — the card greys out for the rest of the fight
   const sup=(G.ages?AGES[G.age].sup:1);
-  const ty=G.laneY[lane]*H, rad=52*Math.sqrt(sup), dmg=120*sup;
-  const impacts=9;
-  for(let i=0;i<impacts;i++)setTimeout(()=>{ if(!G||G.over)return;
-    const ix=W*0.30+(W*0.66)*(i/(impacts-1))+rnd(-16,16), iy=ty+rnd(-20,20);
-    // white-hot vertical streak in, then the impact
-    for(let p=0;p<4;p++)G.parts.push({x:ix+rnd(-3,3),y:iy-260,vx:rnd(-6,6),vy:900,life:0.16,age:0,col:'#cfe8ff',sz:3.2});
-    explode(ix,iy,rad,'B',40); G.flash=Math.max(G.flash||0,0.35);
-    try{SND.boom(true);}catch(e){}
-    for(const u of G.units){ if(u.side==='R'&&u.alive&&dist(u.x,u.y,ix,iy)<rad){ damage(u,dmg,{side:'B',dmgType:'ap'}); } }
-    if(G.spawners)for(const s of G.spawners){ if(s.side==='R'&&s.alive&&dist(s.x,s.y,ix,iy)<rad){ damage(s,dmg,{side:'B',dmgType:'ap'}); } }
-    G.shake=Math.max(G.shake,SAVE.reduceMotion?5:14);
-  },i*80);
-  announce('🛰 RODS FROM GOD','orbital kinetic strike — '+['top','middle','bottom'][lane]+' lane','#9fd0ff');
-  if(SAVE.evVoice||SAVE.narrator)say(pick(["Orbital's cleared us hot. Rods away.","Tungsten inbound — nothing survives the middle of that lane.","God's own crowbar, coming down. Danger close."]),'grim',1);
+  const rad=50*Math.sqrt(sup), dmg=105*sup;
+  const perLane=7;
+  for(let ln=0;ln<3;ln++){
+    for(let i=0;i<perLane;i++){
+      // stagger lanes slightly so it reads as a rolling curtain down the whole map, not one flash
+      const delay=i*90+ln*40+rnd(0,50);
+      setTimeout(()=>{ if(!G||G.over)return;
+        const ty=G.laneY[ln]*H;
+        const ix=W*0.28+(W*0.68)*(i/(perLane-1))+rnd(-18,18), iy=ty+rnd(-18,18);
+        // white-hot vertical streak in, then the impact
+        for(let p=0;p<4;p++)G.parts.push({x:ix+rnd(-3,3),y:iy-260,vx:rnd(-6,6),vy:900,life:0.16,age:0,col:'#cfe8ff',sz:3.2});
+        explode(ix,iy,rad,'B',40); G.flash=Math.max(G.flash||0,0.30);
+        try{SND.boom(true);}catch(e){}
+        for(const u of G.units){ if(u.side==='R'&&u.alive&&dist(u.x,u.y,ix,iy)<rad){ damage(u,dmg,{side:'B',dmgType:'ap'}); } }
+        if(G.spawners)for(const s of G.spawners){ if(s.side==='R'&&s.alive&&dist(s.x,s.y,ix,iy)<rad){ damage(s,dmg,{side:'B',dmgType:'ap'}); } }
+        G.shake=Math.max(G.shake,SAVE.reduceMotion?5:15);
+      },delay);
+    }
+  }
+  announce('🛰 RODS FROM GOD','orbital bombardment — ALL THREE LANES','#9fd0ff');
+  if(SAVE.evVoice||SAVE.narrator)say(pick(["Orbital's cleared us hot. Rods away — the whole front.","Tungsten inbound across every lane. Nothing out there survives this.","God's own crowbar, coming down. That's our one shot — make it count."]),'grim',2);
   return true;
 }
 // GUNSHIP RUN — a strafing aircraft sweeps ONE lane with cannon fire over ~2.6s
@@ -2860,7 +3028,7 @@ function tryStrike(type,lane,x){
   let ok;
   if(type==='gunrun')ok=tryGunshipRun(lane);
   else if(type==='barrage')ok=tryBarrage();
-  else if(type==='rods')ok=tryRods(lane);
+  else if(type==='rods')ok=tryRods(); // hits all three lanes — the clicked lane is irrelevant
   else ok=tryPrecision(lane,x);
   if(ok)G.strikeUsedCount=(G.strikeUsedCount||0)+1;
   return ok;
@@ -3358,7 +3526,7 @@ function killUnit(u,src){
   if(SAVE.gagChatter&&killer==='B'&&src&&src.alive&&!u.golden&&Math.random()<0.12&&!G.attract)
     floatText(src.x,src.y-src.r-14,pick(CHATTER_KILL),'#cfe3ff');
   // kill bounty — combat feeds the economy (both sides), Age-of-War style
-  const bnt=Math.round(((UNITS[u.key]&&UNITS[u.key].cost)||20)*0.30);
+  const bnt=Math.round(((UNITS[u.key]&&UNITS[u.key].cost)||20)*0.30*(G.bountyMul||1)); // bountyMul: daily "War of Attrition" twist
   if(killer==='B'){
     G.cp=Math.min(G.cpMax,G.cp+bnt); floatText(u.x,u.y-u.r-4,'+'+bnt,'#ffce5a');
     if(G.ages)G.evo+=6;
@@ -4469,7 +4637,8 @@ function syncHUD(){
   // air-support strike buttons (gunship / barrage / precision)
   for(const type of STRIKE_KEYS){ const el=document.getElementById('card-'+type); if(!el)continue;
     const cdEl=el.querySelector('.cd'); const cd=G.strikeCds[type]||0;
-    if(cd>0){cdEl.style.display='flex';cdEl.textContent=Math.ceil(cd);el.classList.add('cant');}
+    if(STRIKES[type].once&&G.rodsUsed){ cdEl.style.display='flex'; cdEl.textContent='✓'; cdEl.style.fontSize='13px'; el.classList.add('cant'); } // once-per-battle: spent
+    else if(cd>0){cdEl.style.display='flex';cdEl.textContent=Math.ceil(cd);el.classList.add('cant');}
     else{cdEl.style.display='none';el.classList.remove('cant');}
     el.classList.toggle('sel',G.selCard===type);
   }
@@ -4527,7 +4696,7 @@ function buildQuickbar(){
     const el=document.createElement('div');
     el.className='card'; el.id='card-'+type; el.style.borderColor=s.col;
     el.innerHTML=`<span class="key">${s.key}</span><div class="glyph" style="color:${s.col}">${s.glyph}</div>
-      <div class="nm">${s.name}</div><div class="cost" style="color:${s.col}">FREE</div>
+      <div class="nm">${s.name}</div><div class="cost" style="color:${s.col}">${s.once?'1× ONLY':'FREE'}</div>
       <div class="cd" style="display:none"></div>`;
     el.title=s.desc;
     el.onclick=()=>{G.selCard=type;showLaneHint();};
@@ -5041,7 +5210,7 @@ function chaosTick(dt){
   // FLOOD the screen — rapid free spawns for both sides (2-4 at a time)
   G.chaosSpawnT=(G.chaosSpawnT||0)-dt;
   if(G.chaosSpawnT<=0 && G.units.length<110){ G.chaosSpawnT=rnd(0.18,0.45);
-    const roster=HOTBAR.filter(k=>k!=='gunship'&&k!=='medic'&&k!=='jammer');
+    const roster=visibleRoster().filter(k=>k!=='gunship'&&k!=='medic'&&k!=='jammer');
     const n=2+((Math.random()*3)|0);
     for(let s=0;s<n;s++)spawn(Math.random()<0.5?'B':'R', pick(roster), (Math.random()*3)|0);
   }
@@ -5161,8 +5330,20 @@ function endGame(winner,reason){
     if(!SAVE.secretDone){ SAVE.secretDone=true; SAVE.secretBadgeEarned=true; addXP(2000); }
     else addXP(400);
   }
-  // daily best
-  if(G.kind==='daily'){ const dk=todayKey(); if(!SAVE.daily[dk]||score>SAVE.daily[dk])SAVE.daily[dk]=score; }
+  // daily best + streak
+  G.dailyStreakResult=null;
+  if(G.kind==='daily'){
+    const dk=todayKey(); if(!SAVE.daily[dk]||score>SAVE.daily[dk])SAVE.daily[dk]=score;
+    if(won && SAVE.dailyLastWin!==dk){
+      // consecutive only if the previous win was literally yesterday; otherwise the streak restarts
+      const yst=new Date(Date.parse(dk+'T00:00:00Z')-86400000).toISOString().slice(0,10);
+      SAVE.dailyStreak=(SAVE.dailyLastWin===yst)?(SAVE.dailyStreak||0)+1:1;
+      SAVE.dailyLastWin=dk;
+      if(SAVE.dailyStreak>(SAVE.dailyBestStreak||0))SAVE.dailyBestStreak=SAVE.dailyStreak;
+      G.dailyStreakResult={streak:SAVE.dailyStreak,best:SAVE.dailyBestStreak,isBest:SAVE.dailyStreak===SAVE.dailyBestStreak};
+      addXP(40+Math.min(200,SAVE.dailyStreak*20)); // streaks pay a growing (capped) bonus
+    }
+  }
   // war-mode conquest resolution
   if(G.kind==='war'){ try{warResolve(won);}catch(e){} }
   // unlock doctrines by level
@@ -5267,6 +5448,12 @@ function showResults(won,reason,score,xpGain,leveled){
       if(tt.unlocked)secretExtra+=`<div class="res-xp" style="color:#ff9adf;font-weight:800">☢ EVERY TIME TRIAL BEATEN — something hidden has opened in the Campaign menu…</div>`; }
     else secretExtra+=`<div class="res-xp" style="color:var(--dim)">⏱ Time trial: ${tt.t}s — needed under ${tt.par}s. Faster next time, Commander.</div>`;
   }
+  // 🔥 daily streak
+  if(G.dailyStreakResult){ const s=G.dailyStreakResult;
+    secretExtra+=`<div class="res-xp" style="color:var(--gold)">🔥 DAILY STREAK: <b>${s.streak}</b> day${s.streak===1?'':'s'} running${s.isBest&&s.streak>1?' — a new personal best!':(s.best>s.streak?` (best ${s.best})`:'')} — come back tomorrow to keep it alive.</div>`;
+  } else if(G.kind==='daily'&&!won&&(SAVE.dailyStreak||0)>0){
+    secretExtra+=`<div class="res-xp" style="color:var(--dim)">🔥 Your ${SAVE.dailyStreak}-day streak is still alive — today's run just didn't land. Try again before midnight.</div>`;
+  }
   if(G.kind==='secret'&&won){
     secretExtra+= G.secretClearNow
       ? `<div class="res-xp" style="color:#ff9adf;font-weight:800">☢ THE GLITCH FRONT CLEARED — unlocked: ⁂ Drone Swarm unit · 🛰 Rods from God strike · 🕳 the Glitch-Breaker badge · +2000 XP</div>`
@@ -5364,13 +5551,8 @@ function launchSecret(){
   start();
 }
 function launchDaily(){
-  const key=todayKey();
-  const rng=mulberry32(hashStr(key)); rng();rng(); // warm up
-  const wx=WEATHER_KEYS[Math.floor(rng()*WEATHER_KEYS.length)];
-  const diffKeys=['veteran','elite','legendary'];
-  const diff=diffKeys[Math.floor(rng()*diffKeys.length)];
-  const mut=DAILY_MUTATORS[Math.floor(rng()*DAILY_MUTATORS.length)];
-  LAUNCH={type:'daily',weather:wx,diff,daily:{mut},mut,
+  const d=generateDaily(todayKey()); const mut=d.mut;
+  LAUNCH={type:'daily',weather:d.weather,diff:d.diff,daily:{mut,gen:d},mut,
     banned:mut.ban||[],enemyBias:mut.bias||null,cdMul:mut.cdMul||1,ecpMul:1};
   start();
 }
@@ -5550,10 +5732,21 @@ function buildMenu(){
       co.appendChild(hint);
     }
   }
-  // daily info
+  // daily info — today's procedurally generated scenario, your streak, and the clear count
   const di=document.getElementById('daily-info');
-  if(di){ const dk=todayKey(); const best=SAVE.daily[dk]||0;
-    di.innerHTML=`Today's seed <b>${dk}</b> — identical for everyone. Your best: <b>${best.toLocaleString()}</b>`; }
+  if(di){ const dk=todayKey(); const best=SAVE.daily[dk]||0; const d=generateDaily(dk);
+    const wonToday=SAVE.dailyLastWin===dk;
+    const streak=SAVE.dailyStreak||0, bestStreak=SAVE.dailyBestStreak||0;
+    di.innerHTML=
+      `<div style="color:var(--gold);font-weight:800">${escapeHTML(d.mut.name)}</div>`+
+      `<div style="font-size:11px;line-height:1.45;margin:2px 0 5px">${escapeHTML(d.mut.desc)}</div>`+
+      `<div style="font-size:10.5px;color:var(--faint)">${escapeHTML(DIFFS[d.diff].name)} · ${WEATHERS[d.weather].glyph} ${escapeHTML(WEATHERS[d.weather].name)} · seed <b>${dk}</b> — identical for everyone</div>`+
+      `<div style="font-size:10.5px;margin-top:4px">Your best: <b>${best.toLocaleString()}</b>`+
+        (streak>0?` · 🔥 Streak <b style="color:var(--gold)">${streak}</b>${bestStreak>streak?` (best ${bestStreak})`:''}`:'')+
+        (wonToday?` · <b style="color:var(--good)">✔ cleared today</b>`:'')+`</div>`+
+      // TODO(live): this figure is FAKE — see dailyClearsToday(). Swap for a real backend count.
+      `<div style="font-size:10.5px;color:var(--faint);margin-top:2px">🌍 <b>${dailyClearsToday(dk).toLocaleString()}</b> commanders have beaten it today</div>`;
+  }
 }
 function mkOpt(txt,sel){const b=document.createElement('button');b.textContent=txt;
   b.style.cssText='padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:12px;font-weight:600;background:var(--panel2);color:var(--dim);';
@@ -5719,53 +5912,46 @@ document.getElementById('btn-narr').onclick=()=>{SAVE.narrator=!SAVE.narrator;pe
   if(SAVE.narrator)say("Iron Marshal, back on the net. Let's win something.",'deadpan',2); else narrStop();};
 document.getElementById('btn-menu').onclick=()=>{ if(G&&!G.over){ if(!confirm('Abandon the current battle and return to menu?'))return; } openMenu(); };
 
-/* ═══ VOICE SETTINGS MODAL ═══ */
+/* ═══ VOICE SETTINGS MODAL — picks one of the browser's own voices. No API, no key. ═══ */
+function browserVoices(){
+  try{ const ss=window.speechSynthesis; if(!ss)return []; const vs=ss.getVoices()||[];
+    // English first (the Marshal's lines are English), then everything else, each alphabetical
+    const en=vs.filter(v=>/en[-_]?/i.test(v.lang)), rest=vs.filter(v=>!/en[-_]?/i.test(v.lang));
+    const byName=(a,b)=>a.name.localeCompare(b.name);
+    return en.sort(byName).concat(rest.sort(byName));
+  }catch(e){ return []; }
+}
 function buildVoiceModal(){
-  const vv=document.getElementById('vm-voices'); vv.innerHTML='';
-  for(const k in ELEVEN_VOICES){
-    const b=document.createElement('button'); b.className='vm-voice'+(SAVE.ttsVoice===k?' sel':'');
-    b.textContent=k==='custom'&&SAVE.ttsVoiceCustomName?('Custom — '+SAVE.ttsVoiceCustomName):ELEVEN_VOICES[k].name;
-    b.onclick=()=>{SAVE.ttsVoice=k;buildVoiceModal();};
+  const vv=document.getElementById('vm-voices'); if(!vv)return; vv.innerHTML='';
+  const vs=browserVoices();
+  if(!vs.length){
+    vv.innerHTML='<div style="font-size:12px;color:var(--dim)">No speech voices are exposed by this browser. The Marshal will still show subtitles for every line.</div>';
+    document.getElementById('vm-status').textContent='';
+    return;
+  }
+  for(const v of vs){
+    const b=document.createElement('button');
+    const sel=(SAVE.narrVoiceURI===v.voiceURI)||(!SAVE.narrVoiceURI&&NARR.voice&&NARR.voice.voiceURI===v.voiceURI);
+    b.className='vm-voice'+(sel?' sel':'');
+    b.textContent=v.name+' · '+v.lang+(SAVE.narrVoiceURI?'':(sel?' (auto)':''));
+    b.onclick=()=>{ SAVE.narrVoiceURI=v.voiceURI; persist(); narrPickVoice(); buildVoiceModal();
+      document.getElementById('vm-status').textContent='Voice set to '+v.name+'. Hit Test Voice to hear him.'; };
     vv.appendChild(b);
   }
-  document.getElementById('vm-key').value=ttsKeyPlain||'';
-  document.getElementById('vm-custom-wrap').style.display=SAVE.ttsVoice==='custom'?'':'none';
-  // an older save may have an explicit empty string here (poisons past DEFAULT_SAVE) — show
-  // the baked-in Thaddeus ID instead of a blank field so it's obvious a voice is selected
-  document.getElementById('vm-custom-id').value=SAVE.ttsVoiceCustomId||THADDEUS_VOICE_ID;
-  document.getElementById('vm-status').textContent=ttsKeyPlain?
-    'Premium voice active — lines are cached per phrase to save quota.':
-    'No key set — using the free styled radio voice.';
+  const cur=NARR.voice?NARR.voice.name:'(browser default)';
+  document.getElementById('vm-status').textContent='Current: '+cur+(SAVE.narrVoiceURI?'':' — auto-picked');
 }
 function openVoiceModal(){ buildVoiceModal(); document.getElementById('voicemodal').classList.add('show'); }
 function closeVoiceModal(){ document.getElementById('voicemodal').classList.remove('show'); }
 document.getElementById('btn-voice').onclick=openVoiceModal;
 document.getElementById('vm-close').onclick=closeVoiceModal;
-// ElevenLabs voice IDs are plain alphanumeric — strip anything else so a pasted
-// URL/query-string can't sneak extra path/query segments into the TTS fetch URL.
-function sanitizeVoiceId(id){ return (id||'').trim().replace(/[^a-zA-Z0-9]/g,'').slice(0,64); }
-async function readVoiceModalFields(){
-  await setTtsKey(document.getElementById('vm-key').value.trim());
-  SAVE.ttsVoiceCustomId=sanitizeVoiceId(document.getElementById('vm-custom-id').value);
-}
-document.getElementById('vm-save').onclick=async()=>{
-  await readVoiceModalFields(); NARR.cache={}; persist(); buildVoiceModal();
-  const ok=!!activeVoiceId();
-  document.getElementById('vm-status').textContent=ttsKeyPlain?
-    (ok?'Saved. Premium voice will be used from now on.':'Saved key, but the custom voice ID is empty — paste one above.'):
-    'Saved. No key set — using the free styled radio voice.';
+document.getElementById('vm-auto').onclick=()=>{
+  SAVE.narrVoiceURI=null; persist(); narrPickVoice(); buildVoiceModal();
+  document.getElementById('vm-status').textContent='Back to the auto-picked voice: '+(NARR.voice?NARR.voice.name:'(browser default)');
 };
-document.getElementById('vm-clear').onclick=()=>{
-  clearTtsKey(); SAVE.ttsVoiceCustomId=''; SAVE.ttsVoiceCustomName=''; NARR.cache={}; persist(); buildVoiceModal();
-};
-document.getElementById('vm-test').onclick=async()=>{
-  await readVoiceModalFields(); NARR.cache={};
-  document.getElementById('vm-status').textContent='Testing...';
+document.getElementById('vm-test').onclick=()=>{
   narrStop();
   say("This is the Iron Marshal, reporting for duty. Let's see how I sound.",'deadpan',2);
-  setTimeout(()=>{document.getElementById('vm-status').textContent=ttsKeyPlain&&activeVoiceId()?
-    'If you heard a natural voice, the key works — hit Save to keep it.':
-    'That was the free styled voice. Add a key (and a voice ID, if using Custom) above for a neural voice.';},2200);
 };
 /* ═══ DEBUG MODE — manually fire any scripted event ═══ */
 function dbgAction(label,fn){ return {label,fn}; }
@@ -5874,7 +6060,7 @@ function renderManualBody(tab){
     <p>Every real battle feeds your <b>🎖 Service Record</b> — career totals, your most-fielded units, a rolling battle log, and a head-to-head <b>rivalry record against every enemy general</b>. Beat one enough times and they'll greet you differently. All gags and random events are individually toggleable in ⚙ Settings, so a pure strategy session is always one switch away.</p>`;
   } else if(tab==='roster'){
     h=`<p>The full roster. <b>DMG</b> is the damage type it deals; <b>Armour</b> is how it soaks hits. Stats are base values before doctrine, terrain, veterancy and age scaling.</p><div class="man-grid">`;
-    HOTBAR.forEach(key=>{
+    visibleRoster().forEach(key=>{
       const u=UNITS[key], dt=UNIT_DMGTYPE[key], ac=UNIT_ARMORCLASS[key];
       const dtTag=dt?`<span class="dtag ${dt}">${dt}</span>`:`<span class="dtag support">SUPPORT</span>`;
       const acTag=`<span class="dtag ${ac}">${ARMORCLASS_LABEL[ac]}</span>`;
@@ -6397,14 +6583,14 @@ function startAttract(){
   sel.mode='skirmish'; sel.doctrine=pick(docs); sel.diff='veteran';
   resize(); newGame();
   Object.assign(sel,savedSel);
-  G.attract=true; G.techMode=false; for(const k of HOTBAR)G.unlocked[k]=true;
+  G.attract=true; G.techMode=false; for(const k of visibleRoster())G.unlocked[k]=true;
   G.cpRate=16; G.ecpRate=16; G._atkT=0.4; G.prep=0; G.frozen=false;
   document.getElementById('hud').classList.add('hidden');
 }
 function attractTick(dt){
   G._atkT-=dt;
   if(G._atkT<=0){ G._atkT=rnd(0.45,0.95);
-    G.cp=240; tryDeploy(pick(HOTBAR.filter(k=>k!=='gunship')),(Math.random()*3)|0);
+    G.cp=240; tryDeploy(pick(visibleRoster().filter(k=>k!=='gunship')),(Math.random()*3)|0);
     if(Math.random()<0.12)tryStrike(pick(AI_STRIKE_KEYS),(Math.random()*3)|0,W*0.6);
   }
 }
@@ -6451,13 +6637,42 @@ function titleActive(){ const t=document.getElementById('title'); return !!t && 
    used by the title's right-hand figure and the skull under the skirmish-menu difficulty picker. ── */
 const SKULL_CAPS=['SILENT DEAD','SCARRED','SMOULDERING','INFERNAL']; // by difficulty severity 0..3
 function diffMenace(){ const d=DIFFS[sel.diff]; return d?Math.max(0,Math.min(3,d.fx||0)):0; } // recruit0 · veteran1 · elite2 · legendary3
+// The skull is built from layered CSS shapes (cranium/sockets/nasal/jaw/teeth) rather than an
+// emoji, so each tier can add real anatomy and real motion: a scar, then burning sockets, then a
+// working jaw that chatters as it laughs, then a lit cigar trailing smoke.
 function skullMarkup(menace){
   const scar=menace>=1, eyes=menace>=2, laugh=menace>=3, cigar=menace>=3;
-  return `<div class="tf-art tf-sk${laugh?' laugh':''}">`
-    + `<span class="tf-base">💀</span>`
-    + (eyes?`<span class="tf-eye l"></span><span class="tf-eye r"></span>`:'')
-    + (scar?`<span class="tf-scar"></span>`:'')
-    + (cigar?`<span class="tf-cigar">🚬</span>`:'')
+  return `<div class="tf-art sk-wrap${laugh?' laugh':' sway'}">`
+    + `<div class="sk-cran"></div><div class="sk-temple l"></div><div class="sk-temple r"></div>`
+    + `<div class="sk-brow"></div>`
+    + `<div class="sk-socket l"></div><div class="sk-socket r"></div>`
+    + `<div class="sk-cheek l"></div><div class="sk-cheek r"></div>`
+    + `<div class="sk-nose"></div>`
+    + `<div class="sk-jaw"></div><div class="sk-maxilla"></div><div class="sk-teeth"></div>`
+    + (eyes?`<div class="tf-eye l"></div><div class="tf-eye r"></div>`:'')
+    + (scar?`<div class="tf-scar"></div>`:'')
+    + (cigar?`<div class="tf-cigar"></div><div class="tf-smoke"></div><div class="tf-smoke s2"></div><div class="tf-smoke s3"></div>`:'')
+    + `</div>`;
+}
+// The recruit is the mirror of that: same layered approach, hardening with YOUR rank — brow angle
+// drops, stubble comes in, he picks up a scar and eventually a cigar, and he breathes throughout.
+function recruitMarkup(tier){
+  const scar=tier>=2, cigar=tier>=3, stubble=tier>=2;
+  const browAng=[8,4,-2,-7,-10][tier];      // friendly → hardened glare
+  const mouthW=[0.19,0.17,0.15,0.14,0.16][tier];
+  return `<div class="tf-art rc-wrap breathe">`
+    + `<div class="rc-neck"></div><div class="rc-collar"></div>`
+    + `<div class="rc-ear l"></div><div class="rc-ear r"></div>`
+    + `<div class="rc-face"></div>`
+    + (stubble?`<div class="rc-stubble"></div>`:'')
+    + `<div class="rc-brow l" style="transform:rotate(${browAng}deg)"></div>`
+    + `<div class="rc-brow r" style="transform:rotate(${-browAng}deg)"></div>`
+    + `<div class="rc-eye l"></div><div class="rc-eye r"></div>`
+    + `<div class="rc-nose"></div>`
+    + `<div class="rc-mouth" style="width:${mouthW}em"></div>`
+    + `<div class="rc-helm"></div><div class="rc-helmbrim"></div><div class="rc-strap"></div>`
+    + (scar?`<div class="tf-scar"></div>`:'')
+    + (cigar?`<div class="tf-cigar"></div><div class="tf-smoke"></div><div class="tf-smoke s2"></div><div class="tf-smoke s3"></div>`:'')
     + `</div>`;
 }
 // the small skull tucked under the skirmish-menu difficulty picker (replaces the old diff "gunfire")
@@ -6476,16 +6691,10 @@ function renderTitleFigures(){
   const figs=document.getElementById('title-figs'); if(!rec||!sk||!figs)return;
   figs.classList.toggle('reduce',!!SAVE.reduceMotion);
   const tier=titleHardenTier();
-  const recFaces=['🙂','😐','😤','😠','😎'];               // green rookie → cool, battle-worn veteran
   const recCap  =['RAW RECRUIT','BLOODED','HARDENED','GRIZZLED','WAR LEGEND'];
-  // recruit (YOU) — by rank: helmet + face; scar from tier 2, cigar from tier 3
-  rec.innerHTML =
-    `<div class="tf-art tf-rec">`
-    + `<span class="tf-base">${recFaces[tier]}</span>`
-    + `<span class="tf-helmet">🪖</span>`
-    + (tier>=2?`<span class="tf-scar"></span>`:'')
-    + (tier>=3?`<span class="tf-cigar">🚬</span>`:'')
-    + `</div><div class="tf-cap">${recCap[tier]}</div><div class="tf-sub">Rank ${SAVE.lvl}</div>`;
+  // recruit (YOU) — hardens with your Commander Rank
+  rec.innerHTML = recruitMarkup(tier)
+    + `<div class="tf-cap">${recCap[tier]}</div><div class="tf-sub">Rank ${SAVE.lvl}</div>`;
   // skull (THE ENEMY) — by chosen difficulty
   const d=DIFFS[sel.diff]||DIFFS.veteran, m=diffMenace();
   sk.innerHTML = skullMarkup(m) + `<div class="tf-cap" style="color:${d.col}">${d.name}</div><div class="tf-sub">${SKULL_CAPS[m]}</div>`;
