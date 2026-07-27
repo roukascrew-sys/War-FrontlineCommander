@@ -699,6 +699,12 @@
   .t-btn.war{border-color:var(--blue);} .t-btn.war b{color:var(--blue);} .t-btn.war:hover{box-shadow:0 0 18px #4aa8ff44;}
   .t-btn.tut{border-color:var(--good);} .t-btn.tut b{color:var(--good);} .t-btn.tut:hover{box-shadow:0 0 18px #3fd07a44;}
   .title-foot{font-size:12px;color:var(--dim);text-shadow:0 2px 6px #000;margin-top:10px;}
+  /* Legible but quiet — this has to be readable to count as a notice, so it is not dropped
+     below ~10px and keeps a real text-shadow against the animated attract battle behind it. */
+  .title-legal{font-size:10px;line-height:1.5;color:var(--faint);text-shadow:0 2px 6px #000;
+    margin-top:7px;max-width:420px;margin-left:auto;margin-right:auto;}
+  .title-legal a{color:var(--faint);text-decoration:underline dotted;}
+  .title-legal a:hover{color:var(--gold);}
   .title-copyright{font-size:10px;color:var(--faint);text-shadow:0 2px 6px #000;margin-top:2px;opacity:.75;}
 
   .title-foot b{color:var(--gold);}
@@ -1382,6 +1388,13 @@
         </div>
       </div>
       <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span> · <span id="t-ver" style="cursor:pointer;text-decoration:underline dotted;">v1.0.0</span></div>
+      <!-- Non-affiliation notice at FIRST CONTACT. It already appeared in the Field Manual and
+           the country picker, but both are places a player reaches only after forming an
+           impression. A disclaimer that is only discoverable is doing half its job. -->
+      <div class="title-legal">All factions, commanders and events are fictional. Not affiliated with
+        or endorsed by any government, armed force or manufacturer.<br>
+        © 2026 RoukasCrew · <a href="privacy.html" target="_blank" rel="noopener">Privacy</a> ·
+        <a href="terms.html" target="_blank" rel="noopener">Terms</a></div>
       <div class="title-copyright">© 2026 RoukasCrew. All rights reserved.</div>
       <button id="t-debugunlock" title="Testing tools — rank-gate bypass, AI overlay, event triggers">🐞 Debug/Dev</button>
     </div>
