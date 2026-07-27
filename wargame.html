@@ -1353,6 +1353,7 @@
       <div class="title-diff" id="title-diff"><span class="td-lbl">DIFFICULTY</span><span class="td-chips" id="td-chips"></span></div>
       <div class="title-btns">
         <button class="hero-btn play" id="t-play"><span class="hb-ic">▶</span><span class="hb-tx"><b>PLAY</b><small>quick battle · pick doctrine &amp; mode</small></span></button>
+        <button class="hero-btn play hidden" id="t-redeploy"><span class="hb-ic">↺</span><span class="hb-tx"><b>REDEPLOY</b><small></small></span></button>
         <button class="hero-btn evo" id="t-evo"><span class="hb-ic">🧬</span><span class="hb-tx"><b>EVOLUTION</b><small>Age of War · evolve through 5 ages</small></span></button>
       </div>
       <div class="title-grp">
@@ -1726,6 +1727,7 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   unlocked:['blitzkrieg','mass'],medals:{},sound:true,narrator:true,streamOn:false,seenTut:false,
   campaignDone:-1,campaignStars:{},daily:{},narrVoiceURI:null,
   speed:1,twitchChannel:'',war:null,warWins:0,aiDebug:false,music:true,musicVol:0.5,news:false,reduceMotion:false,
+  lastSel:null,   // last loadout actually fought with — powers the title screen's REDEPLOY button
   ambient:true,randomEvents:true,evSupply:true,evVoice:true,evCutscene:true,evBarrage:true,evDefector:true,
   chaosMode:false,
   gagChatter:true,gagGolden:true,gagVictory:true,
@@ -2512,7 +2514,24 @@ const CAMPAIGN=[
 // one-letter difficulty tag shown next to each campaign mission (R/V/E/L)
 const DIFF_LETTER={recruit:'R',veteran:'V',elite:'E',legendary:'L'};
 
+/* Seeded from the last loadout the player actually fought with, so a returning session
+   doesn't start by re-picking four dropdowns they already chose last time. SAVE.lastSel is
+   written on battle start (not on menu changes) — what someone browsed past is not what they
+   want resumed. Validated on read: the save could predate a doctrine or name a mode that has
+   since been renamed, and a stale key here would silently break newGame(). */
 let sel={doctrine:'blitzkrieg',mode:'skirmish',diff:'veteran',country:'generic'};
+function restoreLastSel(){
+  const L=SAVE.lastSel;
+  if(!L||typeof L!=='object')return false;
+  // Validate against MODES (every playable mode), NOT MODE_GATES — that table lists only the
+  // rank-gated ones, so using it here rejected a perfectly valid Blitz or Survival loadout.
+  if(!DOCTRINES[L.doctrine]||!DIFFS[L.diff]||!MODES[L.mode])return false;
+  // A mode can also be gated behind a rank the player has since reset below.
+  if(MODE_GATES[L.mode]&&!rankGateOk(MODE_GATES[L.mode].lvl))return false;
+  sel.doctrine=L.doctrine; sel.diff=L.diff; sel.mode=L.mode;
+  if(L.country)sel.country=L.country;
+  return true;
+}
 
 /* ── AUDIO (tiny WebAudio blips, no assets) ── */
 let AC=null;
@@ -3090,6 +3109,12 @@ let G=null;
 let LAUNCH=null; // set by campaign/daily/tutorial launchers; null = plain skirmish/blitz/survival
 function newGame(){
   const L=LAUNCH; // context override (campaign mission / daily / tutorial)
+  // Remember what they chose, but only for battles they actually configured. Campaign missions,
+  // dailies and the tutorial arrive via LAUNCH with a forced loadout — resuming one of those
+  // later would drop the player into someone else's setup. Attract-mode battles are excluded
+  // too (startAttract borrows sel and restores it, so recording here would persist the demo's
+  // random picks over the player's real ones).
+  if(!L && !ATTRACT_STARTING){ try{ SAVE.lastSel={doctrine:sel.doctrine,mode:sel.mode,diff:sel.diff,country:sel.country}; persist(); }catch(e){} }
   const kind = L? L.type : sel.mode;                 // wrapper: skirmish/blitz/survival/domination/campaign/daily/tutorial
   const mode = (kind==='blitz'||kind==='survival'||kind==='domination')? kind : 'skirmish'; // underlying ruleset
   const diffKey = L&&L.diff ? L.diff : sel.diff;
@@ -7021,6 +7046,30 @@ document.getElementById('t-settings').onclick=()=>openSettings();
 
 // title screen
 document.getElementById('t-play').onclick=()=>{leaveTitle();openMenu();};
+/* REDEPLOY — one tap back into the exact fight you had last time. A returning player
+   otherwise has to walk mode → difficulty → doctrine → country every single session before
+   they get to play, which is the main thing standing between "opened the game" and "playing
+   the game". Only shown once there IS a remembered loadout, so a first-time player never sees
+   a button whose label they can't parse. */
+function refreshRedeploy(){
+  const btn=document.getElementById('t-redeploy'); if(!btn)return;
+  const L=SAVE.lastSel;
+  const ok=!!L && !!DOCTRINES[(L||{}).doctrine] && !!DIFFS[(L||{}).diff];
+  btn.classList.toggle('hidden',!ok);
+  if(!ok)return;
+  const d=DOCTRINES[L.doctrine], df=DIFFS[L.diff];
+  const modeName=(MODES[L.mode]&&MODES[L.mode].name)||L.mode||'Skirmish';
+  btn.querySelector('.hb-tx').innerHTML=
+    `<b>REDEPLOY</b><small>${escapeHTML(modeName)} · ${escapeHTML(d.name)} · ${escapeHTML(df.name)}</small>`;
+}
+{
+  const rb=document.getElementById('t-redeploy');
+  if(rb)rb.onclick=()=>{
+    if(!restoreLastSel()){ refreshRedeploy(); return; }  // stale save — fall back to the menu
+    if(typeof gcEvent==='function')gcEvent('redeploy');
+    leaveTitle(); LAUNCH=null; start();
+  };
+}
 document.getElementById('t-evo').onclick=()=>{leaveTitle();launchEvolution();};
 document.getElementById('t-war').onclick=()=>{
   if(!rankGateOk(MODE_GATES.war.lvl)){ showLockToast('War Mode unlocks at Rank '+MODE_GATES.war.lvl+' — you are Rank '+SAVE.lvl+'. Debug: Unlock All bypasses this for testing.'); return; }
@@ -7131,9 +7180,19 @@ function runLoader(){
 }
 
 /* ── ATTRACT MODE — an auto-playing skirmish behind the title ── */
+/* startAttract() nulls LAUNCH and calls newGame() with temporarily borrowed demo picks, and
+   only sets G.attract AFTER newGame() returns — so newGame() cannot tell it is a demo from the
+   inside. This flag is how it knows not to persist the demo's random doctrine as the player's
+   remembered loadout. */
+// Deliberately `var`: newGame() (≈line 3110) reads this, but the declaration sits here at
+// ≈7160. Today the boot order means it is always initialised first, but `let` would make any
+// future reordering a hard ReferenceError that kills the boot. `var` hoists, so the worst case
+// degrades to a harmless no-op instead of a dead game.
+var ATTRACT_STARTING=false;
 function startAttract(){
   narrStop();
   LAUNCH=null;
+  ATTRACT_STARTING=true;
   // newGame() reads sel.* directly and has no override params, so the demo battle
   // has to borrow it briefly — restore the player's real picks right after, or every
   // attract-loop replay (background demo ends every ~30-60s) would silently reset
@@ -7141,7 +7200,8 @@ function startAttract(){
   const savedSel={...sel};
   const docs=Object.keys(DOCTRINES).filter(k=>DOCTRINES[k].unlock<=2);
   sel.mode='skirmish'; sel.doctrine=pick(docs); sel.diff='veteran';
-  resize(); newGame();
+  resize();
+  try{ newGame(); } finally { ATTRACT_STARTING=false; }
   Object.assign(sel,savedSel);
   G.attract=true; G.techMode=false; for(const k of visibleRoster())G.unlocked[k]=true;
   G.cpRate=16; G.ecpRate=16; G._atkT=0.4; G.prep=0; G.frozen=false;
@@ -7170,6 +7230,7 @@ function showTitle(){
   document.getElementById('title-tag').textContent=pick(TITLE_TAGS);
   buildTitleDiff();
   refreshTitleLocks();
+  refreshRedeploy();
   startAttract();
   musicStart('menu');
   if(!SAVE.seenTut){ setTimeout(()=>{ if(!document.getElementById('title').classList.contains('hidden'))
