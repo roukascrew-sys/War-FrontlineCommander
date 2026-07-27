@@ -75,8 +75,13 @@ fi
 echo "  ✓ no credential-shaped strings"
 
 # ── Guard: the placeholder legal fields must be filled before a real launch ──
-if grep -qE "\[INSERT (CONTACT EMAIL|JURISDICTION)" "$DIST/privacy.html" "$DIST/terms.html" 2>/dev/null; then
-  echo "  ⚠ WARNING: privacy.html / terms.html still contain [INSERT …] placeholders."
+# Matches ANY square-bracket ALL-CAPS placeholder rather than a fixed list of names — the
+# previous version hardcoded "[INSERT CONTACT EMAIL|JURISDICTION]" and silently stopped
+# warning the moment those placeholders were renamed to [YOUR STATE]. A guard that fails
+# open when the thing it guards changes shape is worse than no guard.
+if grep -qE "\[[A-Z][A-Z ,.…—-]{3,}\]" "$DIST/privacy.html" "$DIST/terms.html" 2>/dev/null; then
+  echo "  ⚠ WARNING: privacy.html / terms.html still contain unfilled placeholders:"
+  grep -ohE "\[[A-Z][A-Z ,.…—-]{3,}\]" "$DIST/privacy.html" "$DIST/terms.html" | sort -u | sed 's/^/      /'
   echo "    Fine for a playtest build; fill them in before charging money or launching publicly."
 fi
 
