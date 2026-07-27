@@ -388,6 +388,43 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
   ok(realRes.fallback, '[real script error] genuine boot failure DOES still show the reload fallback');
   await realc.close();
 
+  // ══ 10. BACKGROUND TAB QUIESCING ══
+  // People leave itch.io tabs open for hours. A hidden tab must not keep generating a
+  // procedural orchestral score — but a REAL battle must NOT be auto-paused either, or a
+  // streamer with the game behind their chat window returns to a frozen match.
+  const vis = await browser.newContext();
+  const vp = await vis.newPage();
+  await vp.goto(BASE_URL);
+  await vp.waitForTimeout(9000);
+  await vp.mouse.click(400, 300);   // user gesture unlocks the audio context
+  await vp.waitForTimeout(800);
+  const setHidden = h => vp.evaluate(hid => {
+    Object.defineProperty(document, 'hidden', { value: hid, configurable: true });
+    Object.defineProperty(document, 'visibilityState', { value: hid ? 'hidden' : 'visible', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  }, h);
+  const ctxState = () => vp.evaluate(() => (typeof MUSIC !== 'undefined' && MUSIC.ctx) ? MUSIC.ctx.state : 'none');
+
+  const visState = await ctxState();
+  await setHidden(true); await vp.waitForTimeout(1200);
+  const hidState = await ctxState();
+  await setHidden(false); await vp.waitForTimeout(1200);
+  const backState = await ctxState();
+  ok(visState === 'running', `[background tab] audio is running while visible (${visState})`);
+  ok(hidState === 'suspended', `[background tab] audio suspends when the tab is hidden (${hidState})`);
+  ok(backState === 'running', `[background tab] audio resumes when the tab returns (${backState})`);
+
+  // The important half: a live battle keeps simulating while hidden.
+  await vp.evaluate(() => { sel.mode = 'skirmish'; LAUNCH = null; start(); });
+  await vp.waitForTimeout(1500);
+  const tBefore = await vp.evaluate(() => G.t);
+  await setHidden(true);
+  await vp.waitForTimeout(2500);
+  const after = await vp.evaluate(() => ({ t: G.t, paused: G.paused }));
+  ok(after.t > tBefore && !after.paused,
+    `[background tab] a REAL battle keeps running while hidden (${tBefore.toFixed(1)}s -> ${after.t.toFixed(1)}s, paused=${after.paused})`);
+  await vis.close();
+
   console.log('\n══════════ FRONTLINE COMMANDER — REGRESSION SUITE ══════════');
   out.forEach(o => console.log(o));
   console.log('═══════════════════════════════════════════════════════════');

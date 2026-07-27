@@ -6357,8 +6357,40 @@ function start(){
   if(SAVE.streamOn){document.getElementById('chatfeed').innerHTML='';chatReact('idle');}
 }
 let last=performance.now();
+/* ── BACKGROUND-TAB QUIESCING ─────────────────────────────────────────────────
+   Nothing here is a correctness fix; it is a battery/CPU one. The game keeps a rAF loop,
+   a 25Hz music scheduler, ambient/warfx intervals and the endless attract battle running,
+   and on itch.io people leave tabs open for hours. Browsers throttle rAF in a hidden tab
+   but do NOT stop audio scheduling, so a backgrounded tab could sit there generating a
+   procedural orchestral score forever.
+   Deliberately conservative: this only silences audio and skips the attract demo's
+   simulation. A REAL battle is never auto-paused — someone watching a stream on a second
+   monitor, or a streamer with the game behind their chat window, must not come back to a
+   frozen match they did not pause themselves. */
+let _wasHidden=false;
+function onVisibilityChange(){
+  const hidden=document.hidden;
+  if(hidden===_wasHidden)return;
+  _wasHidden=hidden;
+  try{
+    if(hidden){
+      // suspend the audio graph outright — the cheapest and biggest win
+      if(typeof MUSIC!=='undefined'&&MUSIC.ctx&&MUSIC.ctx.state==='running')MUSIC.ctx.suspend();
+      if(typeof ambientStop==='function'&&(!G||G.attract))ambientStop();
+    }else{
+      if(typeof MUSIC!=='undefined'&&MUSIC.ctx&&MUSIC.ctx.state==='suspended'&&SAVE.music)MUSIC.ctx.resume();
+      if(typeof ambientStart==='function'&&SAVE.ambient&&G&&!G.attract&&!G.over)ambientStart();
+      last=performance.now();   // don't bill the hidden interval to the next frame's dt
+    }
+  }catch(e){}
+}
+document.addEventListener('visibilitychange',onVisibilityChange);
+
 function loop(now){
   const raw=Math.min(0.05,(now-last)/1000); last=now;
+  // While hidden, keep the loop alive (so it resumes instantly) but skip the attract demo's
+  // simulation and rendering entirely — it is decoration nobody is looking at.
+  if(document.hidden && G && G.attract){ requestAnimationFrame(loop); return; }
   if(G&&G.attract&&G.over){ startAttract(); }           // endless attract loop behind the title
   if(G&&!G.paused&&!G.over){
     if(G.cutsceneSlowT>0)G.cutsceneSlowT-=raw; // decremented in real time, independent of the slow-mo it causes
