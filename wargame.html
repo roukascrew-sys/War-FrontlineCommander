@@ -1762,7 +1762,49 @@ let STORAGE_OK=(function(){
     return ok;
   }catch(e){ return false; }
 })();
-function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
+/* ── SAVE SANITISER ───────────────────────────────────────────────────────────
+   The old guard was `if(s && s.xp!=null)`, which accepts ANY object carrying an xp key
+   and then Object.assign's it wholesale over the defaults. A save where xp is a string
+   and unlocked is not an array therefore loaded "successfully" and poisoned everything
+   downstream — buildMenu() threw on SAVE.timeTrials being null and the campaign list
+   rendered as a dead panel, with no way for the player to recover short of knowing to
+   clear site data.
+   That is not a hypothetical: a partial write (quota exceeded mid-save, tab killed
+   mid-write), a downgrade to an older build, or any future change to the save shape all
+   produce exactly this. So every field is now type-checked against its default, and
+   anything that does not match is replaced by that default. Unknown keys are dropped.
+   A corrupt save costs you your progress — it cannot cost you a working game. ── */
+function sanitizeSave(raw){
+  const out=JSON.parse(JSON.stringify(DEFAULT_SAVE));
+  if(!raw||typeof raw!=='object')return out;
+  for(const k of Object.keys(DEFAULT_SAVE)){
+    const def=DEFAULT_SAVE[k], got=raw[k];
+    if(got===undefined||got===null)continue;               // keep the default
+    if(Array.isArray(def)){ if(Array.isArray(got))out[k]=got; continue; }
+    if(def!==null&&typeof def==='object'){                 // plain object maps
+      if(got&&typeof got==='object'&&!Array.isArray(got))out[k]=got;
+      continue;
+    }
+    if(typeof def==='number'){                             // must be finite
+      if(typeof got==='number'&&isFinite(got))out[k]=got;
+      continue;
+    }
+    if(typeof got===typeof def)out[k]=got;                 // string / boolean
+  }
+  // Cross-field sanity the per-field pass cannot see. NB: the rank ceiling is written as a
+  // literal, not MAX_LVL — load() runs at line ~1745 and `const MAX_LVL` is declared ~100
+  // lines later, so referencing it here would hit the temporal dead zone and throw during boot.
+  if(!(out.lvl>=1&&out.lvl<=100))out.lvl=DEFAULT_SAVE.lvl;
+  if(!(out.xp>=0))out.xp=0;
+  return out;
+}
+function load(){
+  try{
+    const s=JSON.parse(localStorage.getItem(SAVE_KEY));
+    if(s&&typeof s==='object')return sanitizeSave(s);
+  }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_SAVE));
+}
 /* persist() still never throws — a failed save must not take the battle down with
    it — but a save that silently stopped working now flips STORAGE_OK so the player
    can be told once, rather than finding out when their rank is gone. */

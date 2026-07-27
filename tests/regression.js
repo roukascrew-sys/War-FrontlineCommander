@@ -283,6 +283,51 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
   ok(!clean.warned, '[storage ok] no false "progress not saved" warning');
   ok(clean.probeLeft === null, '[storage ok] storage probe cleans up after itself');
 
+  // ══ 8. CORRUPT SAVE MUST NOT BREAK THE GAME ══
+  // A partial write (quota exceeded mid-save, tab killed), a downgrade to an older build, or
+  // any future change to the save shape produces a save whose fields are the wrong type. The
+  // old guard accepted anything with an `xp` key and merged it wholesale, which poisoned SAVE
+  // and left the campaign menu throwing with no recovery path for the player.
+  const BAD_SAVES = {
+    'all-wrong-types': { xp: 'nope', lvl: -999, wins: null, unlocked: 'str', career: 'str', timeTrials: null },
+    'NaN/Infinity': { xp: NaN, lvl: Infinity, best: NaN, musicVol: 999 },
+    'nulled-objects': { xp: 5, lvl: 3, career: null, timeTrials: null, medals: null, unlocked: null },
+    'empty-object': {},
+    'array-not-object': [1, 2, 3],
+  };
+  for (const [label, payload] of Object.entries(BAD_SAVES)) {
+    const cs = await browser.newContext();
+    const cp = await cs.newPage();
+    const cerrs = []; cp.on('pageerror', e => cerrs.push(e.message));
+    // Ignore blocked outbound analytics: the beacon is an <img> to GoatCounter, and a sandboxed
+    // or offline CI runner fails it with a network error that says nothing about the game.
+    cp.on('console', m => {
+      const t = m.text();
+      if (m.type() === 'error' && !/ERR_TUNNEL|ERR_NAME_NOT_RESOLVED|ERR_INTERNET_DISCONNECTED|goatcounter/i.test(t)) {
+        cerrs.push('console:' + t.split('\n')[0]);
+      }
+    });
+    await cp.goto(BASE_URL);
+    await cp.evaluate(pl => localStorage.setItem('FRONTLINE_SAVE_v1', JSON.stringify(pl)), payload);
+    await cp.reload();
+    await cp.waitForTimeout(8000);
+    const cr = await cp.evaluate(() => {
+      let menuOk = true;
+      try { buildMenu(); } catch (e) { menuOk = false; }
+      return {
+        menuOk,
+        title: !document.getElementById('title').classList.contains('hidden'),
+        lvlSane: SAVE.lvl >= 1 && SAVE.lvl <= 100,
+        xpSane: typeof SAVE.xp === 'number' && SAVE.xp >= 0,
+        unlockedArr: Array.isArray(SAVE.unlocked),
+        careerObj: !!SAVE.career && typeof SAVE.career === 'object',
+      };
+    });
+    const good = cr.menuOk && cr.title && cr.lvlSane && cr.xpSane && cr.unlockedArr && cr.careerObj && cerrs.length === 0;
+    ok(good, `[corrupt save: ${label}] recovers to a working game ${good ? '' : ':: ' + JSON.stringify(cr) + ' ' + cerrs.slice(0, 2).join('|')}`);
+    await cs.close();
+  }
+
   console.log('\n══════════ FRONTLINE COMMANDER — REGRESSION SUITE ══════════');
   out.forEach(o => console.log(o));
   console.log('═══════════════════════════════════════════════════════════');
