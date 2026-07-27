@@ -425,6 +425,105 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
     `[background tab] a REAL battle keeps running while hidden (${tBefore.toFixed(1)}s -> ${after.t.toFixed(1)}s, paused=${after.paused})`);
   await vis.close();
 
+  // ══ 11. ONBOARDING: TUTORIAL SPOTLIGHT ══
+  // "Tap the Rifleman card" only helps if you can find it. Every step that names a control
+  // must point at one that actually exists and is visible, or the instruction is worse than
+  // no instruction.
+  const tut = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const tp = await tut.newPage();
+  const terrs = []; tp.on('pageerror', e => terrs.push(e.message));
+  await tp.goto(BASE_URL);
+  await tp.waitForTimeout(9000);
+  await tp.evaluate(() => { SAVE.seenTut = false; persist(); LAUNCH = { type: 'tutorial' }; start(); });
+  await tp.waitForTimeout(1500);
+  const spots = await tp.evaluate(() => TUT_STEPS.map((s, i) => {
+    if (!s.spot) return null;
+    const el = document.querySelector(s.spot);
+    const r = el ? el.getBoundingClientRect() : null;
+    return { i, sel: s.spot, ok: !!(el && el.offsetParent && r.width > 0 && r.height > 0) };
+  }).filter(Boolean));
+  ok(spots.length >= 5, `[tutorial] steps carry spotlight targets (${spots.length} of them)`);
+  const badSpots = spots.filter(s => !s.ok);
+  ok(badSpots.length === 0,
+    `[tutorial] every spotlight target exists and is visible${badSpots.length ? ' :: MISSING ' + JSON.stringify(badSpots) : ''}`);
+
+  // The ring must surround its target, and keep doing so after a viewport change — the
+  // hotbar reflows on resize, and a stale ring pointing at empty space is actively harmful.
+  const ringOn = async () => tp.evaluate(() => {
+    TUT_STEPS.forEach(s => s._t = null); G.tutStep = 2; G.selCard = null;
+    return new Promise(res => setTimeout(() => {
+      const el = document.getElementById('tutspot'), t = document.querySelector('#card-rifle');
+      const er = el.getBoundingClientRect(), tr = t.getBoundingClientRect();
+      res({
+        on: el.classList.contains('on'),
+        surrounds: er.left <= tr.left + 1 && er.top <= tr.top + 1 && er.right >= tr.right - 1 && er.bottom >= tr.bottom - 1,
+      });
+    }, 700));
+  });
+  const rDesk = await ringOn();
+  ok(rDesk.on && rDesk.surrounds, '[tutorial] spotlight ring surrounds the Rifleman card');
+  await tp.setViewportSize({ width: 390, height: 844 });
+  const rPhone = await ringOn();
+  ok(rPhone.on && rPhone.surrounds, '[tutorial] spotlight re-tracks the card after a resize to phone width');
+  // and it must never outlive the tutorial
+  await tp.evaluate(() => tutFinish());
+  await tp.waitForTimeout(400);
+  const ringGone = await tp.evaluate(() => document.getElementById('tutspot').classList.contains('on'));
+  ok(!ringGone, '[tutorial] spotlight clears when the tutorial ends');
+  ok(terrs.length === 0, `[tutorial] zero page errors ${terrs.length ? ':: ' + terrs.join(' | ') : ''}`);
+  await tut.close();
+
+  // ══ 12. MODE BRIEFINGS + AUDIENCE CAPTURE + COMEBACK ══
+  const on = await browser.newContext();
+  const op = await on.newPage();
+  const oerrs = []; op.on('pageerror', e => oerrs.push(e.message));
+  await op.goto(BASE_URL);
+  await op.waitForTimeout(9000);
+
+  const briefs = await op.evaluate(() => Object.keys(MODE_BRIEFS));
+  ok(['evolution', 'chaos', 'rivals', 'war'].every(k => briefs.includes(k)),
+    `[mode briefs] all four gated modes have a briefing (${briefs.join(',')})`);
+
+  const queue = await op.evaluate(async () => {
+    SAVE.lvl = 20; SAVE.modeBriefsSeen = {};
+    let opened = 0;
+    const iv = setInterval(() => { const b = document.querySelector('#modebrief.show .mb-ok'); if (b) { opened++; b.click(); } }, 100);
+    return await new Promise(res => runModeBriefQueue(() => { clearInterval(iv); res({ opened, seen: Object.keys(SAVE.modeBriefsSeen).length }); }));
+  });
+  ok(queue.seen === 4 && queue.opened === 4,
+    `[mode briefs] queue shows each exactly once without stacking (opened ${queue.opened}, seen ${queue.seen})`);
+
+  // The capture card must stay silent while no community URL is configured — shipping a
+  // prominent CTA that leads nowhere burns the one moment a player was willing to act.
+  const rally = await op.evaluate(() => {
+    SAVE.career.battles = 99; SAVE.rallyDone = false; SAVE.rallySeen = 0;
+    return { url: COMMUNITY_URL, win: rallyEligible(true), loss: rallyEligible(false) };
+  });
+  ok(!rally.url ? (!rally.win && !rally.loss) : true,
+    '[audience capture] stays silent while COMMUNITY_URL is unset (no dead call-to-action ships)');
+  const rallyGated = await op.evaluate(() => {
+    const saved = SAVE.career.battles;
+    SAVE.career.battles = 1; const early = rallyEligible(true);
+    SAVE.career.battles = saved; SAVE.rallyDone = true; const done = rallyEligible(true);
+    SAVE.rallyDone = false;
+    return { early, done };
+  });
+  ok(!rallyGated.early && !rallyGated.done,
+    '[audience capture] never asks a first-time player, and never again once actioned');
+
+  const comeback = await op.evaluate(() => {
+    const day = d => new Date(Date.now() - d * 86400000).toISOString().slice(0, 10);
+    SAVE.lastPlayedDay = null; const first = comebackCheck();
+    SAVE.lastPlayedDay = day(1); SAVE.dailyStreak = 3; const b2b = comebackCheck();
+    SAVE.lastPlayedDay = day(4); SAVE.dailyStreak = 0; const away = comebackCheck();
+    return { first, b2b: !!b2b && /streak/i.test(b2b.s), away: !!away && /4 days/.test(away.s) };
+  });
+  ok(comeback.first === null, '[comeback] a brand-new player is not greeted with a welcome-back');
+  ok(comeback.b2b, '[comeback] a next-day return names the live daily streak');
+  ok(comeback.away, '[comeback] a lapsed return names how long they were gone');
+  ok(oerrs.length === 0, `[onboarding] zero page errors ${oerrs.length ? ':: ' + oerrs.join(' | ') : ''}`);
+  await on.close();
+
   console.log('\n══════════ FRONTLINE COMMANDER — REGRESSION SUITE ══════════');
   out.forEach(o => console.log(o));
   console.log('═══════════════════════════════════════════════════════════');

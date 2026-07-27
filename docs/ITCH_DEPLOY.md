@@ -91,3 +91,33 @@ real domain, pass `SITE_URL` and the script emits a correct pair:
 ```bash
 SITE_URL=https://your-real-domain.example ./build-itch.sh
 ```
+
+## Turning on the audience-capture layer
+
+The game can show a one-off "Rally point" card after a win, pointing players at a
+place that can actually hold a relationship (Discord, mailing list, socials).
+
+It is **off by default and ships silently** — a prominent call-to-action that
+leads nowhere burns the single moment a player was willing to act on. To enable
+it, set one constant near the top of the community block in `wargame.html`:
+
+```js
+const COMMUNITY_URL='https://discord.gg/xxxxxxx';   // empty = feature disabled
+const COMMUNITY_LABEL='Join the Discord';           // match the button text to the URL
+```
+
+Nothing else needs changing. The card then appears under these rules:
+
+| Rule | Why |
+|---|---|
+| Only after a **win** | Nobody joins a community right after losing |
+| Only from the **third battle** onward | A stranger who has played once has no reason to |
+| At most **three times, ever** | Past that it is an ad, not an invitation |
+| Never again once **followed or dismissed** | Both are answers; only one is "yes" |
+
+Both outcomes are recorded as analytics events (`rally-shown`, `rally-follow`,
+`rally-dismiss`), so the follow-through rate is measurable rather than guessed at.
+
+**Recommendation:** create the destination *before* the itch.io launch. Right now
+every playtester is a one-time visitor by design — this is the only mechanism in
+the build that changes that.

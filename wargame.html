@@ -975,6 +975,59 @@
   #tutbox.show{opacity:1;transform:translateX(-50%) scale(1);}
   #tutbox .tl{display:block;color:var(--cyan);font-weight:800;font-size:11px;letter-spacing:2px;margin-bottom:5px;}
   #tutbox .tt{color:var(--ink);font-size:15px;line-height:1.5;}
+  /* ── TUTORIAL SPOTLIGHT ──────────────────────────────────────────────────────
+     "Tap the Rifleman card" is only useful if you can find the Rifleman card. The
+     spotlight ring is drawn as a separate absolutely-positioned element rather than by
+     restyling the target, because the targets are live game controls: mutating their own
+     border/box-shadow would fight the selected/cooldown/locked states the card already
+     paints, and would have to be reliably undone. A detached ring can never corrupt the
+     thing it points at. */
+  /* ── MODE BRIEFING MODAL ── */
+  #modebrief{position:fixed;inset:0;z-index:60;background:#05070ccc;backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;padding:20px;}
+  #modebrief.show{display:flex;}
+  #modebrief .mb-in{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:22px 24px;max-width:460px;width:100%;text-align:center;box-shadow:0 20px 60px #000b;}
+  #modebrief .mb-glyph{font-size:40px;line-height:1;margin-bottom:6px;}
+  #modebrief .mb-name{font-size:18px;font-weight:900;letter-spacing:1px;margin-bottom:14px;
+    text-transform:uppercase;}
+  #modebrief .mb-row{text-align:left;font-size:13px;color:var(--dim);line-height:1.55;
+    background:var(--panel2);border:1px solid var(--line);border-radius:9px;
+    padding:9px 12px;margin-bottom:8px;}
+  #modebrief .mb-row b{display:block;font-size:10.5px;letter-spacing:1.2px;color:var(--faint);
+    text-transform:uppercase;margin-bottom:2px;}
+  #modebrief .mb-watch{border-color:#7a5a2a;background:#1a1408;}
+  #modebrief .mb-watch b{color:var(--gold);}
+  #modebrief .mb-ok{margin-top:8px;padding:10px 30px;border-radius:9px;border:1px solid var(--gold);
+    background:var(--gold);color:#0a0e14;font-weight:800;font-size:14px;cursor:pointer;}
+  #modebrief .mb-ok:hover{filter:brightness(1.08);}
+  /* ── COMMUNITY / RALLY POINT CARD (audience capture) ── */
+  .rally{background:linear-gradient(135deg,#12203a,#0e1520);border:1px solid #2a4a7a;
+    border-radius:11px;padding:13px 15px;margin-top:12px;text-align:left;}
+  .rally-h{font-size:13px;font-weight:800;color:var(--cyan);margin-bottom:4px;letter-spacing:.4px;}
+  .rally-p{font-size:12px;color:var(--dim);line-height:1.5;margin-bottom:9px;}
+  .rally-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .rally-btn{padding:8px 16px;border-radius:8px;border:1px solid var(--cyan);background:var(--cyan);
+    color:#06121a;font-weight:800;font-size:12.5px;cursor:pointer;text-decoration:none;
+    display:inline-block;}
+  .rally-btn:hover{filter:brightness(1.1);}
+  .rally-no{padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:none;
+    color:var(--faint);font-weight:700;font-size:12px;cursor:pointer;}
+  .rally-no:hover{color:var(--dim);border-color:var(--dim);}
+  #tutspot{position:fixed;z-index:13;pointer-events:none;border-radius:12px;
+    border:2px solid var(--gold);box-shadow:0 0 0 3px #ffce5a33,0 0 22px 6px #ffce5a55,
+    inset 0 0 12px #ffce5a22;opacity:0;transition:opacity .18s;}
+  #tutspot.on{opacity:1;animation:tutSpotPulse 1.25s ease-in-out infinite;}
+  @keyframes tutSpotPulse{0%,100%{box-shadow:0 0 0 3px #ffce5a33,0 0 18px 4px #ffce5a44,inset 0 0 10px #ffce5a22;}
+    50%{box-shadow:0 0 0 5px #ffce5a55,0 0 30px 10px #ffce5a77,inset 0 0 16px #ffce5a33;}}
+  /* An arrow riding just above the ring, so the eye lands on it even on a busy field. */
+  #tutspot::after{content:'▾';position:absolute;left:50%;top:-24px;transform:translateX(-50%);
+    color:var(--gold);font-size:20px;line-height:1;text-shadow:0 2px 6px #000;
+    animation:tutArrow 1.25s ease-in-out infinite;}
+  @keyframes tutArrow{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(4px);}}
+  @media (prefers-reduced-motion:reduce){
+    #tutspot.on{animation:none;} #tutspot::after{animation:none;}
+  }
   #tut-skip{position:absolute;top:12px;right:14px;z-index:14;pointer-events:auto;
     padding:6px 12px;border:1px solid var(--line);border-radius:7px;background:#0b0f18cc;color:var(--dim);font-size:12px;font-weight:600;}
   #tut-skip:hover{color:var(--ink);border-color:var(--cyan);}
@@ -1207,7 +1260,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.14.4</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.15.0</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -1294,6 +1347,7 @@
     <!-- tutorial coach mark -->
     <div id="tutbox"><span class="tl">▮ TRAINING</span><span class="tt"></span></div>
     <button id="tut-skip" class="hidden">Skip training ▸</button>
+    <div id="tutspot" aria-hidden="true"></div>
   </div>
 
   <!-- streamer overlay -->
@@ -1494,6 +1548,13 @@
 
   <!-- RESULTS -->
   <div class="screen hidden" id="results"></div>
+<!-- MODE BRIEFING — fires once when a mode unlocks; re-readable from the Field Manual. -->
+<div id="modebrief"><div class="mb-in">
+  <div class="mb-glyph">🧬</div>
+  <div class="mb-name">Mode unlocked</div>
+  <div class="mb-body"></div>
+  <button class="mb-ok">Understood</button>
+</div></div>
 
   <!-- RANK-UP SCREEN — shown before results when a battle ends in a level-up -->
   <div id="rankup">
@@ -1760,6 +1821,10 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   campaignDone:-1,campaignStars:{},daily:{},narrVoiceURI:null,
   speed:1,twitchChannel:'',war:null,warWins:0,aiDebug:false,music:true,musicVol:0.5,news:false,reduceMotion:false,
   lastSel:null,   // last loadout actually fought with — powers the title screen's REDEPLOY button
+  modeBriefsSeen:{},   // which mode briefings have been shown (one-shot each)
+  rallySeen:0,         // how many times the community card has been shown (frequency-capped)
+  rallyDone:false,     // player followed or dismissed it for good — never ask again
+  lastPlayedDay:null,  // 'YYYY-MM-DD' of the previous session, drives the welcome-back line
   ambient:true,randomEvents:true,evSupply:true,evVoice:true,evCutscene:true,evBarrage:true,evDefector:true,
   chaosMode:false,
   gagChatter:true,gagGolden:true,gagVictory:true,
@@ -2225,13 +2290,18 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.14.4';
+const GAME_VERSION='1.15.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.15.0',notes:[
+    'The tutorial now POINTS at what it is telling you to press — a pulsing ring lands on the Rifleman card, the Tank, the AT team, the strike button, the speed control and the stance bar as each is mentioned. It follows the control if the screen changes size, and never lingers after training ends.',
+    'New: every mode now explains itself the first time you can play it. Evolution, Chaos, Rivals and War each get a short briefing — what it is, how it differs, and the one thing that will catch you out — shown once, then filed away.',
+    'The game now notices when you come back. Returning the next day names your daily streak; coming back after a break tells you how long you were gone and what is waiting.',
+  ]},
   {v:'1.14.4',notes:[
     'FIXED: if your ad blocker blocked the analytics request, the game could wrongly decide it had failed to start and show a "something went wrong / Reload" screen over a game that was working perfectly. The startup check no longer treats a blocked download as a failure to launch — while still catching genuine failures.',
     'Published a full security model (SECURITY.md) and filled in the real contact address in the Privacy Policy and Terms',
@@ -6047,8 +6117,13 @@ function showResults(won,reason,score,xpGain,leveled){
       <button class="sbtn" id="r-menu">☰ Menu</button>
     </div>
     ${leveled?renderUnlockNote():''}
+    ${rallyEligible(won)?rallyMarkup():''}
   `;
   r.classList.remove('hidden');
+  // Count the impression only once it has actually rendered, and bind after innerHTML so
+  // the handlers are not wiped by the assignment above.
+  if(rallyEligible(won)){ SAVE.rallySeen=(SAVE.rallySeen||0)+1; persist(); rallyBind();
+    if(typeof gcEvent==='function')gcEvent('rally-shown'); }
   // 🎉 victory flyover gag — confetti + a jet flypast over the results (toggleable)
   if(won&&!isTut&&SAVE.gagVictory&&!SAVE.reduceMotion){
     for(let i=0;i<40;i++){ const c=document.createElement('div'); c.className='vic-conf';
@@ -6068,6 +6143,152 @@ function showResults(won,reason,score,xpGain,leveled){
   refreshTopbar();
 }
 /* ═══ RANK-UP SCREEN — cosmetic celebration shown before results on a level-up ═══ */
+/* ═══ COMMUNITY / "RALLY POINT" — the audience-capture layer ═══════════════════
+   The game has no accounts and no backend, so the only capture that is honest here is
+   sending a player somewhere that CAN hold a relationship — a Discord, a mailing list,
+   a socials page. That destination lives in one constant.
+
+   COMMUNITY_URL is intentionally EMPTY by default, and every code path below is a no-op
+   while it is. Shipping a prominent call-to-action that leads nowhere is worse than
+   shipping none: it burns the one moment a player was willing to act on. Fill it in and
+   the card starts appearing on its own — no other change needed.
+
+   Timing is the whole design. It appears only after a WIN, only from the third battle
+   onward (so it is never the first thing a stranger sees), at most three times ever, and
+   never again once the player has either followed it or dismissed it. A capture prompt
+   that keeps asking is just an ad. */
+const COMMUNITY_URL='';                       // e.g. 'https://discord.gg/xxxxxxx'
+const COMMUNITY_LABEL='Join the Discord';     // button text, matched to whatever URL you use
+const RALLY_MAX_SHOWS=3;
+
+function rallyEligible(won){
+  if(!COMMUNITY_URL)return false;                       // nothing to point at — stay silent
+  if(!won)return false;                                 // never ask after a loss
+  if(SAVE.rallyDone)return false;                       // followed or dismissed for good
+  if((SAVE.rallySeen||0)>=RALLY_MAX_SHOWS)return false; // asked enough
+  if((SAVE.career&&SAVE.career.battles||0)<3)return false; // let them actually like it first
+  return true;
+}
+function rallyMarkup(){
+  return `<div class="rally">
+    <div class="rally-h">📡 Rally point</div>
+    <div class="rally-p">This is an open playtest and it changes every week. If you want the
+      updates — and to tell me what to fix — that all happens in one place.</div>
+    <div class="rally-row">
+      <a class="rally-btn" id="rally-go" href="${escapeHTML(COMMUNITY_URL)}" target="_blank" rel="noopener">${escapeHTML(COMMUNITY_LABEL)}</a>
+      <button class="rally-no" id="rally-no">Not now</button>
+    </div></div>`;
+}
+/* Called after the results screen paints. Buttons are bound here rather than inline so the
+   click can be recorded before the new tab opens. */
+function rallyBind(){
+  const go=document.getElementById('rally-go'), no=document.getElementById('rally-no');
+  if(go)go.onclick=()=>{ SAVE.rallyDone=true; persist();
+    if(typeof gcEvent==='function')gcEvent('rally-follow'); };
+  if(no)no.onclick=()=>{ SAVE.rallyDone=true; persist();
+    if(typeof gcEvent==='function')gcEvent('rally-dismiss');
+    const el=document.querySelector('.rally'); if(el)el.remove(); };
+}
+
+/* ═══ COMEBACK LOOP ═══════════════════════════════════════════════════════════
+   The daily challenge and its streak already existed; what was missing was any
+   acknowledgement that the player CAME BACK. A streak the game never mentions is a
+   number, not a hook. This runs once per session at the title screen. */
+function comebackCheck(){
+  const today=todayKey();
+  const prev=SAVE.lastPlayedDay;
+  if(prev===today)return null;              // same day, already greeted
+  SAVE.lastPlayedDay=today; persist();
+  if(!prev)return null;                     // first ever session — nothing to come back from
+  const days=Math.round((new Date(today)-new Date(prev))/86400000);
+  const streak=SAVE.dailyStreak||0;
+  if(days===1&&streak>0)
+    return {t:'Back-to-back, Commander.',s:`Daily streak: ${streak}. Today's challenge is up — keep it alive.`};
+  if(days===1)
+    return {t:'Welcome back, Commander.',s:"Today's daily challenge is live. Clearing it starts a streak."};
+  if(days<=7)
+    return {t:'The front held without you.',s:`${days} days out. Your daily challenge is waiting.`+(streak>0?' Your streak reset — start a new one.':'')};
+  return {t:'Long time, Commander.',s:`${days} days. A new daily challenge is up, and the war map is where you left it.`};
+}
+function showComeback(){
+  const c=comebackCheck(); if(!c)return;
+  try{
+    const d=document.createElement('div');
+    d.setAttribute('role','status');
+    d.style.cssText='position:fixed;left:50%;transform:translateX(-50%);top:14px;z-index:60;'+
+      'max-width:min(460px,92vw);background:#0e1a2a;border:1px solid var(--cyan);border-radius:11px;'+
+      'padding:11px 16px;box-shadow:0 8px 30px #000a;text-align:center;';
+    d.innerHTML=`<div style="font-size:13.5px;font-weight:800;color:var(--cyan)">${escapeHTML(c.t)}</div>`+
+      `<div style="font-size:12px;color:var(--dim);margin-top:3px;line-height:1.5">${escapeHTML(c.s)}</div>`;
+    document.body.appendChild(d);
+    setTimeout(()=>{ d.style.transition='opacity .6s'; d.style.opacity='0';
+      setTimeout(()=>{ if(d.parentNode)d.remove(); },700); },7000);
+    if(typeof gcEvent==='function')gcEvent('comeback');
+  }catch(e){}
+}
+
+/* ═══ MODE BRIEFINGS ══════════════════════════════════════════════════════════
+   A mode that unlocks with no explanation is a mode nobody plays. Each of these fires
+   ONCE, the first time the mode becomes available, and is re-readable afterwards from
+   the Field Manual. Kept to three lines: what it is, how it differs, and the one thing
+   that will catch you out — a wall of text at a moment of celebration gets skipped. */
+const MODE_BRIEFS={
+  evolution:{glyph:'🧬',name:'Evolution',col:'#3fd07a',
+    what:'Age-of-War rules. Kills earn Evolution points instead of just score.',
+    diff:'Spend those points to advance through five eras — each age unlocks better hardware for both sides and hardens your HQ.',
+    watch:'The enemy ages up too, capped one era above you. Falling behind is survivable; falling two behind is not.'},
+  chaos:{glyph:'🤪',name:'Chaos / Meme Mode',col:'#ff5a4a',
+    what:'Every restraint removed. Free spawns, constant explosions, events firing back to back.',
+    diff:'It is not balanced and is not meant to be — it exists to produce clips.',
+    watch:'Turn it on in Settings FIRST, then start any battle. It is a modifier, not a menu entry.'},
+  rivals:{glyph:'⚔',name:'Rivals',col:'#c9a0ff',
+    what:'Named enemy commanders with their own personalities, taunts and grudges.',
+    diff:'Each remembers your last fight and adapts to what beat them. Beat one and they stay beaten; let one escape and they come back smarter.',
+    watch:'Defeating the whole roster earns a large XP bonus and the Rivals Champion badge.'},
+  war:{glyph:'🗺',name:'War',col:'#ffce5a',
+    what:'A conquest map of linked territories rather than a single battle.',
+    diff:'Winning a node pushes your front into its neighbours; losing lets the enemy do the same. Progress persists between sessions.',
+    watch:'You allocate CP before each battle. Overspend early and a later node will be unwinnable.'},
+};
+/* Shown once per mode. The record lives in SAVE.modeBriefsSeen so it survives a session
+   but is cleared by a progress reset, same as everything else. */
+function modeBriefPending(){
+  const seen=SAVE.modeBriefsSeen||{};
+  return Object.keys(MODE_BRIEFS).filter(k=>{
+    const gate=MODE_GATES[k];
+    const unlocked = gate ? rankGateOk(gate.lvl) : true;
+    return unlocked && !seen[k];
+  });
+}
+function showModeBrief(key,onDone){
+  const m=MODE_BRIEFS[key];
+  if(!m){ if(onDone)onDone(); return; }
+  const el=document.getElementById('modebrief');
+  if(!el){ if(onDone)onDone(); return; }
+  el.querySelector('.mb-glyph').textContent=m.glyph;
+  el.querySelector('.mb-glyph').style.color=m.col;
+  el.querySelector('.mb-name').textContent=m.name+' unlocked';
+  el.querySelector('.mb-name').style.color=m.col;
+  el.querySelector('.mb-body').innerHTML=
+    `<div class="mb-row"><b>What it is</b>${escapeHTML(m.what)}</div>`+
+    `<div class="mb-row"><b>How it differs</b>${escapeHTML(m.diff)}</div>`+
+    `<div class="mb-row mb-watch"><b>Watch out</b>${escapeHTML(m.watch)}</div>`;
+  el.classList.add('show');
+  SAVE.modeBriefsSeen=SAVE.modeBriefsSeen||{}; SAVE.modeBriefsSeen[key]=true; persist();
+  if(typeof gcEvent==='function')gcEvent('modebrief-'+key);
+  const close=()=>{ el.classList.remove('show'); if(onDone)onDone(); };
+  el.querySelector('.mb-ok').onclick=close;
+}
+/* Drains the queue one at a time — two modes can unlock on the same rank, and stacking
+   two modals on top of each other would hide the first one's text behind the second. */
+function runModeBriefQueue(onDone){
+  const q=modeBriefPending();
+  if(!q.length){ if(onDone)onDone(); return; }
+  let i=0;
+  const next=()=>{ if(i>=q.length){ if(onDone)onDone(); return; } showModeBrief(q[i++],next); };
+  next();
+}
+
 function showRankUp(fromLvl,toLvl,onContinue){
   const el=document.getElementById('rankup'); if(!el){onContinue();return;}
   const badge=currentBadge(toLvl), title=commanderTitle(toLvl);
@@ -6081,7 +6302,9 @@ function showRankUp(fromLvl,toLvl,onContinue){
   el.classList.add('show');
   if(SAVE.sound)SND.combo(5);
   const cont=document.getElementById('ru-continue');
-  cont.onclick=()=>{ el.classList.remove('show'); onContinue(); };
+  // A rank that unlocks a mode explains that mode before handing control back. Queued,
+  // not stacked: two modes can unlock on the same rank.
+  cont.onclick=()=>{ el.classList.remove('show'); runModeBriefQueue(onContinue); };
 }
 function renderUnlockNote(){
   const justUnlocked=Object.keys(DOCTRINES).filter(k=>DOCTRINES[k].unlock===SAVE.lvl&&SAVE.unlocked.includes(k));
@@ -6145,30 +6368,59 @@ function tutHasB(key){ for(const u of G.units)if(u.alive&&u.side==='B'&&u.key===
 const TUT_STEPS=[
   {say:"War room's yours now, Commander. I'm the Iron Marshal — I'll walk you through your first fight. Nice and slow.",mood:'brief',wait:6},
   {say:"That gold bar up top is Command Points. It fills on its own, and everything you deploy costs it. That's your whole economy — spend it well.",mood:'deadpan',wait:6.5},
-  {say:"Pick your first unit. Tap the Rifleman card down there, or press the 1 key.",mood:'deadpan',cond:()=>G.selCard==='rifle'},
+  {say:"Pick your first unit. Tap the Rifleman card down there, or press the 1 key.",mood:'deadpan',spot:'#card-rifle',cond:()=>G.selCard==='rifle'},
   {say:"Now put him on the field — tap any of the three lanes to deploy.",mood:'deadpan',cond:()=>G.deploys>=1},
-  {say:"Good. Now some armour. Deploy a Tank — press 4, then tap a lane. That's your battering ram.",mood:'deadpan',cond:()=>tutHasB('tank')},
-  {enter:()=>{spawn('R','tank',1);},say:"Here's the lesson that wins wars — counters. I've rolled a Tank at your middle lane. Rifles bounce off its armour. Kill it with an AT Team: press 2, deploy, and watch it work.",mood:'grim',cond:()=>G.kills>=1,freeze:false},
+  {say:"Good. Now some armour. Deploy a Tank — press 4, then tap a lane. That's your battering ram.",mood:'deadpan',spot:'#card-tank',cond:()=>tutHasB('tank')},
+  {enter:()=>{spawn('R','tank',1);},say:"Here's the lesson that wins wars — counters. I've rolled a Tank at your middle lane. Rifles bounce off its armour. Kill it with an AT Team: press 2, deploy, and watch it work.",mood:'grim',spot:'#card-atgm',cond:()=>G.kills>=1,freeze:false},
   {say:"That's rock-paper-scissors with guns. AT beats armour, armour crushes infantry, infantry swarms the AT. Read what's coming, send the counter.",mood:'deadpan',wait:7},
-  {say:"One more toy — air support. Three free strikes on timers: a gunship run, a rolling barrage, and precision munitions. Press 0 for precision, then tap a lane, and level whatever's standing there.",mood:'hype',cond:()=>(G.strikeUsedCount||0)>=1,freeze:false},
+  {say:"One more toy — air support. Three free strikes on timers: a gunship run, a rolling barrage, and precision munitions. Press 0 for precision, then tap a lane, and level whatever's standing there.",mood:'hype',spot:'#card-precision',cond:()=>(G.strikeUsedCount||0)>=1,freeze:false},
   {say:"Two more specials on that bar: press R for a Recon Flare to light up a lane through weather, and — once you make Rank 3 — F drops an EMP Pulse that stuns a whole lane. Use them to open a hole, then pour through it.",mood:'deadpan',wait:9},
-  {say:"Your deck's sorted into tabs. GROUND is infantry and armour. AIR & AD is aircraft plus the anti-air that swats them. SUPPORT is your no-weapon helpers — the Medic that heals and the EW Jammer that fries drones. PRODUCTION builds factories that pump out units over time. Every unit lives in one of those four.",mood:'deadpan',wait:11},
-  {say:"See the SPEED control on the left of the field? Half-speed buys you thinking time and cleaner micro; two-times fast-forwards a won fight. And SPACE pauses whenever you need a breather.",mood:'deadpan',wait:8.5},
-  {say:"Right beside it, STANCE. Assault pushes hard for their HQ. Skirmish pokes from max range and falls back. Defend digs in on the centre line — that's your Domination stance, since it holds the middle where the capture zone sits.",mood:'deadpan',wait:10},
+  {say:"Your deck's sorted into tabs. GROUND is infantry and armour. AIR & AD is aircraft plus the anti-air that swats them. SUPPORT is your no-weapon helpers — the Medic that heals and the EW Jammer that fries drones. PRODUCTION builds factories that pump out units over time. Every unit lives in one of those four.",mood:'deadpan',spot:'#hotbar',wait:11},
+  {say:"See the SPEED control on the left of the field? Half-speed buys you thinking time and cleaner micro; two-times fast-forwards a won fight. And SPACE pauses whenever you need a breather.",mood:'deadpan',spot:'#speedbar',wait:8.5},
+  {say:"Right beside it, STANCE. Assault pushes hard for their HQ. Skirmish pokes from max range and falls back. Defend digs in on the centre line — that's your Domination stance, since it holds the middle where the capture zone sits.",mood:'deadpan',spot:'#stancebar',wait:10},
   {say:"That's the whole toolkit. Want the full roster and every counter written out? The Field Manual off the title screen has all of it — but you've got more than enough to win this.",mood:'proud',wait:7.5},
   {say:"That's everything, Commander. Their HQ sits on the right — crack it before they crack yours. I'm releasing their army... now. Good luck. Try not to embarrass us.",mood:'proud',wait:6.5,last:true},
 ];
+/* ── SPOTLIGHT ────────────────────────────────────────────────────────────────
+   Points a pulsing ring at the control the current step is asking for. Re-measured
+   every frame rather than positioned once: the hotbar re-renders on tab switches and
+   card state changes, cards reflow on resize/orientation change, and the whole HUD
+   moves on mobile — a one-shot position would drift off the target the first time any
+   of that happened, which is exactly when a confused player is looking at it. */
+let _spotSel=null;
+function tutSpot(sel){
+  _spotSel=sel||null;
+  const el=document.getElementById('tutspot');
+  if(el&&!_spotSel)el.classList.remove('on');
+}
+function tutSpotTick(){
+  const el=document.getElementById('tutspot'); if(!el)return;
+  if(!_spotSel){ el.classList.remove('on'); return; }
+  let t=null; try{ t=document.querySelector(_spotSel); }catch(e){}
+  // Target missing or hidden (wrong hotbar tab open, control not built yet) — hide rather
+  // than ring an empty rectangle at 0,0.
+  if(!t||!t.offsetParent){ el.classList.remove('on'); return; }
+  const r=t.getBoundingClientRect();
+  if(r.width<1||r.height<1){ el.classList.remove('on'); return; }
+  const pad=5;
+  el.style.left=(r.left-pad)+'px'; el.style.top=(r.top-pad)+'px';
+  el.style.width=(r.width+pad*2)+'px'; el.style.height=(r.height+pad*2)+'px';
+  el.classList.add('on');
+}
 function tutStart(){
   for(const s of TUT_STEPS)s._t=null;
   G.tutStep=0; G.selCard=null; // force the player to pick
   G.frozen=true; // hold the field still for the opening line
   showTut('');
+  tutSpot(null);
   document.getElementById('tut-skip').classList.remove('hidden');
 }
 function tutTick(dt){
   const s=TUT_STEPS[G.tutStep]; if(!s){tutFinish();return;}
-  if(s._t==null){ s._t=0; G.frozen=(s.freeze!==false); if(s.enter){try{s.enter();}catch(e){}} showTut(s.say); say(s.say,s.mood||'brief',2); }
+  if(s._t==null){ s._t=0; G.frozen=(s.freeze!==false); if(s.enter){try{s.enter();}catch(e){}}
+    showTut(s.say); say(s.say,s.mood||'brief',2); tutSpot(s.spot||null); }
   s._t+=dt;
+  tutSpotTick();
   let done=false;
   if(s.cond){ if(s.cond())done=true; } else if(s.wait){ if(s._t>=s.wait)done=true; }
   if(done && s._t>1.2){
@@ -6179,6 +6431,7 @@ function tutTick(dt){
 function tutFinish(){
   if(!G||G.tutDone)return;
   G.tutDone=true; G.aiHold=false; G.aiT=1.4; G.frozen=false; // the field comes alive
+  tutSpot(null);
   if(!G.selCard)G.selCard='rifle';
   SAVE.seenTut=true; persist();
   hideTut();
@@ -6191,7 +6444,8 @@ function showTut(text){
   el.querySelector('.tt').textContent=text;
   el.classList.toggle('show',!!text);
 }
-function hideTut(){ const el=document.getElementById('tutbox'); if(el)el.classList.remove('show'); }
+function hideTut(){ const el=document.getElementById('tutbox'); if(el)el.classList.remove('show');
+  tutSpot(null); }   // the ring must never outlive the tutorial box (skip / menu exit route through here)
 
 /* ═══ MENU ═══ */
 function openMenu(){
@@ -6249,7 +6503,13 @@ function buildMenu(){
     if(!modeOk)b.classList.add('lock');
     if(sel.mode===k&&MODECOL[k]){b.style.background=MODECOL[k];b.style.color='#0a0e14';b.style.borderColor=MODECOL[k];}
     else if(MODECOL[k]){b.style.borderColor=MODECOL[k];b.style.color=modeOk?MODECOL[k]:'var(--faint)';}
-    b.onclick=()=>{ if(!modeOk){showLockToast(gate.name+' unlocks at Rank '+gate.lvl+' — you are Rank '+SAVE.lvl+'.');return;} sel.mode=k;buildMenu();};
+    b.onclick=()=>{ if(!modeOk){showLockToast(gate.name+' unlocks at Rank '+gate.lvl+' — you are Rank '+SAVE.lvl+'.');return;}
+      sel.mode=k; buildMenu();
+      // Explain a mode the first time it is actually PICKED, not only on rank-up. Evolution
+      // and Rivals carry no rank gate, so a player can reach them without ever ranking up —
+      // relying on the rank-up hook alone would leave those two permanently unexplained.
+      if(MODE_BRIEFS[k] && !(SAVE.modeBriefsSeen||{})[k]) showModeBrief(k);
+    };
     mOpt.appendChild(b);}
   document.getElementById('mode-desc').textContent=MODES[sel.mode].desc;
   // diff
@@ -7284,10 +7544,12 @@ function attractTick(dt){
 }
 
 /* ── TITLE SCREEN ── */
+let _comebackShown=false;
 function showTitle(){
   // If storage was already dead at boot (embedded iframe / private browsing), say so
   // once we're on a real screen — warning over the loading bar would go unread.
   if(!STORAGE_OK)storageWarn();
+  if(!_comebackShown){ _comebackShown=true; showComeback(); }
   ambientStop(); infoClear();
   ['menu','warmap','results','hud','pauseScreen','manual','settings','record','roadmap','cosmetics','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');
