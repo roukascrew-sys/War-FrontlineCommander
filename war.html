@@ -23125,32 +23125,13 @@ if(typeof window.openPlanMode==='function'){
     }catch(e){ return null; }
   };
 
-  // ── LLM hook (artifact-only; fails silent to procedural) ────────────────
-  // Returns a raw blueprint JSON which is passed through the SAME validate().
-  window.__FoundryInventLLM=async function(L){
-    try{
-      if(!window.INVENTOR_MODE||typeof fetch!=='function') return null;
-      var side=L.side, probs=diagnose(side); if(!probs.length) return null;
-      var vocab={ ops:['SACRIFICE','OBSTACLE','ZONE','COUPLE','CONVERT','DOCTRINE_SHIFT','TEMPO','SIGNAL'],
-        assets:WK, zoneKinds:['denial','sensor','killzone','sanctuary'], triggers:['sector_pressed','enemy_surges','econ_below'],
-        responses:['jam_pulse','recon_pulse','obstacle_pop'], signals:['feed_paranoia','feign_strength','feign_weakness'], tempo:['false_routine','surge_pulse'] };
-      var req='You are a wartime invention bureau. Given the top diagnosed problems, invent ONE novel scheme as minified JSON only: '+
-        '{"concept":"<8 words max>","name":"<3 words max>","primitives":[1-3 of {"op":...params per vocab}],"cost":{"econ":0-0.05,"esc":0-0.06,"pol":0.1-0.5}}. '+
-        'Bounds: SACRIFICE frac<=0.35, ZONE/OBSTACLE dur<=90 mag/strength<=0.8, CONVERT frac<=0.3. Be genuinely inventive (sacrifice, conversion and coupling are allowed and encouraged where apt).';
-      var resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:req+'\nVOCAB:'+JSON.stringify(vocab)+'\nPROBLEMS:'+JSON.stringify(probs.slice(0,3))}]})});
-      var data=await resp.json();
-      var text=(data.content||[]).map(function(b){return b.text||'';}).join('').replace(/```json|```/g,'').trim();
-      var parsed=JSON.parse(text);
-      var bp={ concept:String(parsed.concept||'invention').slice(0,60), problem:probs[0], primitives:parsed.primitives||[], cost:parsed.cost||{pol:0.2}, nameBits:[String(parsed.name||'the Scheme').slice(0,28)] };
-      bp=validate(bp,side); if(!bp) return null;
-      var c=christen(bp);
-      return { minister:'The Inventor', id:'INV\u2692:'+c.name, pol:cl(bp.cost.pol||0.2,0,0.6), llm:true,
-        inventor:{ name:c.name, insight:c.insight, blueprint:bp },
-        why:'"'+c.insight+'"', risk:0.5, gain:0.55,
-        act:function(){ try{ var inv=forge(bp,side); inv.name=c.name; logF(side,'\u2692 THE FOUNDRY (LLM): "'+c.name+'" — '+bp.concept+'.'); }catch(e){} } };
-    }catch(e){ return null; }
-  };
+  // ── LLM hook: REMOVED ────────────────────────────────────────────────────
+  //   There used to be a window.__FoundryInventLLM here that POSTed to the Anthropic
+  //   API to invent schemes. It was dead code — nothing ever called it, and it carried
+  //   no credentials, so it could only ever have returned 401. It was removed because a
+  //   key-shaped hole in a shipped frontend file is an invitation to paste a real key
+  //   into it, and any key in a browser build is public the moment it loads. If genuine
+  //   LLM invention is ever wanted, it has to go behind a server that holds the key.
 
   // ── lifecycle & step wiring ──────────────────────────────────────────────
   if(typeof window.warBegin==='function'){

@@ -1,0 +1,29 @@
+# ── Secrets ───────────────────────────────────────────────────────────────
+# Nothing in this project should ever need a key at build or run time (the game
+# is a single static file with no server), but a stray .env is the single most
+# common way a key reaches a public repo — so it is blocked outright.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.json
+
+# ── Build output ──────────────────────────────────────────────────────────
+# `build-itch.sh` writes here. Never commit it: it is generated, and committing
+# it makes it easy to accidentally ship whatever happens to be lying in the dir.
+/dist/
+*.zip
+
+# ── Local noise ───────────────────────────────────────────────────────────
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+__pycache__/
+*.py[cod]
+.venv/
+venv/

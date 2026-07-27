@@ -240,6 +240,49 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
   ok(ierrs.length === 0, `[iPhone viewport] zero page errors ${ierrs.length ? ':: ' + ierrs.join(' | ') : ''}`);
   await ios.close();
 
+  // ══ 7. STORAGE BLOCKED (itch.io iframe / private browsing / 3rd-party storage off) ══
+  // itch.io serves HTML5 games in a cross-origin iframe, where Safari partitions or blocks
+  // localStorage outright and private-browsing quota is 0 — setItem() THROWS. The game must
+  // stay playable AND tell the player their progress is not being kept, rather than letting
+  // them grind a session and lose it silently.
+  const nostore = await browser.newContext();
+  const np = await nostore.newPage();
+  await np.addInitScript(() => {
+    const boom = () => { throw new DOMException('QuotaExceededError'); };
+    Object.defineProperty(window, 'localStorage', {
+      get() { return { getItem: boom, setItem: boom, removeItem: boom }; },
+    });
+  });
+  const nerrs = []; np.on('pageerror', e => nerrs.push(e.message));
+  await np.goto(BASE_URL);
+  await np.waitForTimeout(9000);
+  const nres = await np.evaluate(() => {
+    const w = [...document.querySelectorAll('div')].find(
+      d => /can.t be saved in this window/i.test(d.textContent || '') && d.style.position === 'fixed');
+    return {
+      flag: typeof STORAGE_OK !== 'undefined' ? STORAGE_OK : null,
+      warned: !!w,
+      tellsFix: !!(w && /own tab|fullscreen/i.test(w.textContent)),
+      title: !document.getElementById('title').classList.contains('hidden'),
+    };
+  });
+  ok(nres.flag === false, '[storage blocked] STORAGE_OK probe correctly reports unusable storage');
+  ok(nres.title, '[storage blocked] game still boots and reaches the title screen');
+  ok(nres.warned, '[storage blocked] player is warned that progress will not be kept');
+  ok(nres.tellsFix, '[storage blocked] warning says how to fix it (own tab / fullscreen)');
+  ok(nerrs.length === 0, `[storage blocked] zero page errors ${nerrs.length ? ':: ' + nerrs.join(' | ') : ''}`);
+  await nostore.close();
+
+  // Healthy storage: no false alarm, and the probe must not litter localStorage.
+  const clean = await page.evaluate(() => ({
+    flag: STORAGE_OK,
+    warned: [...document.querySelectorAll('div')].some(d => /can.t be saved in this window/i.test(d.textContent || '')),
+    probeLeft: localStorage.getItem('__fc_probe__'),
+  }));
+  ok(clean.flag === true, '[storage ok] probe reports storage usable');
+  ok(!clean.warned, '[storage ok] no false "progress not saved" warning');
+  ok(clean.probeLeft === null, '[storage ok] storage probe cleans up after itself');
+
   console.log('\n══════════ FRONTLINE COMMANDER — REGRESSION SUITE ══════════');
   out.forEach(o => console.log(o));
   console.log('═══════════════════════════════════════════════════════════');

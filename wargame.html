@@ -1182,7 +1182,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.14.2</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.14.3</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -1744,8 +1744,57 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   chatPos:null};          // {x,y} of the dragged stream-chat panel; null = default corner
 let SAVE=load();
 SAVE.news=false; // live news wire archived for now (kept in code, off by default)
+/* ── Is localStorage actually usable HERE? ────────────────────────────────────
+   Not a theoretical question. The game is heading for itch.io, where HTML5 games
+   are served inside a cross-origin <iframe>. Safari (and Firefox in strict mode,
+   and Chrome with third-party cookies off) either blocks or partitions storage in
+   that context, and private-browsing quota is 0 — so setItem() THROWS. The old code
+   swallowed that in a bare catch, which meant a player could grind an entire
+   session and lose all of it with no warning and no explanation.
+   Probe once with a real round-trip write/read/delete — the presence of the
+   localStorage object proves nothing, only a successful write does. ── */
+let STORAGE_OK=(function(){
+  try{
+    const k='__fc_probe__';
+    localStorage.setItem(k,'1');
+    const ok=localStorage.getItem(k)==='1';
+    localStorage.removeItem(k);
+    return ok;
+  }catch(e){ return false; }
+})();
 function load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.xp!=null)return Object.assign({},DEFAULT_SAVE,s);}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_SAVE));}
-function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(SAVE));}catch(e){}}
+/* persist() still never throws — a failed save must not take the battle down with
+   it — but a save that silently stopped working now flips STORAGE_OK so the player
+   can be told once, rather than finding out when their rank is gone. */
+function persist(){
+  try{ localStorage.setItem(SAVE_KEY,JSON.stringify(SAVE)); }
+  catch(e){
+    if(STORAGE_OK){ STORAGE_OK=false; try{ storageWarn(); }catch(e2){} }
+  }
+}
+/* One non-blocking banner, once per session. Deliberately not a modal: losing
+   progress is bad, but interrupting someone mid-battle to say so is worse. */
+let _storageWarned=false;
+function storageWarn(){
+  if(_storageWarned)return; _storageWarned=true;
+  try{
+    const d=document.createElement('div');
+    d.setAttribute('role','status');
+    d.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:99990;'+
+      'max-width:min(560px,92vw);background:#2a1410;border:1px solid #ff5a4a;border-radius:10px;'+
+      'padding:11px 14px;color:#ffd9d4;font-size:12.5px;line-height:1.5;box-shadow:0 6px 24px #000a;';
+    d.innerHTML='<b style="color:#ff8a7a">Progress can’t be saved in this window.</b><br>'+
+      'Your browser is blocking storage here — this usually means the game is embedded in a page, '+
+      'or you’re in private browsing. You can still play, but rank and unlocks will be lost when you leave. '+
+      '<b>Open the game in its own tab (or fullscreen) to keep your progress.</b>'+
+      '<button id="fc-stw-x" style="margin-left:8px;background:none;border:1px solid #ff5a4a;color:#ff8a7a;'+
+      'border-radius:6px;padding:2px 9px;font-size:11px;font-weight:700;cursor:pointer">Dismiss</button>';
+    document.body.appendChild(d);
+    const x=d.querySelector('#fc-stw-x'); if(x)x.onclick=()=>d.remove();
+    setTimeout(()=>{ if(d.parentNode)d.remove(); },20000);
+    if(typeof gcEvent==='function')gcEvent('storage-blocked');
+  }catch(e){}
+}
 
 /* ── legacy cleanup: the game used to offer an optional ElevenLabs neural voice, which meant
    storing a user API key. That whole path is gone (a public release would burn through anyone's
@@ -2100,13 +2149,18 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.14.2';
+const GAME_VERSION='1.14.3';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.14.3',notes:[
+    'FIXED: in places where the browser blocks saving — a game embedded in another page, or private browsing — progress silently failed to save and you would lose a whole session with no warning. The game now checks properly at startup and tells you up front, so you can open it in its own tab and keep your rank.',
+    'Added a full Privacy Policy and Terms of Service, linked from Settings and the website',
+    'The in-game privacy summary now lists everything that touches the network, including that the Feedback button opens a Google Form',
+  ]},
   {v:'1.14.2',notes:[
     'Added explicit no-cache headers to both this file and the landing page, and a build number in the landing page footer — if a phone or mail client ever serves a stale cached copy instead of the latest build, this makes it obvious at a glance rather than a silent "why does this look old" mystery.',
   ]},
@@ -6613,20 +6667,27 @@ function settingRow(label,sub,control){
     <div><div style="font-size:13px;font-weight:700;color:var(--ink)">${label}</div><div style="font-size:11px;color:var(--dim);margin-top:2px">${sub}</div></div>
     <div>${control}</div></div>`;
 }
-/* ── PRIVACY & DATA — a short, honest, accurate account of the three things that touch data at
-   all in this game. Written from the actual data flows, not boilerplate: localStorage (this
-   device only), a cookieless analytics beacon, and an opt-in anonymous Twitch connection. No
-   account system, no email, no payment processing exist in this build, so there's genuinely
-   little else to disclose — but "we collect almost nothing" still needs to be SAID, not assumed. ── */
+/* ── PRIVACY & DATA — a short, honest, accurate account of everything that touches data in this
+   game. Written from the actual data flows, not boilerplate. Keep this list EXHAUSTIVE: if a new
+   feature ever talks to the network, it gets a row here in the same commit, and the full Privacy
+   Policy (privacy.html) gets updated too. A disclosure that is merely mostly-complete is worse
+   than none, because it reads as a promise that the missing item does not exist. ── */
 function renderPrivacySection(){
   const row=(label,sub)=>`<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;">
     <div style="font-size:13px;font-weight:700;color:var(--ink)">${label}</div>
     <div style="font-size:11px;color:var(--dim);margin-top:2px;line-height:1.5">${sub}</div></div>`;
   return `<div style="font-size:13px;font-weight:800;color:var(--faint);letter-spacing:.5px;margin:10px 2px -2px">📜 PRIVACY &amp; DATA</div>`+
-    row('Your save data','Rank, unlocks, stats and settings are stored in this browser only (localStorage), never sent anywhere. Clearing your browser data or switching devices resets your progress — there is no account or server-side save.')+
-    row('Analytics','A cookieless page-view/event beacon (GoatCounter) — no personal data, no cross-site tracking, no advertising IDs.')+
+    row('Your save data','Rank, unlocks, stats and settings are stored in this browser only (localStorage), never sent anywhere. Clearing your browser data or switching devices resets your progress — there is no account or server-side save.'+
+      (STORAGE_OK?'':' <b style="color:var(--red)">Saving is currently blocked in this window, so nothing is being kept.</b>'))+
+    row('Analytics','A cookieless page-view/event beacon (GoatCounter) — no personal data, no cross-site tracking, no advertising IDs. Your IP is never stored; it is used transiently for country and de-duplication only.')+
+    row('Crash reports','If the game hits an internal error it reports <i>where</i> in the code it happened (file &amp; line), capped at five per session. Never the error text, never any of your data — this is how a broken release becomes visible instead of silently ruining everyone\'s game.')+
     row('Live Twitch Chat (opt-in)','If you connect a channel, the game reads that channel\'s public chat over an anonymous, read-only connection — no login, no token, and nothing is sent back to Twitch beyond the standard anonymous connection.')+
-    `<div style="font-size:11px;color:var(--faint);padding:2px 4px">No account, no email, no payment processing, no third-party ad or tracking SDKs exist in this build.</div>`;
+    row('Feedback button (you choose)','Nothing is sent when you press 🧪 Feedback. You see the full report — including the attached technical context — and decide whether to copy it or open the form. The form is a <b>Google Form</b>, so anything you submit there goes to Google under their privacy policy, not ours.')+
+    `<div style="font-size:11px;color:var(--faint);padding:2px 4px">No account, no email, no payment processing, no third-party ad or tracking SDKs exist in this build.</div>`+
+    `<div style="display:flex;gap:10px;flex-wrap:wrap;padding:4px 4px 2px">
+      <a href="privacy.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--blue);text-decoration:underline">Full Privacy Policy ↗</a>
+      <a href="terms.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--blue);text-decoration:underline">Terms of Service ↗</a>
+    </div>`;
 }
 function renderSettings(){
   const el=document.getElementById('set-body');
@@ -7046,6 +7107,9 @@ function attractTick(dt){
 
 /* ── TITLE SCREEN ── */
 function showTitle(){
+  // If storage was already dead at boot (embedded iframe / private browsing), say so
+  // once we're on a real screen — warning over the loading bar would go unread.
+  if(!STORAGE_OK)storageWarn();
   ambientStop(); infoClear();
   ['menu','warmap','results','hud','pauseScreen','manual','settings','record','roadmap','cosmetics','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('btn-pause').classList.add('hidden');

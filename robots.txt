@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://YOUR-USERNAME.github.io/attempt-1/sitemap.xml
+# No Sitemap: line on purpose. A sitemap pointing at a domain that does not
+# exist is worse than none — crawlers fetch it, 404, and the host loses crawl
+# trust. build-itch.sh generates a real sitemap.xml when given a live SITE_URL;
+# until a domain exists there is nothing honest to point at.
