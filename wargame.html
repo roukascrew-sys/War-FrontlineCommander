@@ -115,16 +115,34 @@
 
   function watchdog() {
     hideLoader();
-    // give game.js (if it's still alive) a brief moment to reach showTitle() on its own
-    // before deciding the page is genuinely blank and offering the reload fallback
+    // give the main script (if it's still alive) a brief moment to reach showTitle() on its
+    // own before deciding the page is genuinely blank and offering the reload fallback
     setTimeout(function () {
       if (!anyScreenVisible()) showFallback();
     }, 700);
   }
 
-  // capture phase — required to observe a <script src> that fails to load at all
-  // (network error / blocked), since that particular error event does not bubble
-  window.addEventListener("error", watchdog, true);
+  /* A RESOURCE error is not a boot failure — ignore it.
+     This listener is in the capture phase, which is the only way to observe a subresource
+     that failed to load. But that also means it sees the error event of EVERY <img>, <link>
+     and <script> in the page, and a blocked image says nothing about whether the game booted.
+     The game is one self-contained file with no external scripts, so there is no subresource
+     whose failure could stop it starting — which makes every resource error here a false
+     positive by definition.
+     That matters because the analytics beacon is a request to GoatCounter, a host that ad
+     blockers and Pi-hole routinely block. Today that beacon is a DETACHED `new Image()`, and
+     a detached element's error does not propagate to window, so the watchdog never sees it
+     (verified). But that is safety by accident: simply appending that image to the DOM — an
+     entirely natural refactor — would start firing the watchdog mid-boot for every adblocker
+     user, hiding the loader early and, on a slow device where the title has not appeared
+     within 700ms, showing "something went wrong / Reload" over a perfectly working game.
+     Filtering at the source removes the hazard permanently instead of relying on that. */
+  function onWindowError(e) {
+    // e.target is the element for a resource error, and window for a real script error.
+    if (e && e.target && e.target !== window && e.target.nodeName) return; // resource — not us
+    watchdog();
+  }
+  window.addEventListener("error", onWindowError, true);
   window.addEventListener("unhandledrejection", watchdog);
   // last resort: no matter what happened above, never sit on the loading screen past ~8s
   setTimeout(watchdog, 8000);
@@ -1189,7 +1207,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.14.3</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.14.4</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -2207,13 +2225,17 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.14.3';
+const GAME_VERSION='1.14.4';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.14.4',notes:[
+    'FIXED: if your ad blocker blocked the analytics request, the game could wrongly decide it had failed to start and show a "something went wrong / Reload" screen over a game that was working perfectly. The startup check no longer treats a blocked download as a failure to launch — while still catching genuine failures.',
+    'Published a full security model (SECURITY.md) and filled in the real contact address in the Privacy Policy and Terms',
+  ]},
   {v:'1.14.3',notes:[
     'FIXED: in places where the browser blocks saving — a game embedded in another page, or private browsing — progress silently failed to save and you would lose a whole session with no warning. The game now checks properly at startup and tells you up front, so you can open it in its own tab and keep your rank.',
     'Added a full Privacy Policy and Terms of Service, linked from Settings and the website',

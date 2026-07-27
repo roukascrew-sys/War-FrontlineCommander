@@ -328,6 +328,66 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
     await cs.close();
   }
 
+  // ══ 9. BOOT GUARD MUST NOT FIRE ON A BLOCKED RESOURCE ══
+  // The boot guard listens for 'error' in the CAPTURE phase, which is the only way to see a
+  // subresource that failed to load — but that also means it sees every <img>/<link>/<script>
+  // error in the page. The game is one self-contained file with no external scripts, so no
+  // subresource failure can stop it booting, which makes every resource error a false positive.
+  // This matters because the analytics beacon targets GoatCounter, which ad blockers and
+  // Pi-hole routinely block. Treating that as a boot failure would hide the loader early and
+  // show "Reload" over a perfectly working game for every adblocker user.
+  const seesFallback = pg => pg.evaluate(() => {
+    const fb = [...document.querySelectorAll('div')]
+      .find(d => /Reload/.test(d.textContent || '') && d.querySelector('button'));
+    return { fallback: !!fb, titleUp: !document.getElementById('title').classList.contains('hidden') };
+  });
+
+  // 9a. adblocker blocks the beacon AND it is attached to the DOM (the refactor that would bite)
+  const adb = await browser.newContext();
+  await adb.route('**goatcounter.com**', r => r.abort());
+  const ap = await adb.newPage();
+  await ap.addInitScript(() => {
+    const Orig = window.Image;
+    window.Image = function () {
+      const i = new Orig();
+      setTimeout(() => { try { document.body.appendChild(i); } catch (e) {} }, 0);
+      return i;
+    };
+  });
+  await ap.goto(BASE_URL);
+  await ap.waitForTimeout(4000);
+  const adRes = await seesFallback(ap);
+  ok(!adRes.fallback, '[adblocker] blocked analytics beacon does NOT trigger a false "Reload" screen');
+  ok(adRes.titleUp, '[adblocker] game still reaches the title screen');
+  await adb.close();
+
+  // 9b. any blocked <img> mid-boot is likewise not a boot failure
+  const imgc = await browser.newContext();
+  const ip2 = await imgc.newPage();
+  await ip2.goto(BASE_URL);
+  await ip2.evaluate(() => { const i = new Image(); i.src = 'http://127.0.0.1:9/nope.png'; document.body.appendChild(i); });
+  await ip2.waitForTimeout(4000);
+  const imgRes = await seesFallback(ip2);
+  ok(!imgRes.fallback, '[blocked image] a failed <img> does NOT trigger a false "Reload" screen');
+  await imgc.close();
+
+  // 9c. GUARD THE GUARD — a genuine script failure must still surface the fallback.
+  // Without this, "ignore resource errors" could silently degrade into "ignore everything".
+  const realc = await browser.newContext();
+  const rp = await realc.newPage();
+  await rp.addInitScript(() => {
+    window.addEventListener('load', () => setTimeout(() => {
+      document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+      const s = document.createElement('script'); s.textContent = 'null.x.y';
+      document.body.appendChild(s);
+    }, 2500));
+  });
+  await rp.goto(BASE_URL);
+  await rp.waitForTimeout(6000);
+  const realRes = await seesFallback(rp);
+  ok(realRes.fallback, '[real script error] genuine boot failure DOES still show the reload fallback');
+  await realc.close();
+
   console.log('\n══════════ FRONTLINE COMMANDER — REGRESSION SUITE ══════════');
   out.forEach(o => console.log(o));
   console.log('═══════════════════════════════════════════════════════════');
