@@ -5379,11 +5379,19 @@ function chatStatus(txt,col){ const el=document.getElementById('tw-status'); if(
 /* REAL chat line — a genuine message off the Twitch socket (or a FRONTLINE system notice).
    Shows whenever the overlay is up OR a channel is connected, so live messages are never
    swallowed just because Streamer Mode happened to be toggled off. */
+/* Only ever emit a colour we have proven is a bare hex literal. Today every caller passes a
+   hardcoded colour and the live Twitch path passes none at all — but this value lands inside a
+   style="" attribute, and the obvious next feature (show each chatter in their real Twitch
+   colour, which arrives as an attacker-settable IRC `color` tag) would turn an unchecked string
+   here into attribute-breakout XSS. Validating at the sink means that feature can be added
+   safely by someone who never reads this comment. */
+const CHAT_COLS=['#4aa8ff','#3fd07a','#ffce5a','#c9a0ff','#ff9f40'];
+function safeChatCol(c){ return /^#[0-9a-fA-F]{3,8}$/.test(''+c) ? c : pick(CHAT_COLS); }
 function chatMsgRaw(user,txt,ucol){
   if(!SAVE.streamOn && !CHATLINK.connected)return;
   const feed=document.getElementById('chatfeed'); if(!feed)return;
   const el=document.createElement('div');el.className='cmsg';
-  el.innerHTML=`<span class="u" style="color:${ucol||pick(['#4aa8ff','#3fd07a','#ffce5a','#c9a0ff','#ff9f40'])}">${escapeHTML(user)}</span>: ${escapeHTML(txt)}`;
+  el.innerHTML=`<span class="u" style="color:${safeChatCol(ucol)}">${escapeHTML(user)}</span>: ${escapeHTML(txt)}`;
   feed.appendChild(el);
   while(feed.children.length>9)feed.removeChild(feed.firstChild);
 }
@@ -6360,7 +6368,7 @@ function refreshTopbar(){
   document.getElementById('btn-news').classList.toggle('on',!!SAVE.news);
 }
 document.getElementById('btn-music').onclick=()=>musicToggle();
-document.getElementById('btn-news').onclick=()=>{SAVE.news=!SAVE.news;persist();refreshTopbar();renderNews();};
+document.getElementById('btn-news').onclick=()=>{SAVE.news=!SAVE.news;persist();newsTimerSync();refreshTopbar();renderNews();};
 document.getElementById('btn-stream').onclick=()=>{SAVE.streamOn=!SAVE.streamOn;persist();refreshTopbar();
   if(SAVE.streamOn){document.getElementById('chatfeed').innerHTML='';chatReact('idle');}};
 document.getElementById('btn-sound').onclick=()=>{SAVE.sound=!SAVE.sound;persist();refreshTopbar();if(SAVE.sound){actx();beep(600,0.08,'square',0.06);}};
@@ -7463,11 +7471,40 @@ function frontNews(text,key,cd){ if(!SAVE.news)return; const now=performance.now
 // from running — and above all must not stop runLoader() from dismissing the loader.
 try{ for(const k in DOCTRINES)if(SAVE.lvl>=DOCTRINES[k].unlock&&!SAVE.unlocked.includes(k))SAVE.unlocked.push(k); }catch(e){ console.error('unlock',e); }
 // start music on the first real user gesture (browsers block audio before that)
-function _musicKick(){ if(SAVE.music){ musicInit(); try{ if(MUSIC.ctx&&MUSIC.ctx.state==='suspended')MUSIC.ctx.resume(); }catch(e){} if(!MUSIC.running)musicStart(musicContextTheme()); } }
+/* Browsers won't start audio until the user has interacted, so we listen for the first
+   input and unlock the context then. The important part is UNREGISTERING: this runs in
+   the capture phase on every pointerdown and keydown, so leaving it attached taxes every
+   click and keypress for the rest of the session to re-check a thing that can only
+   succeed once. Detach as soon as the context is actually running. */
+function _musicKick(){
+  if(SAVE.music){
+    musicInit();
+    try{ if(MUSIC.ctx&&MUSIC.ctx.state==='suspended')MUSIC.ctx.resume(); }catch(e){}
+    if(!MUSIC.running)musicStart(musicContextTheme());
+  }
+  // Done once the context exists and isn't suspended. If the player has music off we stay
+  // attached, because they may enable it later and still need the unlock gesture.
+  try{ if(MUSIC.ctx&&MUSIC.ctx.state==='running')_musicKickOff(); }catch(e){}
+}
+function _musicKickOff(){
+  window.removeEventListener('pointerdown',_musicKick,true);
+  window.removeEventListener('keydown',_musicKick,true);
+}
 window.addEventListener('pointerdown',_musicKick,true);
 window.addEventListener('keydown',_musicKick,true);
-// world news keeps ticking on the menu / title / war map too (in-battle newsTick adds the rest)
-setInterval(()=>{ if(SAVE.news && (!G || G.over || G.attract)) pushNews(genWorldNews(),'world'); }, 19000);
+/* World news ticks on the menu / title / war map too (in-battle newsTick adds the rest).
+   Started lazily: SAVE.news is off by default (the wire is archived), and an interval that
+   wakes every 19s for a whole session to evaluate a flag that is false is pure battery
+   burn on mobile. The news toggle starts and stops it instead. */
+let newsTimer=null;
+function newsTimerSync(){
+  if(SAVE.news && newsTimer==null){
+    newsTimer=setInterval(()=>{ if(SAVE.news && (!G || G.over || G.attract)) pushNews(genWorldNews(),'world'); },19000);
+  }else if(!SAVE.news && newsTimer!=null){
+    clearInterval(newsTimer); newsTimer=null;
+  }
+}
+newsTimerSync();
 try{ pushNews(genWorldNews(),'world'); pushNews(genWorldNews(),'world'); renderNews(); }catch(e){ console.error('news',e); }
 try{ resize(); }catch(e){ console.error('resize',e); }
 try{ refreshTopbar(); }catch(e){ console.error('topbar',e); }

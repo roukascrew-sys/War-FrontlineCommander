@@ -1,0 +1,56 @@
+name: Regression
+
+# The suite only protects the game if it runs without anyone remembering to run it.
+# Every push and PR that touches the game or the tests gets checked.
+on:
+  push:
+    paths: ['wargame.html', 'index.html', 'tests/**', '.github/workflows/regression.yml']
+  pull_request:
+    paths: ['wargame.html', 'index.html', 'tests/**', '.github/workflows/regression.yml']
+  workflow_dispatch:
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright (chromium only)
+        run: |
+          npm init -y >/dev/null 2>&1 || true
+          npm i -D playwright@latest
+          npx playwright install --with-deps chromium
+
+      - name: Serve the game
+        run: |
+          python3 -m http.server 8080 >/tmp/http.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8080/wargame.html >/dev/null && exit 0
+            sleep 1
+          done
+          echo "server did not come up"; cat /tmp/http.log; exit 1
+
+      - name: Run regression suite
+        run: node tests/regression.js
+        env:
+          BASE_URL: http://localhost:8080/wargame.html
+
+      # Catches the exact class of mistake the allowlist exists to prevent:
+      # an internal document reaching a public release build.
+      - name: Verify the itch.io build ships only the allowlisted files
+        run: |
+          ./build-itch.sh
+          echo "--- files in dist/ ---"
+          ls -1 dist/
+          for f in $(ls -1 dist/ | grep -v '\.zip$'); do
+            case "$f" in
+              index.html|privacy.html|terms.html|robots.txt|sitemap.xml) ;;
+              *) echo "::error::unexpected file in release build: $f"; exit 1 ;;
+            esac
+          done
+          echo "OK — build output contains only expected files"
