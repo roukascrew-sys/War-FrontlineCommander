@@ -691,10 +691,7 @@
   /* three labelled clusters instead of one flat row of 10 same-weight buttons — a cold web
      visitor needs "what can I play" visually separated from "my progress" and "app info",
      even though a warm returning player barely notices the difference either way */
-  .title-grp{margin-top:14px;}
-  .title-grp-lbl{font-size:10px;font-weight:800;letter-spacing:2px;color:var(--faint);
-    text-align:center;margin-bottom:7px;text-transform:uppercase;}
-  .title-btns2{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;}
+  .title-btns2{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;}
   /* two headline mode buttons — each keyed to its own accent */
   .hero-btn{display:flex;align-items:center;gap:14px;padding:16px 26px;border-radius:14px;min-width:250px;
     text-align:left;border:2px solid;transition:.14s;background:#0e1622ee;}
@@ -954,11 +951,11 @@
      ~y80px) and lane 1 (laneY[0]=0.30 of the field) — NOT over the bottom lane, which a
      bottom-anchored version used to sit directly on top of and made the enemy hard to see. */
   #narrator{position:absolute;left:50%;top:84px;transform:translateX(-50%) translateY(-8px);
-    max-width:min(480px,78vw);background:linear-gradient(180deg,#121824ee,#0b0f18ee);border:1px solid var(--line);
-    border-left:3px solid var(--gold);border-radius:8px;padding:7px 14px;opacity:0;pointer-events:none;
-    transition:opacity .2s,transform .2s;z-index:11;font-size:13.5px;line-height:1.4;}
+    max-width:min(380px,66vw);background:linear-gradient(180deg,#121824ee,#0b0f18ee);border:1px solid var(--line);
+    border-left:3px solid var(--gold);border-radius:8px;padding:6px 12px;opacity:0;pointer-events:none;
+    transition:opacity .2s,transform .2s;z-index:11;font-size:12px;line-height:1.4;}
   #narrator.show{opacity:1;transform:translateX(-50%) translateY(0);}
-  #narrator .np{color:var(--gold);font-weight:800;font-size:11px;letter-spacing:1px;margin-right:8px;white-space:nowrap;}
+  #narrator .np{color:var(--gold);font-weight:800;font-size:9.5px;letter-spacing:1px;margin-right:8px;white-space:nowrap;}
   #narrator .nt{color:var(--ink);}
   /* ── rival enemy general subtitle ── */
   #rivalbox{position:absolute;top:54px;left:14px;max-width:250px;background:linear-gradient(180deg,#1c1014ee,#0b0708ee);
@@ -1260,7 +1257,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.15.0</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.15.1</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -1435,30 +1432,17 @@
         <button class="hero-btn play hidden" id="t-redeploy"><span class="hb-ic">↺</span><span class="hb-tx"><b>REDEPLOY</b><small></small></span></button>
         <button class="hero-btn evo" id="t-evo"><span class="hb-ic">🧬</span><span class="hb-tx"><b>EVOLUTION</b><small>Age of War · evolve through 5 ages</small></span></button>
       </div>
-      <div class="title-grp">
-        <div class="title-grp-lbl">More Modes</div>
-        <div class="title-btns2">
-          <button class="t-btn war" id="t-war"><b>🗺 War Mode</b><small>conquer the map</small></button>
-          <button class="t-btn chaos" id="t-chaos"><b>🤪 Chaos Mode</b><small>flip it on in Settings</small></button>
-          <button class="t-btn rivals" id="t-rivals"><b>⚔ Rivals</b><small>a roster that learns you</small></button>
-          <button class="t-btn tut" id="t-tut"><b>🎓 Tutorial</b><small>learn the ropes</small></button>
-        </div>
-      </div>
-      <div class="title-grp">
-        <div class="title-grp-lbl">Your Progress</div>
-        <div class="title-btns2">
-          <button class="t-btn record" id="t-record"><b>🎖 Service Record</b><small>your career &amp; rivals</small></button>
-          <button class="t-btn roadmap" id="t-roadmap"><b>🏆 Roadmap</b><small>rank rewards &amp; unlocks</small></button>
-          <button class="t-btn cosmetics" id="t-cosmetics"><b>🎖 Cosmetics</b><small>equip badge &amp; title</small></button>
-        </div>
-      </div>
-      <div class="title-grp">
-        <div class="title-grp-lbl">Info</div>
-        <div class="title-btns2">
+      <div class="title-btns2">
+        <button class="t-btn war" id="t-war"><b>🗺 War Mode</b><small>conquer the map</small></button>
+        <button class="t-btn chaos" id="t-chaos"><b>🤪 Chaos Mode</b><small>flip it on in Settings</small></button>
+        <button class="t-btn rivals" id="t-rivals"><b>⚔ Rivals</b><small>a roster that learns you</small></button>
+        <button class="t-btn tut" id="t-tut"><b>🎓 Tutorial</b><small>learn the ropes</small></button>
         <button class="t-btn manual" id="t-manual"><b>📖 Field Manual</b><small>how everything works</small></button>
+        <button class="t-btn record" id="t-record"><b>🎖 Service Record</b><small>your career &amp; rivals</small></button>
+        <button class="t-btn roadmap" id="t-roadmap"><b>🏆 Roadmap</b><small>rank rewards &amp; unlocks</small></button>
+        <button class="t-btn cosmetics" id="t-cosmetics"><b>🎖 Cosmetics</b><small>equip badge &amp; title</small></button>
         <button class="t-btn patchnotes" id="t-patchnotes"><b>📋 Patch Notes</b><small>what's new</small></button>
         <button class="t-btn settings" id="t-settings"><b>⚙ Settings</b><small>audio &amp; motion</small></button>
-        </div>
       </div>
       <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span> · <span id="t-ver" style="cursor:pointer;text-decoration:underline dotted;">v1.0.0</span></div>
       <!-- Non-affiliation notice at FIRST CONTACT. It already appeared in the Field Manual and
@@ -2290,13 +2274,17 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.15.0';
+const GAME_VERSION='1.15.1';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.15.1',notes:[
+    'Reverted the title screen\'s 10 secondary buttons back to the original single flat row (the three labelled MORE MODES / YOUR PROGRESS / INFO clusters are gone) — same buttons, same order, same behaviour, just the old layout back.',
+    'Shrunk the war-room narrator subtitle back down to a modest size.',
+  ]},
   {v:'1.15.0',notes:[
     'The tutorial now POINTS at what it is telling you to press — a pulsing ring lands on the Rifleman card, the Tank, the AT team, the strike button, the speed control and the stance bar as each is mentioned. It follows the control if the screen changes size, and never lingers after training ends.',
     'New: every mode now explains itself the first time you can play it. Evolution, Chaos, Rivals and War each get a short briefing — what it is, how it differs, and the one thing that will catch you out — shown once, then filed away.',
