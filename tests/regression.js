@@ -587,6 +587,89 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
     await tctx.close();
   }
 
+  // ══ 14. LAYOUT IS A FUNCTION OF SIZE, NOT OF POINTER TYPE ══
+  // Second defect from the same root: the whole compact layout was gated on
+  // (pointer:coarse). A touchscreen Windows laptop reports pointer:coarse, so a 1920px
+  // machine was locked into the phone layout — icon-only top bar, 40px deploy cards, a
+  // bottom deck packed for a 390px screen. Section 13 could not catch it, because
+  // section 13 only ever ran WITH touch on; the bug was that touch changed anything at all.
+  //
+  // So this section runs every viewport TWICE — once with touch emulation, once without —
+  // and asserts the two render identically. That invariant is the real contract: pointer
+  // type may change tap-target sizes, never layout. Any future rule that moves a box
+  // based on how the user points will fail here.
+  const measureLayout = async (w, h, touch) => {
+    const c = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch });
+    const p = await c.newPage();
+    const errs = []; p.on('pageerror', e => errs.push(e.message));
+    await p.goto(BASE_URL);
+    await p.waitForTimeout(9000);
+    await p.evaluate(() => { const fr = document.getElementById('firstrun'); if (fr) fr.classList.remove('show'); SAVE.seenTut = true; persist(); });
+    await p.evaluate(() => openMenu());
+    await p.waitForTimeout(400);
+    const menuRow = await p.evaluate(() => {
+      const mc = document.querySelector('.menu-cols');
+      const tops = [...mc.querySelectorAll('.mcard')].map(x => Math.round(x.getBoundingClientRect().top));
+      return new Set(tops).size === 1;
+    });
+    await p.evaluate(() => { sel.mode = 'skirmish'; LAUNCH = null; start(); });
+    await p.waitForTimeout(900);
+    const m = await p.evaluate(() => {
+      const bar = document.getElementById('topbar');
+      const btns = [...bar.querySelectorAll('.tb-btn,#playtest-link')];
+      const stream = document.getElementById('btn-stream');
+      const card = document.querySelector('#hotbar .card');
+      const deck = document.getElementById('hbwrap');
+      const qb = document.getElementById('quickbar');
+      const nar = document.getElementById('narrator');
+      const dr = deck ? deck.getBoundingClientRect() : null;
+      return {
+        // >60px means the button is showing its word, not just its emoji
+        topbarWords: stream ? stream.getBoundingClientRect().width > 60 : null,
+        offscreen: btns.filter(b => { const r = b.getBoundingClientRect(); return r.right > innerWidth + 1 || r.left < -1; }).length,
+        cardW: card ? Math.round(card.getBoundingClientRect().width) : null,
+        deckTop: dr ? Math.round(dr.top) : null,
+        deckLeft: dr ? Math.round(dr.left) : null,
+        deckRight: dr ? Math.round(dr.right) : null,
+        qbLeft: qb ? Math.round(qb.getBoundingClientRect().left) : null,
+        // compare the CAP, not the rendered width: rendered size tracks whichever
+        // narration line happens to be on screen and differs between runs.
+        narMaxW: nar ? getComputedStyle(nar).maxWidth : null,
+        laneY: Math.round(innerHeight * 0.70),
+      };
+    });
+    await c.close();
+    return { ...m, menuRow, errs };
+  };
+
+  const LAYOUT_CASES = [
+    { w: 1920, h: 950, label: 'touchscreen laptop', words: true, row: true },
+    { w: 1366, h: 768, label: 'laptop', words: true, row: true },
+    { w: 1024, h: 768, label: 'iPad landscape', words: false, row: true },
+    { w: 390, h: 844, label: 'phone portrait', words: false, row: false },
+  ];
+  for (const lc of LAYOUT_CASES) {
+    const mouse = await measureLayout(lc.w, lc.h, false);
+    const touch = await measureLayout(lc.w, lc.h, true);
+    const keys = ['topbarWords', 'cardW', 'deckTop', 'deckLeft', 'deckRight', 'qbLeft', 'narMaxW', 'menuRow'];
+    const drift = keys.filter(k => mouse[k] !== touch[k]);
+    ok(drift.length === 0,
+      `[layout ${lc.w}x${lc.h} ${lc.label}] touch and mouse render identically` +
+      (drift.length ? ` :: differs on ${drift.map(k => `${k} ${mouse[k]}→${touch[k]}`).join(', ')}` : ''));
+    ok(touch.topbarWords === lc.words,
+      `[layout ${lc.w}x${lc.h}] top bar shows ${lc.words ? 'full labels' : 'icons'} as its width warrants`);
+    ok(touch.menuRow === lc.row,
+      `[layout ${lc.w}x${lc.h}] play screen is ${lc.row ? 'horizontal' : 'stacked'} as its width warrants`);
+    ok(touch.offscreen === 0,
+      `[layout ${lc.w}x${lc.h}] no top-bar button is pushed off the edge (${touch.offscreen} offscreen)`);
+    ok(touch.deckTop !== null && touch.deckTop >= touch.laneY,
+      `[layout ${lc.w}x${lc.h}] deploy deck clears the bottom lane (deck@${touch.deckTop} vs lane@${touch.laneY})`);
+    ok(touch.qbLeft !== null && touch.qbLeft >= 0 && touch.deckLeft >= 0 && touch.deckRight <= lc.w + 1,
+      `[layout ${lc.w}x${lc.h}] deck and specials sit inside the viewport, not clipped off an edge`);
+    ok(touch.errs.length === 0 && mouse.errs.length === 0,
+      `[layout ${lc.w}x${lc.h}] zero page errors ${touch.errs.length ? ':: ' + touch.errs.join(' | ') : ''}`);
+  }
+
   console.log('\n══════════ FRONTLINE COMMANDER — REGRESSION SUITE ══════════');
   out.forEach(o => console.log(o));
   console.log('═══════════════════════════════════════════════════════════');
