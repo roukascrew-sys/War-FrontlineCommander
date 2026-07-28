@@ -524,6 +524,69 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
   ok(oerrs.length === 0, `[onboarding] zero page errors ${oerrs.length ? ':: ' + oerrs.join(' | ') : ''}`);
   await on.close();
 
+  // ══ 13. TOUCH-LAYOUT GEOMETRY ══
+  // This whole block exists because a real defect shipped and 64 checks missed it: the
+  // narrator is top-anchored (top:84px) but three (pointer:coarse) rules also set `bottom`
+  // on it. An absolutely-positioned, auto-height element given BOTH top and bottom stretches
+  // to span the gap — producing a ~600px-tall box down the middle of the battlefield on every
+  // touch device. Every earlier test measured desktop only, where those rules never applied.
+  // The lesson generalised: assert GEOMETRY on touch, not just "it booted".
+  const TOUCH_CASES = [
+    { label: 'touch 1037x882', w: 1037, h: 882, wideEnoughForColumns: true },
+    { label: 'tablet landscape 1194x834', w: 1194, h: 834, wideEnoughForColumns: true },
+    { label: 'phone portrait 390x844', w: 390, h: 844, wideEnoughForColumns: false },
+  ];
+  for (const tc of TOUCH_CASES) {
+    const tctx = await browser.newContext({
+      viewport: { width: tc.w, height: tc.h }, hasTouch: true, isMobile: true,
+    });
+    const tpg = await tctx.newPage();
+    const tperr = []; tpg.on('pageerror', e => tperr.push(e.message));
+    await tpg.goto(BASE_URL);
+    await tpg.waitForTimeout(9000);
+    await tpg.evaluate(() => { const fr = document.getElementById('firstrun'); if (fr) fr.classList.remove('show'); SAVE.seenTut = true; persist(); });
+
+    // menu orientation: cards sharing a top edge means they are side by side
+    await tpg.evaluate(() => openMenu());
+    await tpg.waitForTimeout(500);
+    const mcols = await tpg.evaluate(() => {
+      const mc = document.querySelector('.menu-cols');
+      const tops = [...mc.querySelectorAll('.mcard')].map(c => Math.round(c.getBoundingClientRect().top));
+      return { horizontal: new Set(tops).size === 1, n: tops.length };
+    });
+    if (tc.wideEnoughForColumns) {
+      ok(mcols.horizontal, `[touch ${tc.w}px] play screen keeps the horizontal column layout (${mcols.n} cards)`);
+    } else {
+      ok(!mcols.horizontal, `[touch ${tc.w}px] narrow screen correctly stacks the play screen`);
+    }
+
+    // narrator geometry
+    await tpg.evaluate(() => { sel.mode = 'skirmish'; LAUNCH = null; start(); });
+    await tpg.waitForTimeout(900);
+    await tpg.evaluate(() => { try { narr('battleStart'); } catch (e) {} });
+    await tpg.waitForTimeout(600);
+    // NB: do NOT try to assert this via getComputedStyle().bottom === 'auto'. For an
+    // absolutely-positioned element the computed style returns the USED value, so `bottom`
+    // reports a resolved pixel number even when the stylesheet says auto — the check passes
+    // and fails identically either way. Measure the RESULT instead: a box stretched between
+    // top and bottom is several times taller than its own text.
+    const nb = await tpg.evaluate(() => {
+      const el = document.getElementById('narrator');
+      const r = el.getBoundingClientRect();
+      const cs = getComputedStyle(el);
+      const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      // natural height of the content, independent of how the box is anchored
+      const inner = [...el.children].reduce((m, c) => Math.max(m, c.getBoundingClientRect().bottom), r.top) - r.top;
+      return { h: Math.round(r.height), w: Math.round(r.width), content: Math.round(inner + pad) };
+    });
+    ok(nb.h < 120, `[touch ${tc.w}px] narrator box is a subtitle, not a panel (${nb.h}px tall)`);
+    ok(nb.h <= nb.content + 24,
+      `[touch ${tc.w}px] narrator height tracks its text, i.e. not stretched between top and bottom (${nb.h}px box vs ~${nb.content}px content)`);
+    ok(nb.w <= Math.min(400, tc.w), `[touch ${tc.w}px] narrator width is capped sanely (${nb.w}px)`);
+    ok(tperr.length === 0, `[touch ${tc.w}px] zero page errors ${tperr.length ? ':: ' + tperr.join(' | ') : ''}`);
+    await tctx.close();
+  }
+
   console.log('\n══════════ FRONTLINE COMMANDER — REGRESSION SUITE ══════════');
   out.forEach(o => console.log(o));
   console.log('═══════════════════════════════════════════════════════════');

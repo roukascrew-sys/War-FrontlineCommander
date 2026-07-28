@@ -1172,10 +1172,13 @@
     #chatbox{width:min(46vw,180px);height:140px;left:6px;}
     #chatbox .ch-h{font-size:9px;}
     #chatfeed{font-size:10px;}
-    #narrator{max-width:92vw;font-size:12px;padding:6px 10px;}
+    /* bottom:auto is load-bearing — #narrator is top-anchored, and any rule that also
+       sets `bottom` on it makes an auto-height absolute element stretch to span the two.
+       That is exactly what produced a ~600px-tall narrator box across the field. */
+    #narrator{max-width:min(380px,88vw);font-size:12px;padding:6px 10px;bottom:auto;}
     #narrator .np{font-size:10px;}
     #lanehint{font-size:11px;}
-    #ctrlbar,#votebar,#chatbox,#narrator{bottom:186px;}
+    #ctrlbar,#votebar,#chatbox{bottom:186px;}
     #lanehint{bottom:192px;}
     #tutbox{max-width:92vw;font-size:12px;}
 
@@ -1185,8 +1188,11 @@
     .screen h1{font-size:24px!important;margin-top:6px;}
     .screen .tag{font-size:12.5px;margin-bottom:14px;}
     .back-btn{top:8px;left:8px;font-size:12px;padding:6px 10px;}
-    .menu-cols{flex-direction:column;gap:14px;width:100%;max-width:420px;}
-    .mcard{width:100%;}
+    /* NOTE: menu column-stacking deliberately does NOT live here — see the
+       (pointer:coarse) and (max-width:900px) block below. Stacking the play screen
+       into one narrow column on ANY touch device turned a tablet in landscape and a
+       touchscreen laptop — both 1000px+ wide, with ample room for the three columns —
+       into a tall single-file scroll. Touch says how you point, not how wide you are. */
     .prog-row{flex-wrap:wrap;gap:8px;font-size:12px;justify-content:center;}
     .opt{gap:8px;}
     .opt>button,.opt>.optbtn{min-height:44px;}
@@ -1197,11 +1203,18 @@
     #loader .ld-logo,#loader h1{font-size:26px;}
     .ld-tip{font-size:11.5px;max-width:88vw;}
   }
+  /* Narrow touch screens (phones, small tablets in portrait) genuinely cannot fit the
+     three-column play screen, so they stack. Gated on WIDTH as well as touch, so wide
+     touch devices keep the horizontal layout they have the room for. */
+  @media (pointer:coarse) and (max-width:900px){
+    .menu-cols{flex-direction:column;gap:14px;width:100%;max-width:420px;}
+    .mcard{width:100%;}
+  }
   /* portrait touch: category tabs may wrap to two rows, so the deck is a touch
      taller — keep the floating panels clear of it */
   @media (pointer:coarse) and (orientation:portrait){
     #basebars .bhp .track{width:28vw;}
-    #ctrlbar,#votebar,#chatbox,#narrator{bottom:190px;}
+    #ctrlbar,#votebar,#chatbox{bottom:190px;}
     #lanehint{bottom:196px;}
   }
   /* landscape touch: tabs fit one row, so the deck is shorter and floating
@@ -1211,7 +1224,7 @@
     #hbwrap{bottom:4px;}
     .card{width:48px;height:58px;}
     .card .glyph{font-size:18px;}
-    #ctrlbar,#votebar,#narrator{bottom:164px;}
+    #ctrlbar,#votebar{bottom:164px;}
     #chatbox{bottom:164px;height:116px;}
     #lanehint{bottom:170px;}
     #cpbar{width:min(30vw,200px);}
@@ -1257,7 +1270,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.15.1</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.15.2</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -2274,13 +2287,17 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.15.1';
+const GAME_VERSION='1.15.2';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.15.2',notes:[
+    'FIXED: on touchscreens the narrator subtitle rendered as a giant panel roughly 600 pixels tall down the middle of the battlefield, covering the fight. It was pinned to both the top and the bottom of the screen at once, so it stretched to fill the gap between them.',
+    'FIXED: the play screen stacked into one narrow vertical column on ANY touchscreen — including tablets in landscape and touchscreen laptops that have ample room for the normal three-column layout. It now only stacks when the screen is genuinely narrow.',
+  ]},
   {v:'1.15.1',notes:[
     'Reverted the title screen\'s 10 secondary buttons back to the original single flat row (the three labelled MORE MODES / YOUR PROGRESS / INFO clusters are gone) — same buttons, same order, same behaviour, just the old layout back.',
     'Shrunk the war-room narrator subtitle back down to a modest size.',
