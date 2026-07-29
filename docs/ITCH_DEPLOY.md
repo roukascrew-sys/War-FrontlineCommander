@@ -1,5 +1,7 @@
 # Deploying FRONTLINE COMMANDER to itch.io
 
+**Live page:** https://zeusrgr747.itch.io/frontline-commander
+
 ## The one rule
 
 **Never upload a zip of the repository.** itch.io serves every file in the zip at a
