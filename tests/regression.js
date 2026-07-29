@@ -745,6 +745,23 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
     ok(a11y.focusCss, '[a11y] :focus-visible ring exists for keyboard users');
     ok(!!a11y.canvasLabel, '[a11y] battlefield canvas has an aria-label');
 
+    // The overlay key-guard must not cost the battle its hotkeys. This is the regression
+    // risk the guard itself introduces: block one key too many and SPACE stops pausing, or
+    // the number keys stop selecting units, in the one screen where they matter most.
+    await hp.evaluate(() => { showTitle(); leaveTitle(); LAUNCH = null; sel.mode = 'skirmish'; start(); });
+    await hp.waitForTimeout(1200);
+    const keys = await hp.evaluate(async () => {
+      const press = k => window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
+      const openDuringBattle = (document.querySelector('.screen:not(.hidden)') || {}).id || null;
+      press(' '); const paused = G.paused;
+      press(' '); const resumed = !G.paused;
+      press('1'); const card = G.selCard;
+      return { openDuringBattle, paused, resumed, card };
+    });
+    ok(keys.openDuringBattle === null, '[keys] a live battle has no .screen overlay open, so the key-guard never engages there');
+    ok(keys.paused && keys.resumed, '[keys] SPACE still pauses AND unpauses inside a battle');
+    ok(!!keys.card, `[keys] number hotkeys still select units in a battle (picked "${keys.card}")`);
+
     ok(herr.length === 0, `[v1.16.0] zero page errors ${herr.length ? ':: ' + herr.join(' | ') : ''}`);
     await hctx.close();
   }

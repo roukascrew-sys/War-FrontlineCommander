@@ -6824,11 +6824,13 @@ function loop(now){
 /* ═══ INPUT ═══ */
 window.addEventListener('keydown',e=>{
   if(!G){return;}
-  // Accessibility: while a full-screen overlay (Settings, Manual, menu, …) covers a live
-  // battle, keys belong to that overlay — space must scroll it, not secretly toggle pause
-  // underneath. The pause screen itself is the one exception: space there = unpause.
+  // Accessibility: while a full-screen overlay (Settings, Manual, menu, title, results, …)
+  // covers a live battle, keys belong to that overlay — space must scroll it, not secretly
+  // toggle pause underneath. #pauseScreen is the one exception: space there = unpause.
+  // NB the battle HUD is #hud, which is NOT a .screen, so an actual battle matches nothing
+  // here and keeps every hotkey — verified by the pause/hotkey checks in the suite.
   const openScr=document.querySelector('.screen:not(.hidden)');
-  if(openScr && openScr.id!=='pauseScreen' && openScr.id!=='hud')return;
+  if(openScr && openScr.id!=='pauseScreen')return;
   const k=e.key.toLowerCase();
   if(k===' '){e.preventDefault();togglePause();return;}
   if(G.over||G.paused)return;
