@@ -23,7 +23,8 @@
 <meta name="twitter:description" content="Three lanes. Real counters. Free in your browser — no download, no signup.">
 <meta name="twitter:image" content="og-image.png">
 <meta name="robots" content="index,follow">
-<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'; connect-src 'self' https://*.goatcounter.com; img-src 'self' data: https://*.goatcounter.com; object-src 'none'; base-uri 'none'">
+<!-- default-src 'none': every capability is denied unless granted below (matches the game's CSP) -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.goatcounter.com; img-src 'self' data: https://*.goatcounter.com; media-src 'none'; worker-src 'none'; frame-src 'none'; form-action 'none'; object-src 'none'; base-uri 'none'">
 <!-- No-cache: some phones/mail clients aggressively cache a same-named local HTML file and keep
      serving it after we've pushed a newer build. This costs nothing on a real server (revalidated
      every load) and helps rule out "why am I seeing an old version" reports. -->

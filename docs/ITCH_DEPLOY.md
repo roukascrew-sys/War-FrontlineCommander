@@ -24,7 +24,8 @@ added to the repo can never silently end up in a release.
 ```
 
 The script also refuses to build if anything credential-shaped appears in the
-output, and warns if the legal `[INSERT …]` placeholders are still unfilled.
+output, and warns if any bracketed legal placeholder ever reappears in
+`privacy.html`/`terms.html` (they are currently all filled in).
 
 ## What ships
 
@@ -76,9 +77,11 @@ play-count numbers.
 
 ## Before charging money
 
-- Fill in the `[INSERT CONTACT EMAIL]` and `[INSERT JURISDICTION]` placeholders in
-  `privacy.html` and `terms.html`. The build script warns while they remain.
-- Have both documents reviewed by a lawyer (see the warning box at the bottom of each).
+- `privacy.html` and `terms.html` are complete (contact email + State of Indiana
+  governing law are filled in; the build script would warn if any bracketed
+  placeholder ever reappears).
+- Have both documents reviewed by an Indiana attorney (see the warning box at the
+  bottom of each) — strongly recommended before the first paid transaction.
 - itch.io has its own terms and privacy policy that apply to their side of the
   transaction; they are not a substitute for yours.
 

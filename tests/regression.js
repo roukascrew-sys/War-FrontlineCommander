@@ -670,6 +670,85 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
       `[layout ${lc.w}x${lc.h}] zero page errors ${touch.errs.length ? ':: ' + touch.errs.join(' | ') : ''}`);
   }
 
+  // ══ 15. v1.16.0 — PRE-RELEASE HARDENING + ACCESSIBILITY + TITLE ══
+  {
+    const hctx = await browser.newContext({ viewport: { width: 1366, height: 620 } });
+    const hp = await hctx.newPage();
+    const herr = []; hp.on('pageerror', e => herr.push(e.message));
+    await hp.goto(BASE_URL);
+    await hp.waitForTimeout(9000);
+    await hp.evaluate(() => { const fr = document.getElementById('firstrun'); if (fr) fr.classList.remove('show'); SAVE.seenTut = true; persist(); });
+
+    // CSP is default-deny and grants exactly the known endpoints
+    const csp = await hp.evaluate(() => document.querySelector('meta[http-equiv="Content-Security-Policy"]').content);
+    ok(csp.includes("default-src 'none'"), '[csp] default-src is \'none\' — unlisted capabilities are denied, not defaulted open');
+    ok(csp.includes('wss://irc-ws.chat.twitch.tv') && csp.includes('goatcounter.com'), '[csp] connect-src grants exactly the two known endpoints');
+    ok(!csp.includes('frame-ancestors'), '[csp] no frame-ancestors — itch.io must be able to embed the game (and meta ignores it anyway)');
+
+    // title screen: three labelled clusters + the daily card with streak
+    const title = await hp.evaluate(() => ({
+      groups: [...document.querySelectorAll('.title-grp-lbl')].map(e => e.textContent),
+      daily: !!document.getElementById('t-daily'),
+      dailySub: document.getElementById('t-daily-sub').textContent,
+      streakTxt: document.getElementById('t-daily-streak').textContent,
+    }));
+    ok(title.groups.join('|') === 'More Modes|Your Progress|Info', `[title] three labelled clusters restored (${title.groups.join(', ')})`);
+    ok(title.daily && title.dailySub.length > 3, `[title] daily challenge card present with today's twist ("${title.dailySub}")`);
+    ok(/🔥|Start a streak/.test(title.streakTxt), `[title] streak state shown on the daily card ("${title.streakTxt}")`);
+
+    // tall screens scroll to the very top (the flex-centering clip bug)
+    const scrollTop = await hp.evaluate(() => {
+      const scr = document.getElementById('title'); scr.scrollTop = 0;
+      const first = [...scr.children].find(c => c.offsetHeight > 0 && !c.classList.contains('back-btn'));
+      return { overflow: scr.scrollHeight > scr.clientHeight, top: Math.round(first.getBoundingClientRect().top) };
+    });
+    ok(scrollTop.overflow && scrollTop.top >= 0,
+      `[scroll] an overflowing screen can be scrolled fully to its top (first element at y=${scrollTop.top})`);
+
+    // colourblind palette: whitelisted, swaps canvas team colours + hp ramp
+    const pal = await hp.evaluate(() => {
+      const out = {};
+      SAVE.cbPalette = 'orange'; applyCbPalette();
+      out.orange = TEAM.R.main; out.hpCb = hpRampCol(0.9);
+      SAVE.cbPalette = '"><img onerror=x>'; applyCbPalette();
+      out.hostileAttr = document.body.getAttribute('data-cb'); out.hostileTeam = TEAM.R.main;
+      SAVE.cbPalette = 'default'; applyCbPalette(); out.back = TEAM.R.main; out.hpDef = hpRampCol(0.9);
+      return out;
+    });
+    ok(pal.orange === '#ff9d1f' && pal.back === '#ff5a4a', '[a11y] colourblind palette swaps every canvas team colour through TEAM');
+    ok(pal.hpCb === '#59c3ff' && pal.hpDef === '#3fd07a', '[a11y] unit HP bars switch to a luminance ramp in colourblind modes');
+    ok(pal.hostileAttr === 'default' && pal.hostileTeam === '#ff5a4a', '[a11y] a hostile hand-edited palette value is whitelisted back to default');
+
+    // reduce-motion honoured for fresh saves
+    const rm = await hp.evaluate(() => { localStorage.removeItem(SAVE_KEY); return true; });
+    ok(rm, '[a11y] (setup) save cleared for fresh-boot reduced-motion check');
+    const rmctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' });
+    const rmp = await rmctx.newPage();
+    await rmp.goto(BASE_URL); await rmp.waitForTimeout(9000);
+    const rmv = await rmp.evaluate(() => SAVE.reduceMotion);
+    ok(rmv === true, '[a11y] a fresh save on a prefers-reduced-motion device starts with Reduce Motion ON');
+    await rmctx.close();
+
+    // beacon rate limiter: 300 events cannot become 300 requests
+    const flood = await hp.evaluate(() => {
+      const before = _gcBucket.total;
+      for (let i = 0; i < 300; i++) gcEvent('flood');
+      return { sent: _gcBucket.total - before, cap: _gcBucket.total <= 200 };
+    });
+    ok(flood.sent <= 20 && flood.cap, `[rate-limit] 300 beacon calls collapse to ${flood.sent} sends, session cap holds`);
+
+    // focus ring + canvas ARIA
+    const a11y = await hp.evaluate(() => ({
+      focusCss: [...document.styleSheets].some(s => { try { return [...s.cssRules].some(r => r.selectorText && r.selectorText.includes(':focus-visible')); } catch (e) { return false; } }),
+      canvasLabel: document.getElementById('game').getAttribute('aria-label'),
+    }));
+    ok(a11y.focusCss, '[a11y] :focus-visible ring exists for keyboard users');
+    ok(!!a11y.canvasLabel, '[a11y] battlefield canvas has an aria-label');
+
+    ok(herr.length === 0, `[v1.16.0] zero page errors ${herr.length ? ':: ' + herr.join(' | ') : ''}`);
+    await hctx.close();
+  }
+
   console.log('\n══════════ FRONTLINE COMMANDER — REGRESSION SUITE ══════════');
   out.forEach(o => console.log(o));
   console.log('═══════════════════════════════════════════════════════════');

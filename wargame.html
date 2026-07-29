@@ -38,7 +38,15 @@
      every edit to this file and would silently break the game the first time someone forgot to.
      'unsafe-inline' still blocks an injected <script src="https://evil.example/x.js">, which is
      the realistic bar for a page with no server and no injection sink found in security review. -->
-<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'; connect-src 'self' wss://irc-ws.chat.twitch.tv https://*.goatcounter.com; img-src 'self' data: https://*.goatcounter.com; object-src 'none'; base-uri 'none'">
+<!-- CSP hardening note: default-src 'none' means every capability must be granted explicitly —
+     a directive we forget is DENIED, not silently allowed (without default-src, unlisted
+     directives like frame-src/worker-src/form-action fall back to allow-everything).
+     The full allowlist is exactly the game's four outbound touchpoints, all hardcoded constants:
+       GoatCounter beacon (img-src) · Twitch IRC (connect-src) · privacy/terms links · feedback form (navigations, not governed by CSP).
+     'unsafe-inline' stays by architecture: the whole game is one self-contained file (see PHASES.md).
+     frame-ancestors is deliberately ABSENT: it is ignored in <meta> CSP anyway, and itch.io must
+     be able to embed this game in its player iframe. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' wss://irc-ws.chat.twitch.tv https://*.goatcounter.com; img-src 'self' data: https://*.goatcounter.com; media-src 'none'; worker-src 'none'; frame-src 'none'; form-action 'none'; object-src 'none'; base-uri 'none'">
 <!-- No-cache: some phones/mail clients aggressively cache a same-named local HTML file and keep
      serving it after we've pushed a newer build — this rules that out as a source of "old version" reports. -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -447,8 +455,17 @@
   @media (max-width:820px){ body.news-open #manual,body.news-open #settings,body.news-open #warmap,body.news-open #menu{padding-right:180px;} }
 
   /* ── SCREENS (menu/results) ── */
+  /* Scroll-safe centering: justify-content:center on a scrollable flex column CLIPS the top —
+     overflowing content extends above the scroll origin where no scrollbar can reach it
+     (Settings could not be scrolled to its top). The auto-margin pseudo pair centers short
+     content identically, but collapses to zero when content overflows, so tall screens
+     top-align and every pixel is scrollable. */
   .screen{position:absolute;inset:0;z-index:30;background:radial-gradient(ellipse at 50% 30%,#141c2b,#080b11);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow-y:auto;}
+    display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:24px;overflow-y:auto;}
+  .screen::before{content:"";flex:0 0 auto;margin-top:auto;}
+  .screen::after{content:"";flex:0 0 auto;margin-bottom:auto;}
+  /* keyboard accessibility: a visible ring on keyboard focus only (mouse/touch stay clean) */
+  :focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:4px;}
   .screen h1{font-size:40px;font-weight:900;letter-spacing:2px;margin-bottom:4px;text-align:center;}
   .screen h1 b{color:var(--gold);}
   .screen .tag{color:var(--dim);font-size:14px;margin-bottom:22px;text-align:center;max-width:560px;line-height:1.5;}
@@ -691,7 +708,22 @@
   /* three labelled clusters instead of one flat row of 10 same-weight buttons — a cold web
      visitor needs "what can I play" visually separated from "my progress" and "app info",
      even though a warm returning player barely notices the difference either way */
-  .title-btns2{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;}
+  .title-grp{margin-top:14px;}
+  .title-grp-lbl{font-size:10px;font-weight:800;letter-spacing:2px;color:var(--faint);
+    text-align:center;margin-bottom:7px;text-transform:uppercase;}
+  .title-btns2{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;}
+  /* daily challenge card on the home screen — today's twist + the live streak, one tap to play */
+  .daily-card{display:flex;align-items:center;gap:13px;margin-top:14px;padding:11px 18px;
+    border:1.5px solid var(--cyan);border-radius:12px;background:#0c1520ee;min-width:250px;max-width:min(560px,92vw);
+    text-align:left;transition:.14s;}
+  .daily-card:hover{box-shadow:0 0 18px #5ff0e044;transform:translateY(-1px);}
+  .daily-card .dc-ic{font-size:22px;}
+  .daily-card .dc-tx b{display:block;font-size:13px;color:var(--cyan);letter-spacing:.5px;}
+  .daily-card .dc-tx small{display:block;font-size:10.5px;color:var(--dim);margin-top:2px;line-height:1.35;}
+  .daily-card .dc-streak{margin-left:auto;font-size:12px;font-weight:800;color:var(--gold);
+    background:#141b28;border:1px solid var(--line);border-radius:9px;padding:5px 10px;white-space:nowrap;}
+  .daily-card.done{border-color:var(--good);}
+  .daily-card.done .dc-tx b{color:var(--good);}
   /* two headline mode buttons — each keyed to its own accent */
   .hero-btn{display:flex;align-items:center;gap:14px;padding:16px 26px;border-radius:14px;min-width:250px;
     text-align:left;border:2px solid;transition:.14s;background:#0e1622ee;}
@@ -1319,7 +1351,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.15.3</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.16.0</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -1343,7 +1375,7 @@
 </div>
 
 <div id="stage">
-  <canvas id="game"></canvas>
+  <canvas id="game" role="img" aria-label="Battlefield — three lanes of combat between your forces on the left and the enemy on the right"></canvas>
   <div id="fx-flash"></div>
   <div id="glitch-fx"></div>
 
@@ -1494,17 +1526,35 @@
         <button class="hero-btn play hidden" id="t-redeploy"><span class="hb-ic">↺</span><span class="hb-tx"><b>REDEPLOY</b><small></small></span></button>
         <button class="hero-btn evo" id="t-evo"><span class="hb-ic">🧬</span><span class="hb-tx"><b>EVOLUTION</b><small>Age of War · evolve through 5 ages</small></span></button>
       </div>
-      <div class="title-btns2">
-        <button class="t-btn war" id="t-war"><b>🗺 War Mode</b><small>conquer the map</small></button>
-        <button class="t-btn chaos" id="t-chaos"><b>🤪 Chaos Mode</b><small>flip it on in Settings</small></button>
-        <button class="t-btn rivals" id="t-rivals"><b>⚔ Rivals</b><small>a roster that learns you</small></button>
-        <button class="t-btn tut" id="t-tut"><b>🎓 Tutorial</b><small>learn the ropes</small></button>
-        <button class="t-btn manual" id="t-manual"><b>📖 Field Manual</b><small>how everything works</small></button>
-        <button class="t-btn record" id="t-record"><b>🎖 Service Record</b><small>your career &amp; rivals</small></button>
-        <button class="t-btn roadmap" id="t-roadmap"><b>🏆 Roadmap</b><small>rank rewards &amp; unlocks</small></button>
-        <button class="t-btn cosmetics" id="t-cosmetics"><b>🎖 Cosmetics</b><small>equip badge &amp; title</small></button>
-        <button class="t-btn patchnotes" id="t-patchnotes"><b>📋 Patch Notes</b><small>what's new</small></button>
-        <button class="t-btn settings" id="t-settings"><b>⚙ Settings</b><small>audio &amp; motion</small></button>
+      <button class="daily-card" id="t-daily" aria-label="Play today's daily challenge">
+        <span class="dc-ic">🎯</span>
+        <span class="dc-tx"><b>DAILY CHALLENGE</b><small id="t-daily-sub">a fresh twist every day</small></span>
+        <span class="dc-streak" id="t-daily-streak">🔥 0</span>
+      </button>
+      <div class="title-grp">
+        <div class="title-grp-lbl">More Modes</div>
+        <div class="title-btns2">
+          <button class="t-btn war" id="t-war"><b>🗺 War Mode</b><small>conquer the map</small></button>
+          <button class="t-btn chaos" id="t-chaos"><b>🤪 Chaos Mode</b><small>flip it on in Settings</small></button>
+          <button class="t-btn rivals" id="t-rivals"><b>⚔ Rivals</b><small>a roster that learns you</small></button>
+          <button class="t-btn tut" id="t-tut"><b>🎓 Tutorial</b><small>learn the ropes</small></button>
+        </div>
+      </div>
+      <div class="title-grp">
+        <div class="title-grp-lbl">Your Progress</div>
+        <div class="title-btns2">
+          <button class="t-btn record" id="t-record"><b>🎖 Service Record</b><small>your career &amp; rivals</small></button>
+          <button class="t-btn roadmap" id="t-roadmap"><b>🏆 Roadmap</b><small>rank rewards &amp; unlocks</small></button>
+          <button class="t-btn cosmetics" id="t-cosmetics"><b>🎖 Cosmetics</b><small>equip badge &amp; title</small></button>
+        </div>
+      </div>
+      <div class="title-grp">
+        <div class="title-grp-lbl">Info</div>
+        <div class="title-btns2">
+          <button class="t-btn manual" id="t-manual"><b>📖 Field Manual</b><small>how everything works</small></button>
+          <button class="t-btn patchnotes" id="t-patchnotes"><b>📋 Patch Notes</b><small>what's new</small></button>
+          <button class="t-btn settings" id="t-settings"><b>⚙ Settings</b><small>audio · motion · colour</small></button>
+        </div>
       </div>
       <div class="title-foot"><span id="t-rank">Rank 1</span> · <span id="t-best">Best 0</span> · <span id="t-ver" style="cursor:pointer;text-decoration:underline dotted;">v1.0.0</span></div>
       <!-- Non-affiliation notice at FIRST CONTACT. It already appeared in the Field Manual and
@@ -1650,7 +1700,7 @@
       <div class="fr-p" style="text-align:center">Connect a Twitch channel and your <b>real viewers</b> steer the <b>enemy</b>. This reads your actual live chat over Twitch's anonymous IRC — read-only, no login, no password, no token. While you're connected the demo crowd is switched off, so every name in the feed is a real person in your chat.</div>
       <div style="margin-bottom:12px">
         <label style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px">TWITCH CHANNEL</label>
-        <input id="tw-channel" type="text" placeholder="e.g. your_channel_name" autocomplete="off" maxlength="25" pattern="[a-zA-Z0-9_]+" title="Letters, numbers and underscores only" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-family:var(--mono);font-size:13px">
+        <input id="tw-channel" type="text" aria-label="Twitch channel name" placeholder="e.g. your_channel_name" autocomplete="off" maxlength="25" pattern="[a-zA-Z0-9_]+" title="Letters, numbers and underscores only" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-family:var(--mono);font-size:13px">
       </div>
       <div id="tw-status" style="font-size:12px;color:var(--dim);min-height:18px;margin-bottom:10px">Not connected — the demo crowd is standing in until you connect a real channel.</div>
       <div style="font-size:11.5px;color:var(--faint);line-height:1.6;margin-bottom:14px">
@@ -1877,6 +1927,7 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   history:[],career:{battles:0,wins:0,losses:0,kills:0,deploys:0,cpSpent:0,strikes:0,units:{},dmgDealt:0,timePlayed:0},
   rivalry:{}, equippedBadge:null, equippedTitle:null, rivals:{}, rivalsBadgeEarned:false,
   weatherVis:true, voidSlayerEarned:false, debugUnlockAll:false,
+  cbPalette:'default',   // team-colour accessibility palette: 'default' | 'orange' | 'hico' (whitelisted in applyCbPalette)
   // ── time trials + the hidden "Glitch Front" secret level ──
   timeTrials:{},          // mission id -> best clear time (s); presence means that trial is PASSED
   secretUnlocked:false,   // true once every campaign time trial has been beaten
@@ -1888,6 +1939,33 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   dailyLastWin:null,      // 'YYYY-MM-DD' of the most recent daily win (drives streak continuity)
   chatPos:null};          // {x,y} of the dragged stream-chat panel; null = default corner
 let SAVE=load();
+
+/* ── COLOURBLIND-ACCESSIBLE TEAM PALETTES (ADA pass) ─────────────────────────
+   Friend-vs-foe is THE core read of the battlefield, and it must never hang on a
+   single hue axis a player might not have. Every canvas site that colours by side
+   goes through TEAM (never a bare hex), so one setting recolours the whole war:
+     default  blue vs red      — the classic look
+     orange   blue vs orange   — protanopia/deuteranopia-safe (red-green blindness);
+                                 blue-orange is the strongest surviving axis
+     hico     blue vs yellow   — high contrast; also separates cleanly for tritanopia
+                                 because it splits on LUMINANCE, not just hue
+   Unit mini-HP bars have the same problem (green→amber→red ramp), so hpRampCol()
+   swaps to a luminance ramp (bright blue → yellow → white) in either CB mode. ── */
+const TEAM_PALETTES={
+  default:{B:{main:'#4aa8ff',glow:'#7fd0ff',pale:'#bfe4ff'},R:{main:'#ff5a4a',glow:'#ff9080',pale:'#ffc0b0',deep:'#d63a2a'}},
+  orange:{B:{main:'#4aa8ff',glow:'#7fd0ff',pale:'#bfe4ff'},R:{main:'#ff9d1f',glow:'#ffc060',pale:'#ffe0a8',deep:'#d67d0f'}},
+  hico:  {B:{main:'#63c1ff',glow:'#a8dcff',pale:'#e0f2ff'},R:{main:'#ffe14a',glow:'#fff08a',pale:'#fff8c8',deep:'#d6b520'}},
+};
+let TEAM=TEAM_PALETTES.default;
+function applyCbPalette(){
+  TEAM=TEAM_PALETTES[SAVE.cbPalette]||TEAM_PALETTES.default;   // whitelist — a hand-edited save falls back safely
+  try{ document.body.setAttribute('data-cb',TEAM_PALETTES[SAVE.cbPalette]?SAVE.cbPalette:'default'); }catch(e){}
+}
+applyCbPalette();
+function hpRampCol(p){
+  if(SAVE.cbPalette&&SAVE.cbPalette!=='default') return p>0.5?'#59c3ff':p>0.25?'#ffe14a':'#ffffff';
+  return p>0.5?'#3fd07a':p>0.25?'#ffab40':'#ff5a4a';
+}
 SAVE.news=false; // live news wire archived for now (kept in code, off by default)
 /* ── Is localStorage actually usable HERE? ────────────────────────────────────
    Not a theoretical question. The game is heading for itch.io, where HTML5 games
@@ -1948,7 +2026,12 @@ function load(){
     const s=JSON.parse(localStorage.getItem(SAVE_KEY));
     if(s&&typeof s==='object')return sanitizeSave(s);
   }catch(e){}
-  return JSON.parse(JSON.stringify(DEFAULT_SAVE));
+  const fresh=JSON.parse(JSON.stringify(DEFAULT_SAVE));
+  // ADA/accessibility: a brand-new player who has asked their OS for reduced motion gets it
+  // without having to find the setting. Only on a FRESH save — an explicit in-game choice
+  // afterwards always wins and is never overridden.
+  try{ if(matchMedia('(prefers-reduced-motion: reduce)').matches)fresh.reduceMotion=true; }catch(e){}
+  return fresh;
 }
 /* persist() still never throws — a failed save must not take the battle down with
    it — but a save that silently stopped working now flips STORAGE_OK so the player
@@ -2336,13 +2419,22 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.15.3';
+const GAME_VERSION='1.16.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.16.0',notes:[
+    'NEW: colourblind team palettes in Settings → Accessibility. Blue/Orange for red-green colour blindness, Blue/Yellow for maximum contrast — every friend-or-foe colour on the battlefield and unit health bars switch together.',
+    'NEW: the Daily Challenge now lives on the title screen — today\'s twist, its difficulty and your 🔥 streak, one tap to play.',
+    'The title screen\'s secondary buttons are grouped back into their three labelled clusters: MORE MODES, YOUR PROGRESS and INFO.',
+    'FIXED: Settings (and any other tall screen) can now always be scrolled all the way to the top — tall content used to get clipped above the reachable scroll area.',
+    'FIXED: while Settings or the Field Manual is open over a battle, keys now go to that screen — space scrolls instead of secretly pausing the fight underneath.',
+    'Accessibility: new players whose device asks for reduced motion get it automatically; keyboard focus is now clearly visible on every control; the battlefield canvas describes itself to screen readers.',
+    'Security hardening for the itch.io release: the page\'s Content-Security-Policy now denies every capability by default and grants back exactly the four things the game uses; the analytics beacon is rate-limited (burst 20, 10/min, 200/session hard cap) so the game can never be turned into a traffic cannon; live-chat reconnects are cooled down to one attempt per 3 seconds.',
+  ]},
   {v:'1.15.3',notes:[
     'FIXED: touchscreen laptops and desktops were stuck in the phone layout. The compact interface used to switch on whenever the device reported a touchscreen — which a 1920-pixel Windows laptop does — so a full-size machine got icon-only buttons, tiny deploy cards and a bottom bar packed for a 390-pixel phone. The layout now switches on the size of the screen, which is what it was always meant to measure.',
     'The top bar keeps its full button labels on any screen wide enough to fit them, condenses them on mid-size screens, and only falls back to icons when the words genuinely will not fit.',
@@ -3993,7 +4085,7 @@ function turretTick(dt){
       const ang=Math.atan2(best.y-t.y,best.x-t.x),spd=560;
       G.projs.push({x:t.x,y:t.y,tx:best.x,ty:best.y,tgt:best,side:t.side,dmg:t.dmg,dmgType:t.dmgType,
         vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,arc:false,splash:0,src:t,life:0.6,age:0,
-        col:t.side==='B'?'#bfe4ff':'#ffc0b0'});
+        col:t.side==='B'?TEAM.B.pale:TEAM.R.pale});
       SND.shot();
     }
   }
@@ -4043,7 +4135,7 @@ function drawSpawners(){
     // hp bar — only shown once it's taken damage, so an untouched factory stays uncluttered
     if(s.hp<s.maxHp){ const bw=w+4,hpp=Math.max(0,s.hp/s.maxHp);
       cx.fillStyle='#000a';cx.fillRect(s.x-bw/2,by-9,bw,3);
-      cx.fillStyle=hpp>0.5?'#3fd07a':hpp>0.25?'#ffab40':'#ff5a4a';cx.fillRect(s.x-bw/2,by-9,bw*hpp,3); }
+      cx.fillStyle=hpRampCol(hpp);cx.fillRect(s.x-bw/2,by-9,bw*hpp,3); }
   }
 }
 
@@ -4139,7 +4231,7 @@ function addCombo(){
   chatReact('combo',G.combo);
 }
 function explode(x,y,rad,side,n){
-  G.rings.push({x,y,r:2,max:rad,life:0.4,age:0,col:side==='B'?'#7fd0ff':'#ffb080'});
+  G.rings.push({x,y,r:2,max:rad,life:0.4,age:0,col:side==='B'?TEAM.B.glow:TEAM.R.glow});
   for(let i=0;i<(n||14);i++){const a=rnd(0,6.28),s=rnd(30,150);
     G.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rnd(0.25,0.6),age:0,
       col:pick(['#ffce5a','#ff9f40','#ff5a4a','#fff']),sz:rnd(1.4,3.4)});}
@@ -4163,7 +4255,7 @@ function fire(u,tgt){
   // ambush — guerrilla units land a heavy opening blow
   if(!u.firedOnce){ if(u.ambush&&u.ambush>1)dmg*=u.ambush; u.firedOnce=true; }
   if(u.kamikaze){ u.diving=tgt; return; }
-  const col=u.side==='B'?'#bfe4ff':'#ffc0b0';
+  const col=u.side==='B'?TEAM.B.pale:TEAM.R.pale;
   if(u.arc){
     // ARTILLERY — a real lobbed shell that reliably lands where it's aimed, then splashes.
     const shots=u.salvo>0?u.salvo:1;
@@ -4864,7 +4956,7 @@ function drawPowerFX(){
 function drawTurrets(){
   if(!G.turrets)return;
   for(const t of G.turrets){
-    const col=t.side==='B'?'#4aa8ff':'#ff5a4a', dir=t.side==='B'?1:-1;
+    const col=t.side==='B'?TEAM.B.main:TEAM.R.main, dir=t.side==='B'?1:-1;
     cx.fillStyle='rgba(0,0,0,0.3)';cx.beginPath();cx.ellipse(t.x,t.y+8,10,3,0,0,6.28);cx.fill();
     cx.strokeStyle=shade(col,1.3);cx.lineWidth=3;cx.beginPath();cx.moveTo(t.x,t.y);cx.lineTo(t.x+dir*13,t.y);cx.stroke();
     cx.beginPath();cx.arc(t.x,t.y,9,0,6.28);cx.fillStyle=shade(col,0.95);cx.fill();
@@ -4920,11 +5012,11 @@ function drawHQ(x,side,col){
   bgr.addColorStop(0,shade(col,0.7));bgr.addColorStop(0.5,shade(col,1.15));bgr.addColorStop(1,shade(col,0.7));
   cx.fillStyle=bgr;cx.fillRect(bx,cy-h/2,w,h);
   // crenellations
-  cx.fillStyle=side==='B'?'#4aa8ff':'#ff5a4a';
+  cx.fillStyle=side==='B'?TEAM.B.main:TEAM.R.main;
   for(let i=0;i<5;i++){const yy=cy-h/2+i*(h/5)+3;cx.fillRect(side==='B'?x+18:x-w-4,yy,6,h/5-6);}
   // antenna
   cx.strokeStyle=shade(col,1.3);cx.lineWidth=2;cx.beginPath();cx.moveTo(bx+w/2,cy-h/2);cx.lineTo(bx+w/2,cy-h/2-14);cx.stroke();
-  cx.fillStyle=side==='B'?'#7fd0ff':'#ff9080';cx.beginPath();cx.arc(bx+w/2,cy-h/2-14,2.5,0,6.28);cx.fill();
+  cx.fillStyle=side==='B'?TEAM.B.glow:TEAM.R.glow;cx.beginPath();cx.arc(bx+w/2,cy-h/2-14,2.5,0,6.28);cx.fill();
   // flag glyph
   cx.font='bold 20px var(--mono)';cx.textAlign='center';cx.fillStyle='#fff';
   cx.fillText(side==='B'?'★':'☭',side==='B'?x+8:x-w+14,cy);
@@ -5100,7 +5192,7 @@ function drawUnit(u){
   // hp bar
   if(u.hp<u.maxHp){const bw=u.r*2.4,hpp=u.hp/u.maxHp;
     cx.fillStyle='#000a';cx.fillRect(x-bw/2,y-u.r-7,bw,3);
-    cx.fillStyle=hpp>0.5?'#3fd07a':hpp>0.25?'#ffab40':'#ff5a4a';cx.fillRect(x-bw/2,y-u.r-7,bw*hpp,3);}
+    cx.fillStyle=hpRampCol(hpp);cx.fillRect(x-bw/2,y-u.r-7,bw*hpp,3);}
   // suppression / rout marker
   if((u.sup||0)>0.35){cx.fillStyle=(u.sup>=0.9)?'rgba(255,90,74,0.95)':'rgba(255,171,64,0.9)';
     cx.font='bold 11px var(--mono)';cx.textAlign='center';cx.fillText(u.sup>=0.9?'!!':'!',x,y-u.r-9);}
@@ -5119,7 +5211,7 @@ function drawProj(p){
   if(p.arc){
     // target marker on the ground where the shell will land
     const t=Math.min(1,p.arcT/p.arcDur);
-    cx.globalAlpha=0.5*(1-t)+0.2; cx.strokeStyle=p.side==='B'?'#7fd0ff':'#ff9080'; cx.lineWidth=1;
+    cx.globalAlpha=0.5*(1-t)+0.2; cx.strokeStyle=p.side==='B'?TEAM.B.glow:TEAM.R.glow; cx.lineWidth=1;
     cx.beginPath();cx.arc(p.ix,p.iy,p.splash*(0.4+0.6*t),0,6.28);cx.stroke();
     cx.globalAlpha=1;
     // the shell + short trail
@@ -5152,9 +5244,9 @@ function drawDrops(){
     }
     // parachute + swinging crate
     const sway=Math.sin(d.sway)*6;
-    cx.strokeStyle=d.side==='B'?'#bfe4ff':'#ffb080';cx.lineWidth=1.2;cx.globalAlpha=0.9;
+    cx.strokeStyle=d.side==='B'?TEAM.B.pale:TEAM.R.glow;cx.lineWidth=1.2;cx.globalAlpha=0.9;
     cx.beginPath();cx.moveTo(d.x-9,d.y-12);cx.lineTo(d.x+sway,d.y+6);cx.moveTo(d.x+9,d.y-12);cx.lineTo(d.x+sway,d.y+6);cx.stroke();
-    cx.fillStyle=d.side==='B'?'#3fd07a':'#d63a2a';
+    cx.fillStyle=d.side==='B'?'#3fd07a':TEAM.R.deep;
     cx.beginPath();cx.arc(d.x,d.y-14,10,Math.PI,0);cx.fill();      // canopy
     cx.font='16px var(--font)';cx.textAlign='center';cx.fillText('📦',d.x+sway,d.y+9);
     cx.globalAlpha=1;
@@ -5720,6 +5812,11 @@ function chatConnect(channel){
   // Twitch channel names are letters/numbers/underscore only — reject anything else so a
   // crafted value (e.g. embedded CRLF) can't inject extra lines into the raw IRC socket.
   if(!/^[a-zA-Z0-9_]{1,25}$/.test(channel)){chatStatus('Channel names can only use letters, numbers and underscores.','var(--warn)');return;}
+  // connection-attempt cooldown: mashing Connect must not open a firehose of sockets at
+  // Twitch — one attempt every 3s is plenty for a human and useless for a bot loop
+  const now=Date.now();
+  if(chatConnect._last && now-chatConnect._last<3000){chatStatus('Hold on — trying again in a moment…','var(--warn)');return;}
+  chatConnect._last=now;
   chatDisconnect();
   CHATLINK.channel=channel; CHATLINK.connecting=true;
   chatStatus('Connecting to #'+channel+' …');
@@ -6727,6 +6824,11 @@ function loop(now){
 /* ═══ INPUT ═══ */
 window.addEventListener('keydown',e=>{
   if(!G){return;}
+  // Accessibility: while a full-screen overlay (Settings, Manual, menu, …) covers a live
+  // battle, keys belong to that overlay — space must scroll it, not secretly toggle pause
+  // underneath. The pause screen itself is the one exception: space there = unpause.
+  const openScr=document.querySelector('.screen:not(.hidden)');
+  if(openScr && openScr.id!=='pauseScreen' && openScr.id!=='hud')return;
   const k=e.key.toLowerCase();
   if(k===' '){e.preventDefault();togglePause();return;}
   if(G.over||G.paused)return;
@@ -7165,8 +7267,17 @@ function renderSettings(){
     settingRow('Sound Effects','Blips, booms and impacts',`<button id="set-sound" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.sound)}</button>`)+
     settingRow('Narrator','The Iron Marshal war-room voice',`<button id="set-narr" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.narrator)}</button>`)+
     settingRow('Battlefield Ambience','Distant gunfire & artillery rumble under the fight',`<button id="set-amb" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.ambient)}</button>`)+
-    settingRow('Reduce Motion','Calm screen shake, flashes & parallax',`<button id="set-motion" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.reduceMotion)}</button>`)+
     settingRow('Visibility Modifiers','Fog & rain hide distant terrain around your own forces; storms briefly black out the whole field',`<button id="set-vismod" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.weatherVis)}</button>`)+
+    `<div style="font-size:13px;font-weight:800;color:var(--cyan);letter-spacing:.5px;margin:10px 2px -2px">♿ ACCESSIBILITY</div>`+
+    settingRow('Reduce Motion','Calm screen shake, flashes & parallax. Turned on automatically for new players whose device asks for reduced motion.',`<button id="set-motion" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.reduceMotion)}</button>`)+
+    `<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;">
+      <div style="font-size:13px;font-weight:700;color:var(--ink)">Team Colours</div>
+      <div style="font-size:11px;color:var(--dim);margin:2px 0 8px;line-height:1.5">Friend-vs-foe should never depend on telling red from green. <b>Blue / Orange</b> is built for red-green colour blindness (protanopia &amp; deuteranopia); <b>Blue / Yellow</b> splits the armies by brightness as well as hue, for tritanopia and anyone who just wants maximum contrast. Both also switch unit health bars to a brightness ramp.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" role="radiogroup" aria-label="Team colours">
+        ${[['default','Blue / Red','#4aa8ff','#ff5a4a'],['orange','Blue / Orange','#4aa8ff','#ff9d1f'],['hico','Blue / Yellow','#63c1ff','#ffe14a']].map(([k,lbl,c1,c2])=>
+          `<button class="cb-opt" data-cb-opt="${k}" role="radio" aria-checked="${(SAVE.cbPalette||'default')===k}" style="display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid ${(SAVE.cbPalette||'default')===k?'var(--gold)':'var(--line)'};background:${(SAVE.cbPalette||'default')===k?'#1a2233':'var(--panel2)'};color:var(--ink)">
+            <span aria-hidden="true" style="width:11px;height:11px;border-radius:50%;background:${c1};display:inline-block"></span><span aria-hidden="true" style="width:11px;height:11px;border-radius:50%;background:${c2};display:inline-block"></span>${lbl}</button>`).join('')}
+      </div></div>`+
     `<div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.5px;margin:6px 2px -2px">🎲 RANDOM EVENTS</div>`+
     settingRow('Random Events','Master switch for battlefield surprises',`<button id="set-rev" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.randomEvents)}</button>`)+
     settingRow('· Supply Drops','Air-dropped crates grant CP or reinforcements',`<button id="set-ev-supply" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evSupply)}</button>`)+
@@ -7193,6 +7304,8 @@ function renderSettings(){
   bind('set-amb',()=>{ SAVE.ambient=!SAVE.ambient; persist(); if(!SAVE.ambient)ambientStop(); });
   bind('set-motion',()=>{ SAVE.reduceMotion=!SAVE.reduceMotion; persist(); });
   bind('set-vismod',()=>{ SAVE.weatherVis=!SAVE.weatherVis; persist(); });
+  document.querySelectorAll('.cb-opt').forEach(b=>{ b.onclick=()=>{
+    SAVE.cbPalette=b.getAttribute('data-cb-opt'); applyCbPalette(); persist(); renderSettings(); }; });
   bind('set-rev',()=>{ SAVE.randomEvents=!SAVE.randomEvents; persist(); });
   bind('set-ev-supply',()=>{ SAVE.evSupply=!SAVE.evSupply; persist(); });
   bind('set-ev-voice',()=>{ SAVE.evVoice=!SAVE.evVoice; persist(); });
@@ -7464,6 +7577,7 @@ document.getElementById('t-war').onclick=()=>{
   leaveTitle();showWarMap();
 };
 document.getElementById('t-tut').onclick=()=>{leaveTitle();launchTutorial();};
+document.getElementById('t-daily').onclick=()=>{leaveTitle();launchDaily();};
 document.getElementById('menu-back').onclick=()=>showTitle();
 // Chaos Mode is a Settings toggle, not its own screen — this title-screen entry exists purely
 // so players actually discover it exists (several playtesters never found it buried in Settings).
@@ -7621,12 +7735,28 @@ function showTitle(){
   buildTitleDiff();
   refreshTitleLocks();
   refreshRedeploy();
+  refreshTitleDaily();
   startAttract();
   musicStart('menu');
   if(!SAVE.seenTut){ setTimeout(()=>{ if(!document.getElementById('title').classList.contains('hidden'))
     document.getElementById('firstrun').classList.add('show'); },600); }
 }
 function leaveTitle(){ document.getElementById('title').classList.add('hidden'); G=null; window.G=null; }
+// the home-screen daily card: today's twist + the live streak, refreshed every time the
+// title shows so a midnight rollover or a just-finished clear is always reflected
+function refreshTitleDaily(){
+  const card=document.getElementById('t-daily'); if(!card)return;
+  try{
+    const dk=todayKey(), d=generateDaily(dk);
+    const wonToday=SAVE.dailyLastWin===dk;
+    const streak=SAVE.dailyStreak||0;
+    card.classList.toggle('done',wonToday);
+    document.getElementById('t-daily-sub').textContent=
+      d.mut.name+' · '+DIFFS[d.diff].name+(wonToday?' · ✔ cleared today':'');
+    document.getElementById('t-daily-streak').textContent=
+      streak>0?('🔥 '+streak+(wonToday?'':' — play to keep it')):'Start a streak';
+  }catch(e){ document.getElementById('t-daily-sub').textContent='a fresh twist every day'; }
+}
 // global difficulty chips on the title — set sel.diff so Play, Evolution & the rest all honour it
 // shared "fun" difficulty chip builder — used by both the title screen and the
 // skirmish menu so picking a tier looks and feels identical in both places.
@@ -8030,8 +8160,21 @@ try{ runLoader(); }catch(e){ console.error('runLoader',e); _forceLoaderGone(); t
    (no trailing slash, no /count). Leave it '' to keep analytics off. */
 const ANALYTICS_SITE = 'https://zeusrgr.goatcounter.com'; // GoatCounter site — image-pixel beacon (see note above), not the external count.js
 function gcConfigured(){ return typeof ANALYTICS_SITE==='string' && /^https:\/\/[a-z0-9-]+\.goatcounter\.com/i.test(ANALYTICS_SITE); }
+/* Beacon rate limiter — the game must not be usable as a traffic cannon, and a runaway
+   loop must not be able to burn analytics quota or the player's data plan. Token bucket:
+   burst of 20, refills at 10/min, and a hard 200-beacon ceiling per page load no matter
+   how long the session runs. Drops are silent — analytics never gets to matter that much. */
+const _gcBucket={tokens:20,last:Date.now(),total:0};
+function gcAllow(){
+  const now=Date.now();
+  _gcBucket.tokens=Math.min(20,_gcBucket.tokens+(now-_gcBucket.last)*(10/60000));
+  _gcBucket.last=now;
+  if(_gcBucket.total>=200||_gcBucket.tokens<1)return false;
+  _gcBucket.tokens--; _gcBucket.total++; return true;
+}
 function gcSend(path,title,isEvent){
   if(!gcConfigured())return;
+  if(!gcAllow())return;
   try{
     const base=ANALYTICS_SITE.replace(/\/+$/,'')+'/count';
     const q='?p='+encodeURIComponent(path||location.pathname||'/')
