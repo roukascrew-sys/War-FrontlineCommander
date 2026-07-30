@@ -766,6 +766,140 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
     await hctx.close();
   }
 
+  // ══ 16. v1.16.1 — NARRATOR CUTOFF, DUPLICATE TUTORIAL TEXT, ICON CLARITY, FRIEND-OR-FOE ══
+  {
+    // 16a. narrator/tutorial: a fake speechSynthesis with a scripted per-clause delay proves the
+    // step-advance now WAITS for speech to finish instead of narrStop()-ing it mid-sentence, and
+    // that the tutorial box + narrator subtitle never show the same line at the same time.
+    const nctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await nctx.addInitScript(() => {
+      let cancelled = false;
+      window.__spoken = [];
+      const fake = {
+        speaking: false,
+        speak(u) {
+          cancelled = false; this.speaking = true;
+          window.__spoken.push({ text: u.text, cancelledMidway: false });
+          const rec = window.__spoken[window.__spoken.length - 1];
+          setTimeout(() => { this.speaking = false; if (cancelled) { rec.cancelledMidway = true; return; } try { u.onend && u.onend(); } catch (e) {} }, 250);
+        },
+        cancel() { cancelled = true; this.speaking = false; },
+        getVoices() { return []; }, onvoiceschanged: null,
+      };
+      Object.defineProperty(window, 'speechSynthesis', { value: fake, configurable: true, writable: true });
+    });
+    const np = await nctx.newPage();
+    const nerr = []; np.on('pageerror', e => nerr.push(e.message));
+    await np.goto(BASE_URL); await np.waitForTimeout(9000);
+    await np.evaluate(() => { const fr = document.getElementById('firstrun'); if (fr) fr.classList.remove('show'); SAVE.seenTut = false; SAVE.narrator = true; persist(); });
+    await np.evaluate(() => { LAUNCH = { type: 'tutorial' }; start(); tutStart(); });
+    await np.waitForTimeout(300);
+    const noDup = await np.evaluate(() => ({
+      tutboxShown: document.getElementById('tutbox').classList.contains('show'),
+      narratorShown: document.getElementById('narrator').classList.contains('show'),
+    }));
+    ok(noDup.tutboxShown && !noDup.narratorShown, '[narrator] tutorial shows the training box only, not a duplicate narrator subtitle for the same line');
+    // adversarial fast player: satisfy every cond-based step's condition the instant it appears
+    let sawDup = false;
+    const deadline = Date.now() + 30000;
+    while (Date.now() < deadline) {
+      await np.waitForTimeout(120);
+      const st = await np.evaluate(() => {
+        if (!G || G.tutDone) return { step: -1 };
+        if (G.tutStep === 2) G.selCard = 'rifle';
+        if (G.tutStep === 3) G.deploys = Math.max(G.deploys || 0, 1);
+        if (G.tutStep === 4) G.units.push({ alive: true, side: 'B', key: 'tank' });
+        if (G.tutStep === 5) G.kills = Math.max(G.kills || 0, 1);
+        if (G.tutStep === 7) G.strikeUsedCount = Math.max(G.strikeUsedCount || 0, 1);
+        return { step: G.tutStep, narratorShown: document.getElementById('narrator').classList.contains('show') };
+      });
+      if (st.narratorShown) sawDup = true;
+      if (st.step === -1) break;
+    }
+    ok(!sawDup, '[narrator] narrator subtitle never appears mid-tutorial under an adversarial fast player');
+    const spoken = await np.evaluate(() => window.__spoken.map(s => s.cancelledMidway));
+    ok(spoken.length > 10 && spoken.every(c => !c), `[narrator] zero of ${spoken.length} spoken lines were cut off mid-sentence, even when the player raced every step`);
+    ok(nerr.length === 0, `[narrator] zero page errors ${nerr.length ? ':: ' + nerr.join(' | ') : ''}`);
+    await nctx.close();
+  }
+
+  {
+    // 16b. hotbar icons: every UNITS glyph is a distinct, real pictograph — the old abstract-shape
+    // set (▲⊕◼▣⊞⊗ etc) is asserted absent so a future edit can't silently reintroduce it.
+    const ictx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const ip = await ictx.newPage();
+    const ierr = []; ip.on('pageerror', e => ierr.push(e.message));
+    await ip.goto(BASE_URL); await ip.waitForTimeout(9000);
+    const glyphs = await ip.evaluate(() => Object.values(UNITS).filter(u => u.cat !== undefined).map(u => u.glyph));
+    const OLD_ABSTRACT = ['▲', '⊕', '◼', '▣', '⊞', '⊗', '⬡', '⬟', '✛', '▤', '◈', '➤', '⁂'];
+    ok(!glyphs.some(g => OLD_ABSTRACT.includes(g)), '[icons] no unit uses the old abstract-shape glyph set');
+    ok(new Set(glyphs).size === glyphs.length, `[icons] all ${glyphs.length} unit glyphs are unique — no two cards share an icon`);
+    ok(ierr.length === 0, `[icons] zero page errors ${ierr.length ? ':: ' + ierr.join(' | ') : ''}`);
+    await ictx.close();
+  }
+
+  {
+    // 16c. friend-or-foe: pixel-sample the rendered canvas at the team marker (ground) and IFF
+    // wedge (air) for a friendly and an enemy unit of the SAME type, and assert the colours
+    // actually differ on screen — not just that the drawing code looks right.
+    const fctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
+    const fp = await fctx.newPage();
+    const ferr = []; fp.on('pageerror', e => ferr.push(e.message));
+    await fp.goto(BASE_URL); await fp.waitForTimeout(9000);
+    const iff = await fp.evaluate(() => {
+      const fr = document.getElementById('firstrun'); if (fr) fr.classList.remove('show'); SAVE.seenTut = true; persist();
+      showTitle(); leaveTitle(); LAUNCH = null; sel.mode = 'skirmish'; start();
+      G.prep = 0;
+      spawn('B', 'rifle', 1, 300); spawn('R', 'rifle', 1, 1000);
+      spawn('B', 'heli', 2, 300); spawn('R', 'heli', 2, 1000);
+      for (const u of G.units) u.spotted = true;
+      draw();
+      const ctx = cv.getContext('2d'); const t = ctx.getTransform();
+      const px1 = (wx, wy) => { const d = ctx.getImageData(Math.round(wx * t.a), Math.round(wy * t.d), 1, 1).data; return { r: d[0], g: d[1], b: d[2] }; };
+      const units = G.units.filter(u => u.key === 'rifle' || u.key === 'heli');
+      const bRifle = units.find(u => u.side === 'B' && u.key === 'rifle'), rRifle = units.find(u => u.side === 'R' && u.key === 'rifle');
+      const bHeli = units.find(u => u.side === 'B' && u.key === 'heli'), rHeli = units.find(u => u.side === 'R' && u.key === 'heli');
+      // disc edge, offset past the narrow infantry silhouette
+      const discBest = (u, signs) => { let best = null; for (const s of signs) { const c = px1(u.x + s, u.y + u.r * 0.6); if (!best || Math.abs(c.r - c.b) > Math.abs(best.r - best.b)) best = c; } return best; };
+      const wedge = (u) => px1(u.x, u.y - 16 - u.r - 9);
+      return { bRifle: discBest(bRifle, [6, 7, 8]), rRifle: discBest(rRifle, [-6, -7, -8]), bHeli: wedge(bHeli), rHeli: wedge(rHeli) };
+    });
+    const blue = (px) => px.b > px.r, red = (px) => px.r > px.b;
+    ok(blue(iff.bRifle), '[friend-or-foe] friendly ground unit marker reads blue-dominant');
+    ok(red(iff.rRifle), '[friend-or-foe] enemy ground unit marker reads red-dominant');
+    ok(blue(iff.bHeli), '[friend-or-foe] friendly aircraft IFF wedge reads blue-dominant');
+    ok(red(iff.rHeli), '[friend-or-foe] enemy aircraft IFF wedge reads red-dominant');
+    ok(ferr.length === 0, `[friend-or-foe] zero page errors ${ferr.length ? ':: ' + ferr.join(' | ') : ''}`);
+    await fctx.close();
+  }
+
+  {
+    // 16d. unit visual scale: render size grows (base bump, then Big Units) while the real
+    // gameplay/collision radius never moves — the whole point of keeping them separate.
+    const sctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const sp = await sctx.newPage();
+    const serr = []; sp.on('pageerror', e => serr.push(e.message));
+    await sp.goto(BASE_URL); await sp.waitForTimeout(9000);
+    const scale = await sp.evaluate(() => {
+      const fr = document.getElementById('firstrun'); if (fr) fr.classList.remove('show'); SAVE.seenTut = true; persist();
+      showTitle(); leaveTitle(); LAUNCH = null; sel.mode = 'skirmish'; start();
+      spawn('B', 'tank', 1, 500);
+      const u = G.units.find(x => x.key === 'tank');
+      const rBefore = u.r, vrDefault = unitVisualR(u);
+      SAVE.bigUnits = true;
+      const vrBig = unitVisualR(u);
+      const rAfterBig = u.r;
+      SAVE.bigUnits = false;
+      return { rBefore, rAfterBig, vrDefault, vrBig, base: BASE_VUNIT_SCALE, bigMul: BIG_UNITS_SCALE };
+    });
+    ok(scale.rBefore === scale.rAfterBig, '[unit-scale] gameplay radius (u.r) is untouched by the Big Units setting');
+    ok(scale.vrDefault > scale.rBefore, `[unit-scale] default render size is modestly larger than gameplay radius (${scale.vrDefault.toFixed(1)} vs ${scale.rBefore})`);
+    ok(scale.vrDefault < scale.rBefore * 1.3, '[unit-scale] default bump stays subtle (under 1.3x), not drastic');
+    ok(scale.vrBig > scale.vrDefault * 1.5, `[unit-scale] Big Units mode is dramatically larger than the default (${scale.vrBig.toFixed(1)} vs ${scale.vrDefault.toFixed(1)})`);
+    ok(serr.length === 0, `[unit-scale] zero page errors ${serr.length ? ':: ' + serr.join(' | ') : ''}`);
+    await sctx.close();
+  }
+
   console.log('\n══════════ FRONTLINE COMMANDER — REGRESSION SUITE ══════════');
   out.forEach(o => console.log(o));
   console.log('═══════════════════════════════════════════════════════════');

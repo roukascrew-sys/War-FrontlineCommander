@@ -262,9 +262,13 @@
   #hbtabs{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;pointer-events:auto;}
   /* Colour-coded tech tabs — each category owns a hue that matches the units inside it, so the
      tech tree reads at a glance instead of every tab looking identical. --tc is set per tab. */
-  .hbtab{padding:5px 11px;border:1px solid var(--tc,var(--line));border-radius:7px;background:#0b0f18d8;
-    font-size:10.5px;font-weight:800;letter-spacing:.6px;color:var(--tc,var(--dim));text-transform:uppercase;transition:.1s;
-    box-shadow:inset 0 -2px 0 -1px var(--tc,transparent);}
+  /* Resting tabs used to lean on border colour + tiny text alone to say "these four are
+     different" — easy to miss before you've ever clicked one. A permanent soft glow in the
+     tab's own identity colour (not just on hover) reads as four distinct coloured zones at a
+     glance, which is the whole point of colour-coding them in the first place. */
+  .hbtab{padding:5px 11px;border:1.5px solid var(--tc,var(--line));border-radius:7px;background:#0b0f18d8;
+    font-size:11px;font-weight:800;letter-spacing:.6px;color:var(--tc,var(--dim));text-transform:uppercase;transition:.1s;
+    box-shadow:inset 0 -2px 0 -1px var(--tc,transparent),0 0 7px -3px var(--tc,transparent);}
   .hbtab:hover{color:var(--ink);border-color:var(--tc,var(--blue));transform:translateY(-1px);
     box-shadow:inset 0 -2px 0 -1px var(--tc,transparent),0 0 10px -2px var(--tc,transparent);}
   .hbtab:active{transform:translateY(0) scale(0.95);}
@@ -1351,7 +1355,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.16.0</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.16.1</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -1928,6 +1932,7 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   rivalry:{}, equippedBadge:null, equippedTitle:null, rivals:{}, rivalsBadgeEarned:false,
   weatherVis:true, voidSlayerEarned:false, debugUnlockAll:false,
   cbPalette:'default',   // team-colour accessibility palette: 'default' | 'orange' | 'hico' (whitelisted in applyCbPalette)
+  bigUnits:false,        // accessibility/fun: render units much larger — visual only, see unitVisualR()
   // ── time trials + the hidden "Glitch Front" secret level ──
   timeTrials:{},          // mission id -> best clear time (s); presence means that trial is PASSED
   secretUnlocked:false,   // true once every campaign time trial has been beaten
@@ -2196,43 +2201,52 @@ const DOCTRINES={
 
 /* ── UNIT TYPES ── */
 // cat: which doctrine cost/dmg perk applies. cd = deploy cooldown (s).
+/* Glyphs are literal pictographs, not abstract math symbols (▲⊕◼ etc, the pre-v1.16.1 set) — a
+   player scanning the hotbar should be able to tell a tank from an AT team without reading the
+   8px name underneath. Where no single emoji IS the real vehicle (no Unicode tank exists), the
+   pick leans on an established gaming shorthand instead (🛡 = "tank/heavy armour role") rather
+   than a shape that means nothing. Every glyph in this object is unique — no two units share one,
+   so the icon alone is still enough to tell two cards apart at a glance. Note: full-colour emoji
+   ignore the CSS `color:` the hotbar card sets from u.col below — that's fine, they bring their
+   own colour, which reads clearer than a tinted symbol ever did. u.col itself is unchanged and
+   still drives the actual battlefield sprite, AAR bars and Field Manual accents. */
 const UNITS={
-  rifle:{name:'Rifleman',glyph:'▲',cat:'inf',cost:20,cd:0.6,hp:34,dmg:5,rof:0.55,rng:70,spd:34,col:'#8fd0ff',
+  rifle:{name:'Rifleman',glyph:'🪖',cat:'inf',cost:20,cd:0.6,hp:34,dmg:5,rof:0.55,rng:70,spd:34,col:'#8fd0ff',
     aa:false,splash:0,r:7,vsAir:2.4,desc:'cheap line infantry'},
-  atgm:{name:'AT Team',glyph:'⊕',cat:'inf',cost:38,cd:1.4,hp:26,dmg:22,rof:1.7,rng:120,spd:26,col:'#b0e0ff',
+  atgm:{name:'AT Team',glyph:'🚀',cat:'inf',cost:38,cd:1.4,hp:26,dmg:22,rof:1.7,rng:120,spd:26,col:'#b0e0ff',
     aa:false,splash:0,r:7,vsArmor:3.0,desc:'kills armour, weak vs infantry'},
-  tank:{name:'Tank',glyph:'◼',cat:'veh',cost:70,cd:2.2,hp:180,dmg:26,rof:1.3,rng:100,spd:24,col:'#ffb347',
+  tank:{name:'Tank',glyph:'🛡',cat:'veh',cost:70,cd:2.2,hp:180,dmg:26,rof:1.3,rng:100,spd:24,col:'#ffb347',
     aa:false,splash:14,r:12,armor:true,desc:'armoured breakthrough'},
-  ifv:{name:'IFV',glyph:'▣',cat:'veh',cost:48,cd:1.5,hp:96,dmg:16,rof:0.7,rng:90,spd:30,col:'#ffc766',
+  ifv:{name:'IFV',glyph:'🚙',cat:'veh',cost:48,cd:1.5,hp:96,dmg:16,rof:0.7,rng:90,spd:30,col:'#ffc766',
     aa:false,splash:6,r:10,armor:true,desc:'fast, shreds infantry'},
-  arty:{name:'Artillery',glyph:'⊞',cat:'arty',cost:60,cd:2.6,hp:60,dmg:34,rof:2.4,rng:230,spd:12,col:'#ff9f7f',
+  arty:{name:'Artillery',glyph:'🎆',cat:'arty',cost:60,cd:2.6,hp:60,dmg:34,rof:2.4,rng:230,spd:12,col:'#ff9f7f',
     aa:false,splash:26,r:11,arc:true,desc:'long-range area fire'},
-  aa:{name:'AA Vehicle',glyph:'⊗',cat:'veh',cost:44,cd:1.8,hp:80,dmg:30,rof:0.9,rng:150,spd:26,col:'#7fffaa',
+  aa:{name:'AA Vehicle',glyph:'🚨',cat:'veh',cost:44,cd:1.8,hp:80,dmg:30,rof:0.9,rng:150,spd:26,col:'#7fffaa',
     aa:true,onlyAir:true,splash:0,r:10,desc:'shreds aircraft, useless vs ground'},
-  heli:{name:'Attack Heli',glyph:'⬡',cat:'air',cost:80,cd:2.6,hp:70,dmg:22,rof:0.8,rng:120,spd:44,col:'#d49bff',
+  heli:{name:'Attack Heli',glyph:'🚁',cat:'air',cost:80,cd:2.6,hp:70,dmg:22,rof:0.8,rng:120,spd:44,col:'#d49bff',
     aa:false,flies:true,splash:8,r:11,vsArmor:2.2,desc:'flies over, hits armour'},
-  drone:{name:'Kamikaze Drone',glyph:'⬟',cat:'dro',cost:11,cd:0.45,hp:11,dmg:38,rof:99,rng:50,spd:62,col:'#ffdf7f',
+  drone:{name:'Kamikaze Drone',glyph:'💣',cat:'dro',cost:11,cd:0.45,hp:11,dmg:38,rof:99,rng:50,spd:62,col:'#ffdf7f',
     aa:false,flies:true,lowAir:true,splash:9,r:8,kamikaze:true,vsArmor:2.5,desc:'dirt-cheap one-shot diver — swarm them, but EW & rapid fire shred them'},
   // ── Phase 1 additions ──
-  sniper:{name:'Sniper',glyph:'✛',cat:'inf',cost:40,cd:1.6,hp:18,dmg:34,rof:2.4,rng:210,spd:20,col:'#c9e0ff',
+  sniper:{name:'Sniper',glyph:'🎯',cat:'inf',cost:40,cd:1.6,hp:18,dmg:34,rof:2.4,rng:210,spd:20,col:'#c9e0ff',
     aa:false,splash:0,r:6,vsArmor:0.35,precise:true,desc:'long-range, shreds infantry, useless vs armour'},
   medic:{name:'Medic',glyph:'✚',cat:'inf',cost:42,cd:2.2,hp:44,dmg:0,rof:99,rng:0,spd:26,col:'#9fffce',
     aa:false,splash:0,r:8,heal:9,healR:66,support:true,desc:'heals & patches nearby troops — no weapon'},
-  mlrs:{name:'Rocket Arty',glyph:'▤',cat:'arty',cost:82,cd:3.6,hp:52,dmg:20,rof:3.0,rng:270,spd:9,col:'#ff8f6f',
+  mlrs:{name:'Rocket Arty',glyph:'🧨',cat:'arty',cost:82,cd:3.6,hp:52,dmg:20,rof:3.0,rng:270,spd:9,col:'#ff8f6f',
     aa:false,splash:30,r:11,arc:true,salvo:4,desc:'devastating rocket salvo, very fragile'},
-  jammer:{name:'EW Jammer',glyph:'◈',cat:'veh',cost:52,cd:2.8,hp:74,dmg:0,rof:99,rng:0,spd:20,col:'#b0a0ff',
+  jammer:{name:'EW Jammer',glyph:'📵',cat:'veh',cost:52,cd:2.8,hp:74,dmg:0,rof:99,rng:0,spd:20,col:'#b0a0ff',
     aa:false,splash:0,r:10,jam:0.55,jamR:135,antiDrone:true,support:true,desc:'suppresses enemy fire in a radius & fries drones — no weapon'},
   // ── air-power tier: a strafing gunship and the fighter that hard-counters it ──
-  interceptor:{name:'Interceptor',glyph:'➤',cat:'air',cost:70,cd:1.0,hp:150,dmg:26,rof:0.55,rng:150,spd:66,col:'#7fd0ff',
+  interceptor:{name:'Interceptor',glyph:'🛩',cat:'air',cost:70,cd:1.0,hp:150,dmg:26,rof:0.55,rng:150,spd:66,col:'#7fd0ff',
     aa:false,flies:true,orbit:true,splash:0,r:9,vsAir:3,desc:'flies a wide combat air patrol over the middle, downing any aircraft it passes — a lasting air shield'},
   gunship:{name:'Gunship',glyph:'✈',cat:'air',cost:165,cd:0.55,hp:230,dmg:15,rof:0.55,rng:210,spd:22,col:'#ff7f50',
     aa:false,flies:true,gunship:true,splash:8,r:15,desc:'loiters mid-field and strafes all three lanes — needs interceptor cover'},
   // close-quarters DOT specialist — dangerous to close with, brutal once it does
-  flame:{name:'Flame Trooper',glyph:'♨',cat:'inf',cost:34,cd:1.2,hp:30,dmg:8,rof:0.9,rng:34,spd:22,col:'#ff7a3c',
+  flame:{name:'Flame Trooper',glyph:'🔥',cat:'inf',cost:34,cd:1.2,hp:30,dmg:8,rof:0.9,rng:34,spd:22,col:'#ff7a3c',
     aa:false,splash:0,r:7,burnDps:9,burnDur:3.5,desc:'very short range but sets targets ablaze — brutal vs infantry, weak vs armour'},
-  // ⁂ SECRET UNLOCK — the Drone Swarm. One deploy releases a whole cloud of kamikaze micro-drones.
+  // ☄ SECRET UNLOCK — the Drone Swarm. One deploy releases a whole cloud of kamikaze micro-drones.
   // Earned by clearing the hidden Glitch Front. cost covers the ENTIRE swarm (swarmN drones).
-  swarm:{name:'Drone Swarm',glyph:'⁂',cat:'dro',cost:66,cd:6,hp:9,dmg:16,rof:99,rng:46,spd:66,col:'#a0ffe0',
+  swarm:{name:'Drone Swarm',glyph:'☄',cat:'dro',cost:66,cd:6,hp:9,dmg:16,rof:99,rng:46,spd:66,col:'#a0ffe0',
     aa:false,flies:true,lowAir:true,splash:6,r:6,kamikaze:true,vsArmor:2.2,swarmN:5,
     desc:'SECRET UNLOCK — deploys a cloud of kamikaze micro-drones in one go; drowns armour, but EW & rapid fire shred them'},
   // 🕵 mythic rare-event boss — never in the hotbar, only ever appears via triggerVoidRift()
@@ -2419,13 +2433,21 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.16.0';
+const GAME_VERSION='1.16.1';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.16.1',notes:[
+    'FIXED: the war-room narrator could get cut off mid-sentence — most noticeably in the tutorial, where a fast player finishing a step (picking a card, deploying) before the Marshal finished the previous line would chop it off. Steps now wait for the current line to actually finish before moving on, with a safety timeout so a stuck voice can never soft-lock the tutorial.',
+    'FIXED: during the tutorial, the training callout and the war-room subtitle were showing the exact same line at the same time — the Marshal still speaks every line, but it only appears on screen once now.',
+    'Unit icons on the hotbar and Field Manual are real pictographs now — 🪖 rifleman, 🚀 AT team, 🛡 tank, 🚁 heli, 🎯 sniper and so on — instead of abstract shapes like ▲ ⊕ ◼ that gave no clue what they were without reading the tiny name underneath.',
+    'FIXED: friendly and enemy units of the same type rendered in an identical colour, distinguished only by which way they were facing — a real problem for aircraft drifting across lanes with no ground context. Every unit now sits on a solid team-coloured base (blue vs red, following your colourblind palette if set), and aircraft additionally get a coloured IFF wedge overhead.',
+    'The four hotbar category tabs (GROUND / AIR & AD / SUPPORT / PRODUCTION) now carry a permanent soft glow in their own colour, so the four categories read as distinct at rest, not just once you start clicking around.',
+    'Units render a bit larger relative to the lane for better visibility — a modest, deliberately subtle bump. Added a new Big Units accessibility setting for a much larger, unapologetically goofy scale if you want it. Both are purely visual: hitboxes, range and combat are completely unaffected.',
+  ]},
   {v:'1.16.0',notes:[
     'NEW: colourblind team palettes in Settings → Accessibility. Blue/Orange for red-green colour blindness, Blue/Yellow for maximum contrast — every friend-or-foe colour on the battlefield and unit health bars switch together.',
     'NEW: the Daily Challenge now lives on the title screen — today\'s twist, its difficulty and your 🔥 streak, one tap to play.',
@@ -3156,6 +3178,11 @@ function showRival(text){
 let narrHideT=null;
 function showNarr(text){
   const el=document.getElementById('narrator'); if(!el)return;
+  // During the tutorial, #tutbox already shows this exact line — positioned near whatever
+  // it's pointing at, with the spotlight ring — so popping the war-room subtitle up too was
+  // just the same sentence twice on screen at once. The Marshal still SPEAKS it either way;
+  // this only suppresses the redundant second text box.
+  if(G&&G.tutorial&&!G.tutDone)return;
   el.querySelector('.nt').textContent=text;
   el.classList.add('show');
   clearTimeout(narrHideT);
@@ -3559,7 +3586,7 @@ function tryDeploy(key,lane){
   SND.deployFor(key);
   // 🗣 unit chatter gag — a quick quip from the fresh deployment (toggleable)
   if(SAVE.gagChatter&&!G.attract&&Math.random()<0.22){ const u=G.units[G.units.length-1];
-    if(u)floatText(u.x+14,u.y-u.r-12,pick(CHATTER_DEPLOY),'#cfe3ff'); }
+    if(u)floatText(u.x+14,u.y-unitVisualR(u)-12,pick(CHATTER_DEPLOY),'#cfe3ff'); }
   // deploy ripple feedback
   G.rings.push({x:58,y:G.laneY[lane]*H,r:2,max:24,life:0.4,age:0,col:'#7fd0ff'});
   if(G.tutorial&&window.tutOnAction)tutOnAction('deploy',key,lane);
@@ -3806,7 +3833,7 @@ const REVENTS={
   defector:{ flag:'evDefector', run(){ const enemies=G.units.filter(u=>u.side==='R'&&u.alive&&!u.boss);
     if(!enemies.length){ REVENTS.supply.run(); return; }
     const u=pick(enemies); u.side='B'; u.spotted=true; u.stealth=false; u.hitFlash=0.5; u.vetKills=0;
-    u.name=unitName(u.key,G.country); floatText(u.x,u.y-u.r-14,'DEFECTOR ▲','#5ff0e0');
+    u.name=unitName(u.key,G.country); floatText(u.x,u.y-unitVisualR(u)-14,'DEFECTOR ▲','#5ff0e0');
     explode(u.x,u.y,34,'B',14);
     announce('🏳 DEFECTOR','an enemy '+ (UNITS[u.key]?UNITS[u.key].name:'unit') +' joins us','#5ff0e0');
     if(SAVE.evVoice)say("Well, well. A change of heart on the enemy line. Welcome aboard.",'mock',1); } },
@@ -4145,7 +4172,7 @@ function damage(u,dmg,src){
   if(src&&src.dmgType){
     dmg*=dmgMul(src.dmgType,u.armorClass);          // damage type vs armour class
     if(u.cover)dmg*=0.6;                             // dug-in / forest cover softens the hit
-    if(src.crit&&Math.random()<src.crit){ dmg*=2; floatText(u.x,u.y-u.r-6,'CRIT!','#ffce5a'); }
+    if(src.crit&&Math.random()<src.crit){ dmg*=2; floatText(u.x,u.y-unitVisualR(u)-6,'CRIT!','#ffce5a'); }
   }
   // rapid-fire weapons hose cheap drones out of the sky
   if(u.key==='drone' && src && src.rof && src.rof<=0.75) dmg*=2.4;
@@ -4176,7 +4203,7 @@ function grantVetXP(u){
     u.maxHp=u.baseHp*r.hpMul; u.dmg=u.baseDmg*r.dmgMul;
     u.hp=Math.min(u.maxHp,u.hp+(u.maxHp-oldMax)); // the promotion heals by the stat delta, not to full
     u.vetRank=newRank;
-    if(u.side==='B'){ floatText(u.x,u.y-u.r-16,r.name.toUpperCase()+' ▲','#ffce5a'); SND.combo(2); }
+    if(u.side==='B'){ floatText(u.x,u.y-unitVisualR(u)-16,r.name.toUpperCase()+' ▲','#ffce5a'); SND.combo(2); }
   }
 }
 function killUnit(u,src){
@@ -4187,7 +4214,7 @@ function killUnit(u,src){
     if(src&&src.alive)grantVetXP(src);
     return;
   }
-  explode(u.x,u.y,u.r*2+6,u.side, u.cat==='veh'||u.cat==='arty'?26:12);
+  explode(u.x,u.y,unitVisualR(u)*2+6,u.side, u.cat==='veh'||u.cat==='arty'?26:12);
   if(u.cat==='veh'||u.cat==='arty'||u.cat==='air')SND.boom();
   if(u.isVoidBoss){ voidWardenDefeated(u,src); return; }
   // morale shock — watching a comrade die suppresses nearby friendlies
@@ -4207,7 +4234,7 @@ function killUnit(u,src){
   // kill bounty — combat feeds the economy (both sides), Age-of-War style
   const bnt=Math.round(((UNITS[u.key]&&UNITS[u.key].cost)||20)*0.30*(G.bountyMul||1)); // bountyMul: daily "War of Attrition" twist
   if(killer==='B'){
-    G.cp=Math.min(G.cpMax,G.cp+bnt); floatText(u.x,u.y-u.r-4,'+'+bnt,'#ffce5a');
+    G.cp=Math.min(G.cpMax,G.cp+bnt); floatText(u.x,u.y-unitVisualR(u)-4,'+'+bnt,'#ffce5a');
     if(G.ages)G.evo+=6;
     G.kills++;
     if(!G.firstBlood){G.firstBlood=true; if(G.t>1){narr('firstBlood'); frontNews('First contact confirmed — the '+((G.warName||MODES[G.mode]&&MODES[G.mode].name||'front'))+' erupts into open battle','fb',20);}}
@@ -5025,10 +5052,21 @@ function drawHQ(x,side,col){
 function rr(X,Y,Wd,Ht,R){ R=Math.min(R,Ht/2,Wd/2); cx.beginPath();
   cx.moveTo(X+R,Y);cx.arcTo(X+Wd,Y,X+Wd,Y+Ht,R);cx.arcTo(X+Wd,Y+Ht,X,Y+Ht,R);
   cx.arcTo(X,Y+Ht,X,Y,R);cx.arcTo(X,Y,X+Wd,Y,R);cx.closePath(); }
+/* Visual size vs gameplay size are DELIBERATELY separate. u.r is the real collision/contact
+   radius — kamikaze-drone detonation range, melee/splash checks, etc. all read it directly, so
+   scaling u.r itself to make units easier to see would silently buff everyone's engagement
+   range along with the sprite. unitVisualR() is a render-only radius: every DRAWING call (the
+   sprite scale, HP bar, shield ring, team marker, floating text offsets, death explosion) reads
+   this instead, so "bigger on screen" can never mean "bigger hitbox". BASE_VUNIT_SCALE is the
+   permanent, modest "more proportional to the lane" bump; SAVE.bigUnits stacks the loud,
+   deliberately goofy accessibility/fun multiplier on top of it. */
+const BASE_VUNIT_SCALE=1.12;
+const BIG_UNITS_SCALE=2.0;
+function unitVisualR(u){ return u.r*BASE_VUNIT_SCALE*(SAVE.bigUnits?BIG_UNITS_SCALE:1); }
 /* ── representational unit silhouettes — best-effort little models, drawn facing
    the enemy (B → right, R → left). Everything is in a ~±14 unit box, scaled by r. ── */
 function drawUnitSprite(u,px,py){
-  const f=u.side==='B'?1:-1, k=u.r/8;
+  const f=u.side==='B'?1:-1, k=unitVisualR(u)/8;
   const col=u.hitFlash>0?'#ffffff':u.col;
   const dk=shade(col,0.60), lt=shade(col,1.30), steel='#3a4250', dsteel='#232a34', gun='#1c2029';
   cx.save(); cx.translate(px,py);
@@ -5138,7 +5176,8 @@ function drawUnitSprite(u,px,py){
     cx.strokeStyle='#c9a0ff'; cx.lineWidth=0.9; cx.globalAlpha=0.6+0.4*pulse; cx.stroke(); cx.globalAlpha=1;
     cx.fillStyle=col; cx.beginPath(); cx.arc(0,0,2.6,0,6.28); cx.fill();
   } else {
-    // fallback: shaded disc + glyph (should not happen for known units)
+    // fallback: shaded disc + glyph (should not happen for known units) — LOCAL space, already
+    // stretched to the right on-screen size by the cx.scale(f*k,k) above (k reads unitVisualR).
     cx.fillStyle=col;cx.beginPath();cx.arc(0,0,u.r*0.9,0,6.28);cx.fill();cx.strokeStyle=dk;cx.stroke();
   }
   cx.restore();
@@ -5152,55 +5191,77 @@ function drawUnit(u){
   }
   const fly=u.flies?-16:0;
   const x=u.x,y=u.y+fly+(u.flies?Math.sin(u.bob)*2:0);
+  // vr: the render-only radius every decoration below positions itself against, so HP bars,
+  // rings, glyph offsets etc all grow together with the sprite (see unitVisualR() for why this
+  // is kept separate from u.r, the real gameplay radius).
+  const vr=unitVisualR(u);
   // support aura (medic/jammer)
   if(u.support&&(u.healR||u.jamR)){cx.globalAlpha=0.09;cx.strokeStyle=u.heal>0?'#9fffce':'#b0a0ff';
     cx.lineWidth=1.5;cx.beginPath();cx.arc(x,y,(u.healR||u.jamR),0,6.28);cx.stroke();cx.globalAlpha=1;}
   // ground shadow (depth) — under the true ground position for fliers
   cx.fillStyle='rgba(0,0,0,0.30)';cx.beginPath();
-  cx.ellipse(u.x,u.y+(u.flies?4:u.r*0.55),u.r*(u.flies?0.7:0.95),u.flies?3:u.r*0.34,0,0,6.28);cx.fill();
+  cx.ellipse(u.x,u.y+(u.flies?4:vr*0.55),vr*(u.flies?0.7:0.95),u.flies?3:vr*0.34,0,0,6.28);cx.fill();
   // shield (defend stance) — drawn behind the body, facing the enemy
   if(u.shield){cx.strokeStyle='rgba(120,225,150,0.75)';cx.lineWidth=2.4;
-    cx.beginPath();cx.arc(x,y,u.r+4,-0.95,0.95);cx.stroke();}
-  // team-ID ring under the unit + optional age ring (Evolution)
-  cx.beginPath();cx.arc(x, y+(u.flies?3:u.r*0.6), u.r*0.82, 0, 6.28);
-  cx.strokeStyle=u.side==='B'?'rgba(74,168,255,0.42)':'rgba(255,90,74,0.42)';cx.lineWidth=1;cx.stroke();
-  if(u.age>0&&AGES[u.age]){cx.beginPath();cx.arc(x,y,u.r+4,0,6.28);cx.strokeStyle=AGES[u.age].col;cx.lineWidth=1.3;cx.globalAlpha=0.65;cx.stroke();cx.globalAlpha=1;}
+    cx.beginPath();cx.arc(x,y,vr+4,-0.95,0.95);cx.stroke();}
+  // ── FRIEND-OR-FOE MARKER ──
+  // The sprite body is coloured by UNIT TYPE (u.col — matches its hotbar/manual icon), so side
+  // can't ALSO live in body colour without making "what is it" harder to read than "whose is it".
+  // Side gets its own clearly separate signal: a solid team-coloured base under every unit
+  // (through TEAM, so it follows the colourblind palette same as projectiles and HP bars) — a
+  // real disc now, not a 1px 0.42-alpha ring that used to be nearly invisible against the
+  // battlefield. Aircraft get a second, stronger cue on top: a solid IFF wedge overhead. They
+  // needed one — flying units have no ground-lane context to anchor "which side is this" the
+  // way marching infantry do, they drift across all three lanes, and a friendly and an enemy
+  // Attack Heli passing near each other read as identical shapes without it.
+  const teamCol=u.side==='B'?TEAM.B.main:TEAM.R.main;
+  const ringY=y+(u.flies?3:vr*0.6);
+  cx.globalAlpha=0.4; cx.fillStyle=teamCol;
+  cx.beginPath();cx.ellipse(x,ringY,vr*0.88,vr*0.44,0,0,6.28);cx.fill();
+  cx.globalAlpha=1; cx.strokeStyle=teamCol; cx.lineWidth=1.6;
+  cx.beginPath();cx.ellipse(x,ringY,vr*0.88,vr*0.44,0,0,6.28);cx.stroke();
+  if(u.flies){
+    cx.fillStyle=teamCol;
+    cx.beginPath();cx.moveTo(x,y-vr-13);cx.lineTo(x-4.5,y-vr-5);cx.lineTo(x+4.5,y-vr-5);cx.closePath();cx.fill();
+    cx.strokeStyle='rgba(0,0,0,0.4)';cx.lineWidth=0.8;cx.stroke();
+  }
+  if(u.age>0&&AGES[u.age]){cx.beginPath();cx.arc(x,y,vr+4,0,6.28);cx.strokeStyle=AGES[u.age].col;cx.lineWidth=1.3;cx.globalAlpha=0.65;cx.stroke();cx.globalAlpha=1;}
   // the representational little model
   drawUnitSprite(u,x,y);
   // ☠ chat-boss marker (sprites replaced glyphs, so the boss gets a crown of doom)
-  if(u.boss){ cx.font='bold '+(u.r+2)+'px var(--font)';cx.textAlign='center';cx.textBaseline='middle';
-    cx.fillStyle='#c9a0ff';cx.fillText('☠',x,y-u.r-10);cx.textBaseline='alphabetic';
-    cx.beginPath();cx.arc(x,y,u.r+5,0,6.28);cx.strokeStyle='rgba(201,160,255,0.5)';cx.lineWidth=2;cx.stroke(); }
+  if(u.boss){ cx.font='bold '+(vr+2)+'px var(--font)';cx.textAlign='center';cx.textBaseline='middle';
+    cx.fillStyle='#c9a0ff';cx.fillText('☠',x,y-vr-10);cx.textBaseline='alphabetic';
+    cx.beginPath();cx.arc(x,y,vr+5,0,6.28);cx.strokeStyle='rgba(201,160,255,0.5)';cx.lineWidth=2;cx.stroke(); }
   // 🥇 golden drone sparkle
   if(u.golden&&Math.random()<0.35)G.parts.push({x:x+rnd(-6,6),y:y+rnd(-6,6),vx:rnd(-12,12),vy:rnd(-20,6),life:0.4,age:0,col:'#ffe89a',sz:1.8});
   // 👻 phantom casualty — a fake death skull + red flash over a perfectly healthy unit
   if(u.phantom>0){
     const fl=(Math.sin(performance.now()/70)+1)/2;
-    cx.fillStyle='rgba(255,60,50,'+(0.30+0.25*fl)+')';cx.beginPath();cx.arc(x,y,u.r+2,0,6.28);cx.fill();
-    cx.font='bold '+(u.r+4)+'px var(--font)';cx.textAlign='center';cx.textBaseline='middle';cx.fillStyle='#fff';
-    cx.fillText('💀',x,y-u.r-8);cx.textBaseline='alphabetic';
+    cx.fillStyle='rgba(255,60,50,'+(0.30+0.25*fl)+')';cx.beginPath();cx.arc(x,y,vr+2,0,6.28);cx.fill();
+    cx.font='bold '+(vr+4)+'px var(--font)';cx.textAlign='center';cx.textBaseline='middle';cx.fillStyle='#fff';
+    cx.fillText('💀',x,y-vr-8);cx.textBaseline='alphabetic';
   }
   // 🔥 set alight — a flickering fire glyph riding the unit while the burn ticks
   if(u.burnT>0){
     const fl=(Math.sin(performance.now()/55+x)+1)/2;
-    cx.font=(u.r*0.9+3)+'px var(--font)';cx.textAlign='center';cx.textBaseline='middle';
-    cx.globalAlpha=0.75+0.25*fl; cx.fillText('🔥',x,y-u.r-4); cx.globalAlpha=1; cx.textBaseline='alphabetic';
+    cx.font=(vr*0.9+3)+'px var(--font)';cx.textAlign='center';cx.textBaseline='middle';
+    cx.globalAlpha=0.75+0.25*fl; cx.fillText('🔥',x,y-vr-4); cx.globalAlpha=1; cx.textBaseline='alphabetic';
   }
   // muzzle flash
   if(u.muzzle>0){cx.fillStyle='rgba(255,220,120,0.9)';cx.beginPath();
-    const dx=u.side==='B'?u.r+4:-u.r-4;cx.arc(x+dx,y,4,0,6.28);cx.fill();}
+    const dx=u.side==='B'?vr+4:-vr-4;cx.arc(x+dx,y,4,0,6.28);cx.fill();}
   // hp bar
-  if(u.hp<u.maxHp){const bw=u.r*2.4,hpp=u.hp/u.maxHp;
-    cx.fillStyle='#000a';cx.fillRect(x-bw/2,y-u.r-7,bw,3);
-    cx.fillStyle=hpRampCol(hpp);cx.fillRect(x-bw/2,y-u.r-7,bw*hpp,3);}
+  if(u.hp<u.maxHp){const bw=vr*2.4,hpp=u.hp/u.maxHp;
+    cx.fillStyle='#000a';cx.fillRect(x-bw/2,y-vr-7,bw,3);
+    cx.fillStyle=hpRampCol(hpp);cx.fillRect(x-bw/2,y-vr-7,bw*hpp,3);}
   // suppression / rout marker
   if((u.sup||0)>0.35){cx.fillStyle=(u.sup>=0.9)?'rgba(255,90,74,0.95)':'rgba(255,171,64,0.9)';
-    cx.font='bold 11px var(--mono)';cx.textAlign='center';cx.fillText(u.sup>=0.9?'!!':'!',x,y-u.r-9);}
+    cx.font='bold 11px var(--mono)';cx.textAlign='center';cx.fillText(u.sup>=0.9?'!!':'!',x,y-vr-9);}
   // veterancy chevrons
   if(u.vetRank>0){
     cx.strokeStyle='#ffce5a';cx.lineWidth=1.6;
     for(let c=0;c<VET_RANKS[u.vetRank].chev;c++){
-      const cy0=y+u.r+8+c*5;
+      const cy0=y+vr+8+c*5;
       cx.beginPath();cx.moveTo(x-4,cy0+3);cx.lineTo(x,cy0);cx.lineTo(x+4,cy0+3);cx.stroke();
     }
   }
@@ -5901,7 +5962,7 @@ function chatPower(user,key,threshold,label,fn){
 function chatNuke(){
   announce('☢ CHAT NUKE','the whole front is glass','#ff5a4a');
   say(pick(["...Chat. What did you DO.","I did not authorise that. I did not UN-authorise it either.","Well. That's one way to reset the board."]),'grim',2);
-  for(const u of G.units){ if(u.alive){ explode(u.x,u.y,u.r*2+6,'B',14); u.alive=false; } }
+  for(const u of G.units){ if(u.alive){ explode(u.x,u.y,unitVisualR(u)*2+6,'B',14); u.alive=false; } }
   for(let i=0;i<34;i++){ explode(rnd(50,W-50),rnd(H*0.24,H*0.78),rnd(26,64),'B',26); }
   G.shake=Math.max(G.shake,SAVE.reduceMotion?10:44); G.flash=1; G.hqFlashCol='#ffd27f';
   SND.hqhit(); setTimeout(()=>{try{SND.boom(true);}catch(e){}},120);
@@ -5925,7 +5986,7 @@ function secretNuke(){
   G.nukeDone=true; G.wasteland=true;
   announce('☢ WARHEAD DETONATION','the front is glass','#ff5a4a');
   say("Too late to move — brace! Everything on that field is gone.",'grim',3);
-  for(const u of G.units){ if(u.alive){ explode(u.x,u.y,u.r*2+6,u.side,14); u.alive=false; } }
+  for(const u of G.units){ if(u.alive){ explode(u.x,u.y,unitVisualR(u)*2+6,u.side,14); u.alive=false; } }
   if(G.spawners)for(const s of G.spawners){ s.alive=false; }
   for(let i=0;i<42;i++){ explode(rnd(50,W-50),rnd(H*0.16,H*0.84),rnd(30,76),'B',30); }
   G.units=G.units.filter(u=>u.alive);
@@ -5976,7 +6037,7 @@ function chatStorm(){
 function chatFortify(){
   announce('🛡 FORTIFY','chat mends your line','#3fd07a');
   for(const u of G.units){ if(u.side==='B'&&u.alive){ u.hp=u.maxHp; u.sup=0; u.hitFlash=0.4;
-    G.parts.push({x:u.x,y:u.y-u.r,vx:0,vy:-30,life:0.6,age:0,col:'#9fffce',sz:3}); } }
+    G.parts.push({x:u.x,y:u.y-unitVisualR(u),vx:0,vy:-30,life:0.6,age:0,col:'#9fffce',sz:3}); } }
   bumpHype(8); chatMsgRaw('FRONTLINE','chat heals the whole army!','#3fd07a');
 }
 // ⚔ CHAT BLITZ — chat throws a free wave into every lane
@@ -6565,22 +6626,32 @@ function tutSpotTick(){
   el.classList.add('on');
 }
 function tutStart(){
-  for(const s of TUT_STEPS)s._t=null;
+  for(const s of TUT_STEPS){ s._t=null; s._readyAt=null; }
   G.tutStep=0; G.selCard=null; // force the player to pick
   G.frozen=true; // hold the field still for the opening line
   showTut('');
+  const nar=document.getElementById('narrator'); if(nar)nar.classList.remove('show'); // no stale line from before the tutorial
   tutSpot(null);
   document.getElementById('tut-skip').classList.remove('hidden');
 }
 function tutTick(dt){
   const s=TUT_STEPS[G.tutStep]; if(!s){tutFinish();return;}
-  if(s._t==null){ s._t=0; G.frozen=(s.freeze!==false); if(s.enter){try{s.enter();}catch(e){}}
+  if(s._t==null){ s._t=0; s._readyAt=null; G.frozen=(s.freeze!==false); if(s.enter){try{s.enter();}catch(e){}}
     showTut(s.say); say(s.say,s.mood||'brief',2); tutSpot(s.spot||null); }
   s._t+=dt;
   tutSpotTick();
-  let done=false;
-  if(s.cond){ if(s.cond())done=true; } else if(s.wait){ if(s._t>=s.wait)done=true; }
-  if(done && s._t>1.2){
+  let ready=false;
+  if(s.cond){ if(s.cond())ready=true; } else if(s.wait){ if(s._t>=s.wait)ready=true; }
+  if(ready && s._readyAt==null)s._readyAt=s._t;
+  // A fast player can meet a step's condition (click the right card, deploy, get a kill) well
+  // before the Marshal finishes speaking that step's line. Advancing anyway used to call the
+  // NEXT step's say(...,2), which narrStop()s and cuts the CURRENT line off mid-sentence — that
+  // was the "narrator doesn't finish his sentences" bug. So the step now also waits for
+  // !NARR.speaking. A ceiling still protects against a stuck/broken speech engine (or the
+  // narrator being off, where NARR.speaking is never true to begin with): never hold the step
+  // more than 6s past whenever its condition first became true.
+  const canAdvance = !NARR.speaking || (s._readyAt!=null && (s._t-s._readyAt)>6);
+  if(ready && s._t>1.2 && canAdvance){
     if(s.last){ tutFinish(); return; }
     G.tutStep++; const ns=TUT_STEPS[G.tutStep]; if(ns)ns._t=null;
   }
@@ -7280,6 +7351,7 @@ function renderSettings(){
           `<button class="cb-opt" data-cb-opt="${k}" role="radio" aria-checked="${(SAVE.cbPalette||'default')===k}" style="display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid ${(SAVE.cbPalette||'default')===k?'var(--gold)':'var(--line)'};background:${(SAVE.cbPalette||'default')===k?'#1a2233':'var(--panel2)'};color:var(--ink)">
             <span aria-hidden="true" style="width:11px;height:11px;border-radius:50%;background:${c1};display:inline-block"></span><span aria-hidden="true" style="width:11px;height:11px;border-radius:50%;background:${c2};display:inline-block"></span>${lbl}</button>`).join('')}
       </div></div>`+
+    settingRow('Big Units','Every unit renders much larger on the battlefield. Purely visual — hitboxes, range and combat are unaffected, so this is safe to leave on for every match.',`<button id="set-bigunits" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.bigUnits)}</button>`)+
     `<div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.5px;margin:6px 2px -2px">🎲 RANDOM EVENTS</div>`+
     settingRow('Random Events','Master switch for battlefield surprises',`<button id="set-rev" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.randomEvents)}</button>`)+
     settingRow('· Supply Drops','Air-dropped crates grant CP or reinforcements',`<button id="set-ev-supply" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evSupply)}</button>`)+
@@ -7308,6 +7380,7 @@ function renderSettings(){
   bind('set-vismod',()=>{ SAVE.weatherVis=!SAVE.weatherVis; persist(); });
   document.querySelectorAll('.cb-opt').forEach(b=>{ b.onclick=()=>{
     SAVE.cbPalette=b.getAttribute('data-cb-opt'); applyCbPalette(); persist(); renderSettings(); }; });
+  bind('set-bigunits',()=>{ SAVE.bigUnits=!SAVE.bigUnits; persist(); });
   bind('set-rev',()=>{ SAVE.randomEvents=!SAVE.randomEvents; persist(); });
   bind('set-ev-supply',()=>{ SAVE.evSupply=!SAVE.evSupply; persist(); });
   bind('set-ev-voice',()=>{ SAVE.evVoice=!SAVE.evVoice; persist(); });
