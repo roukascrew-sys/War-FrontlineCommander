@@ -782,6 +782,8 @@
   .t-btn.rivals{border-color:var(--red);} .t-btn.rivals b{color:var(--red);} .t-btn.rivals:hover{box-shadow:0 0 18px #ff5a4a44;}
   .t-btn.patchnotes{border-color:var(--good);} .t-btn.patchnotes b{color:var(--good);} .t-btn.patchnotes:hover{box-shadow:0 0 18px #3fd07a44;}
   .t-btn.chaos{border-color:#ff5ad6;} .t-btn.chaos b{color:#ff5ad6;} .t-btn.chaos:hover{box-shadow:0 0 18px #ff5ad644;}
+  .t-btn.indoc{border-color:var(--gold);} .t-btn.indoc b{color:var(--gold);} .t-btn.indoc:hover{box-shadow:0 0 18px #ffce5a44;}
+  .t-btn.leaderboard{border-color:var(--cyan);} .t-btn.leaderboard b{color:var(--cyan);} .t-btn.leaderboard:hover{box-shadow:0 0 18px #5ff0e044;}
   /* rank-gated title buttons (War Mode, Chaos below its rank) — dimmed, no hover lift */
   .t-btn.locked{opacity:.45;filter:grayscale(.4);}
   .t-btn.locked:hover{transform:none;box-shadow:none;}
@@ -819,6 +821,101 @@
   .cos-nm{display:block;font-size:11.5px;font-weight:700;color:var(--ink);margin-bottom:3px;}
   .cos-lvl{display:block;font-size:9px;font-weight:800;letter-spacing:.5px;color:var(--faint);text-transform:uppercase;}
   .cos-item.on .cos-lvl{color:var(--gold);}
+
+  /* ── DAILY CHEST ──────────────────────────────────────────────────────────
+     Rarity drives colour everywhere it appears (--rc), so a Legendary reads as
+     Legendary in the reveal, the collection grid and the title card without
+     three separate colour tables to keep in sync. */
+  .cos-item.chest{border-color:var(--rc,var(--line));}
+  .cos-item.chest:hover{border-color:var(--rc,var(--purple));}
+  .cos-item.chest .cos-lvl{color:var(--rc,var(--faint));}
+  .cos-item.chest.on{box-shadow:0 0 0 2px var(--rc,var(--gold)) inset;border-color:var(--rc,var(--gold));}
+  .cos-item.chest.locked{border-color:var(--line);}
+  .chest-prog{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;padding:10px 14px;margin-bottom:14px;flex-wrap:wrap;}
+  .chest-prog-bar{flex:1;min-width:120px;height:9px;background:#0008;border-radius:5px;overflow:hidden;}
+  .chest-prog-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--gold));border-radius:5px;}
+  .chest-prog-txt{font-family:var(--mono);font-size:11.5px;color:var(--dim);}
+  .rar-chip{display:inline-block;font-family:var(--mono);font-size:9.5px;font-weight:800;letter-spacing:.6px;
+    text-transform:uppercase;padding:2px 7px;border-radius:5px;border:1px solid var(--rc);color:var(--rc);}
+  /* title-screen chest card — mirrors .daily-card so the two sit as a matched pair */
+  .chest-card{display:flex;align-items:center;gap:10px;width:100%;padding:9px 13px;margin-top:7px;
+    background:linear-gradient(100deg,#1a1408,#12100a);border:1.5px solid var(--gold);border-radius:11px;
+    cursor:pointer;transition:.12s;text-align:left;}
+  .chest-card:hover{transform:translateY(-1px);box-shadow:0 0 18px -4px var(--gold);}
+  .chest-card.spent{opacity:.5;border-color:var(--line);background:var(--panel2);cursor:default;}
+  .chest-card.spent:hover{transform:none;box-shadow:none;}
+  .chest-card .cc-ic{font-size:21px;}
+  .chest-card .cc-tx{flex:1;display:flex;flex-direction:column;line-height:1.25;}
+  .chest-card .cc-tx b{font-size:12.5px;font-weight:800;letter-spacing:.5px;color:var(--gold);}
+  .chest-card.spent .cc-tx b{color:var(--dim);}
+  .chest-card .cc-tx small{font-size:10.5px;color:var(--dim);}
+  .chest-card .cc-streak{font-family:var(--mono);font-size:11px;font-weight:800;color:var(--gold);white-space:nowrap;}
+  /* reveal overlay */
+  /* Above #locktoast (300) — while a modal is up nothing should render on top of it. */
+  #chest-modal{position:fixed;inset:0;z-index:320;display:flex;align-items:center;justify-content:center;
+    background:#000c;backdrop-filter:blur(3px);padding:16px;}
+  #chest-modal.hidden{display:none;}
+  #chest-box{background:var(--panel);border:2px solid var(--rc,var(--gold));border-radius:16px;
+    padding:22px 24px;max-width:min(400px,94vw);text-align:center;box-shadow:0 0 44px -8px var(--rc,var(--gold));}
+  #chest-title{font-family:var(--mono);font-size:11px;font-weight:800;letter-spacing:2px;
+    text-transform:uppercase;color:var(--rc,var(--gold));margin-bottom:10px;}
+  #chest-lid{font-size:62px;line-height:1;margin:6px 0 10px;transition:transform .2s;}
+  #chest-lid.shake{animation:chestShake .45s ease-in-out 2;}
+  @keyframes chestShake{0%,100%{transform:rotate(0) scale(1)}25%{transform:rotate(-7deg) scale(1.05)}75%{transform:rotate(7deg) scale(1.05)}}
+  #chest-reveal{min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;}
+  .cr-glyph{font-size:42px;line-height:1;}
+  .cr-name{font-size:15px;font-weight:800;color:var(--ink);}
+  .cr-sub{font-size:11.5px;color:var(--dim);line-height:1.5;}
+  .cr-in{animation:crIn .35s ease-out;}
+  @keyframes crIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+  /* The JS also honours SAVE.reduceMotion before adding .shake/.cr-in; this covers an OS-level
+     preference on a save that predates the setting. */
+  @media (prefers-reduced-motion: reduce){
+    #chest-lid.shake{animation:none;}
+    .cr-in{animation:none;}
+  }
+
+  /* ── LEADERBOARD ── */
+  .lb-note{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--cyan);
+    border-radius:8px;padding:9px 13px;margin-bottom:14px;font-size:11.5px;color:var(--dim);line-height:1.55;}
+  .lb-row{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);
+    border-radius:9px;padding:8px 12px;margin-bottom:5px;font-size:12px;}
+  .lb-row.top{border-color:var(--gold);}
+  .lb-rank{font-family:var(--mono);font-weight:800;color:var(--dim);min-width:34px;}
+  .lb-row.top .lb-rank{color:var(--gold);}
+  .lb-main{flex:1;min-width:0;}
+  .lb-main b{color:var(--ink);}
+  .lb-meta{display:block;font-size:10px;color:var(--faint);margin-top:1px;}
+  .lb-score{font-family:var(--mono);font-weight:800;color:var(--cyan);text-align:right;white-space:nowrap;}
+  .lb-score small{display:block;font-size:9.5px;color:var(--faint);font-weight:600;}
+  .lb-streaks{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:16px;}
+  .lb-sk{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 13px;text-align:center;}
+  .lb-sk-n{font-family:var(--mono);font-size:23px;font-weight:800;color:var(--gold);line-height:1.1;}
+  .lb-sk-l{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin-top:3px;}
+  .lb-sk-b{font-size:9.5px;color:var(--faint);margin-top:2px;}
+  .bt-row{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);
+    border-left:3px solid var(--good);border-radius:9px;padding:7px 12px;margin-bottom:5px;font-size:12px;}
+  .bt-glyph{font-size:16px;}
+  .bt-lbl{flex:1;color:var(--ink);}
+  .bt-n{font-family:var(--mono);font-size:10px;color:var(--faint);}
+  .bt-score{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--cyan);}
+
+  /* ── INDOCTRINATION ── */
+  .ind-card{display:flex;align-items:center;gap:12px;background:var(--panel);border:1.5px solid var(--dc,var(--line));
+    border-radius:11px;padding:11px 14px;margin-bottom:7px;cursor:pointer;transition:.12s;text-align:left;width:100%;}
+  .ind-card:hover{transform:translateY(-2px);box-shadow:0 0 18px -6px var(--dc,var(--blue));}
+  .ind-card.done{border-color:var(--good);}
+  .ind-glyph{font-size:24px;color:var(--dc,var(--ink));line-height:1;}
+  /* The card's text column is built from <span>s (a <button> may not contain <div>s), so
+     each line needs display:block or they run together on one line. */
+  .ind-tx{flex:1;min-width:0;display:block;}
+  .ind-nm{display:block;font-size:13px;font-weight:800;color:var(--dc,var(--ink));}
+  .ind-doc{display:block;font-size:10.5px;color:var(--dim);margin-top:1px;}
+  .ind-teaches{display:block;font-size:10.5px;color:var(--faint);margin-top:3px;line-height:1.45;}
+  .ind-state{font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:.5px;
+    text-transform:uppercase;color:var(--faint);white-space:nowrap;}
+  .ind-card.done .ind-state{color:var(--good);}
 
   /* ── REWARDS ROADMAP ── */
   .road-now{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:16px;}
@@ -1355,7 +1452,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.16.1</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.17.0</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -1535,6 +1632,11 @@
         <span class="dc-tx"><b>DAILY CHALLENGE</b><small id="t-daily-sub">a fresh twist every day</small></span>
         <span class="dc-streak" id="t-daily-streak">🔥 0</span>
       </button>
+      <button class="chest-card" id="t-chest" aria-label="Open today's supply crate">
+        <span class="cc-ic">🎁</span>
+        <span class="cc-tx"><b>DAILY SUPPLY CRATE</b><small id="t-chest-sub">a random cosmetic, once a day</small></span>
+        <span class="cc-streak" id="t-chest-streak">🔥 0</span>
+      </button>
       <div class="title-grp">
         <div class="title-grp-lbl">More Modes</div>
         <div class="title-btns2">
@@ -1545,8 +1647,15 @@
         </div>
       </div>
       <div class="title-grp">
+        <div class="title-grp-lbl">Learn</div>
+        <div class="title-btns2">
+          <button class="t-btn indoc" id="t-indoc"><b>🎓 Indoctrination</b><small id="t-indoc-sub">try every doctrine</small></button>
+        </div>
+      </div>
+      <div class="title-grp">
         <div class="title-grp-lbl">Your Progress</div>
         <div class="title-btns2">
+          <button class="t-btn leaderboard" id="t-leaderboard"><b>🏆 Leaderboard</b><small>best runs &amp; streaks</small></button>
           <button class="t-btn record" id="t-record"><b>🎖 Service Record</b><small>your career &amp; rivals</small></button>
           <button class="t-btn roadmap" id="t-roadmap"><b>🏆 Roadmap</b><small>rank rewards &amp; unlocks</small></button>
           <button class="t-btn cosmetics" id="t-cosmetics"><b>🎖 Cosmetics</b><small>equip badge &amp; title</small></button>
@@ -1620,6 +1729,38 @@
     <h1>🎖 <b>COSMETICS</b></h1>
     <div class="tag" style="margin-bottom:6px">Pick which earned badge and title you fly — anything you've reached Rank for is fair game, doesn't have to be your newest.</div>
     <div class="man-wrap"><div class="man-body" id="cos-body"></div></div>
+  </div>
+
+  <!-- INDOCTRINATION — the doctrine school -->
+  <div class="screen hidden" id="indoc">
+    <button class="back-btn" id="indoc-back">◀ Title</button>
+    <h1>🎓 <b>INDOCTRINATION</b></h1>
+    <div class="tag" style="margin-bottom:6px">Nine short lessons, one per doctrine — every one of them stacked in your favour on purpose. You're handed the doctrine (locked or not), a roster cut to just its units, and an enemy built to lose to it. Play them to find out which doctrine you actually enjoy before you commit to grinding for it.</div>
+    <div class="man-wrap"><div class="man-body" id="indoc-body"></div></div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div class="screen hidden" id="leaderboard">
+    <button class="back-btn" id="lb-back">◀ Title</button>
+    <h1>🏆 <b>LEADERBOARD</b></h1>
+    <div class="tag" style="margin-bottom:6px">Your best runs, your streaks, and everything you've beaten today.</div>
+    <div class="man-wrap">
+      <div class="man-tabs" id="lb-tabs"></div>
+      <div class="man-body" id="lb-body"></div>
+    </div>
+  </div>
+
+  <!-- DAILY CHEST — reveal overlay -->
+  <div id="chest-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="chest-title">
+    <div id="chest-box">
+      <div id="chest-title">DAILY SUPPLY DROP</div>
+      <div id="chest-lid" role="img" aria-label="Supply crate">🎁</div>
+      <div id="chest-reveal" aria-live="polite"></div>
+      <div class="btn-row" style="justify-content:center;margin-top:12px">
+        <button class="sbtn prim" id="chest-open">▣ OPEN CRATE</button>
+        <button class="sbtn" id="chest-close">Close</button>
+      </div>
+    </div>
   </div>
 
   <!-- RIVALS MODE -->
@@ -1933,6 +2074,20 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   weatherVis:true, voidSlayerEarned:false, debugUnlockAll:false,
   cbPalette:'default',   // team-colour accessibility palette: 'default' | 'orange' | 'hico' (whitelisted in applyCbPalette)
   bigUnits:false,        // accessibility/fun: render units much larger — visual only, see unitVisualR()
+  // ── daily chest (see CHEST_RARITIES / rollChest) ──
+  chestLastDay:null,     // 'YYYY-MM-DD' of the last chest opened — one per real day, no take-backs
+  chestOwned:{},         // chest cosmetic id -> true. The ONLY way these are earned; no rank path.
+  chestStreak:0,         // consecutive days a chest has been opened
+  chestBestStreak:0,
+  chestPulls:0,          // lifetime chests opened (drives the pity counter below)
+  chestSinceEpic:0,      // pulls since the last Epic-or-better — feeds the pity floor
+  // ── leaderboard / streaks / beaten-today (all LOCAL — see the LEADERBOARD block) ──
+  board:[],              // personal best runs, best-first, capped at BOARD_MAX
+  winStreak:0, bestWinStreak:0,
+  beatToday:{day:null,items:[]},   // what's been cleared today; rolls over at local midnight
+  // ── Indoctrination (doctrine school) ──
+  indocDone:{},          // doctrine key -> true once that doctrine's lesson has been cleared
+  indocSeen:false,       // whether the player has opened the school at all (drives the title nudge)
   // ── time trials + the hidden "Glitch Front" secret level ──
   timeTrials:{},          // mission id -> best clear time (s); presence means that trial is PASSED
   secretUnlocked:false,   // true once every campaign time trial has been beaten
@@ -2144,15 +2299,28 @@ function currentBadge(lvl){ let b=HQ_BADGES[0]; for(const e of HQ_BADGES)if(lvl>
 // equipped cosmetic accessors — player can pin any badge/title they've already earned instead of
 // always showing the newest one; falls back to the highest unlocked if nothing's equipped (or the
 // equipped pick got outdated, e.g. a reset-rank dropped them below what they'd chosen)
+/* Both accessors resolve THREE sources now: the rank ladder (numeric key = the rank it
+   unlocks at), the special achievement badges, and chest drops (string id, gated on
+   actually owning it). An equipped pick that is no longer valid — a rank reset, or a
+   hand-edited save naming an id that doesn't exist — silently falls back to the rank
+   default rather than rendering `undefined` on the title screen. */
 function equippedBadge(){
   if(SAVE.equippedBadge!=null){
-    if(typeof SAVE.equippedBadge==='string'){ const sb=SPECIAL_BADGES.find(e=>e.id===SAVE.equippedBadge); if(sb&&sb.requires())return sb; }
+    if(typeof SAVE.equippedBadge==='string'){
+      const sb=SPECIAL_BADGES.find(e=>e.id===SAVE.equippedBadge); if(sb&&sb.requires())return sb;
+      const cb=chestItem(SAVE.equippedBadge); if(cb&&cb.type==='badge'&&chestOwns(cb.id))return cb;
+    }
     else { const b=HQ_BADGES.find(e=>e.lvl===SAVE.equippedBadge); if(b&&SAVE.lvl>=b.lvl)return b; }
   }
   return currentBadge(SAVE.lvl);
 }
 function equippedTitleEntry(){
-  if(SAVE.equippedTitle!=null){ const t=COMMANDER_TITLES.find(e=>e.lvl===SAVE.equippedTitle); if(t&&SAVE.lvl>=t.lvl)return t; }
+  if(SAVE.equippedTitle!=null){
+    if(typeof SAVE.equippedTitle==='string'){
+      const ct=chestItem(SAVE.equippedTitle); if(ct&&ct.type==='title'&&chestOwns(ct.id))return ct;
+    }
+    else { const t=COMMANDER_TITLES.find(e=>e.lvl===SAVE.equippedTitle); if(t&&SAVE.lvl>=t.lvl)return t; }
+  }
   let t=COMMANDER_TITLES[0]; for(const e of COMMANDER_TITLES)if(SAVE.lvl>=e.lvl)t=e; return t;
 }
 function equippedTitleStr(){ return equippedTitleEntry().title; }
@@ -2405,6 +2573,236 @@ const SPECIAL_BADGES=[
   {id:'void_slayer',glyph:'🕳',name:'Void Slayer',requires:()=>!!SAVE.voidSlayerEarned},
   {id:'glitch_breaker',glyph:'▓',name:'Glitch-Breaker',requires:()=>!!SAVE.secretBadgeEarned},
 ];
+/* ═══ DAILY CHEST ═════════════════════════════════════════════════════════════
+   One chest per real day, granting one cosmetic from a pool that CANNOT be earned
+   any other way — no rank path, no purchase, no grind. That's deliberate: the rank
+   ladder already rewards playing a lot, so the chest rewards *coming back*, which is
+   a different (and for a free browser game, more valuable) behaviour.
+
+   Three rules keep it from feeling like a slot machine that hates you:
+     · DUPLICATE PROTECTION — a roll only ever considers items you don't own. Rolling
+       a rarity you've completed walks outward to the nearest rarity with something
+       left, so a chest is never "you got nothing".
+     · PITY FLOOR — CHEST_PITY consecutive pulls without an Epic-or-better forces one.
+       Worst case is bounded; a player can always answer "how far am I from good?".
+     · COMPLETION PAYOUT — once the whole pool is owned the chest keeps opening and
+       pays XP instead, so a completionist's streak still means something.
+   Rarity is cosmetic-only in every sense: nothing here touches combat, and a Legendary
+   badge confers exactly the same zero gameplay advantage as a Common one. ── */
+const CHEST_RARITIES={
+  common:   {name:'Common',   col:'#9aa8b8',weight:52,xp:40},
+  uncommon: {name:'Uncommon', col:'#3fd07a',weight:27,xp:80},
+  rare:     {name:'Rare',     col:'#4aa8ff',weight:14,xp:160},
+  epic:     {name:'Epic',     col:'#c9a0ff',weight:5.6,xp:340},
+  legendary:{name:'Legendary',col:'#ffce5a',weight:1.4,xp:750},
+};
+const CHEST_RARITY_ORDER=['common','uncommon','rare','epic','legendary'];
+const CHEST_PITY=14;  // pulls without an Epic+ before one is guaranteed
+/* The pool. `type` decides which cosmetic slot it fills — both slots already exist and
+   are already equippable, so a chest drop is usable the moment it lands. Glyphs are all
+   distinct from HQ_BADGES and SPECIAL_BADGES so no two entries look alike in the grid. */
+const CHEST_COSMETICS=[
+  // ── common ──
+  {id:'cb_boar',    type:'badge',rarity:'common',glyph:'🐗',name:'Iron Boar'},
+  {id:'cb_hound',   type:'badge',rarity:'common',glyph:'🐕',name:'Trench Hound'},
+  {id:'cb_anvil',   type:'badge',rarity:'common',glyph:'🪨',name:'The Anvil'},
+  {id:'cb_lantern', type:'badge',rarity:'common',glyph:'🕯',name:'Night Watch'},
+  {id:'cb_compass', type:'badge',rarity:'common',glyph:'🧭',name:'True North'},
+  {id:'cb_spade',   type:'badge',rarity:'common',glyph:'🪏',name:'Entrenching Tool'},
+  {id:'ct_mudline', type:'title',rarity:'common',title:'Of the Mud Line'},
+  {id:'ct_quiet',   type:'title',rarity:'common',title:'The Quiet Professional'},
+  {id:'ct_earlybird',type:'title',rarity:'common',title:'First Light'},
+  {id:'ct_holdfast',type:'title',rarity:'common',title:'Holdfast'},
+  // ── uncommon ──
+  {id:'cb_bear',    type:'badge',rarity:'uncommon',glyph:'🐻',name:'Winter Bear'},
+  {id:'cb_serpent', type:'badge',rarity:'uncommon',glyph:'🐍',name:'Cold Serpent'},
+  {id:'cb_axe',     type:'badge',rarity:'uncommon',glyph:'🪓',name:'Breach Axe'},
+  {id:'cb_bow',     type:'badge',rarity:'uncommon',glyph:'🏹',name:'Long Shot'},
+  {id:'cb_gear',    type:'badge',rarity:'uncommon',glyph:'⚙',name:'The Machine'},
+  {id:'ct_ironwill',type:'title',rarity:'uncommon',title:'Iron Will'},
+  {id:'ct_saltline',type:'title',rarity:'uncommon',title:'Salt of the Line'},
+  {id:'ct_hardway', type:'title',rarity:'uncommon',title:'Taught the Hard Way'},
+  {id:'ct_nobreak', type:'title',rarity:'uncommon',title:'Never Broke Formation'},
+  // ── rare ──
+  {id:'cb_owl',     type:'badge',rarity:'rare',glyph:'🦉',name:'Silent Watcher'},
+  {id:'cb_shark',   type:'badge',rarity:'rare',glyph:'🦈',name:'Deep Runner'},
+  {id:'cb_trident', type:'badge',rarity:'rare',glyph:'🔱',name:'Trident'},
+  {id:'cb_chain',   type:'badge',rarity:'rare',glyph:'⛓',name:'Broken Chain'},
+  {id:'cb_wave',    type:'badge',rarity:'rare',glyph:'🌊',name:'Tidewall'},
+  {id:'ct_ghostline',type:'title',rarity:'rare',title:'Ghost of the Line'},
+  {id:'ct_coldopen',type:'title',rarity:'rare',title:'The Cold Open'},
+  {id:'ct_lasthill',type:'title',rarity:'rare',title:'Keeper of the Last Hill'},
+  // ── epic ──
+  {id:'cb_comet',   type:'badge',rarity:'epic',glyph:'☄',name:'Fallen Star'},
+  {id:'cb_eye',     type:'badge',rarity:'epic',glyph:'🧿',name:'Evil Eye'},
+  {id:'cb_orbit',   type:'badge',rarity:'epic',glyph:'🪐',name:'Far Orbit'},
+  {id:'ct_stormbrk',type:'title',rarity:'epic',title:'Stormbreaker'},
+  {id:'ct_unmoved', type:'title',rarity:'epic',title:'The Unmoved'},
+  // ── legendary ──
+  {id:'cb_oracle',  type:'badge',rarity:'legendary',glyph:'🔮',name:'The Oracle'},
+  {id:'cb_ossuary', type:'badge',rarity:'legendary',glyph:'🗿',name:'Ossuary'},
+  {id:'ct_endswar', type:'title',rarity:'legendary',title:'They Called It The End Of Wars'},
+];
+function chestItem(id){ return CHEST_COSMETICS.find(c=>c.id===id)||null; }
+function chestOwns(id){ return !!(SAVE.chestOwned&&SAVE.chestOwned[id]); }
+function chestUnowned(rarity){ return CHEST_COSMETICS.filter(c=>c.rarity===rarity&&!chestOwns(c.id)); }
+function chestPoolComplete(){ return CHEST_COSMETICS.every(c=>chestOwns(c.id)); }
+// Is a chest available right now? One per calendar day, local time.
+function chestReady(){ return SAVE.chestLastDay!==todayKey(); }
+/* Pick a rarity by weight, honouring the pity floor. Split out so the regression suite can
+   hammer the distribution without opening 10,000 real chests through the UI. */
+function rollChestRarity(rnd01){
+  const r=(typeof rnd01==='function')?rnd01:Math.random;
+  if((SAVE.chestSinceEpic||0)>=CHEST_PITY){
+    // pity: force Epic or Legendary, weighted between just those two
+    const eW=CHEST_RARITIES.epic.weight, lW=CHEST_RARITIES.legendary.weight;
+    return r()<(eW/(eW+lW))?'epic':'legendary';
+  }
+  let total=0; for(const k of CHEST_RARITY_ORDER)total+=CHEST_RARITIES[k].weight;
+  let roll=r()*total;
+  for(const k of CHEST_RARITY_ORDER){ roll-=CHEST_RARITIES[k].weight; if(roll<=0)return k; }
+  return 'common';
+}
+/* Resolve a rarity to an actual unowned item. Walks outward from the rolled tier — down
+   first (a completed Legendary tier shouldn't silently downgrade you to Common while
+   Epic still has entries), then up — and returns null only when the pool is finished. */
+function pickChestItem(rarity,rnd01){
+  const r=(typeof rnd01==='function')?rnd01:Math.random;
+  const idx=CHEST_RARITY_ORDER.indexOf(rarity);
+  const order=[rarity];
+  for(let d=1;d<CHEST_RARITY_ORDER.length;d++){
+    if(idx-d>=0)order.push(CHEST_RARITY_ORDER[idx-d]);
+    if(idx+d<CHEST_RARITY_ORDER.length)order.push(CHEST_RARITY_ORDER[idx+d]);
+  }
+  for(const tier of order){
+    const pool=chestUnowned(tier);
+    if(pool.length)return pool[Math.floor(r()*pool.length)];
+  }
+  return null; // whole pool owned
+}
+/* Open today's chest. Returns a result object for the reveal UI, or null if one has
+   already been claimed today (the caller should never get here — see chestReady). */
+function claimChest(){
+  if(!chestReady())return null;
+  const today=todayKey();
+  // streak: consecutive only if the previous chest was literally yesterday
+  const yst=new Date(Date.parse(today+'T00:00:00Z')-86400000).toISOString().slice(0,10);
+  SAVE.chestStreak=(SAVE.chestLastDay===yst)?(SAVE.chestStreak||0)+1:1;
+  if(SAVE.chestStreak>(SAVE.chestBestStreak||0))SAVE.chestBestStreak=SAVE.chestStreak;
+  SAVE.chestLastDay=today;
+  SAVE.chestPulls=(SAVE.chestPulls||0)+1;
+
+  const rarity=rollChestRarity();
+  const item=pickChestItem(rarity);
+  let out;
+  if(item){
+    if(!SAVE.chestOwned)SAVE.chestOwned={};
+    SAVE.chestOwned[item.id]=true;
+    // pity bookkeeping keys off what you actually RECEIVED, not what was rolled
+    if(item.rarity==='epic'||item.rarity==='legendary')SAVE.chestSinceEpic=0;
+    else SAVE.chestSinceEpic=(SAVE.chestSinceEpic||0)+1;
+    const xp=Math.round(CHEST_RARITIES[item.rarity].xp*0.35);
+    addXP(xp);
+    out={item,rarity:item.rarity,xp,streak:SAVE.chestStreak,complete:false,
+      owned:Object.keys(SAVE.chestOwned).length,total:CHEST_COSMETICS.length};
+  } else {
+    // collection finished — the chest keeps paying, just in XP
+    SAVE.chestSinceEpic=0;
+    const xp=CHEST_RARITIES[rarity].xp;
+    addXP(xp);
+    out={item:null,rarity,xp,streak:SAVE.chestStreak,complete:true,
+      owned:CHEST_COSMETICS.length,total:CHEST_COSMETICS.length};
+  }
+  persist();
+  if(typeof gcEvent==='function')gcEvent('chest-open');
+  return out;
+}
+/* ═══ LEADERBOARD · STREAKS · BEATEN TODAY ════════════════════════════════════
+   ⚠ SCOPE, STATED PLAINLY: this board is LOCAL. Every row on it is a run YOU played
+   on THIS device. It is not a global ranking and the UI never implies it is — the
+   game has no backend, and inventing plausible-looking rival scores would be lying
+   to the player about the one screen whose entire job is being a truthful record.
+
+   A global board is a backend feature, not a frontend one. When that server exists,
+   the seam is deliberately small — see LEADERBOARD_BACKEND below. Everything else
+   (scoring, rating, dedupe, the board UI) already works and would not change.
+
+   RATED SCORE: raw score isn't comparable across difficulty — a Recruit blowout can
+   out-score a hard-fought Legendary win. Every row therefore carries both its raw
+   score and a rated score (raw × the tier weight below), and the board sorts on
+   rated. The weights are shown in the UI so the number is never mysterious. ── */
+const BOARD_MAX=25;            // rows kept; more than this is scrollback nobody reads
+const BEAT_TODAY_MAX=40;
+const DIFF_WEIGHT={recruit:0.7,veteran:1.0,elite:1.35,legendary:1.8};
+/* ── BACKEND SEAM ─────────────────────────────────────────────────────────────
+   Set this to an object implementing:
+     submit(entry) -> Promise<void>            // entry as built by boardEntry()
+     top(mode, limit) -> Promise<Array<entry>> // global rows, best-first
+   …and renderLeaderboard() gains a GLOBAL tab. Until then it stays null and every
+   surface says "local". Do NOT populate this with sample data to "preview" the UI —
+   a board that shows fake names is indistinguishable from a board that lies.
+   Server-side requirements (score validation, rate limits, auth) are already
+   specified in SECURITY.md under the day-one backend checklist. ── */
+const LEADERBOARD_BACKEND=null;
+function diffWeight(d){ return DIFF_WEIGHT[d]||1.0; }
+function ratedScore(score,diff){ return Math.round((score||0)*diffWeight(diff)); }
+function boardEntry(g,won,score){
+  return { ts:Date.now(), score:Math.round(score||0), rated:ratedScore(score,g.diff),
+    mode:g.mode, kind:g.kind, diff:g.diff, doc:g.doc, won:!!won,
+    kills:g.kills|0, dur:Math.round(g.t||0) };
+}
+/* Insert a finished run into the personal board. Losses are recorded too — a board of
+   only wins hides the shape of how you actually play — but they can never out-rank a
+   win of equal rated score, so the top of the board stays meaningful. */
+function boardRecord(g,won,score){
+  if(!Array.isArray(SAVE.board))SAVE.board=[];
+  const e=boardEntry(g,won,score);
+  SAVE.board.push(e);
+  SAVE.board.sort((a,b)=>(b.rated-a.rated)||((b.won?1:0)-(a.won?1:0))||(b.ts-a.ts));
+  if(SAVE.board.length>BOARD_MAX)SAVE.board.length=BOARD_MAX;
+  return SAVE.board.indexOf(e); // -1 if it didn't make the cut, else its rank
+}
+/* Win streak — consecutive won battles, broken by any real loss. The tutorial and
+   attract-mode battles never touch it (they never reach here). */
+function streakRecord(won){
+  if(won){ SAVE.winStreak=(SAVE.winStreak||0)+1;
+    if(SAVE.winStreak>(SAVE.bestWinStreak||0))SAVE.bestWinStreak=SAVE.winStreak; }
+  else SAVE.winStreak=0;
+  return SAVE.winStreak;
+}
+/* ── BEATEN TODAY ──────────────────────────────────────────────────────────────
+   A running list of what you actually CLEARED today, rolled over at local midnight.
+   Deduped by id so replaying mission 3 four times leaves one row (with its best
+   score), which is what "beaten today" means to a player. */
+function beatTodayState(){
+  const today=todayKey();
+  if(!SAVE.beatToday||typeof SAVE.beatToday!=='object')SAVE.beatToday={day:null,items:[]};
+  if(SAVE.beatToday.day!==today)SAVE.beatToday={day:today,items:[]};
+  if(!Array.isArray(SAVE.beatToday.items))SAVE.beatToday.items=[];
+  return SAVE.beatToday;
+}
+function beatTodayAdd(id,label,glyph,score){
+  const st=beatTodayState();
+  const prev=st.items.find(i=>i.id===id);
+  if(prev){ if((score||0)>(prev.score||0))prev.score=Math.round(score||0); prev.n=(prev.n||1)+1; prev.ts=Date.now(); }
+  else { st.items.unshift({id,label,glyph:glyph||'✔',score:Math.round(score||0),n:1,ts:Date.now()});
+    if(st.items.length>BEAT_TODAY_MAX)st.items.length=BEAT_TODAY_MAX; }
+}
+/* Decide what this finished battle counts as on the beaten-today list. Only real
+   clears land here — a loss is not a beat. */
+function beatTodayRecord(g,won,score){
+  if(!won)return;
+  if(g.kind==='campaign'&&g.mission){
+    beatTodayAdd('camp-'+g.mission.id,'Campaign · '+g.mission.name,'🎖',score);
+    if(g.timeTrial)beatTodayAdd('tt-'+g.mission.id,'Time Trial · '+g.mission.name,'⏱',score);
+  }
+  else if(g.kind==='indoc'&&g.indoc)beatTodayAdd('indoc-'+g.indoc.doctrine,'Indoctrination · '+g.indoc.name,'🎓',score);
+  else if(g.kind==='daily')beatTodayAdd('daily','Daily Challenge','🎯',score);
+  else if(g.kind==='secret')beatTodayAdd('secret','The Glitch Front','☢',score);
+  else if(g.kind==='rival'&&g.general)beatTodayAdd('rival-'+g.general.name,'Rival · '+g.general.name,'⚔',score);
+  else if(g.kind==='war')beatTodayAdd('war-'+(g.warName||'node'),'War Mode · '+(g.warName||'node'),'🗺',score);
+  else beatTodayAdd('mode-'+g.mode,(MODES[g.mode]?MODES[g.mode].name:g.mode)+' win','🏅',score);
+}
 function rivalBiasFor(name){ // their own signature weapon the first time; a counter to your last loadout after that
   const gen=GENERALS.find(g=>g.name===name);
   const rd=SAVE.rivals&&SAVE.rivals[name];
@@ -2433,13 +2831,20 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.16.1';
+const GAME_VERSION='1.17.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.17.0',notes:[
+    'NEW — INDOCTRINATION: a separate nine-lesson school, one per doctrine, reachable from the title screen. Every lesson hands you the doctrine (whether or not you have unlocked it), cuts your roster down to just that doctrine\'s units, and puts you against an enemy built to lose to it — Blitzkrieg gets vehicles against infantry, Deep Fires gets guns against a slow mass, and so on. They are easy on purpose: the point is to let you FEEL what a doctrine does before deciding whether to grind toward it, instead of picking one out of a dropdown based on a paragraph of text.',
+    'NEW — DAILY SUPPLY CRATE: one crate a day, granting a random cosmetic from a 35-piece pool that cannot be earned any other way. Five rarities (Common through Legendary), duplicate protection so a crate is never wasted, and a pity floor that guarantees an Epic or better within 14 pulls. Once the whole collection is yours the crate keeps paying out in XP. Crate cosmetics equip from the Cosmetics screen alongside your rank badges and titles.',
+    'NEW — LEADERBOARD screen: your best runs ranked by rated score (raw score weighted by difficulty, so a hard-won Legendary victory outranks a Recruit blowout), a streaks panel covering win / daily / crate streaks alongside your career totals, and a BEATEN TODAY list of everything you have cleared since midnight. This board is local — it is your own runs on your own device, and it says so plainly, because the game still has no server and a board showing invented rival scores would be a lie.',
+    'Win streaks are now tracked and shown on the results screen from three consecutive wins up.',
+    'Number keys now index the cards you can actually see rather than fixed roster slots — this only changes anything in Indoctrination, where the deck is deliberately cut down.',
+  ]},
   {v:'1.16.1',notes:[
     'FIXED: the war-room narrator could get cut off mid-sentence — most noticeably in the tutorial, where a fast player finishing a step (picking a card, deploying) before the Marshal finished the previous line would chop it off. Steps now wait for the current line to actually finish before moving on, with a safety timeout so a stuck voice can never soft-lock the tutorial.',
     'FIXED: during the tutorial, the training callout and the war-room subtitle were showing the exact same line at the same time — the Marshal still speaks every line, but it only appears on screen once now.',
@@ -2793,6 +3198,68 @@ const CAMPAIGN=[
 
 // one-letter difficulty tag shown next to each campaign mission (R/V/E/L)
 const DIFF_LETTER={recruit:'R',veteran:'V',elite:'E',legendary:'L'};
+
+/* ═══ INDOCTRINATION — the doctrine school ════════════════════════════════════
+   A separate, deliberately EASY track that exists for one reason: the main game asks
+   you to pick a doctrine before you have any basis for choosing one. Nine doctrines,
+   each a paragraph of text, chosen from a dropdown by someone who has never played.
+   That's a guess, not a decision.
+
+   So each lesson is a stacked deck. You are handed the doctrine (no rank gate — this
+   is where you find out whether you *want* to grind toward it), a roster cut down to
+   just the units that doctrine is about, and an opponent built specifically to lose to
+   it. Blitzkrieg gets vehicles against infantry. Deep Fires gets guns against a slow
+   mass. The player is not being tested; they're being shown what the doctrine FEELS
+   like when it works, which is the thing no description can convey.
+
+   Design rules, held across all nine:
+     · `diff` never exceeds recruit — losing here teaches nothing.
+     · `allow` (player) and `enemyAllow` are whitelists, and both must contain a real
+       answer to the other side. A stacked deck is fine; an unloseable one is boring.
+     · `lesson` is the ONE sentence the player should leave with. It's shown on the
+       results screen, which is the only moment they're guaranteed to read it.
+   Cleared lessons are cosmetic progress (SAVE.indocDone) — no unlocks are gated
+   behind this, so a player who skips the school loses nothing but context. ── */
+const INDOC=[
+  {doctrine:'blitzkrieg',name:'Steel Roll',weather:'clear',diff:'recruit',ecpMul:0.55,startCp:90,
+    allow:['tank','ifv','rifle'],enemyAllow:['rifle','sniper','medic'],enemyBias:'rifle',
+    brief:"Blitzkrieg school, Commander. You have armour, they have men on foot. Vehicles cost you less and move faster under this doctrine — so don't trickle them in. Mass two or three in one lane and drive straight through. Infantry cannot stop steel that keeps moving.",
+    lesson:"Armour beats infantry when it concentrates. Blitzkrieg is cheap, fast vehicles — spend that on a single deep thrust, not three shallow ones."},
+  {doctrine:'mass',name:'Human Tide',weather:'overcast',diff:'recruit',ecpMul:0.6,startCp:80,
+    allow:['rifle','medic','flame'],enemyAllow:['tank','atgm'],enemyBias:'atgm',
+    brief:"Mass Assault. Their kit is better than yours and it does not matter. Your infantry cost a third less and your economy runs hotter — so flood the lane. Their anti-tank teams are useless against men, and a medic behind the line keeps the tide rolling.",
+    lesson:"Quantity is its own quality. Mass Assault wins by making every trade cheap for you and expensive for them — never stop deploying."},
+  {doctrine:'airpower',name:'Own The Sky',weather:'clear',diff:'recruit',ecpMul:0.6,startCp:110,
+    allow:['heli','gunship','rifle'],enemyAllow:['tank','ifv','rifle'],enemyBias:'tank',
+    brief:"Air Dominant. Look at what they brought — armour, infantry, and not one air-defence vehicle in the order of battle. Your aircraft cost less and hit harder. Fly over the whole mess and kill it from above. Keep a few riflemen home so nothing walks into your HQ unopposed.",
+    lesson:"Aircraft are untouchable until the enemy brings AA — and devastating until then. Air Dominant is about punishing an opponent who forgot to look up."},
+  {doctrine:'precision',name:'Every Round Counts',weather:'clear',diff:'recruit',ecpMul:0.6,startCp:90,
+    allow:['sniper','atgm','rifle'],enemyAllow:['rifle','ifv'],enemyBias:'rifle',
+    brief:"Precision Strike. You are outnumbered and you will stay outnumbered — that's the point. Everything you field hits eighteen percent harder and your missile strike reloads fast. Snipers reach further than anything they own. Kill them before they close, and use the strike the moment they bunch up.",
+    lesson:"Precision Strike trades volume for reach and damage. Win at range, never in a brawl, and treat your missile strike as a real weapon rather than an emergency button."},
+  {doctrine:'swarm',name:'Death By A Thousand',weather:'clear',diff:'recruit',ecpMul:0.6,startCp:80,
+    allow:['drone','rifle','ifv'],enemyAllow:['tank','arty','rifle'],enemyBias:'tank',
+    brief:"Drone Swarm school. Their armour is expensive, slow, and has nothing that shoots up. Your drones cost forty percent less and come off cooldown twice as fast. Every drone is a one-way trip — that's fine. Send five for every tank and count the exchange rate, not the losses.",
+    lesson:"Drones are ammunition, not soldiers. Drone Swarm wins on exchange rate — losing ten cheap airframes to kill three expensive tanks is a victory, not a setback."},
+  {doctrine:'bastion',name:'Break On My Line',weather:'rain',diff:'recruit',ecpMul:0.75,startCp:100,openEnemy:4,
+    allow:['rifle','atgm','aa','medic'],enemyAllow:['tank','heli','rifle'],enemyBias:'tank',
+    brief:"Defense in Depth. They open with a rush — that is what you want. Your HQ carries forty percent more health and every unit you field is a quarter tougher. Do not race them up the lane. Set your line, hold the Defend stance, let them break themselves on it, then walk forward over what's left.",
+    lesson:"Defense in Depth wins by outlasting, not outrunning. Absorb the first push with a set line, then counter-attack into an enemy that has already spent its budget."},
+  {doctrine:'fires',name:'The God Of War',weather:'overcast',diff:'recruit',ecpMul:0.6,startCp:120,
+    allow:['arty','mlrs','rifle'],enemyAllow:['rifle','medic'],enemyBias:'rifle',
+    brief:"Deep Fires. They advance in a mass — shoulder to shoulder, straight up the lane. Your guns and rockets cost a quarter less and hit thirty percent harder, and they outrange everything the enemy owns. Screen with a few riflemen so nothing reaches the tubes, then shape the whole battlefield from behind them.",
+    lesson:"Artillery kills clusters, not individuals. Deep Fires wants the enemy bunched up and far away — screen your guns, then never let the fight get close."},
+  {doctrine:'recon',name:'See First, Shoot First',weather:'fog',diff:'recruit',ecpMul:0.65,startCp:95,
+    allow:['sniper','atgm','rifle','ifv'],enemyAllow:['rifle','tank','ifv'],enemyBias:'ifv',
+    brief:"Recon-Pull, and look at the weather — thick fog, and it does not touch you. Your spotting range more than doubles and the fog never blinds you. They are fighting blind in the same field you can see clearly. Find where they're weak, then pull your whole force through that gap.",
+    lesson:"Information is a weapon. Recon-Pull turns bad weather into your advantage — find the undefended lane before committing, and the fight is decided before contact."},
+  {doctrine:'guerrilla',name:'Bleed Them White',weather:'night',diff:'recruit',ecpMul:0.7,startCp:85,
+    allow:['rifle','flame','atgm'],enemyAllow:['tank','ifv'],enemyBias:'tank',
+    brief:"Insurgency. An armoured column, at night, against men who cost you forty percent less and are very hard to see coming. You will not win a stand-up fight and you should not try. Let the armour commit down a lane, then hit it from inside its own dust with flame and AT. Patience is the doctrine.",
+    lesson:"Insurgency trades ground for casualties. Cheap, hidden infantry ambushing committed armour beats meeting that armour head-on — every single time."},
+];
+function indocFor(key){ return INDOC.find(l=>l.doctrine===key)||null; }
+function indocClearedCount(){ return INDOC.filter(l=>SAVE.indocDone&&SAVE.indocDone[l.doctrine]).length; }
 
 /* Seeded from the last loadout the player actually fought with, so a returning session
    doesn't start by re-picking four dropdowns they already chose last time. SAVE.lastSel is
@@ -3403,7 +3870,12 @@ function newGame(){
   const kind = L? L.type : sel.mode;                 // wrapper: skirmish/blitz/survival/domination/campaign/daily/tutorial
   const mode = (kind==='blitz'||kind==='survival'||kind==='domination')? kind : 'skirmish'; // underlying ruleset
   const diffKey = L&&L.diff ? L.diff : sel.diff;
-  const doc=DOCTRINES[sel.doctrine], perk=doc.perk, diff=DIFFS[diffKey];
+  /* Doctrine is normally the player's menu pick, but a launcher may FORCE one — that's the
+     whole mechanism behind Indoctrination, which hands you a doctrine you may not have
+     unlocked yet so you can try it before deciding to grind toward it. Validated against
+     DOCTRINES so a bad launcher key can never produce `perk` of undefined. */
+  const docKey=(L&&L.doctrine&&DOCTRINES[L.doctrine])?L.doctrine:sel.doctrine;
+  const doc=DOCTRINES[docKey], perk=doc.perk, diff=DIFFS[diffKey];
   const laneY=fieldLaneY(); // deck-aware: 3 lanes laid into the field above the deploy deck
   const hqHP=1000*(perk.hpMul||1);
   // ── weather ──
@@ -3415,8 +3887,9 @@ function newGame(){
   const spotMul=wx.spotMul*(perk.spotMul||1);
   const ecpMul=(L&&L.ecpMul)||1;
   G={
-    kind, mode, diff:diffKey, doc:sel.doctrine, perk, diffMul:diff,
+    kind, mode, diff:diffKey, doc:docKey, perk, diffMul:diff,
     mission:(L&&L.type==='campaign')?L.mission:null,
+    indoc:(L&&L.type==='indoc')?L.indoc:null,
     daily:(L&&L.type==='daily')?L.daily:null,
     warName:(L&&L.type==='war')?L.warName:null, attract:false,
     timeTrial:(L&&L.timeTrial)||false, parTime:(L&&L.parTime)||0,       // ⏱ campaign time trial
@@ -3425,6 +3898,12 @@ function newGame(){
     wxKey, wx, wxRng:wx.rngMul, wxSpd:wx.spdMul, wxSpot:spotMul,
     spotBase:230, // px; scaled by weather+doctrine
     banned:(L&&L.banned)?L.banned:[],
+    /* Roster WHITELISTS, per side. `banned` (daily mutators) applies to everyone; these
+       are one-sided and are what lets an Indoctrination lesson stack the deck — the
+       player gets exactly the doctrine's units, the enemy gets exactly what that doctrine
+       beats. null means "no restriction", which is every other mode in the game. */
+    allowed:(L&&L.allowed&&L.allowed.length)?L.allowed.slice():null,
+    enemyAllowed:(L&&L.enemyAllowed&&L.enemyAllowed.length)?L.enemyAllowed.slice():null,
     enemyBias:(L&&L.enemyBias)||null,
     cdMul:(L&&L.cdMul)||1,
     t:0, over:false, result:null, paused:false,
@@ -3493,12 +3972,25 @@ function newGame(){
   for(const u of HOTBAR)G.cds[u]=0;
   window.G=G; // expose for console/debug
   // opening skirmishers so lanes are alive from the first second (count scales with difficulty)
-  if(mode!=='survival'&&kind!=='tutorial'){ const oc=diff.open||3; for(let i=0;i<oc;i++){ spawn('R',pick(['rifle','ifv','rifle']),i%3); } }
+  if(mode!=='survival'&&kind!=='tutorial'){ const oc=diff.open||3; for(let i=0;i<oc;i++){ spawn('R',enemyPick(['rifle','ifv','rifle']),i%3); } }
   // campaign "start outnumbered" openers
-  if(L&&L.openEnemy){ for(let i=0;i<L.openEnemy;i++){ spawn('R',pick(['tank','ifv','rifle','atgm']),(Math.random()*3)|0); } }
+  if(L&&L.openEnemy){ for(let i=0;i<L.openEnemy;i++){ spawn('R',enemyPick(['tank','ifv','rifle','atgm']),(Math.random()*3)|0); } }
   buildHotbar();
 }
 
+/* Pick an enemy unit from a hard-coded shortlist while still honouring a per-side roster
+   whitelist. Several spawn sites (opening skirmishers, campaign "outnumbered" openers,
+   chat-driven waves) pick from their own literal lists rather than going through the AI's
+   weighted table, so without this an Indoctrination lesson could field a unit its briefing
+   promised the player wouldn't see. Falls back to the whitelist's first entry — never to
+   an arbitrary unit — when the shortlist and the whitelist don't intersect. */
+function enemyPick(list){
+  if(G&&G.enemyAllowed){
+    const ok=list.filter(k=>G.enemyAllowed.indexOf(k)>=0);
+    return ok.length?pick(ok):G.enemyAllowed[0];
+  }
+  return pick(list);
+}
 /* ── unit factory ── */
 let _uid=1;
 function unitCost(key){ const u=UNITS[key],p=G.perk; let c=u.cost;
@@ -3569,6 +4061,7 @@ function tryDeploy(key,lane){
   if(G.over||G.paused)return false;
   lane=Math.max(0,Math.min(2,(lane|0))); // guard: only 3 lanes exist — never spawn a unit at an out-of-range (NaN) position
   if(G.banned&&G.banned.indexOf(key)>=0){ flashCard(key,'cant'); return false; }
+  if(G.allowed&&G.allowed.indexOf(key)<0){ flashCard(key,'cant'); return false; } // outside this lesson's roster
   if(!G.unlocked[key]){ flashCard(key,'cant'); return false; } // must buy the tier first
   const cost=unitCost(key);
   if(G.cp<cost){ flashCard(key,'cant'); return false; }
@@ -3801,7 +4294,7 @@ function landDrop(d){
     for(const u of G.units){ if(u.side==='B'&&u.alive&&dist(u.x,u.y,d.x,d.ty)<90){ u.hp=Math.min(u.maxHp,u.hp+u.maxHp*0.35); u.hitFlash=0.3; } }
   } else {
     // enemy resupply — a couple of fresh units
-    const k=pick(['rifle','ifv','atgm']); for(let i=0;i<2;i++)spawn('R',k,d.lane);
+    const k=enemyPick(['rifle','ifv','atgm']); for(let i=0;i<2;i++)spawn('R',k,d.lane);
     floatText(d.x,d.ty,'ENEMY RESUPPLY','#ff8f6f');
   }
 }
@@ -3850,7 +4343,11 @@ function fireRandomEvent(){
   try{ pick(pool).run(); G.revCount++; }catch(e){}
 }
 function randomEventTick(dt){
-  if(!SAVE.randomEvents||!G||G.over||G.paused||G.tutorial||G.attract)return;
+  /* Indoctrination sits alongside the tutorial here. A lesson's whole value is that the
+     matchup is exactly what the briefing said it was — a Golden Drone or an enemy resupply
+     wandering in mid-lesson is noise at best, and at worst puts a unit on the field that the
+     lesson's roster has no answer to. Surprises are for the real game. */
+  if(!SAVE.randomEvents||!G||G.over||G.paused||G.tutorial||G.attract||G.kind==='indoc')return;
   G.revT-=dt;
   if(G.revT<=0){ G.revT=rnd(30,55); fireRandomEvent(); }
 }
@@ -4330,7 +4827,9 @@ function aiStep(dt){
   if(G.enemyBias){ for(const c of choices){ if(c[0]===G.enemyBias)c[1]*=3.2; } }
   // banned units (daily mutators) never appear
   if(G.banned&&G.banned.length)choices=choices.filter(c=>G.banned.indexOf(c[0])<0);
-  if(!choices.length)choices=[['rifle',1]];
+  // Indoctrination: the enemy is restricted to the roster this lesson wants them to lose with
+  if(G.enemyAllowed)choices=choices.filter(c=>G.enemyAllowed.indexOf(c[0])>=0);
+  if(!choices.length)choices=[[(G.enemyAllowed&&G.enemyAllowed[0])||'rifle',1]];
   // what's the AI most worried about? (drives the readout)
   const threat = (airThreat>=pArmor&&airThreat>=pInf&&airThreat>0)?'AIR' : (pArmor>=pInf&&pArmor>0)?'ARMOR' : (pInf>0)?'INFANTRY':'nothing yet';
   // smart AI (elite+) commits more of its budget and picks lanes deliberately, scaling with
@@ -5335,6 +5834,8 @@ function syncHUD(){
     ob=`<div class="big" style="color:#5ff0e0">${secured}/3 ZONES SECURED</div>${lost?lost+' held by them · ':''}lock all 3 to win outright`;}
   else if(G.kind==='campaign'&&G.mission){ob=`<div class="big">${G.mission.name}</div>★ ${G.mission.star}`;}
   else if(G.kind==='daily'){ob=`<div class="big">DAILY</div>${G.daily?G.daily.mut.name:''}`;}
+  else if(G.kind==='indoc'&&G.indoc){const dc=(DOCTRINES[G.indoc.doctrine]||{});
+    ob=`<div class="big" style="color:${dc.col||'var(--gold)'}">🎓 ${G.indoc.name.toUpperCase()}</div>${dc.name||''} school`;}
   else if(G.kind==='tutorial'){ob=`<div class="big">TRAINING</div>learn the ropes`;}
   else if(G.kind==='evolution'){ob=`<div class="big" style="color:${AGES[G.age].col}">${AGES[G.age].glyph} ${AGES[G.age].name.toUpperCase()}</div>age ${G.age+1}/5 · evolve to advance`;}
   else{ob=`<div class="big">SKIRMISH</div>${DIFFS[G.diff].name} · ${DOCTRINES[G.doc].name}`;}
@@ -5466,8 +5967,14 @@ function buildQuickbar(){
 }
 function buildHotbar(){
   buildQuickbar();
+  /* Indoctrination hands you a roster of three or four units, which routinely spans
+     categories (Mass Assault is rifle + medic + flame — GROUND and SUPPORT). Paging a
+     teaching deck behind tabs hides units the lesson is explicitly about, so a restricted
+     roster drops the tab bar entirely and lays every allowed card out in one row. */
+  const oneDeck=!!(G&&G.allowed);
   const tabsEl=document.getElementById('hbtabs'); tabsEl.innerHTML='';
-  for(const t of HB_TABS){
+  tabsEl.style.display=oneDeck?'none':'';
+  if(!oneDeck)for(const t of HB_TABS){
     const tb=document.createElement('button'); tb.className='hbtab'+(hbTab===t.id?' on':'');
     tb.textContent=t.label;
     if(t.col)tb.style.setProperty('--tc',t.col); // drives border/text/glow via the .hbtab rules
@@ -5476,9 +5983,15 @@ function buildHotbar(){
   }
   const tab=HB_TABS.find(t=>t.id===hbTab)||HB_TABS[0];
   const hb=document.getElementById('hotbar'); hb.innerHTML='';
+  /* In one-deck mode the number shown on a card must match what the keyboard handler will
+     do — that handler indexes the visible deck, so a card's label is its position in the
+     filtered list, not its slot in the global HOTBAR. */
+  const deckIdx = oneDeck ? HOTBAR.filter(k=>G.allowed.indexOf(k)>=0) : null;
   HOTBAR.forEach((key,i)=>{
-    if(!tab.units||!tab.units.has(key))return;
+    if(!oneDeck && (!tab.units||!tab.units.has(key)))return;
     if(key==='swarm'&&!SAVE.secretDone)return; // hidden until the secret level is cleared
+    if(oneDeck && G.allowed.indexOf(key)<0)return;
+    if(oneDeck)i=deckIdx.indexOf(key);
     const u=UNITS[key];
     const el=document.createElement('div');
     el.className='card'; el.id='card-'+key;
@@ -5507,7 +6020,7 @@ function buildHotbar(){
     if(HB_GROUP_END[key]){ const sep=document.createElement('div'); sep.className='hb-sep'; hb.appendChild(sep); }
   });
   // production spawners — high-cost factories placed just ahead of your HQ
-  if(tab.spawners)for(const type of SPAWNER_KEYS){ const sp=SPAWNERS[type];
+  if(tab.spawners&&!(G&&G.allowed))for(const type of SPAWNER_KEYS){ const sp=SPAWNERS[type];
     const el=document.createElement('div');
     el.className='card spawner'; el.id='card-sp-'+type; el.style.borderColor=sp.col;
     el.innerHTML=`<span class="key">🏭</span><div class="glyph" style="color:${sp.col}">${sp.glyph}</div>
@@ -6123,7 +6636,7 @@ function chatVoteTick(dt){
     let best=-1,bl=1; for(let i=0;i<3;i++)if(G.cvVotes[i]>best){best=G.cvVotes[i];bl=i;}
     if(best>0){
       const n=Math.min(4,1+Math.floor(best/2));
-      for(let k=0;k<n;k++)spawn('R',pick(['rifle','tank','ifv','atgm','drone']),bl);
+      for(let k=0;k<n;k++)spawn('R',enemyPick(['rifle','tank','ifv','atgm','drone']),bl);
       announce('CHAT SENDS THE '+['TOP','MIDDLE','BOTTOM'][bl]+' LANE','+'+n+' enemy','#c9a0ff');
       chatMsgRaw('FRONTLINE','the '+['top','mid','bot'][bl]+' lane vote wins — incoming!','#c9a0ff');
     }
@@ -6175,6 +6688,17 @@ function endGame(winner,reason){
       G.ttResult={passed:false,t:Math.round(G.t*10)/10,par:G.parTime};
     }
   }
+  // ── INDOCTRINATION: mark the doctrine's lesson cleared (cosmetic progress; gates nothing) ──
+  G.indocResult=null;
+  if(G.kind==='indoc'&&G.indoc){
+    const key=G.indoc.doctrine;
+    if(!SAVE.indocDone)SAVE.indocDone={};
+    const firstClear=won&&!SAVE.indocDone[key];
+    if(won){ SAVE.indocDone[key]=true; if(firstClear)addXP(150); }
+    G.indocResult={doctrine:key,name:G.indoc.name,lesson:G.indoc.lesson,won,firstClear,
+      cleared:indocClearedCount(),total:INDOC.length};
+    if(firstClear&&typeof gcEvent==='function')gcEvent('indoc-clear');
+  }
   // ── SECRET LEVEL ("Glitch Front") cleared: unlock the Drone Swarm + Rods from God, badge + bonus XP ──
   G.secretClearNow=false;
   if(G.kind==='secret'&&won){
@@ -6204,6 +6728,19 @@ function endGame(winner,reason){
   checkMedals(won,score);
   // 🎖 career backend — battle history, aggregates & rivalry memory
   try{ recordBattle(won,score); }catch(e){}
+  /* 🏆 leaderboard / streaks / beaten-today. Indoctrination is deliberately EXCLUDED from
+     the board: its lessons are stacked to be won, so letting them post scores would put a
+     tutorial blowout above a real Legendary victory and make the board meaningless. It
+     still counts for the beaten-today list, which is a record of what you did, not a rank. */
+  G.boardResult=null;
+  try{
+    if(G.kind!=='indoc'){
+      const rank=boardRecord(G,won,score);
+      G.boardResult=(rank>=0)?{rank:rank+1,rated:ratedScore(score,G.diff),total:SAVE.board.length}:null;
+    }
+    G.streakNow=streakRecord(won);
+    beatTodayRecord(G,won,score);
+  }catch(e){}
   persist();
   chatReact(won?'win':'lose');
   if(leveled)showRankUp(lvlBefore,SAVE.lvl,()=>showResults(won,reason,score,xpGain,leveled));
@@ -6266,6 +6803,7 @@ function grantMedal(id){ if(MEDALS[id]&&!SAVE.medals[id]){SAVE.medals[id]=1;} }
 function kindLabel(){
   if(G.kind==='campaign'&&G.mission)return 'CAMPAIGN · '+G.mission.name;
   if(G.kind==='daily')return 'DAILY CHALLENGE';
+  if(G.kind==='indoc'&&G.indoc)return 'INDOCTRINATION · '+G.indoc.name;
   if(G.kind==='tutorial')return 'TRAINING';
   if(G.kind==='war')return 'WAR · '+(G.warName||'front');
   if(G.kind==='evolution')return 'EVOLUTION · '+AGES[G.age].name;
@@ -6305,6 +6843,25 @@ function showResults(won,reason,score,xpGain,leveled){
     secretExtra+=`<div class="res-xp" style="color:var(--gold)">🔥 DAILY STREAK: <b>${s.streak}</b> day${s.streak===1?'':'s'} running${s.isBest&&s.streak>1?' — a new personal best!':(s.best>s.streak?` (best ${s.best})`:'')} — come back tomorrow to keep it alive.</div>`;
   } else if(G.kind==='daily'&&!won&&(SAVE.dailyStreak||0)>0){
     secretExtra+=`<div class="res-xp" style="color:var(--dim)">🔥 Your ${SAVE.dailyStreak}-day streak is still alive — today's run just didn't land. Try again before midnight.</div>`;
+  }
+  /* 🎓 Indoctrination — the LESSON is the payload of this whole mode, and the results
+     screen is the one moment the player is guaranteed to be reading. It goes first and it
+     goes in doctrine colour, above the score furniture. */
+  if(G.indocResult){ const ir=G.indocResult; const dc=(DOCTRINES[ir.doctrine]||{}).col||'var(--gold)';
+    if(ir.won){
+      secretExtra+=`<div class="res-xp" style="color:${dc};font-weight:800">🎓 ${escapeHTML(ir.name.toUpperCase())} — LESSON COMPLETE${ir.firstClear?' (+150 XP)':''}</div>`;
+      secretExtra+=`<div class="res-aar" style="border-color:${dc}">${escapeHTML(ir.lesson)}</div>`;
+      secretExtra+=`<div class="res-xp" style="color:var(--dim)">Doctrine school: ${ir.cleared}/${ir.total} complete.</div>`;
+    } else {
+      secretExtra+=`<div class="res-xp" style="color:var(--dim)">🎓 These lessons are built to be won — take another run at it. ${escapeHTML(ir.lesson)}</div>`;
+    }
+  }
+  // 🏆 personal-board placement + win streak (local board — see the LEADERBOARD block)
+  if(G.boardResult){ const b=G.boardResult;
+    secretExtra+=`<div class="res-xp" style="color:var(--cyan)">🏆 PERSONAL BEST BOARD — #${b.rank} of ${b.total} · rated ${b.rated.toLocaleString()}</div>`;
+  }
+  if(won&&(G.streakNow||0)>=3){
+    secretExtra+=`<div class="res-xp" style="color:var(--gold)">🔥 WIN STREAK: <b>${G.streakNow}</b>${G.streakNow===(SAVE.bestWinStreak||0)?' — your best yet':''}</div>`;
   }
   if(G.kind==='secret'&&won){
     secretExtra+= G.secretClearNow
@@ -6547,6 +7104,17 @@ function launchTimeTrial(id){
   LAUNCH={type:'campaign',mission:m,diff:m.diff,weather:m.weather,ecpMul:m.ecpMul,
     enemyBias:m.enemyBias||null,openEnemy:m.openEnemy||0,
     timeTrial:true,parTime:missionParTime(m)};
+  start();
+}
+/* ── INDOCTRINATION — a doctrine lesson. Forces the doctrine (bypassing its rank gate on
+   purpose), hands both sides a whitelisted roster, and runs on a generous economy. See the
+   INDOC table for the design rules these launches have to hold to. ── */
+function launchIndoc(doctrineKey){
+  const L=indocFor(doctrineKey); if(!L)return;
+  LAUNCH={type:'indoc',indoc:L,doctrine:L.doctrine,diff:L.diff||'recruit',weather:L.weather,
+    ecpMul:L.ecpMul||0.6,startCp:L.startCp||80,openEnemy:L.openEnemy||0,
+    allowed:L.allow,enemyAllowed:L.enemyAllow,enemyBias:L.enemyBias||null};
+  if(typeof gcEvent==='function')gcEvent('indoc-start');
   start();
 }
 // ── THE GLITCH FRONT — the hidden secret level. See secretTick() for its phases. ──
@@ -6832,12 +7400,14 @@ function start(){
   if(!G.attract)ambientStart();
   syncStanceUI(); syncSpeedUI();
   const hqLbl=document.getElementById('hqB-lbl'); if(hqLbl)hqLbl.textContent=equippedBadge().glyph+' YOUR HQ';
-  const big=(G.kind==='campaign'&&G.mission)?G.mission.name:((MODES[G.mode]&&MODES[G.mode].name)||G.kind);
+  const big=(G.kind==='campaign'&&G.mission)?G.mission.name:
+            (G.kind==='indoc'&&G.indoc)?G.indoc.name:((MODES[G.mode]&&MODES[G.mode].name)||G.kind);
   if(G.prep>0)announce('⏳ PREP · '+String(big).toUpperCase(),'queue your opening wave — enemy frozen','#5ff0e0');
   else announce(String(big).toUpperCase(),DOCTRINES[G.doc].name+' · '+DIFFS[G.diff].name+' · '+G.wx.name,DOCTRINES[G.doc].col);
   if(!G.tutorial){
     if(G.wxKey!=='clear')say(G.wx.line,'grim',1);
     if(G.kind==='campaign'&&G.mission)say(G.mission.brief,'brief',1);
+    else if(G.kind==='indoc'&&G.indoc)say(G.indoc.brief,'brief',1);
     else if(G.kind==='daily'&&G.daily)say("Today's orders, Commander: "+G.daily.mut.name+". "+G.daily.mut.desc,'brief',1);
     else if(G.prep<=0)narr('battleStart'); // otherwise battleStart fires when prep ends
     if(G.general)setTimeout(()=>{ if(G&&!G.over&&!G.tutorial)showRival(rivalIntroFor(G.general)); },G.prep>0?Math.min(9000,G.prep*1000+800):1400);
@@ -6909,7 +7479,11 @@ window.addEventListener('keydown',e=>{
   const n=parseInt(e.key,10);
   if(!isNaN(n)){
     if(n===0){G.selCard='precision';showLaneHint();return;}
-    if(n>=1&&n<=9&&n<=HOTBAR.length){ const key=HOTBAR[n-1];
+    /* Number keys index the roster the player can actually SEE. Normally that's HOTBAR;
+       in an Indoctrination lesson the deck is cut down, so 1–3 must mean the three cards
+       on screen rather than three global slots that were filtered out of the hotbar. */
+    const deck = G.allowed ? HOTBAR.filter(k=>G.allowed.indexOf(k)>=0) : HOTBAR;
+    if(n>=1&&n<=9&&n<=deck.length){ const key=deck[n-1];
       if(!G.unlocked[key]){ if(!G.ages && tryUnlock(key))G.selCard=key; } else G.selCard=key;
       showLaneHint();return;}
   }
@@ -7133,7 +7707,7 @@ document.getElementById('fr-no').onclick=()=>{document.getElementById('firstrun'
 const DMGTYPE_LABEL={sa:'Small Arms',ap:'Armour-Piercing',he:'High Explosive',aa:'Anti-Air'};
 const ARMORCLASS_LABEL={inf:'Infantry',light:'Light',heavy:'Heavy',air:'Air',struct:'Structure'};
 function openManual(tab){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','record','roadmap','cosmetics','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','settings','record','roadmap','cosmetics','rivals','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('manual').classList.remove('hidden');
   hideDiffAmbient();
@@ -7295,7 +7869,7 @@ function renderManualBody(tab){
 
 /* ═══ SETTINGS MODAL ═══ */
 function openSettings(){
-  ['title','menu','warmap','results','hud','pauseScreen','manual','record','roadmap','cosmetics','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','manual','record','roadmap','cosmetics','rivals','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
   document.getElementById('settings').classList.remove('hidden');
   hideDiffAmbient();
   renderSettings();
@@ -7405,7 +7979,7 @@ function renderSettings(){
 }
 /* ═══ SERVICE RECORD — the career backend surfaced ═══ */
 function openRecord(){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','roadmap','cosmetics','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','roadmap','cosmetics','rivals','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('record').classList.remove('hidden');
   hideDiffAmbient();
@@ -7459,7 +8033,7 @@ function renderRecord(){
   el.innerHTML=h; el.scrollTop=0;
 }
 function openRoadmap(){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','cosmetics','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','cosmetics','rivals','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('roadmap').classList.remove('hidden');
   hideDiffAmbient();
@@ -7515,18 +8089,29 @@ function renderRoadPath(){
   },0);
 }
 function openCosmetics(){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','rivals','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('cosmetics').classList.remove('hidden');
   hideDiffAmbient();
   renderCosmetics();
 }
+/* Both equippers validate BEFORE writing: a numeric key is a rank gate, a string key is
+   either a special achievement badge or an owned crate drop. Clicking a locked tile is a
+   no-op rather than an equip that silently fails to render. */
 function equipBadge(val){
   if(typeof val==='number'){ if(!rankGateOk(val))return; }
-  else { const sb=SPECIAL_BADGES.find(e=>e.id===val); if(!sb||!sb.requires())return; }
+  else {
+    const sb=SPECIAL_BADGES.find(e=>e.id===val);
+    if(sb){ if(!sb.requires())return; }
+    else { const cb=chestItem(val); if(!cb||cb.type!=='badge'||!chestOwns(val))return; }
+  }
   SAVE.equippedBadge=val; persist(); renderCosmetics(); refreshTopbar();
 }
-function equipTitle(lvl){ if(!rankGateOk(lvl))return; SAVE.equippedTitle=lvl; persist(); renderCosmetics(); refreshTopbar(); }
+function equipTitle(val){
+  if(typeof val==='number'){ if(!rankGateOk(val))return; }
+  else { const ct=chestItem(val); if(!ct||ct.type!=='title'||!chestOwns(val))return; }
+  SAVE.equippedTitle=val; persist(); renderCosmetics(); refreshTopbar();
+}
 function renderCosmetics(){
   const el=document.getElementById('cos-body'); if(!el)return;
   const eqBadge=equippedBadge(), eqT=equippedTitleEntry().lvl;
@@ -7548,13 +8133,217 @@ function renderCosmetics(){
       `<span class="cos-lvl">${locked?'Rank '+t.lvl:(on?'EQUIPPED':'Rank '+t.lvl)}</span></div>`;
   }
   h+=`</div>`;
+  /* ── Crate collection. Shown as one grid across both slot types because that's how the
+     player thinks about it ("what have I pulled?"), not split by badge/title. Unowned
+     entries stay visible but locked so the pool's size and shape are never a mystery. ── */
+  const ownedN=CHEST_COSMETICS.filter(c=>chestOwns(c.id)).length;
+  h+=`<h2>Supply Crate Collection</h2>`;
+  h+=`<div class="chest-prog"><span style="font-size:20px">🎁</span>`+
+    `<div class="chest-prog-bar"><i style="width:${Math.round(ownedN/CHEST_COSMETICS.length*100)}%"></i></div>`+
+    `<span class="chest-prog-txt">${ownedN}/${CHEST_COSMETICS.length} collected · ${SAVE.chestPulls||0} crates opened</span></div>`;
+  h+=`<div class="cos-grid">`;
+  for(const c of CHEST_COSMETICS){
+    const owned=chestOwns(c.id), rar=CHEST_RARITIES[c.rarity]||CHEST_RARITIES.common;
+    const isBadge=c.type==='badge';
+    const on=owned&&(isBadge?SAVE.equippedBadge===c.id:SAVE.equippedTitle===c.id);
+    h+=`<div class="cos-item chest${on?' on':''}${owned?'':' locked'}" style="--rc:${rar.col}"`+
+      ` data-eq="${isBadge?'badge':'title'}" data-lvl="${escapeHTML(c.id)}"`+
+      ` title="${escapeHTML(rar.name)} ${isBadge?'HQ badge':'commander title'}${owned?'':' — not yet pulled from a crate'}">`+
+      `<span class="cos-glyph">${owned?(isBadge?c.glyph:'🎖'):'🔒'}</span>`+
+      `<span class="cos-nm">${escapeHTML(owned?(isBadge?c.name:c.title):'???')}</span>`+
+      `<span class="cos-lvl">${on?'EQUIPPED':rar.name}</span></div>`;
+  }
+  h+=`</div>`;
   el.innerHTML=h; el.scrollTop=0;
   el.querySelectorAll('.cos-item').forEach(it=>{
     it.onclick=()=>{ const raw=it.dataset.lvl, lvl=isNaN(+raw)?raw:+raw; if(it.dataset.eq==='badge')equipBadge(lvl); else equipTitle(lvl); };
   });
 }
+/* ═══ INDOCTRINATION SCREEN ═══ */
+function openIndoc(){
+  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','cosmetics','rivals','patchnotes','leaderboard'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
+  document.getElementById('btn-pause').classList.add('hidden');
+  document.getElementById('indoc').classList.remove('hidden');
+  hideDiffAmbient();
+  SAVE.indocSeen=true; persist();
+  renderIndoc();
+}
+function renderIndoc(){
+  const el=document.getElementById('indoc-body'); if(!el)return;
+  const done=indocClearedCount();
+  let h=`<div class="road-now"><span class="road-now-badge">🎓</span>`+
+    `<div class="road-now-bar"><i style="width:${Math.round(done/INDOC.length*100)}%"></i></div>`+
+    `<span class="road-now-txt">${done}/${INDOC.length} lessons cleared</span></div>`;
+  if(done===INDOC.length)
+    h+=`<div class="lb-note">Every doctrine studied. You've now actually played all nine — pick the one you liked, not the one that sounded good.</div>`;
+  else
+    h+=`<div class="lb-note">These are teaching fights, not tests: <b>easy on purpose</b>, with the roster cut down and the enemy chosen to lose to the doctrine you're being handed. Doctrines you haven't unlocked yet are playable here anyway — that's the point.</div>`;
+  for(const L of INDOC){
+    const d=DOCTRINES[L.doctrine]||{}; const cleared=!!(SAVE.indocDone&&SAVE.indocDone[L.doctrine]);
+    const locked=!SAVE.unlocked.includes(L.doctrine);
+    const roster=L.allow.map(k=>UNITS[k]?UNITS[k].glyph:'').join(' ');
+    h+=`<button class="ind-card${cleared?' done':''}" style="--dc:${d.col||'var(--line)'}" data-doc="${escapeHTML(L.doctrine)}">`+
+      `<span class="ind-glyph">${d.glyph||'🎓'}</span>`+
+      `<span class="ind-tx">`+
+        `<span class="ind-nm">${escapeHTML(L.name)}</span>`+
+        `<span class="ind-doc">${escapeHTML(d.name||L.doctrine)}${locked?' · <i style="color:var(--faint)">not yet unlocked — playable here</i>':''}</span>`+
+        `<span class="ind-teaches">${roster} &nbsp;vs&nbsp; ${L.enemyAllow.map(k=>UNITS[k]?UNITS[k].glyph:'').join(' ')} &nbsp;·&nbsp; ${escapeHTML(WEATHERS[L.weather]?WEATHERS[L.weather].name:L.weather)}</span>`+
+      `</span>`+
+      `<span class="ind-state">${cleared?'✔ Cleared':'▶ Start'}</span></button>`;
+  }
+  el.innerHTML=h; el.scrollTop=0;
+  el.querySelectorAll('.ind-card').forEach(c=>{ c.onclick=()=>launchIndoc(c.dataset.doc); });
+}
+
+/* ═══ LEADERBOARD SCREEN ═══ */
+const LB_TABS=[['runs','🏆 Best Runs'],['streaks','🔥 Streaks'],['today','✔ Beaten Today']];
+let lbTab='runs';
+function openLeaderboard(){
+  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','cosmetics','rivals','patchnotes','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
+  document.getElementById('btn-pause').classList.add('hidden');
+  document.getElementById('leaderboard').classList.remove('hidden');
+  hideDiffAmbient();
+  buildLbTabs(lbTab);
+}
+function buildLbTabs(active){
+  lbTab=active;
+  const tabs=document.getElementById('lb-tabs'); if(!tabs)return; tabs.innerHTML='';
+  LB_TABS.forEach(([id,lbl])=>{
+    const b=document.createElement('button'); b.className='man-tab'+(id===active?' on':''); b.textContent=lbl;
+    b.onclick=()=>buildLbTabs(id); tabs.appendChild(b);
+  });
+  renderLeaderboard(active);
+}
+function renderLeaderboard(tab){
+  const el=document.getElementById('lb-body'); if(!el)return;
+  let h='';
+  if(tab==='runs'){
+    /* The local-only disclaimer is not boilerplate — it is the single most important
+       sentence on this screen, and it stays until a real backend exists. */
+    h+=`<div class="lb-note"><b>These are your runs, on this device.</b> Frontline Commander has no server yet, `+
+      `so there is nothing to compare against but yourself — and a board showing invented rival scores would be a lie. `+
+      `Rows are ranked by <b>rated score</b>: raw score × difficulty weight `+
+      `(${Object.keys(DIFF_WEIGHT).map(k=>`${DIFFS[k]?DIFFS[k].name:k} ×${DIFF_WEIGHT[k]}`).join(' · ')}), `+
+      `so a hard-won Legendary win outranks a Recruit blowout. Indoctrination lessons are excluded — they're stacked to be won.</div>`;
+    const board=Array.isArray(SAVE.board)?SAVE.board:[];
+    if(!board.length){
+      h+=`<p style="color:var(--dim)">No runs banked yet. Finish a battle in any mode and it lands here.</p>`;
+    } else {
+      board.forEach((e,i)=>{
+        const d=DIFFS[e.diff]||{}, doc=DOCTRINES[e.doc]||{};
+        const when=new Date(e.ts);
+        h+=`<div class="lb-row${i<3?' top':''}">`+
+          `<span class="lb-rank">#${i+1}</span>`+
+          `<span class="lb-main"><b>${escapeHTML(MODES[e.mode]?MODES[e.mode].name:e.mode)}</b> · `+
+            `<span style="color:${doc.col||'var(--dim)'}">${escapeHTML(doc.name||e.doc)}</span>`+
+            `<span class="lb-meta">${e.won?'✔ Win':'✘ Loss'} · <span style="color:${d.col||'var(--faint)'}">${escapeHTML(d.name||e.diff)}</span>`+
+            ` · ${e.kills} kills · ${Math.floor(e.dur/60)}:${String(e.dur%60).padStart(2,'0')}`+
+            ` · ${when.toLocaleDateString()}</span></span>`+
+          `<span class="lb-score">${e.rated.toLocaleString()}<small>raw ${e.score.toLocaleString()}</small></span></div>`;
+      });
+    }
+  }
+  else if(tab==='streaks'){
+    const c=SAVE.career||{};
+    h+=`<div class="lb-streaks">`+
+      `<div class="lb-sk"><div class="lb-sk-n">${SAVE.winStreak||0}</div><div class="lb-sk-l">Win streak</div><div class="lb-sk-b">best ${SAVE.bestWinStreak||0}</div></div>`+
+      `<div class="lb-sk"><div class="lb-sk-n">${SAVE.dailyStreak||0}</div><div class="lb-sk-l">Daily streak</div><div class="lb-sk-b">best ${SAVE.dailyBestStreak||0}</div></div>`+
+      `<div class="lb-sk"><div class="lb-sk-n">${SAVE.chestStreak||0}</div><div class="lb-sk-l">Crate streak</div><div class="lb-sk-b">best ${SAVE.chestBestStreak||0}</div></div>`+
+      `<div class="lb-sk"><div class="lb-sk-n">${SAVE.best.toLocaleString()}</div><div class="lb-sk-l">Best raw score</div><div class="lb-sk-b">any mode</div></div>`+
+      `</div>`;
+    h+=`<h2>Career</h2>`;
+    h+=`<div class="lb-streaks">`+
+      `<div class="lb-sk"><div class="lb-sk-n">${c.battles||0}</div><div class="lb-sk-l">Battles</div><div class="lb-sk-b">${c.wins||0}W · ${c.losses||0}L</div></div>`+
+      `<div class="lb-sk"><div class="lb-sk-n">${(c.kills||0).toLocaleString()}</div><div class="lb-sk-l">Total kills</div><div class="lb-sk-b">${(c.deploys||0).toLocaleString()} deployed</div></div>`+
+      `<div class="lb-sk"><div class="lb-sk-n">${SAVE.bestSurvival||0}s</div><div class="lb-sk-l">Longest survival</div><div class="lb-sk-b">held the line</div></div>`+
+      `<div class="lb-sk"><div class="lb-sk-n">${SAVE.bestBlitz.toLocaleString()}</div><div class="lb-sk-l">Best Blitz</div><div class="lb-sk-b">2-minute clock</div></div>`+
+      `</div>`;
+    h+=`<div class="lb-note">A win streak breaks on any real loss, in any mode. The daily and crate streaks each need one action per calendar day — miss a day and they restart at 1, not 0, on your next clear.</div>`;
+  }
+  else {
+    const st=beatTodayState();
+    h+=`<div class="lb-note">Everything you've <b>cleared today</b>, ${escapeHTML(st.day||todayKey())}. Rolls over at midnight, local time. Replays collapse into one row keeping your best score.</div>`;
+    if(!st.items.length){
+      h+=`<p style="color:var(--dim)">Nothing beaten yet today. The daily challenge is the obvious place to start.</p>`;
+    } else {
+      for(const it of st.items){
+        h+=`<div class="bt-row"><span class="bt-glyph">${it.glyph}</span>`+
+          `<span class="bt-lbl">${escapeHTML(it.label)}${it.n>1?` <span class="bt-n">×${it.n}</span>`:''}</span>`+
+          `<span class="bt-score">${(it.score||0).toLocaleString()}</span></div>`;
+      }
+    }
+  }
+  el.innerHTML=h; el.scrollTop=0;
+}
+
+/* ═══ DAILY CHEST — reveal flow ═══ */
+function refreshTitleChest(){
+  const card=document.getElementById('t-chest'); if(!card)return;
+  const sub=document.getElementById('t-chest-sub'), stk=document.getElementById('t-chest-streak');
+  const ready=chestReady();
+  card.classList.toggle('spent',!ready);
+  if(stk)stk.textContent='🔥 '+(SAVE.chestStreak||0);
+  if(sub){
+    const owned=Object.keys(SAVE.chestOwned||{}).length;
+    sub.textContent = ready
+      ? `a random cosmetic — ${owned}/${CHEST_COSMETICS.length} collected`
+      : `claimed today · back tomorrow (${owned}/${CHEST_COSMETICS.length} collected)`;
+  }
+  card.setAttribute('aria-disabled',ready?'false':'true');
+}
+function openChestModal(){
+  const m=document.getElementById('chest-modal'); if(!m)return;
+  const box=document.getElementById('chest-box'), lid=document.getElementById('chest-lid');
+  const rev=document.getElementById('chest-reveal'), btn=document.getElementById('chest-open');
+  box.style.setProperty('--rc','var(--gold)');
+  lid.textContent='🎁'; lid.classList.remove('shake');
+  const ready=chestReady();
+  if(ready){
+    rev.innerHTML=`<div class="cr-sub">One crate a day. ${Object.keys(SAVE.chestOwned||{}).length}/${CHEST_COSMETICS.length} collected`+
+      `${(SAVE.chestSinceEpic||0)>=CHEST_PITY-3&&!chestPoolComplete()?` · <b style="color:var(--purple)">Epic guaranteed within ${Math.max(1,CHEST_PITY-(SAVE.chestSinceEpic||0))}</b>`:''}.</div>`;
+    btn.classList.remove('hidden'); btn.disabled=false; btn.textContent='▣ OPEN CRATE';
+  } else {
+    rev.innerHTML=`<div class="cr-sub">Today's crate is already claimed, Commander. A fresh one drops at midnight.</div>`;
+    btn.classList.add('hidden');
+  }
+  m.classList.remove('hidden');
+  (ready?btn:document.getElementById('chest-close')).focus();
+}
+function closeChestModal(){ const m=document.getElementById('chest-modal'); if(m)m.classList.add('hidden'); }
+function doChestOpen(){
+  const btn=document.getElementById('chest-open'); if(btn)btn.disabled=true;
+  const lid=document.getElementById('chest-lid'), rev=document.getElementById('chest-reveal');
+  const box=document.getElementById('chest-box');
+  if(!SAVE.reduceMotion&&lid)lid.classList.add('shake');
+  const res=claimChest();
+  if(!res){ closeChestModal(); return; }   // raced with another claim — nothing to reveal
+  const reveal=()=>{
+    const rar=CHEST_RARITIES[res.rarity]||CHEST_RARITIES.common;
+    box.style.setProperty('--rc',rar.col);
+    if(lid){ lid.classList.remove('shake'); lid.textContent='📦'; }
+    const anim=SAVE.reduceMotion?'':' cr-in';
+    if(res.item){
+      const isBadge=res.item.type==='badge';
+      rev.innerHTML=`<div class="cr-glyph${anim}">${isBadge?res.item.glyph:'🎖'}</div>`+
+        `<div class="cr-name">${escapeHTML(isBadge?res.item.name:res.item.title)}</div>`+
+        `<div><span class="rar-chip" style="--rc:${rar.col}">${rar.name}</span></div>`+
+        `<div class="cr-sub">New ${isBadge?'HQ badge':'commander title'} · +${res.xp} XP<br>`+
+        `${res.owned}/${res.total} collected — equip it from Cosmetics.</div>`;
+    } else {
+      rev.innerHTML=`<div class="cr-glyph${anim}">🏅</div>`+
+        `<div class="cr-name">Surplus Requisition</div>`+
+        `<div><span class="rar-chip" style="--rc:${rar.col}">${rar.name}</span></div>`+
+        `<div class="cr-sub">Every cosmetic is already yours — the crate paid out <b>+${res.xp} XP</b> instead.</div>`;
+    }
+    if(SAVE.sound)beep(res.rarity==='legendary'?880:res.rarity==='epic'?740:560,0.18,'triangle',0.07);
+    refreshTitleChest();
+    try{ document.getElementById('t-rank').textContent=equippedBadge().glyph+' Rank '+SAVE.lvl+' '+equippedTitleStr(); }catch(e){}
+    if(btn){ btn.classList.add('hidden'); }
+  };
+  if(SAVE.reduceMotion)reveal(); else setTimeout(reveal,900);
+}
 function openRivals(){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','cosmetics','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','cosmetics','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('rivals').classList.remove('hidden');
   hideDiffAmbient();
@@ -7612,6 +8401,23 @@ document.getElementById('t-cosmetics').onclick=()=>openCosmetics();
 document.getElementById('cos-back').onclick=()=>showTitle();
 document.getElementById('t-rivals').onclick=()=>openRivals();
 document.getElementById('rivals-back').onclick=()=>showTitle();
+document.getElementById('t-indoc').onclick=()=>openIndoc();
+document.getElementById('indoc-back').onclick=()=>showTitle();
+document.getElementById('t-leaderboard').onclick=()=>openLeaderboard();
+document.getElementById('lb-back').onclick=()=>showTitle();
+// 🎁 daily crate — the card opens the reveal overlay whether or not one is available;
+// the overlay itself is what tells the player they've already claimed today.
+document.getElementById('t-chest').onclick=()=>openChestModal();
+document.getElementById('chest-open').onclick=()=>doChestOpen();
+document.getElementById('chest-close').onclick=()=>closeChestModal();
+document.getElementById('chest-modal').addEventListener('click',e=>{ if(e.target.id==='chest-modal')closeChestModal(); });
+// Escape closes the crate overlay. Capture phase so it lands before the battle hotkey handler,
+// which ignores it anyway while a .screen is up — this is purely for keyboard users.
+window.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  const m=document.getElementById('chest-modal');
+  if(m&&!m.classList.contains('hidden')){ e.preventDefault(); closeChestModal(); }
+},true);
 document.getElementById('t-patchnotes').onclick=()=>openPatchNotes();
 document.getElementById('pn-back').onclick=()=>showTitle();
 const tVerEl=document.getElementById('t-ver'); if(tVerEl)tVerEl.onclick=()=>openPatchNotes();
@@ -7800,7 +8606,7 @@ function showTitle(){
   if(!STORAGE_OK)storageWarn();
   if(!_comebackShown){ _comebackShown=true; showComeback(); }
   ambientStop(); infoClear();
-  ['menu','warmap','results','hud','pauseScreen','manual','settings','record','roadmap','cosmetics','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['menu','warmap','results','hud','pauseScreen','manual','settings','record','roadmap','cosmetics','rivals','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('title').classList.remove('hidden');
   document.getElementById('t-rank').textContent=equippedBadge().glyph+' Rank '+SAVE.lvl+' '+equippedTitleStr();
@@ -7811,6 +8617,10 @@ function showTitle(){
   refreshTitleLocks();
   refreshRedeploy();
   refreshTitleDaily();
+  refreshTitleChest();
+  try{ const ind=document.getElementById('t-indoc-sub');
+    if(ind){ const d=indocClearedCount();
+      ind.textContent = d===0?'try every doctrine':(d>=INDOC.length?'all 9 lessons cleared':`${d}/${INDOC.length} lessons cleared`); } }catch(e){}
   startAttract();
   musicStart('menu');
   if(!SAVE.seenTut){ setTimeout(()=>{ if(!document.getElementById('title').classList.contains('hidden'))
@@ -7969,7 +8779,7 @@ function warDiffFor(str){ return str>=80?'legendary':str>=62?'elite':str>=44?'ve
 let warSel=null;
 function showWarMap(){
   ambientStop();
-  ['title','menu','results','hud','pauseScreen','roadmap','cosmetics','rivals','patchnotes'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['title','menu','results','hud','pauseScreen','roadmap','cosmetics','rivals','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('warmap').classList.remove('hidden');
   hideDiffAmbient();

@@ -685,14 +685,20 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
     ok(csp.includes('wss://irc-ws.chat.twitch.tv') && csp.includes('goatcounter.com'), '[csp] connect-src grants exactly the two known endpoints');
     ok(!csp.includes('frame-ancestors'), '[csp] no frame-ancestors — itch.io must be able to embed the game (and meta ignores it anyway)');
 
-    // title screen: three labelled clusters + the daily card with streak
+    // title screen: labelled clusters + the daily card with streak.
+    // v1.17.0 added a fourth cluster ("Learn") for the Indoctrination school; the assertion
+    // pins the full ordered list so an accidental reordering or a dropped group still fails.
     const title = await hp.evaluate(() => ({
       groups: [...document.querySelectorAll('.title-grp-lbl')].map(e => e.textContent),
       daily: !!document.getElementById('t-daily'),
       dailySub: document.getElementById('t-daily-sub').textContent,
       streakTxt: document.getElementById('t-daily-streak').textContent,
+      chest: !!document.getElementById('t-chest'),
+      indoc: !!document.getElementById('t-indoc'),
+      leaderboard: !!document.getElementById('t-leaderboard'),
     }));
-    ok(title.groups.join('|') === 'More Modes|Your Progress|Info', `[title] three labelled clusters restored (${title.groups.join(', ')})`);
+    ok(title.groups.join('|') === 'More Modes|Learn|Your Progress|Info', `[title] labelled clusters intact (${title.groups.join(', ')})`);
+    ok(title.chest && title.indoc && title.leaderboard, '[title] the daily crate card, Indoctrination and Leaderboard entry points are all present');
     ok(title.daily && title.dailySub.length > 3, `[title] daily challenge card present with today's twist ("${title.dailySub}")`);
     ok(/🔥|Start a streak/.test(title.streakTxt), `[title] streak state shown on the daily card ("${title.streakTxt}")`);
 
@@ -898,6 +904,270 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
     ok(scale.vrBig > scale.vrDefault * 1.5, `[unit-scale] Big Units mode is dramatically larger than the default (${scale.vrBig.toFixed(1)} vs ${scale.vrDefault.toFixed(1)})`);
     ok(serr.length === 0, `[unit-scale] zero page errors ${serr.length ? ':: ' + serr.join(' | ') : ''}`);
     await sctx.close();
+  }
+
+  // ══ 17. v1.17.0 — DAILY CHEST · LEADERBOARD · INDOCTRINATION ══
+  {
+    // 17a. CHEST — pool integrity, weighted distribution, the pity floor, duplicate
+    //      protection, and the completion payout. Rolled thousands of times in-page
+    //      rather than through the UI: one chest a day means the UI can only ever
+    //      exercise a single branch, and the interesting failures are all in the tail.
+    const cctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const cp = await cctx.newPage();
+    const cerr = []; cp.on('pageerror', e => cerr.push(e.message));
+    await cp.goto(BASE_URL); await cp.waitForTimeout(9000);
+
+    const pool = await cp.evaluate(() => {
+      const ids = CHEST_COSMETICS.map(c => c.id);
+      const badgeGlyphs = CHEST_COSMETICS.filter(c => c.type === 'badge').map(c => c.glyph);
+      const rankGlyphs = HQ_BADGES.map(b => b.glyph).concat(SPECIAL_BADGES.map(b => b.glyph));
+      return {
+        n: CHEST_COSMETICS.length,
+        dupIds: ids.length - new Set(ids).size,
+        dupGlyphs: badgeGlyphs.length - new Set(badgeGlyphs).size,
+        collide: badgeGlyphs.filter(g => rankGlyphs.includes(g)),
+        badRarity: CHEST_COSMETICS.filter(c => !CHEST_RARITIES[c.rarity]).map(c => c.id),
+        malformed: CHEST_COSMETICS.filter(c =>
+          c.type === 'badge' ? (!c.name || !c.glyph) : c.type === 'title' ? !c.title : true).map(c => c.id),
+        rarities: CHEST_RARITY_ORDER.filter(r => !CHEST_COSMETICS.some(c => c.rarity === r)),
+      };
+    });
+    ok(pool.dupIds === 0, '[chest] every cosmetic id is unique');
+    ok(pool.dupGlyphs === 0, '[chest] no two chest badges share a glyph');
+    ok(pool.collide.length === 0, `[chest] chest badge glyphs never collide with rank/special badges ${pool.collide.length ? ':: ' + pool.collide.join(',') : ''}`);
+    ok(pool.badRarity.length === 0, '[chest] every cosmetic names a real rarity tier');
+    ok(pool.malformed.length === 0, `[chest] badges carry name+glyph and titles carry a title ${pool.malformed.length ? ':: ' + pool.malformed.join(',') : ''}`);
+    ok(pool.rarities.length === 0, `[chest] every rarity tier has at least one cosmetic ${pool.rarities.length ? ':: empty ' + pool.rarities.join(',') : ''}`);
+
+    const dist = await cp.evaluate(() => {
+      const N = 20000, counts = {};
+      let gap = 0, worstGap = 0;
+      SAVE.chestSinceEpic = 0;
+      for (let i = 0; i < N; i++) {
+        const r = rollChestRarity();
+        counts[r] = (counts[r] || 0) + 1;
+        if (r === 'epic' || r === 'legendary') { if (gap > worstGap) worstGap = gap; gap = 0; SAVE.chestSinceEpic = 0; }
+        else { gap++; SAVE.chestSinceEpic++; }
+      }
+      SAVE.chestSinceEpic = 0;
+      return { N, counts, worstGap, pity: CHEST_PITY };
+    });
+    const pct = k => (dist.counts[k] || 0) / dist.N * 100;
+    ok(pct('common') > pct('uncommon') && pct('uncommon') > pct('rare') && pct('rare') > pct('epic') && pct('epic') > pct('legendary'),
+      `[chest] rarity frequency is strictly ordered common>uncommon>rare>epic>legendary (${['common','uncommon','rare','epic','legendary'].map(k => k[0] + ':' + pct(k).toFixed(1)).join(' ')})`);
+    ok(pct('legendary') > 0 && pct('legendary') < 5, `[chest] legendary stays genuinely rare but reachable (${pct('legendary').toFixed(2)}%)`);
+    ok(dist.worstGap <= dist.pity, `[chest] pity floor holds — never more than ${dist.pity} pulls without an epic+ (worst run: ${dist.worstGap})`);
+
+    const drain = await cp.evaluate(() => {
+      SAVE.chestOwned = {}; SAVE.chestSinceEpic = 0; SAVE.chestPulls = 0;
+      const got = []; let surplus = 0, nulls = 0;
+      for (let i = 0; i < CHEST_COSMETICS.length + 6; i++) {
+        SAVE.chestLastDay = null;               // force a fresh day for each pull
+        const r = claimChest();
+        if (!r) { nulls++; continue; }
+        if (r.item) got.push(r.item.id); else surplus++;
+      }
+      return { pulls: got.length, dupes: got.length - new Set(got).size, surplus, nulls,
+               owned: Object.keys(SAVE.chestOwned).length, total: CHEST_COSMETICS.length };
+    });
+    ok(drain.dupes === 0, `[chest] duplicate protection — draining the whole pool never granted the same item twice (${drain.pulls} pulls, ${drain.dupes} dupes)`);
+    ok(drain.owned === drain.total, `[chest] the pool is fully collectable (${drain.owned}/${drain.total})`);
+    ok(drain.surplus === 6, `[chest] once collected, further crates pay XP surplus instead of failing (${drain.surplus} surplus payouts)`);
+
+    const claimGate = await cp.evaluate(() => {
+      SAVE.chestLastDay = null;
+      const first = !!claimChest();
+      const readyAfter = chestReady();
+      const second = claimChest();
+      return { first, readyAfter, secondBlocked: second === null, day: SAVE.chestLastDay === todayKey() };
+    });
+    ok(claimGate.first && claimGate.secondBlocked && !claimGate.readyAfter && claimGate.day,
+      '[chest] strictly one crate per calendar day — a second claim the same day is refused');
+
+    const equipChest = await cp.evaluate(() => {
+      SAVE.chestOwned = {};
+      const badge = CHEST_COSMETICS.find(c => c.type === 'badge');
+      const title = CHEST_COSMETICS.find(c => c.type === 'title');
+      equipBadge(badge.id); equipTitle(title.id);           // unowned — must be refused
+      const refusedB = equippedBadge().glyph !== badge.glyph;
+      const refusedT = equippedTitleEntry().title !== title.title;
+      SAVE.chestOwned[badge.id] = true; SAVE.chestOwned[title.id] = true;
+      equipBadge(badge.id); equipTitle(title.id);           // owned — must stick
+      return { refusedB, refusedT, badgeOk: equippedBadge().glyph === badge.glyph,
+               titleOk: equippedTitleEntry().title === title.title };
+    });
+    ok(equipChest.refusedB && equipChest.refusedT, '[chest] equipping an unowned crate cosmetic is refused');
+    ok(equipChest.badgeOk && equipChest.titleOk, '[chest] an owned crate badge and title both equip and resolve');
+    ok(cerr.length === 0, `[chest] zero page errors ${cerr.length ? ':: ' + cerr.join(' | ') : ''}`);
+    await cctx.close();
+  }
+
+  {
+    // 17b. LEADERBOARD — rated ordering, the board cap, streak break/continue, and the
+    //      beaten-today rollover. Also asserts the local-only disclaimer is actually on
+    //      screen: it is the one thing on that page that must never quietly disappear.
+    const lctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const lp = await lctx.newPage();
+    const lerr = []; lp.on('pageerror', e => lerr.push(e.message));
+    await lp.goto(BASE_URL); await lp.waitForTimeout(9000);
+
+    const rated = await lp.evaluate(() => {
+      SAVE.board = [];
+      const mk = (diff, sc) => ({ diff, mode: 'skirmish', kind: 'skirmish', doc: 'mass', kills: 10, t: 100, sc });
+      // a Recruit blowout must NOT outrank a lower-raw Legendary win
+      const a = mk('recruit', 1000), b = mk('legendary', 800);
+      boardRecord(a, true, a.sc); boardRecord(b, true, b.sc);
+      return { order: SAVE.board.map(e => e.diff), rated: SAVE.board.map(e => e.rated),
+               weights: DIFF_WEIGHT, indocExcluded: typeof BOARD_MAX === 'number' };
+    });
+    ok(rated.order[0] === 'legendary',
+      `[leaderboard] rated score ranks a Legendary win over a higher-raw Recruit run (${rated.order.join(' > ')})`);
+
+    const cap = await lp.evaluate(() => {
+      SAVE.board = [];
+      const extra = 25, n = BOARD_MAX + extra;
+      for (let i = 0; i < n; i++)
+        boardRecord({ diff: 'veteran', mode: 'skirmish', kind: 'skirmish', doc: 'mass', kills: 1, t: 60 }, true, 100 + i);
+      const desc = SAVE.board.every((e, i, a) => i === 0 || a[i - 1].rated >= e.rated);
+      return { len: SAVE.board.length, max: BOARD_MAX, desc,
+               top: SAVE.board[0].score, expectedTop: 100 + n - 1,
+               // the worst surviving row must be better than everything that was dropped
+               worst: SAVE.board[SAVE.board.length - 1].score, droppedBest: 100 + extra - 1 };
+    });
+    ok(cap.len === cap.max, `[leaderboard] board is capped at BOARD_MAX rows (${cap.len}/${cap.max})`);
+    ok(cap.desc, '[leaderboard] rows stay sorted best-first after every insert');
+    ok(cap.top === cap.expectedTop, `[leaderboard] the highest-scoring run survives the cap (kept ${cap.top}, expected ${cap.expectedTop})`);
+    ok(cap.worst > cap.droppedBest, `[leaderboard] the cap drops the WORST runs, not the oldest (worst kept ${cap.worst} > best dropped ${cap.droppedBest})`);
+
+    const streak = await lp.evaluate(() => {
+      SAVE.winStreak = 0; SAVE.bestWinStreak = 0;
+      streakRecord(true); streakRecord(true); streakRecord(true);
+      const after3 = SAVE.winStreak, best3 = SAVE.bestWinStreak;
+      streakRecord(false);
+      const afterLoss = SAVE.winStreak, bestKept = SAVE.bestWinStreak;
+      streakRecord(true);
+      return { after3, best3, afterLoss, bestKept, restarted: SAVE.winStreak };
+    });
+    ok(streak.after3 === 3 && streak.best3 === 3, '[leaderboard] win streak counts consecutive wins and records a best');
+    ok(streak.afterLoss === 0 && streak.bestKept === 3, '[leaderboard] a loss breaks the streak but never the recorded best');
+    ok(streak.restarted === 1, '[leaderboard] the streak restarts cleanly after a break');
+
+    const today = await lp.evaluate(() => {
+      SAVE.beatToday = { day: '1999-01-01', items: [{ id: 'stale', label: 'stale', glyph: '?', score: 1 }] };
+      // NB read the length IMMEDIATELY — beatTodayState() hands back a live reference to
+      // SAVE.beatToday, so the adds below would otherwise mutate what we're asserting on.
+      const rolled = beatTodayState();                    // stale day must be discarded
+      const rolledEmpty = rolled.items.length === 0, rolledDay = rolled.day === todayKey();
+      beatTodayAdd('daily', 'Daily Challenge', '🎯', 500);
+      beatTodayAdd('daily', 'Daily Challenge', '🎯', 900);  // replay: dedupe, keep best
+      beatTodayAdd('daily', 'Daily Challenge', '🎯', 300);  // worse replay: must not lower it
+      const d = beatTodayState().items.find(i => i.id === 'daily');
+      return { rolledEmpty, day: rolledDay,
+               rows: beatTodayState().items.length, n: d.n, score: d.score };
+    });
+    ok(today.rolledEmpty && today.day, '[beaten-today] the list rolls over to an empty board on a new calendar day');
+    ok(today.rows === 1 && today.n === 3, '[beaten-today] repeat clears of the same thing collapse into one row with a count');
+    ok(today.score === 900, `[beaten-today] a deduped row keeps the BEST score, not the latest (${today.score})`);
+
+    const disclaimer = await lp.evaluate(() => {
+      showTitle(); openLeaderboard(); buildLbTabs('runs');
+      const txt = document.getElementById('lb-body').textContent;
+      return { local: /your runs, on this device/i.test(txt), noServer: /no server/i.test(txt),
+               visible: !document.getElementById('leaderboard').classList.contains('hidden'),
+               backendNull: LEADERBOARD_BACKEND === null };
+    });
+    ok(disclaimer.visible, '[leaderboard] the screen opens from the title');
+    ok(disclaimer.local && disclaimer.noServer,
+      '[leaderboard] the board states plainly that it is local and that there is no server — never silently implies a global ranking');
+    ok(disclaimer.backendNull, '[leaderboard] LEADERBOARD_BACKEND ships as null — no placeholder/fake global rows');
+    ok(lerr.length === 0, `[leaderboard] zero page errors ${lerr.length ? ':: ' + lerr.join(' | ') : ''}`);
+    await lctx.close();
+  }
+
+  {
+    // 17c. INDOCTRINATION — the promise of this mode is that the matchup is exactly what
+    //      the briefing said. So: the forced doctrine applies (even unlocked-gated), the
+    //      player's deck is exactly the whitelist, off-roster deploys are refused, and the
+    //      ENEMY never fields anything outside its own whitelist across a full fight.
+    const ictx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const ip = await ictx.newPage();
+    const ierr = []; ip.on('pageerror', e => ierr.push(e.message));
+    await ip.goto(BASE_URL); await ip.waitForTimeout(9000);
+
+    const shape = await ip.evaluate(() => {
+      const bad = [];
+      for (const L of INDOC) {
+        if (!DOCTRINES[L.doctrine]) bad.push(L.doctrine + ': unknown doctrine');
+        if (!L.allow || !L.allow.length) bad.push(L.doctrine + ': empty player roster');
+        if (!L.enemyAllow || !L.enemyAllow.length) bad.push(L.doctrine + ': empty enemy roster');
+        for (const k of (L.allow || [])) if (!UNITS[k]) bad.push(L.doctrine + ': bad unit ' + k);
+        for (const k of (L.enemyAllow || [])) if (!UNITS[k]) bad.push(L.doctrine + ': bad enemy unit ' + k);
+        if (L.diff && L.diff !== 'recruit') bad.push(L.doctrine + ': difficulty above recruit (' + L.diff + ')');
+        if (!L.brief || !L.lesson) bad.push(L.doctrine + ': missing brief/lesson');
+        if (!WEATHERS[L.weather]) bad.push(L.doctrine + ': bad weather ' + L.weather);
+      }
+      const covered = Object.keys(DOCTRINES).filter(d => !INDOC.some(l => l.doctrine === d));
+      return { bad, covered, n: INDOC.length, docs: Object.keys(DOCTRINES).length };
+    });
+    ok(shape.bad.length === 0, `[indoc] every lesson is well-formed ${shape.bad.length ? ':: ' + shape.bad.join(' | ') : ''}`);
+    ok(shape.covered.length === 0, `[indoc] every doctrine has a lesson ${shape.covered.length ? ':: missing ' + shape.covered.join(',') : ''}`);
+    ok(shape.n === shape.docs, `[indoc] lesson count matches doctrine count (${shape.n}/${shape.docs})`);
+
+    // play all nine to a result
+    const runs = [];
+    for (const key of shape ? await ip.evaluate(() => INDOC.map(l => l.doctrine)) : []) {
+      runs.push(await ip.evaluate(async (dkey) => {
+        const fr = document.getElementById('firstrun'); if (fr) fr.classList.remove('show');
+        SAVE.seenTut = true; SAVE.unlocked = ['blitzkrieg', 'mass'];   // most lessons are rank-locked doctrines
+        showTitle(); leaveTitle(); launchIndoc(dkey);
+        const lesson = INDOC.find(l => l.doctrine === dkey);
+        const forced = G.doc === dkey;
+        const deck = [...document.querySelectorAll('#hotbar .card:not(.spawner)')].map(c => c.id.replace('card-', ''));
+        const spawners = document.querySelectorAll('#hotbar .card.spawner').length;
+        const tabsHidden = document.getElementById('hbtabs').style.display === 'none';
+        // an off-roster unit must be refused even with unlimited CP
+        const outside = HOTBAR.find(k => lesson.allow.indexOf(k) < 0 && k !== 'swarm');
+        G.prep = 0; G.frozen = false; G.cp = 99999;
+        const n0 = G.units.length; if (outside) tryDeploy(outside, 1);
+        const offRosterBlocked = G.units.length === n0;
+        const deadline = Date.now() + 9000;
+        while (!G.over && Date.now() < deadline) {
+          G.cp = 400;
+          for (const k of lesson.allow) for (let l = 0; l < 3; l++) tryDeploy(k, l);
+          for (let i = 0; i < 60; i++) step(1 / 30);
+          await new Promise(r => setTimeout(r, 0));
+        }
+        const enemyKeys = [...new Set(G.units.filter(u => u.side === 'R').map(u => u.key))];
+        return { dkey, forced, deck, want: lesson.allow.slice(), spawners, tabsHidden, offRosterBlocked,
+                 enemyIllegal: enemyKeys.filter(k => lesson.enemyAllow.indexOf(k) < 0),
+                 over: G.over, won: G.result === 'B', cleared: !!(SAVE.indocDone && SAVE.indocDone[dkey]),
+                 leakedToBoard: (SAVE.board || []).some(e => e.kind === 'indoc'),
+                 onToday: (SAVE.beatToday.items || []).some(i => i.id === 'indoc-' + dkey) };
+      }, key));
+    }
+    const same = (a, b) => a.length === b.length && a.slice().sort().join() === b.slice().sort().join();
+    ok(runs.every(r => r.forced), `[indoc] the lesson's doctrine is forced regardless of rank unlocks (${runs.filter(r => !r.forced).map(r => r.dkey).join(',') || 'all ok'})`);
+    ok(runs.every(r => same(r.deck, r.want)), `[indoc] the visible deck is exactly the lesson roster ${runs.filter(r => !same(r.deck, r.want)).map(r => r.dkey + ':' + r.deck.join('/')).join(' | ')}`);
+    ok(runs.every(r => r.tabsHidden && r.spawners === 0), '[indoc] category tabs and production spawners are hidden — the cut-down deck is shown as one row');
+    ok(runs.every(r => r.offRosterBlocked), `[indoc] deploying a unit outside the roster is refused even with unlimited CP (${runs.filter(r => !r.offRosterBlocked).map(r => r.dkey).join(',') || 'all blocked'})`);
+    ok(runs.every(r => r.enemyIllegal.length === 0),
+      `[indoc] the enemy never fields a unit outside its whitelist ${runs.filter(r => r.enemyIllegal.length).map(r => r.dkey + ':' + r.enemyIllegal.join('/')).join(' | ')}`);
+    ok(runs.every(r => r.over && r.won), `[indoc] every lesson is winnable and resolves (${runs.filter(r => !r.won).map(r => r.dkey).join(',') || 'all won'})`);
+    ok(runs.every(r => r.cleared), '[indoc] a win marks the lesson cleared in the save');
+    ok(runs.every(r => !r.leakedToBoard), '[indoc] stacked lessons never post to the leaderboard');
+    ok(runs.every(r => r.onToday), '[indoc] a cleared lesson does appear on the beaten-today list');
+
+    // normal play must be completely unaffected by the whitelist machinery
+    const normal = await ip.evaluate(() => {
+      showTitle(); leaveTitle(); LAUNCH = null; sel.mode = 'skirmish'; sel.doctrine = 'blitzkrieg'; start();
+      return { allowed: G.allowed, enemyAllowed: G.enemyAllowed,
+               tabsShown: document.getElementById('hbtabs').style.display !== 'none',
+               tabs: document.querySelectorAll('#hbtabs .hbtab').length, doc: G.doc };
+    });
+    ok(normal.allowed === null && normal.enemyAllowed === null, '[indoc] a normal skirmish carries no roster restriction');
+    ok(normal.tabsShown && normal.tabs >= 3, `[indoc] the category tab bar is back for normal play (${normal.tabs} tabs)`);
+    ok(ierr.length === 0, `[indoc] zero page errors ${ierr.length ? ':: ' + ierr.join(' | ') : ''}`);
+    await ictx.close();
   }
 
   console.log('\n══════════ FRONTLINE COMMANDER — REGRESSION SUITE ══════════');
