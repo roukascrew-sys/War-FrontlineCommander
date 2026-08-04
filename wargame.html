@@ -822,6 +822,31 @@
   .cos-lvl{display:block;font-size:9px;font-weight:800;letter-spacing:.5px;color:var(--faint);text-transform:uppercase;}
   .cos-item.on .cos-lvl{color:var(--gold);}
 
+  /* ── PATCH NOTES: pre/post public-beta divider ── */
+  .pn-era{font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:1.6px;
+    text-transform:uppercase;color:var(--faint);margin:4px 0 10px;}
+  .pn-launch-tag{font-family:var(--mono);font-size:9.5px;font-weight:800;letter-spacing:.8px;
+    color:var(--gold);border:1px solid var(--gold);border-radius:5px;padding:2px 6px;
+    vertical-align:middle;margin-left:6px;}
+  .pn-divider{display:flex;flex-direction:column;gap:2px;align-items:center;text-align:center;
+    margin:18px 0 14px;padding:10px 12px;border-top:1px dashed var(--gold);
+    border-bottom:1px dashed var(--gold);background:#1a140833;
+    font-family:var(--mono);font-size:10px;letter-spacing:.5px;color:var(--gold);}
+  .pn-divider span:last-child{color:var(--faint);}
+
+  /* ── DEV ACCESS CODE BOX (inside the Debug/Dev panel) ── */
+  #dbg-code-wrap{background:#0b0f18;border:1px solid var(--line);border-radius:9px;
+    padding:10px 12px;margin:10px 0;}
+  #dbg-code-wrap label{display:block;font-family:var(--mono);font-size:10px;font-weight:800;
+    letter-spacing:1px;text-transform:uppercase;color:var(--faint);margin-bottom:6px;}
+  .dbg-code-row{display:flex;gap:7px;}
+  #dbg-code{flex:1;min-width:0;background:#060910;border:1px solid var(--line);border-radius:7px;
+    padding:7px 10px;color:var(--ink);font-family:var(--mono);font-size:12px;letter-spacing:.5px;}
+  #dbg-code:focus{outline:none;border-color:var(--warn);}
+  #dbg-code-msg{font-size:11px;line-height:1.5;margin-top:6px;min-height:1em;color:var(--faint);}
+  #dbg-code-msg.good{color:var(--good);}
+  #dbg-code-msg.bad{color:var(--red);}
+
   /* ── DAILY CHEST ──────────────────────────────────────────────────────────
      Rarity drives colour everywhere it appears (--rc), so a Legendary reads as
      Legendary in the reveal, the collection grid and the title card without
@@ -1452,7 +1477,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.17.0</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.17.1</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -1914,6 +1939,15 @@
       <div class="fr-h" style="text-align:center">🐞 Debug / Dev Tools</div>
       <div class="fr-p" style="text-align:center">Testing tools, kept out of the way of normal play. Event triggers fire the real function directly — the same code path as when it happens naturally — so most need a live battle running.</div>
       <div id="dbg-toggles"></div>
+      <div id="dbg-code-wrap">
+        <label for="dbg-code">Access code</label>
+        <div class="dbg-code-row">
+          <input id="dbg-code" type="text" autocomplete="off" spellcheck="false"
+                 placeholder="enter code" aria-describedby="dbg-code-msg" maxlength="40">
+          <button class="sbtn" id="dbg-code-go">Apply</button>
+        </div>
+        <div id="dbg-code-msg" role="status"></div>
+      </div>
       <div id="dbg-groups"></div>
       <div class="btn-row" style="justify-content:center;margin-top:10px">
         <button class="sbtn" id="dbg-close">✕ Close</button>
@@ -2127,6 +2161,27 @@ function hpRampCol(p){
   return p>0.5?'#3fd07a':p>0.25?'#ffab40':'#ff5a4a';
 }
 SAVE.news=false; // live news wire archived for now (kept in code, off by default)
+
+/* ── SESSION-RESET SWITCHES ───────────────────────────────────────────────────
+   Some toggles are dramatic enough that inheriting them from a previous session is a
+   trap rather than a convenience. Chaos Mode is the clear case: it removes every
+   restraint, and a player who flipped it on once to see what it did — or a streamer's
+   viewer who tried it on a shared machine — should not silently boot into permanent
+   mayhem days later and conclude the game is broken. Same reasoning for the dev
+   switches: a build left with the rank gates bypassed reads as "everything is
+   unlocked and none of the progression works".
+
+   These stay perfectly usable — they're one click away in Settings and the Debug
+   panel — they just don't SURVIVE a reload. Everything that represents earned
+   progress (rank, unlocks, streaks, the crate collection) is untouched by this.
+   Keep this list short: a setting a player deliberately chose should normally stick,
+   so only things that can strand someone belong here. */
+const SESSION_RESET_KEYS=['chaosMode','debugUnlockAll','aiDebug'];
+(function resetSessionSwitches(){
+  let changed=false;
+  for(const k of SESSION_RESET_KEYS){ if(SAVE[k]){ SAVE[k]=false; changed=true; } }
+  if(changed)persist();
+})();
 /* ── Is localStorage actually usable HERE? ────────────────────────────────────
    Not a theoretical question. The game is heading for itch.io, where HTML5 games
    are served inside a cross-origin <iframe>. Safari (and Firefox in strict mode,
@@ -2831,13 +2886,19 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.17.0';
+const GAME_VERSION='1.17.1';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.17.1',notes:[
+    'Chaos Mode no longer survives a reload. It removes every restraint in the game, and inheriting it from a session you barely remember reads as "the game is broken" rather than as a setting — so it now starts OFF every time you open the game and is one click away in Settings when you want it. The dev switches (rank-gate bypass, AI overlay) reset the same way. Nothing you have actually earned is affected: rank, unlocks, streaks and your crate collection are untouched.',
+    'The Patch Notes screen now marks where the public beta launched, so you can tell at a glance which changes real players have actually seen and which are pre-launch development history.',
+    'Added a developer access-code box to the Debug/Dev panel for testing and trailer capture.',
+    'The community link is now validated before it is shown — a mistyped or non-https destination disables the card instead of shipping a dead button.',
+  ]},
   {v:'1.17.0',notes:[
     'NEW — INDOCTRINATION: a separate nine-lesson school, one per doctrine, reachable from the title screen. Every lesson hands you the doctrine (whether or not you have unlocked it), cuts your roster down to just that doctrine\'s units, and puts you against an enemy built to lose to it — Blitzkrieg gets vehicles against infantry, Deep Fires gets guns against a slow mass, and so on. They are easy on purpose: the point is to let you FEEL what a doctrine does before deciding whether to grind toward it, instead of picking one out of a dropdown based on a paragraph of text.',
     'NEW — DAILY SUPPLY CRATE: one crate a day, granting a random cosmetic from a 35-piece pool that cannot be earned any other way. Five rarities (Common through Legendary), duplicate protection so a crate is never wasted, and a pity floor that guarantees an Epic or better within 14 pulls. Once the whole collection is yours the crate keeps paying out in XP. Crate cosmetics equip from the Cosmetics screen alongside your rank badges and titles.',
@@ -2853,7 +2914,11 @@ const PATCH_NOTES=[
     'The four hotbar category tabs (GROUND / AIR & AD / SUPPORT / PRODUCTION) now carry a permanent soft glow in their own colour, so the four categories read as distinct at rest, not just once you start clicking around.',
     'Units render a bit larger relative to the lane for better visibility — a modest, deliberately subtle bump. Added a new Big Units accessibility setting for a much larger, unapologetically goofy scale if you want it. Both are purely visual: hitboxes, range and combat are completely unaffected.',
   ]},
-  {v:'1.16.0',notes:[
+  /* ── PUBLIC BETA LAUNCH BOUNDARY ──────────────────────────────────────────
+     v1.16.0 is the build that was live when the itch.io page went public. Entries
+     ABOVE this one shipped to real players; entries below are pre-launch history.
+     Move this flag only if the live build is ever rolled back to a different version. */
+  {v:'1.16.0',launch:true,notes:[
     'NEW: colourblind team palettes in Settings → Accessibility. Blue/Orange for red-green colour blindness, Blue/Yellow for maximum contrast — every friend-or-foe colour on the battlefield and unit health bars switch together.',
     'NEW: the Daily Challenge now lives on the title screen — today\'s twist, its difficulty and your 🔥 streak, one tap to play.',
     'The title screen\'s secondary buttons are grouped back into their three labelled clusters: MORE MODES, YOUR PROGRESS and INFO.',
@@ -6932,12 +6997,36 @@ function showResults(won,reason,score,xpGain,leveled){
    onward (so it is never the first thing a stranger sees), at most three times ever, and
    never again once the player has either followed it or dismissed it. A capture prompt
    that keeps asking is just an ad. */
+/* ── TO GO LIVE: paste the invite URL below and rebuild. That is the whole change. ──
+   Use a NEVER-EXPIRING Discord invite (Invite → Edit → Expire After: Never, Max Uses:
+   No Limit). A default Discord invite dies after 7 days, which would leave a permanent
+   in-game button pointing at a dead link — worse than no button at all.
+   The URL is validated below; a malformed or non-https value disables the card rather
+   than shipping a broken link, so a typo fails safe and visibly (console warning). */
 const COMMUNITY_URL='';                       // e.g. 'https://discord.gg/xxxxxxx'
 const COMMUNITY_LABEL='Join the Discord';     // button text, matched to whatever URL you use
 const RALLY_MAX_SHOWS=3;
+/* Only these hosts may be linked. This is not about untrusted input — the value is a
+   hard-coded constant in this file — it is about catching a typo or a paste of the wrong
+   thing before it ships to thousands of players. `javascript:` and `data:` URLs can never
+   pass, and neither can a plain http:// link that browsers would flag as insecure. */
+const COMMUNITY_HOSTS=['discord.gg','discord.com','www.discord.com','patreon.com','www.patreon.com',
+  'x.com','www.x.com','twitter.com','www.twitter.com','itch.io','reddit.com','www.reddit.com'];
+function communityUrlOk(){
+  if(!COMMUNITY_URL)return false;                       // unset — the intended default
+  try{
+    const u=new URL(COMMUNITY_URL);
+    if(u.protocol!=='https:'){ console.warn('COMMUNITY_URL must be https — community card disabled.'); return false; }
+    const host=u.hostname.toLowerCase();
+    const ok=COMMUNITY_HOSTS.some(h=>host===h||host.endsWith('.'+h));
+    if(!ok)console.warn('COMMUNITY_URL host "'+host+'" is not in COMMUNITY_HOSTS — community card disabled.');
+    return ok;
+  }catch(e){ console.warn('COMMUNITY_URL is not a valid URL — community card disabled.'); return false; }
+}
+const COMMUNITY_OK=communityUrlOk();
 
 function rallyEligible(won){
-  if(!COMMUNITY_URL)return false;                       // nothing to point at — stay silent
+  if(!COMMUNITY_OK)return false;                        // unset or malformed — stay silent
   if(!won)return false;                                 // never ask after a loss
   if(SAVE.rallyDone)return false;                       // followed or dismissed for good
   if((SAVE.rallySeen||0)>=RALLY_MAX_SHOWS)return false; // asked enough
@@ -7653,6 +7742,79 @@ function DEBUG_GROUPS(){ // built lazily so it always sees the latest REVENTS/DI
 /* Persistent dev switches (as opposed to the one-shot event triggers below). These used to live
    on the topbar and the title screen, where they were the first thing a new player saw; they're
    all consolidated in here now. */
+/* ═══ DEV ACCESS CODES ════════════════════════════════════════════════════════
+   Codes typed into the Debug panel's access-code box. These are DEVELOPER tools, not
+   player secrets — the panel they live in is already labelled "Debug/Dev" and sits
+   behind an understated title-screen button, so nothing here is a hidden reward the
+   player is meant to discover.
+
+   ⚠ THIS IS NOT SECURITY. The codes are in plain text in a client-side file; anyone
+   who opens devtools can read them, and anyone who wants to edit their own save can
+   do so without a code at all. That's fine — there is nothing to protect. The value
+   is purely convenience: one string that puts an account into a known late-game state
+   for trailer capture, screenshots, and testing content that would otherwise take
+   hours to reach legitimately.
+
+   Every code is REVERSIBLE via Settings → Reset Progress, and none of them touch
+   another player's data (there isn't any). Codes are matched case-insensitively and
+   trimmed, because typing one into a text box at 2am should not fail on whitespace. */
+const DEV_CODES={
+  omegalambda77:{
+    label:'MAX ACCOUNT',
+    desc:'Rank 100, every doctrine, every mode, the secret level and its unlocks, all badges, and the full crate collection. For trailer capture and late-game testing.',
+    run(){
+      // addXP() zeroes xp once the ceiling is reached, so a maxed account carries lvl 100 / xp 0
+      SAVE.lvl=MAX_LVL; SAVE.xp=0;
+      SAVE.unlocked=Object.keys(DOCTRINES).slice();
+      SAVE.debugUnlockAll=true;                    // bypasses the rank gates on modes/cosmetics
+      // campaign fully cleared, every time trial passed at a plausible time
+      SAVE.campaignDone=CAMPAIGN.length-1;
+      SAVE.campaignStars={}; SAVE.timeTrials={};
+      for(const m of CAMPAIGN){ SAVE.campaignStars[m.id]=1; SAVE.timeTrials[m.id]=Math.round(missionParTime(m)*0.8); }
+      // the secret level and everything it gates (Drone Swarm + Rods from God)
+      SAVE.secretUnlocked=true; SAVE.secretDone=true; SAVE.secretBadgeEarned=true;
+      // achievement badges
+      SAVE.voidSlayerEarned=true; SAVE.rivalsBadgeEarned=true;
+      SAVE.rivals={}; for(const g of GENERALS)SAVE.rivals[g.name]={w:3,l:0,defeated:true,dominant:null};
+      // every medal + the whole crate collection, so cosmetics screens are fully populated
+      SAVE.medals={}; for(const id in MEDALS)SAVE.medals[id]=1;
+      SAVE.chestOwned={}; for(const c of CHEST_COSMETICS)SAVE.chestOwned[c.id]=true;
+      // doctrine school marked complete
+      SAVE.indocDone={}; for(const l of INDOC)SAVE.indocDone[l.doctrine]=true;
+      SAVE.seenTut=true;
+      persist();
+      return 'Account maxed — Rank '+MAX_LVL+', secret level cleared, Drone Swarm + Rods from God unlocked, all cosmetics owned.';
+    }},
+  resetall:{
+    label:'WIPE',
+    desc:'Full progress wipe — identical to Settings → Reset Progress. Here so a code-driven capture session can start clean without leaving the panel.',
+    run(){
+      SAVE=JSON.parse(JSON.stringify(DEFAULT_SAVE)); persist();
+      return 'Progress wiped back to a brand-new account.';
+    }},
+};
+/* Apply whatever is in the access-code box. Unknown codes fail quietly and specifically —
+   no hints, no "close!" — because a wrong code here means a typo, not a puzzle. */
+function applyDevCode(){
+  const inp=document.getElementById('dbg-code'), msg=document.getElementById('dbg-code-msg');
+  if(!inp||!msg)return;
+  const raw=(inp.value||'').trim().toLowerCase();
+  if(!raw){ msg.textContent='Enter a code.'; msg.className='bad'; return; }
+  const code=DEV_CODES[raw];
+  if(!code){ msg.textContent='Not a valid code.'; msg.className='bad'; return; }
+  let out='';
+  try{ out=code.run()||'Applied.'; }
+  catch(e){ msg.textContent='Code failed: '+(e&&e.message?e.message:'unknown error'); msg.className='bad'; return; }
+  msg.textContent='✔ '+code.label+' — '+out; msg.className='good';
+  inp.value='';
+  // repaint everything the code could have changed
+  try{ buildDebugToggles(); refreshTitleLocks(); refreshTopbar(); refreshTitleChest();
+       if(typeof buildMenu==='function')buildMenu();
+       const tr=document.getElementById('t-rank');
+       if(tr)tr.textContent=equippedBadge().glyph+' Rank '+SAVE.lvl+' '+equippedTitleStr();
+       const tb=document.getElementById('t-best'); if(tb)tb.textContent='Best '+SAVE.best.toLocaleString();
+  }catch(e){}
+}
 const DEBUG_TOGGLES=[
   {key:'debugUnlockAll', label:'Unlock All',
    desc:'Bypasses every rank gate — modes, doctrines, cosmetics — without touching your real Rank/XP.',
@@ -7691,10 +7853,21 @@ function buildDebugModal(){
     wrap.appendChild(row); host.appendChild(wrap);
   }
 }
-function openDebugModal(){ buildDebugModal(); document.getElementById('debugmodal').classList.add('show'); }
+function openDebugModal(){
+  buildDebugModal();
+  const msg=document.getElementById('dbg-code-msg');
+  if(msg){ msg.textContent=''; msg.className=''; }
+  const inp=document.getElementById('dbg-code'); if(inp)inp.value='';
+  document.getElementById('debugmodal').classList.add('show');
+}
 function closeDebugModal(){ document.getElementById('debugmodal').classList.remove('show'); }
 document.getElementById('btn-debug').onclick=openDebugModal;
 document.getElementById('dbg-close').onclick=closeDebugModal;
+document.getElementById('dbg-code-go').onclick=applyDevCode;
+document.getElementById('dbg-code').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ e.preventDefault(); applyDevCode(); }
+  e.stopPropagation();   // never let a typed code leak into the battle hotkeys underneath
+});
 
 document.getElementById('btn-pause').onclick=togglePause;
 document.getElementById('btn-play').onclick=()=>{LAUNCH=null;start();};
@@ -8383,13 +8556,29 @@ function openPatchNotes(){
   hideDiffAmbient();
   renderPatchNotes();
 }
+/* The notes list is newest-first, so the launch build sits partway down it. Everything
+   ABOVE the marked entry shipped to real players after the public beta went live;
+   everything from the marked entry down is pre-launch development history. The divider
+   is rendered after the launch entry's notes so the boundary reads in the right place
+   while scrolling downward through time. */
 function renderPatchNotes(){
   const el=document.getElementById('pn-body'); if(!el)return;
   let h='';
+  const launchIdx=PATCH_NOTES.findIndex(p=>p.launch);
+  if(launchIdx>0){
+    h+=`<div class="pn-era">Since public beta</div>`;
+  }
   PATCH_NOTES.forEach((p,i)=>{
-    h+=`<h2>v${p.v}${i===0?' <span style="color:var(--good);font-size:11px;font-weight:800;letter-spacing:.5px">CURRENT</span>':''}</h2><ul>`;
+    h+=`<h2>v${p.v}`;
+    if(i===0)h+=` <span style="color:var(--good);font-size:11px;font-weight:800;letter-spacing:.5px">CURRENT</span>`;
+    if(p.launch)h+=` <span class="pn-launch-tag">PUBLIC BETA LAUNCH</span>`;
+    h+=`</h2><ul>`;
     for(const n of p.notes)h+=`<li>${escapeHTML(n)}</li>`;
     h+=`</ul>`;
+    if(p.launch&&i<PATCH_NOTES.length-1)
+      h+=`<div class="pn-divider"><span>▲ everything above shipped after launch</span>`+
+         `<span>▼ everything below is pre-launch development</span></div>`+
+         `<div class="pn-era">Before public beta</div>`;
   });
   el.innerHTML=h; el.scrollTop=0;
 }

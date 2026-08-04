@@ -1170,6 +1170,144 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
     await ictx.close();
   }
 
+  // ══ 18. v1.17.1 — SESSION-RESET SWITCHES · DEV CODES · LAUNCH DIVIDER ══
+  {
+    const vctx = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+    const vp = await vctx.newPage();
+    const verr = []; vp.on('pageerror', e => verr.push(e.message));
+    await vp.goto(BASE_URL); await vp.waitForTimeout(9000);
+    await vp.evaluate(() => { const fr = document.getElementById('firstrun'); if (fr) fr.classList.remove('show'); });
+
+    // 18a. SESSION RESET — the switches that can strand a player must never survive a reload,
+    //      and nothing a player EARNED may be touched by that reset.
+    await vp.evaluate(() => {
+      SAVE.chaosMode = true; SAVE.debugUnlockAll = true; SAVE.aiDebug = true;
+      SAVE.lvl = 42; SAVE.dailyStreak = 9; SAVE.bestWinStreak = 5;
+      SAVE.chestOwned = { cb_boar: true }; SAVE.secretDone = true; SAVE.campaignDone = 4;
+      persist();
+    });
+    await vp.reload(); await vp.waitForTimeout(9000);
+    const sess = await vp.evaluate(() => ({
+      chaos: SAVE.chaosMode, unlockAll: SAVE.debugUnlockAll, aiDebug: SAVE.aiDebug,
+      stored: JSON.parse(localStorage.getItem(SAVE_KEY) || '{}'),
+      lvl: SAVE.lvl, streak: SAVE.dailyStreak, best: SAVE.bestWinStreak,
+      crates: Object.keys(SAVE.chestOwned).length, secret: SAVE.secretDone, camp: SAVE.campaignDone,
+      keys: SESSION_RESET_KEYS,
+    }));
+    ok(sess.chaos === false && sess.unlockAll === false && sess.aiDebug === false,
+      `[session-reset] chaos mode and the dev switches all start OFF after a reload (chaos=${sess.chaos} unlockAll=${sess.unlockAll} ai=${sess.aiDebug})`);
+    ok(sess.stored.chaosMode === false,
+      '[session-reset] the reset is persisted, so a second reload cannot resurrect the old value');
+    ok(sess.lvl === 42 && sess.streak === 9 && sess.best === 5 && sess.crates === 1 && sess.secret === true && sess.camp === 4,
+      '[session-reset] earned progress (rank, streaks, crates, secret, campaign) is untouched by the reset');
+    ok(Array.isArray(sess.keys) && sess.keys.length <= 4,
+      `[session-reset] the reset list stays deliberately short (${sess.keys.length} keys: ${sess.keys.join(', ')})`);
+
+    const chaosStill = await vp.evaluate(() => {
+      SAVE.lvl = 99; SAVE.chaosMode = true; persist();
+      showTitle(); leaveTitle(); LAUNCH = null; sel.mode = 'skirmish'; start();
+      return !!G.chaos;
+    });
+    ok(chaosStill, '[session-reset] chaos mode still works normally once enabled within a session');
+
+    // 18b. DEV CODES — the max code has to actually reach the late-game content it promises
+    //      (that is its entire purpose: trailer capture without hours of legitimate play).
+    const code = await vp.evaluate(() => {
+      SAVE = JSON.parse(JSON.stringify(DEFAULT_SAVE)); persist();
+      showTitle(); openDebugModal();
+      document.getElementById('dbg-code').value = '  OmegaLambda77  ';  // padded + mixed case
+      applyDevCode();
+      const msgEl = document.getElementById('dbg-code-msg');
+      return {
+        cls: msgEl.className, html: msgEl.innerHTML,
+        lvl: SAVE.lvl, maxLvl: MAX_LVL, xp: SAVE.xp,
+        docs: SAVE.unlocked.length, allDocs: Object.keys(DOCTRINES).length,
+        camp: SAVE.campaignDone === CAMPAIGN.length - 1,
+        trials: Object.keys(SAVE.timeTrials).length === CAMPAIGN.length,
+        secret: SAVE.secretUnlocked && SAVE.secretDone && SAVE.secretBadgeEarned,
+        crates: Object.keys(SAVE.chestOwned).length === CHEST_COSMETICS.length,
+        indoc: Object.keys(SAVE.indocDone).length === INDOC.length,
+        boxCleared: document.getElementById('dbg-code').value === '',
+      };
+    });
+    ok(code.cls === 'good', '[dev-code] the max code applies, case-insensitively and whitespace-trimmed');
+    ok(code.lvl === code.maxLvl && code.xp === 0, `[dev-code] rank goes to the ceiling with xp zeroed (${code.lvl}/${code.xp})`);
+    ok(code.docs === code.allDocs && code.camp && code.trials, '[dev-code] all doctrines unlocked, campaign cleared, every time trial passed');
+    ok(code.secret, '[dev-code] the secret level is unlocked AND cleared — this is what gates the Drone Swarm and Rods from God');
+    ok(code.crates && code.indoc, '[dev-code] full crate collection and every doctrine lesson marked cleared');
+    ok(code.boxCleared, '[dev-code] the input clears after a successful apply');
+
+    const secretKit = await vp.evaluate(() => {
+      showTitle(); leaveTitle(); LAUNCH = null; sel.mode = 'skirmish'; start();
+      let seen = false;
+      for (const t of HB_TABS) { hbTab = t.id; buildHotbar();
+        if ([...document.querySelectorAll('#hotbar .card')].some(c => c.id === 'card-swarm')) seen = true; }
+      return { swarm: seen, rods: SAVE.secretDone };
+    });
+    ok(secretKit.swarm, '[dev-code] the Drone Swarm card is actually visible in the hotbar after the max code');
+    ok(secretKit.rods, '[dev-code] the Rods from God strike is available after the max code');
+
+    const badCode = await vp.evaluate(() => {
+      const before = JSON.stringify(SAVE);
+      const results = [];
+      for (const t of ['', 'omegalambda', 'OMEGALAMBDA78', '<img src=x onerror=alert(1)>', ' ']) {
+        document.getElementById('dbg-code').value = t; applyDevCode();
+        results.push(document.getElementById('dbg-code-msg').className);
+      }
+      return { unchanged: JSON.stringify(SAVE) === before, allRejected: results.every(r => r === 'bad'),
+               html: document.getElementById('dbg-code-msg').innerHTML };
+    });
+    ok(badCode.unchanged, '[dev-code] an invalid or blank code never mutates the save');
+    ok(badCode.allRejected, '[dev-code] every invalid code reports a clear failure');
+    ok(!/<img|onerror/i.test(badCode.html), '[dev-code] typed markup is never injected into the DOM (textContent, not innerHTML)');
+
+    const wipe = await vp.evaluate(() => {
+      document.getElementById('dbg-code').value = 'resetall'; applyDevCode();
+      return { lvl: SAVE.lvl, crates: Object.keys(SAVE.chestOwned).length, secret: SAVE.secretDone };
+    });
+    ok(wipe.lvl === 1 && wipe.crates === 0 && !wipe.secret, '[dev-code] the wipe code returns the account to brand new');
+
+    // 18c. COMMUNITY LINK — an unset or malformed destination must disable the card, never
+    //      ship a dead/unsafe button to players.
+    const comm = await vp.evaluate(() => ({
+      unset: COMMUNITY_URL === '', okFalse: COMMUNITY_OK === false, silent: rallyEligible(true) === false,
+      rejects: (() => {
+        // exercise the validator's logic directly against hostile-looking values
+        const test = (u) => { try { const p = new URL(u); return p.protocol === 'https:' &&
+          COMMUNITY_HOSTS.some(h => p.hostname.toLowerCase() === h || p.hostname.toLowerCase().endsWith('.' + h)); }
+          catch (e) { return false; } };
+        return { js: test('javascript:alert(1)'), data: test('data:text/html,x'),
+                 http: test('http://discord.gg/abc'), evil: test('https://discord.gg.evil.com/x'),
+                 good: test('https://discord.gg/abc123') };
+      })(),
+    }));
+    ok(comm.unset && comm.okFalse && comm.silent, '[community] with COMMUNITY_URL unset the rally card stays silent');
+    ok(!comm.rejects.js && !comm.rejects.data && !comm.rejects.http && !comm.rejects.evil,
+      '[community] the validator rejects javascript:, data:, plain http, and look-alike hosts');
+    ok(comm.rejects.good, '[community] a real https discord.gg invite passes the validator');
+
+    // 18d. PATCH NOTES — the pre/post public-beta boundary must be visible and correctly placed
+    const pn = await vp.evaluate(() => {
+      showTitle(); openPatchNotes();
+      const body = document.getElementById('pn-body');
+      const kids = [...body.children];
+      const launchIdx = kids.findIndex(c => c.tagName === 'H2' && /PUBLIC BETA LAUNCH/.test(c.textContent));
+      const divIdx = kids.findIndex(c => c.className === 'pn-divider');
+      const marked = PATCH_NOTES.filter(p => p.launch);
+      return { txt: body.textContent, launchIdx, divIdx,
+               markedCount: marked.length, markedVer: marked[0] && marked[0].v,
+               firstHead: body.querySelector('h2').textContent, current: GAME_VERSION };
+    });
+    ok(pn.markedCount === 1, `[patch-notes] exactly one release carries the launch flag (${pn.markedCount})`);
+    ok(/Since public beta/.test(pn.txt) && /Before public beta/.test(pn.txt),
+      '[patch-notes] both era headings render around the boundary');
+    ok(pn.launchIdx >= 0 && pn.divIdx > pn.launchIdx,
+      '[patch-notes] the divider sits AFTER the launch build, so post-launch entries are the ones above it');
+    ok(pn.firstHead.includes(pn.current), `[patch-notes] the newest entry is the running version (${pn.current})`);
+    ok(verr.length === 0, `[v1.17.1] zero page errors ${verr.length ? ':: ' + verr.join(' | ') : ''}`);
+    await vctx.close();
+  }
+
   console.log('\n══════════ FRONTLINE COMMANDER — REGRESSION SUITE ══════════');
   out.forEach(o => console.log(o));
   console.log('═══════════════════════════════════════════════════════════');

@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Frontline Commander — Dev Tools &amp; Access Codes</title>
+<!--
+  ══════════════════════════════════════════════════════════════════════════════
+  PRIVATE — DO NOT PUBLISH.
+
+  This file is a personal reference for developer tools, access codes and testing
+  shortcuts. It is deliberately NOT in build-itch.sh's FILES allowlist, so running
+  ./build-itch.sh will never copy it into dist/ or the itch.io zip. That allowlist
+  is the safety mechanism: it copies only the files named in it, so any new file
+  added to this repo is excluded by default rather than shipped by accident.
+
+  If you ever switch the build to a denylist or a "zip the folder" approach, this
+  file becomes public. Don't.
+  ══════════════════════════════════════════════════════════════════════════════
+-->
+<style>
+  :root{
+    --bg:#0a0d12; --panel:#111722; --panel2:#0d1219; --line:#232f3d;
+    --ink:#dfe7f0; --dim:#8b9bad; --faint:#5b6a7c;
+    --gold:#ffce5a; --cyan:#5ff0e0; --red:#ff5a4a; --good:#3fd07a; --purple:#c9a0ff;
+    --mono:ui-monospace,'SF Mono','Cascadia Mono',Consolas,'Roboto Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.6;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+  .wrap{max-width:1000px;margin:0 auto;padding:32px 22px 80px;}
+  header{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:26px;}
+  .stamp{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:800;
+    letter-spacing:1.6px;text-transform:uppercase;color:var(--red);
+    border:1px solid var(--red);border-radius:4px;padding:3px 9px;background:#2a141033;}
+  h1{font-size:clamp(1.7rem,4vw,2.3rem);margin:14px 0 6px;letter-spacing:-.5px;}
+  h1 span{display:block;font-size:.42em;font-weight:600;color:var(--dim);letter-spacing:.6px;margin-top:5px;}
+  .lede{color:var(--dim);max-width:70ch;margin:0;font-size:.96rem;}
+  h2{font-size:1.15rem;margin:34px 0 4px;padding-bottom:7px;border-bottom:1px solid var(--line);
+    letter-spacing:.2px;}
+  h2 .n{font-family:var(--mono);font-size:.72em;color:var(--faint);margin-right:8px;}
+  h3{font-size:.98rem;margin:20px 0 6px;color:var(--cyan);}
+  p{margin:8px 0;}
+  code,kbd{font-family:var(--mono);font-size:.86em;background:var(--panel2);
+    border:1px solid var(--line);border-radius:4px;padding:1px 6px;color:var(--gold);}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.9rem;}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{font-family:var(--mono);font-size:.72rem;letter-spacing:.9px;text-transform:uppercase;
+    color:var(--faint);font-weight:800;}
+  td:first-child{white-space:nowrap;}
+  .scroll{overflow-x:auto;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 17px;margin:14px 0;}
+  .card.warn{border-color:var(--gold);background:#1a140822;}
+  .card.danger{border-color:var(--red);background:#2a141022;}
+  .card h4{margin:0 0 6px;font-size:.9rem;color:var(--gold);letter-spacing:.3px;}
+  .card.danger h4{color:var(--red);}
+  .card p:last-child{margin-bottom:0;}
+  ul,ol{margin:8px 0;padding-left:22px;} li{margin:4px 0;}
+  .code-chip{display:inline-block;font-family:var(--mono);font-weight:800;font-size:.95rem;
+    color:var(--gold);background:#1a1408;border:1.5px solid var(--gold);border-radius:6px;
+    padding:4px 11px;letter-spacing:1px;}
+  .key{display:inline-block;font-family:var(--mono);font-size:.8rem;background:var(--panel2);
+    border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:2px 8px;color:var(--ink);}
+  .muted{color:var(--faint);font-size:.85rem;}
+  .tag{display:inline-block;font-family:var(--mono);font-size:.66rem;font-weight:800;
+    letter-spacing:.6px;text-transform:uppercase;padding:2px 6px;border-radius:4px;margin-left:6px;}
+  .tag.live{color:var(--good);border:1px solid var(--good);}
+  .tag.planned{color:var(--faint);border:1px solid var(--faint);}
+  footer{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);color:var(--faint);font-size:.85rem;}
+  @media (max-width:620px){ td:first-child{white-space:normal;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="stamp">Private — never publish</span>
+  <h1>Dev Tools &amp; Access Codes<span>Frontline Commander — running reference</span></h1>
+  <p class="lede">Everything needed to put a build into a known state for testing, trailer capture and
+  screenshots. Kept in the repo but excluded from the itch.io build by the allowlist in
+  <code>build-itch.sh</code>. Add new tools here as they land so this stays the single place to look.</p>
+</header>
+
+<div class="card danger">
+  <h4>Why this file is safe to keep in the repo</h4>
+  <p><code>build-itch.sh</code> copies only the files named in its <code>FILES</code> array
+  (<code>wargame.html</code>, <code>privacy.html</code>, <code>terms.html</code>). Everything else in the
+  repo — including this file — is excluded by default. Verify any time with:</p>
+  <p><code>./build-itch.sh &amp;&amp; unzip -l dist/frontline-commander-itch.zip</code></p>
+  <p>If that listing ever shows more than those three files, stop and fix the build before uploading.</p>
+</div>
+
+<h2><span class="n">01</span>Access codes</h2>
+<p>Typed into the <strong>access code</strong> box in the Debug/Dev panel
+(title screen → <span class="key">🐞 Debug/Dev</span>, or the topbar Debug button mid-battle).
+Matching is case-insensitive and whitespace-trimmed.</p>
+
+<div class="scroll">
+<table>
+  <tr><th>Code</th><th>Name</th><th>What it does</th></tr>
+  <tr>
+    <td><span class="code-chip">omegalambda77</span></td>
+    <td>MAX ACCOUNT <span class="tag live">live</span></td>
+    <td>
+      Puts the account into a full late-game state in one action:
+      <ul>
+        <li>Rank <strong>100</strong> (XP zeroed, which is what the cap does naturally)</li>
+        <li>All <strong>9 doctrines</strong> unlocked</li>
+        <li>Campaign fully cleared + <strong>every time trial passed</strong></li>
+        <li><strong>Secret level</strong> unlocked <em>and</em> cleared → grants the
+            <strong>Drone Swarm</strong> unit and <strong>Rods from God</strong> strike</li>
+        <li>All rivals defeated, all medals, all three special badges</li>
+        <li>Entire <strong>35-piece crate collection</strong> owned</li>
+        <li>All 9 Indoctrination lessons marked cleared</li>
+        <li>Rank-gate bypass on (session-scoped — see §3)</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td><span class="code-chip">resetall</span></td>
+    <td>WIPE <span class="tag live">live</span></td>
+    <td>Full progress wipe — identical to Settings → Reset Progress. Here so a capture
+        session can start clean without leaving the panel.</td>
+  </tr>
+</table>
+</div>
+
+<div class="card warn">
+  <h4>These are conveniences, not security</h4>
+  <p>The codes sit in plain text inside <code>wargame.html</code>. Anyone who opens devtools can read
+  them, and anyone who wants to edit their own save can do so without a code at all. That is fine —
+  there is nothing to protect in a single-player client-side game. Don't ever use this pattern to gate
+  something that <em>would</em> matter (paid content, another player's data); that belongs behind a
+  server, and <code>SECURITY.md</code> covers what that needs.</p>
+</div>
+
+<h2><span class="n">02</span>Trailer &amp; screenshot recipes</h2>
+
+<h3>Showing off the secret level (The Glitch Front)</h3>
+<ol>
+  <li>Apply <code>omegalambda77</code></li>
+  <li>Title → PLAY → the campaign list now shows <strong>☢ THE GLITCH FRONT</strong> at the bottom</li>
+  <li>Phases run on a clock: ~30s battle → nuke → glitching wasteland → Voidwarden boss.
+      The nuke is the money shot; the wasteland phase is the most visually distinctive thing in the game.</li>
+</ol>
+
+<h3>Showing off the secret weapons</h3>
+<table>
+  <tr><th>Unlock</th><th>Where</th><th>Notes</th></tr>
+  <tr><td>⁂ Drone Swarm</td><td>Hotbar → AIR &amp; AD tab</td>
+      <td>One deploy releases a whole cloud. Hidden everywhere until <code>SAVE.secretDone</code>.</td></tr>
+  <tr><td>🛰 Rods from God</td><td>Hotkey <span class="key">T</span> (outside Evolution)</td>
+      <td>Rains on all three lanes, once per battle. The biggest single visual in the game.</td></tr>
+</table>
+
+<h3>Maximum-carnage capture</h3>
+<ol>
+  <li><code>omegalambda77</code>, then Settings → enable <strong>Chaos Mode</strong>
+      <span class="muted">(remember: it resets on reload, so re-enable per session)</span></li>
+  <li>Start a Skirmish on <strong>Legendary</strong></li>
+  <li>Debug panel → Mythic Events → any of the three for a rare on-demand set piece</li>
+  <li>Fire <span class="key">T</span> (Rods) into a crowded lane</li>
+</ol>
+
+<h3>Clean UI screenshots</h3>
+<p>Chaos Mode <strong>off</strong>, Veteran difficulty, and let a battle run ~60s so lanes are populated
+but not saturated. The Indoctrination screen and the Field Manual counter-web tab are the two best
+"this has real depth" stills.</p>
+
+<h2><span class="n">03</span>Session-reset switches</h2>
+<p>These three are forced <strong>off</strong> on every page load
+(<code>SESSION_RESET_KEYS</code> in <code>wargame.html</code>) so nobody — including you — boots into a
+state that reads as broken:</p>
+<table>
+  <tr><th>Key</th><th>What it is</th></tr>
+  <tr><td><code>chaosMode</code></td><td>Chaos / Meme Mode — every restraint removed</td></tr>
+  <tr><td><code>debugUnlockAll</code></td><td>Rank-gate bypass for modes, doctrines and cosmetics</td></tr>
+  <tr><td><code>aiDebug</code></td><td>Enemy AI thinking overlay</td></tr>
+</table>
+<p class="muted">Everything representing earned progress — rank, XP, unlocks, streaks, crate collection,
+campaign and time-trial state — is untouched by this and persists normally. After
+<code>omegalambda77</code> the account is genuinely Rank 100, so the gate bypass isn't needed on
+subsequent loads anyway.</p>
+
+<h2><span class="n">04</span>Debug panel contents</h2>
+<p>Title screen → <span class="key">🐞 Debug/Dev</span>. Every action calls the real function, so most
+need a live battle running.</p>
+<table>
+  <tr><th>Group</th><th>Contents</th></tr>
+  <tr><td>Dev Toggles</td><td>Unlock All · AI Thinking Overlay</td></tr>
+  <tr><td>Access code</td><td>The box described in §1</td></tr>
+  <tr><td>Battle / FX</td><td>HQ flash · spawn flame trooper · preview rank-up screen</td></tr>
+  <tr><td>Difficulty FX</td><td>Preview each tier's title-screen flourish</td></tr>
+  <tr><td>Mythic events</td><td>Error Cascade · The Shadow · Void Rift + boss</td></tr>
+</table>
+
+<h2><span class="n">05</span>Hotkeys</h2>
+<div class="scroll">
+<table>
+  <tr><th>Key</th><th>Action</th></tr>
+  <tr><td><span class="key">1</span>–<span class="key">9</span></td><td>Select unit card (indexes the <em>visible</em> deck)</td></tr>
+  <tr><td><span class="key">0</span></td><td>Missile strike</td></tr>
+  <tr><td><span class="key">R</span> / <span class="key">F</span></td><td>Recon flare / EMP pulse (Rank 3)</td></tr>
+  <tr><td><span class="key">G</span> / <span class="key">B</span></td><td>Gunship run / rolling barrage</td></tr>
+  <tr><td><span class="key">T</span></td><td>Build turret (Evolution) · <strong>Rods from God</strong> (once unlocked)</td></tr>
+  <tr><td><span class="key">V</span></td><td>Evolve (Evolution mode)</td></tr>
+  <tr><td><span class="key">Q</span> / <span class="key">W</span> / <span class="key">E</span></td><td>Quick-deploy to top / mid / bottom lane</td></tr>
+  <tr><td><span class="key">Z</span> / <span class="key">X</span> / <span class="key">C</span></td><td>Assault / Defend / Skirmish stance</td></tr>
+  <tr><td><span class="key">`</span></td><td>Toggle AI thinking overlay</td></tr>
+  <tr><td><span class="key">Space</span></td><td>Pause</td></tr>
+</table>
+</div>
+
+<h2><span class="n">06</span>Console handles</h2>
+<p>The game exposes live state for poking at from devtools.</p>
+<table>
+  <tr><th>Handle</th><th>What</th></tr>
+  <tr><td><code>G</code></td><td>Live battle state (null outside a battle)</td></tr>
+  <tr><td><code>SAVE</code></td><td>The save object. Edit then call <code>persist()</code>.</td></tr>
+  <tr><td><code>SAVE_KEY</code></td><td><code>'FRONTLINE_SAVE_v1'</code> — the localStorage key</td></tr>
+  <tr><td><code>claimChest()</code></td><td>Force a crate pull (set <code>SAVE.chestLastDay=null</code> first)</td></tr>
+  <tr><td><code>launchIndoc('blitzkrieg')</code></td><td>Jump straight into a doctrine lesson</td></tr>
+  <tr><td><code>launchSecret()</code></td><td>Jump straight into the Glitch Front</td></tr>
+  <tr><td><code>generateDaily(todayKey())</code></td><td>Inspect today's composed challenge</td></tr>
+  <tr><td><code>spawn('R','tank',1)</code></td><td>Spawn an enemy tank in the middle lane</td></tr>
+</table>
+
+<h2><span class="n">07</span>Testing</h2>
+<ol>
+  <li><code>python3 -m http.server 8080</code></li>
+  <li><code>node tests/regression.js</code> — exits 0 on pass</li>
+</ol>
+<p class="muted">Override the target with <code>PORT=</code> or <code>BASE_URL=</code>.</p>
+
+<h2><span class="n">08</span>Future tools — add here as they land</h2>
+<ul>
+  <li><span class="tag planned">planned</span> Global leaderboard admin / score invalidation (needs the backend)</li>
+  <li><span class="tag planned">planned</span> Deterministic seed override for reproducible capture runs</li>
+  <li><span class="tag planned">planned</span> One-key "cinematic camera" for trailer B-roll</li>
+</ul>
+
+<footer>
+  Frontline Commander — internal reference. Last updated for <strong>v1.17.1</strong>.<br>
+  Keep this current: a stale tools file is worse than none, because you'll trust it.
+</footer>
+
+</div>
+</body>
+</html>
