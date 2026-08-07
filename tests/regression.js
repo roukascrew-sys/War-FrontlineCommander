@@ -697,8 +697,20 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
       indoc: !!document.getElementById('t-indoc'),
       leaderboard: !!document.getElementById('t-leaderboard'),
     }));
-    ok(title.groups.join('|') === 'More Modes|Learn|Your Progress|Info', `[title] labelled clusters intact (${title.groups.join(', ')})`);
+    // v1.17.2 folded the Info cluster into inline text links so the primary actions clear
+    // the fold in the 1280x720 itch embed; the three remaining clusters are pinned in order.
+    ok(title.groups.join('|') === 'More Modes|Learn|Your Progress', `[title] labelled clusters intact (${title.groups.join(', ')})`);
     ok(title.chest && title.indoc && title.leaderboard, '[title] the daily crate card, Indoctrination and Leaderboard entry points are all present');
+    const infoLinks = await hp.evaluate(() => ['t-manual', 't-patchnotes', 't-settings']
+      .every(id => { const e = document.getElementById(id); return e && e.offsetParent !== null; }));
+    ok(infoLinks, '[title] Field Manual / Patch Notes / Settings survive the fold-out as reachable links');
+    // PLAY must precede the difficulty picker in the DOM — a first-timer shouldn't have to
+    // resolve "which difficulty?" before they're allowed to want to play.
+    const order = await hp.evaluate(() => {
+      const play = document.getElementById('t-play'), diff = document.getElementById('title-diff');
+      return !!(play && diff && (play.compareDocumentPosition(diff) & Node.DOCUMENT_POSITION_FOLLOWING));
+    });
+    ok(order, '[title] the PLAY button comes before the difficulty picker');
     ok(title.daily && title.dailySub.length > 3, `[title] daily challenge card present with today's twist ("${title.dailySub}")`);
     ok(/🔥|Start a streak/.test(title.streakTxt), `[title] streak state shown on the daily card ("${title.streakTxt}")`);
 
@@ -823,8 +835,11 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
       if (st.step === -1) break;
     }
     ok(!sawDup, '[narrator] narrator subtitle never appears mid-tutorial under an adversarial fast player');
-    const spoken = await np.evaluate(() => window.__spoken.map(s => s.cancelledMidway));
-    ok(spoken.length > 10 && spoken.every(c => !c), `[narrator] zero of ${spoken.length} spoken lines were cut off mid-sentence, even when the player raced every step`);
+    const spokenAll = await np.evaluate(() => window.__spoken.map(s => ({ t: s.text, c: s.cancelledMidway })));
+    const cutLines = spokenAll.filter(s => s.c).map(s => '"' + String(s.t).slice(0, 55) + '…"');
+    ok(spokenAll.length > 10 && cutLines.length === 0,
+      `[narrator] zero of ${spokenAll.length} spoken lines were cut off mid-sentence, even when the player raced every step` +
+      (cutLines.length ? ` :: CUT ${cutLines.length}: ${cutLines.join(' | ')}` : ''));
     ok(nerr.length === 0, `[narrator] zero page errors ${nerr.length ? ':: ' + nerr.join(' | ') : ''}`);
     await nctx.close();
   }
@@ -1270,7 +1285,15 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
     // 18c. COMMUNITY LINK — an unset or malformed destination must disable the card, never
     //      ship a dead/unsafe button to players.
     const comm = await vp.evaluate(() => ({
-      unset: COMMUNITY_URL === '', okFalse: COMMUNITY_OK === false, silent: rallyEligible(true) === false,
+      // COMMUNITY_URL is now SET (the live Discord). What matters is that whatever is set
+      // passes the validator — a shipped link that fails validation would silently disable
+      // the whole audience-capture path with only a console warning to show for it.
+      set: COMMUNITY_URL !== '', okTrue: COMMUNITY_OK === true,
+      https: /^https:\/\//.test(COMMUNITY_URL),
+      host: (() => { try { return new URL(COMMUNITY_URL).hostname; } catch (e) { return null; } })(),
+      hostAllowed: (() => { try { const h = new URL(COMMUNITY_URL).hostname.toLowerCase();
+        return COMMUNITY_HOSTS.some(a => h === a || h.endsWith('.' + a)); } catch (e) { return false; } })(),
+      rallyLive: rallyEligible(true) === true || (SAVE.rallyDone === true),  // eligible unless already dismissed
       rejects: (() => {
         // exercise the validator's logic directly against hostile-looking values
         const test = (u) => { try { const p = new URL(u); return p.protocol === 'https:' &&
@@ -1281,7 +1304,9 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
                  good: test('https://discord.gg/abc123') };
       })(),
     }));
-    ok(comm.unset && comm.okFalse && comm.silent, '[community] with COMMUNITY_URL unset the rally card stays silent');
+    ok(comm.set && comm.okTrue && comm.https,
+      `[community] the shipped COMMUNITY_URL is https and passes the validator (host: ${comm.host})`);
+    ok(comm.hostAllowed, `[community] the destination host is on the allowlist (${comm.host})`);
     ok(!comm.rejects.js && !comm.rejects.data && !comm.rejects.http && !comm.rejects.evil,
       '[community] the validator rejects javascript:, data:, plain http, and look-alike hosts');
     ok(comm.rejects.good, '[community] a real https discord.gg invite passes the validator');
@@ -1306,6 +1331,79 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
     ok(pn.firstHead.includes(pn.current), `[patch-notes] the newest entry is the running version (${pn.current})`);
     ok(verr.length === 0, `[v1.17.1] zero page errors ${verr.length ? ':: ' + verr.join(' | ') : ''}`);
     await vctx.close();
+  }
+
+  // ══ 19. v1.17.2 — THE TUTORIAL MUST NEVER HANG ══
+  {
+    /* Beta funnel data: 17 players started the tutorial, 4 finished it. The cause was that
+       every interactive step waited forever for one exact action, with the Skip button as the
+       only escape — so a player who didn't understand the ask, or was on a phone being told to
+       "press 0", simply stopped. This section exists so that can never silently return. */
+    const tctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    const tp = await tctx.newPage();
+    const terr = []; tp.on('pageerror', e => terr.push(e.message));
+    await tp.goto(BASE_URL); await tp.waitForTimeout(9000);
+
+    const shape = await tp.evaluate(() => {
+      const gated = TUT_STEPS.map((s, i) => ({ i, cond: !!s.cond, nudge: !!s.nudge, auto: !!s.auto }))
+        .filter(s => s.cond);
+      return { gated, missingNudge: gated.filter(s => !s.nudge).map(s => s.i),
+               missingAuto: gated.filter(s => !s.auto).map(s => s.i),
+               nudgeT: TUT_NUDGE_T, autoT: TUT_AUTO_T,
+               keyboardOnly: TUT_STEPS.filter(s => s.cond && /press \d/i.test(s.nudge || '')).length };
+    });
+    ok(shape.missingNudge.length === 0,
+      `[tutorial] every condition-gated step has a plain-language nudge ${shape.missingNudge.length ? ':: missing on ' + shape.missingNudge.join(',') : ''}`);
+    ok(shape.missingAuto.length === 0,
+      `[tutorial] every condition-gated step can perform itself for a stuck player ${shape.missingAuto.length ? ':: missing on ' + shape.missingAuto.join(',') : ''}`);
+    ok(shape.autoT > shape.nudgeT && shape.autoT <= 60,
+      `[tutorial] the auto-help timer follows the nudge and stays under a minute (${shape.nudgeT}s → ${shape.autoT}s)`);
+    ok(shape.keyboardOnly === 0,
+      '[tutorial] no nudge tells the player to press a key — a phone has no keyboard and 28% of traffic is touch');
+
+    // park on each gated step, do NOTHING, and require it to move on
+    const hangs = [];
+    for (const g of shape.gated) {
+      const r = await tp.evaluate(async (target) => {
+        const fr = document.getElementById('firstrun'); if (fr) fr.classList.remove('show');
+        showTitle(); leaveTitle(); launchTutorial();
+        for (let guard = 0; guard < 6000 && G.tutStep < target; guard++) {
+          const s = TUT_STEPS[G.tutStep];
+          if (s && s.cond && s.auto) { try { s.auto(); } catch (e) {} }
+          if (s) s._t = 999;
+          if (typeof NARR === 'object') NARR.speaking = false;
+          tutTick(1 / 30);
+        }
+        if (G.tutStep !== target) return { target, landed: G.tutStep, skipped: true };
+        const before = G.tutStep;
+        // 90 simulated seconds of complete inactivity — three times the auto-help timer
+        for (let i = 0; i < 90 * 30; i++) { if (typeof NARR === 'object') NARR.speaking = false; tutTick(1 / 30); }
+        return { target, landed: before, moved: G.tutStep !== before || G.tutDone };
+      }, g.i);
+      if (!r.skipped && !r.moved) hangs.push(r.target);
+    }
+    ok(hangs.length === 0,
+      `[tutorial] no condition-gated step hangs on an inactive player ${hangs.length ? ':: steps ' + hangs.join(',') + ' HANG' : '(all ' + shape.gated.length + ' self-recover)'}`);
+
+    // and a fully passive player must actually reach the end and be counted as finishing
+    const passive = await tp.evaluate(async () => {
+      SAVE = JSON.parse(JSON.stringify(DEFAULT_SAVE)); persist();
+      showTitle(); leaveTitle(); launchTutorial();
+      let guard = 0;
+      while (!G.tutDone && guard++ < 10 * 60 * 30) {
+        if (typeof NARR === 'object') NARR.speaking = false;
+        tutTick(1 / 30);
+        if (!G.frozen) step(1 / 30);
+      }
+      return { done: G.tutDone, seen: SAVE.seenTut,
+               funnelDone: !!(SAVE.funnel && SAVE.funnel['tutorial-done']),
+               helped: TUT_STEPS.filter(s => s._autoed).length };
+    });
+    ok(passive.done, '[tutorial] a player who touches NOTHING still reaches the end of the tutorial');
+    ok(passive.funnelDone, '[tutorial] that completion is counted in the funnel, so the metric reflects reality');
+    ok(passive.helped > 0, `[tutorial] the auto-help actually engaged for the passive run (${passive.helped} steps)`);
+    ok(terr.length === 0, `[tutorial] zero page errors ${terr.length ? ':: ' + terr.join(' | ') : ''}`);
+    await tctx.close();
   }
 
   console.log('\n══════════ FRONTLINE COMMANDER — REGRESSION SUITE ══════════');
