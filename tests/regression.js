@@ -1406,6 +1406,122 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
     await tctx.close();
   }
 
+  // ══ 20. v1.17.3 — TOPBAR SETTINGS · ITCH CORNER CLEARANCE · KILLFEED ATTRIBUTION ══
+  {
+    const xctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
+    const xp = await xctx.newPage();
+    const xerr = []; xp.on('pageerror', e => xerr.push(e.message));
+    await xp.goto(BASE_URL); await xp.waitForTimeout(9000);
+    await xp.evaluate(() => { const fr = document.getElementById('firstrun'); if (fr) fr.classList.remove('show'); SAVE.seenTut = true; persist(); });
+
+    // 20a. killfeed must never render literal "undefined" — the original bug was DOT/burn kills
+    //      crediting a synthetic {side} object with no name/glyph
+    const kf = await xp.evaluate(() => {
+      showTitle(); leaveTitle(); LAUNCH = null; sel.mode = 'skirmish'; start(); G.prep = 0; G.frozen = false;
+      spawn('B', 'flame', 1, 500); spawn('R', 'rifle', 1, 560);
+      const flame = G.units.find(u => u.side === 'B' && u.key === 'flame');
+      const victim = G.units.find(u => u.side === 'R' && u.key === 'rifle');
+      damage(victim, 1, { side: 'B', dmgType: null, glyph: flame.glyph, name: flame.name, burnDps: 40, burnDur: 3 });
+      flame.alive = false; flame.hp = 0;   // the igniting unit is gone by the time the DOT finishes the kill
+      document.getElementById('killfeed').innerHTML = '';
+      for (let i = 0; i < 400 && victim.alive; i++) burnTick(victim, 1 / 30);
+      const attributed = document.getElementById('killfeed').innerHTML;
+      document.getElementById('killfeed').innerHTML = '';
+      killfeed({ side: 'R' }, { col: '#fff', glyph: '🪖', name: 'Rifleman' });  // fully bare attacker
+      const bare = document.getElementById('killfeed').innerHTML;
+      return { victimDied: !victim.alive, attributed, bare };
+    });
+    ok(kf.victimDied, '[killfeed] burn DOT setup actually finishes the kill');
+    ok(!/undefined/i.test(kf.attributed) && /Flame Trooper|🔥/.test(kf.attributed),
+      `[killfeed] a burn kill is attributed to the igniting unit, captured at ignition — not "undefined" — even after that unit is gone :: ${kf.attributed.replace(/\s+/g, ' ').slice(0, 160)}`);
+    ok(!/undefined/i.test(kf.bare), `[killfeed] a fully bare {side} attacker (no name/glyph at all) still never renders "undefined" :: ${kf.bare.replace(/\s+/g, ' ')}`);
+
+    // 20b. Settings is reachable mid-battle, pauses the sim, and returns to the SAME battle
+    const settings = await xp.evaluate(() => {
+      const hasBtn = !!document.getElementById('btn-settings');
+      const killsBefore = G.kills, tBefore = G.t;
+      document.getElementById('btn-settings').click();
+      const open = { visible: !document.getElementById('settings').classList.contains('hidden'), paused: G.paused, gameAlive: !!G && !G.over };
+      const frozen = G.kills === killsBefore && G.t === tBefore;
+      document.getElementById('set-back').click();
+      const closed = { hidden: document.getElementById('settings').classList.contains('hidden'),
+        hudBack: !document.getElementById('hud').classList.contains('hidden'), resumed: !G.paused, gameIntact: !!G && !G.over };
+      return { hasBtn, open, frozen, closed };
+    });
+    ok(settings.hasBtn, '[settings] a Settings button exists in the topbar');
+    ok(settings.open.visible && settings.open.paused && settings.open.gameAlive,
+      '[settings] opening it mid-battle shows the screen and pauses the sim without abandoning the match');
+    ok(settings.frozen, '[settings] battle state does not advance while the menu is open');
+    ok(settings.closed.hidden && settings.closed.hudBack && settings.closed.resumed && settings.closed.gameIntact,
+      '[settings] Back resumes the SAME battle rather than dropping to the title');
+
+    // a pre-existing deliberate pause must survive a visit to Settings, not get silently cleared
+    const pausePreserve = await xp.evaluate(() => {
+      togglePause();
+      const before = { paused: G.paused, screenUp: !document.getElementById('pauseScreen').classList.contains('hidden') };
+      document.getElementById('btn-settings').click();
+      document.getElementById('set-back').click();
+      const after = { paused: G.paused, screenUp: !document.getElementById('pauseScreen').classList.contains('hidden') };
+      togglePause();
+      return { before, after };
+    });
+    ok(pausePreserve.before.paused && pausePreserve.before.screenUp, '[settings] pause precondition set up correctly');
+    ok(pausePreserve.after.paused && pausePreserve.after.screenUp,
+      '[settings] a deliberate pause survives a Settings visit instead of being force-resumed');
+
+    // abandoning via Menu while Settings is open must not strand it on top of the menu screen
+    const stranding = await xp.evaluate(() => {
+      showTitle(); leaveTitle(); LAUNCH = null; sel.mode = 'skirmish'; start(); G.paused = false;
+      document.getElementById('btn-settings').click();
+      const wasOpen = !document.getElementById('settings').classList.contains('hidden');
+      const origConfirm = window.confirm; window.confirm = () => true;
+      document.getElementById('btn-menu').click();
+      window.confirm = origConfirm;
+      return { wasOpen, strandedOverMenu: !document.getElementById('settings').classList.contains('hidden'),
+               menuVisible: !document.getElementById('menu').classList.contains('hidden') };
+    });
+    ok(stranding.wasOpen, '[settings] precondition — settings was open before abandoning');
+    ok(!stranding.strandedOverMenu && stranding.menuVisible,
+      '[settings] abandoning via Menu while Settings is open does not strand it over the menu screen');
+
+    // Settings opened from the TITLE (no live battle) must still behave exactly as before
+    const fromTitle = await xp.evaluate(() => {
+      showTitle();
+      document.getElementById('btn-settings').click();
+      const opened = !document.getElementById('settings').classList.contains('hidden');
+      document.getElementById('set-back').click();
+      return { opened, backToTitle: !document.getElementById('title').classList.contains('hidden') };
+    });
+    ok(fromTitle.opened && fromTitle.backToTitle, '[settings] opened from the title screen, Back still returns to the title as before');
+
+    // 20c. itch.io embed corner clearance — verified across the actual in-battle button set
+    //      (Pause visible), which is the tightest real layout, at a spread of common widths
+    const widths = [1280, 1366, 1420, 1421, 1440, 1499, 1500, 1536, 1920, 2560];
+    const layout = [];
+    for (const w of widths) {
+      await xp.setViewportSize({ width: w, height: 900 });
+      await xp.waitForTimeout(60);
+      layout.push({ w, ...(await xp.evaluate(() => {
+        const tb = document.getElementById('topbar'), menu = document.getElementById('btn-menu');
+        const btns = [...tb.querySelectorAll('.tb-btn,#playtest-link')].filter(b => getComputedStyle(b).display !== 'none' && !b.classList.contains('hidden'));
+        const offscreen = btns.filter(x => { const r = x.getBoundingClientRect(); return r.right > window.innerWidth + 1 || r.left < -1; }).length;
+        return { offscreen, menuClearance: window.innerWidth - menu.getBoundingClientRect().right };
+      })) });
+    }
+    const anyOffscreen = layout.filter(l => l.offscreen > 0);
+    ok(anyOffscreen.length === 0,
+      `[topbar] no button is pushed offscreen at any tested width (adding Settings did not silently break a laptop-width layout) ${anyOffscreen.length ? ':: ' + anyOffscreen.map(l => l.w + 'px:' + l.offscreen).join(', ') : ''}`);
+    const wideClear = layout.filter(l => l.w >= 1500);
+    ok(wideClear.every(l => l.menuClearance >= 60),
+      `[topbar] every width ≥1500px reserves real clearance from the true corner for itch.io's embed overlay ${wideClear.map(l => l.w + ':' + l.menuClearance.toFixed(0)).join(', ')}`);
+    const laptopClear = layout.find(l => l.w === 1366);
+    ok(laptopClear && laptopClear.menuClearance > 0 && laptopClear.menuClearance < 60,
+      `[topbar] common laptop widths (1366px) stay unpadded rather than fighting the itch-clearance rule for room they don't have (clearance ${laptopClear && laptopClear.menuClearance.toFixed(0)}px)`);
+
+    ok(xerr.length === 0, `[v1.17.3] zero page errors ${xerr.length ? ':: ' + xerr.join(' | ') : ''}`);
+    await xctx.close();
+  }
+
   console.log('\n══════════ FRONTLINE COMMANDER — REGRESSION SUITE ══════════');
   out.forEach(o => console.log(o));
   console.log('═══════════════════════════════════════════════════════════');

@@ -179,6 +179,19 @@
     border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 14px;z-index:20;
     overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
   #topbar::-webkit-scrollbar{display:none;}
+  /* itch.io's HTML embed draws its OWN hover toolbar (zoom out/reset/in, fullscreen) directly over
+     the top-right corner of the game on desktop, plus a resize grip in the bottom-right — visible
+     in captured footage sitting right on top of Pause/Menu, which is what actually made "the menu
+     button behave weird": it isn't broken, itch's own chrome is drawn on top of it. This is a mouse
+     -hover affordance (no touch equivalent), so the extra clearance only applies where a mouse is
+     the expected input.
+     The threshold is 1500px, not the more obvious ~960px "is this a phone" cutoff: the topbar's
+     own button row already fills a laptop-width (1280–1400px) window almost exactly, so adding
+     clearance there would just create a NEW overflow — the topbar itself has to scroll to reach
+     Menu, trading one hidden-button bug for another. 1500px+ is comfortably past that squeeze
+     (any 1920×1080 display, which is what a fullscreen itch session actually runs at) and is
+     where reserving room is free instead of costing something else. */
+  @media (min-width:1500px){ #topbar{padding-right:84px;} }
   #topbar .logo{font-weight:800;letter-spacing:1px;font-size:15px;}
   #topbar .logo b{color:var(--gold);}
   .hstat{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dim);}
@@ -200,6 +213,7 @@
   #btn-sound:hover{border-color:var(--cyan);color:var(--cyan);}
   #btn-ai:hover{border-color:var(--good);color:var(--good);}
   #btn-ai.on{background:var(--good);border-color:var(--good);}
+  #btn-settings:hover{border-color:var(--cyan);color:var(--cyan);}
   #btn-pause:hover{border-color:var(--warn);color:var(--warn);}
   #btn-menu:hover{border-color:var(--red);color:var(--red);}
   /* AI thinking debug panel */
@@ -550,25 +564,59 @@
   .tfig{position:absolute;top:24%;display:flex;flex-direction:column;align-items:center;gap:9px;
     filter:drop-shadow(0 6px 16px #000d);opacity:.97;}
   .tfig-l{left:6.5%;} .tfig-r{right:6.5%;}
+  /* ── WAR-LIT AMBIENT GLOW ─────────────────────────────────────────────────
+     A single soft light source behind each figure, tinted to the side it stands for — the
+     game's own blue-vs-red team read (TEAM_PALETTES), not an invented palette. This is the
+     cheapest, highest-yield move for "more depth, more moody": everything else is fine detail,
+     this is what makes the figure look lit rather than pasted flat on the title art. */
+  .tfig::before{content:'';position:absolute;left:50%;top:38%;width:2.6em;height:2.6em;
+    transform:translate(-50%,-50%);border-radius:50%;filter:blur(0.5em);z-index:-1;opacity:.55;}
+  .tfig-l::before{background:radial-gradient(circle,var(--blue) 0%,var(--blue2) 45%,transparent 72%);}
+  .tfig-r::before{background:radial-gradient(circle,var(--red) 0%,var(--red2) 45%,transparent 72%);}
+  #title-figs.reduce .tfig::before{opacity:.4;}
   /* Both figures are drawn from layered CSS shapes (no emoji, no images) so they read as real
      characters and can animate part-by-part: the skull's jaw works, its sockets burn, the
      recruit breathes and his cigar smokes. Everything is sized in `em` off .tf-art's font-size,
      so the same markup scales from the 78px title figures to the 46px menu skull. */
   .tf-art{position:relative;font-size:78px;line-height:1;width:1.05em;height:1.15em;}
   .tf-art>*{position:absolute;}
+  /* Film-grain pass over the whole figure — the same technique used in the concept-art mockups,
+     here at a much lighter touch since it has to read at 78px, not poster size. mix-blend-mode
+     lets it read as texture on the gradients underneath rather than a flat grey layer on top. */
+  .tf-art::after{content:'';position:absolute;inset:-4%;z-index:7;pointer-events:none;opacity:.16;
+    mix-blend-mode:overlay;border-radius:inherit;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  #title-figs.reduce .tf-art::after,#menu-skull.reduce .tf-art::after{opacity:.08;}
 
   /* ── SKULL ───────────────────────────────────────────────────────────── */
+  /* Deepened from the original flat bone gradient: a darker ambient-occlusion core, a hotter
+     rim highlight on the light side, and hairline cracks + grime patches so it reads as an old,
+     battle-worn object rather than a clean prop — the same "worn, not glossy" instinct behind
+     the Field Dossier concept direction, applied here in miniature. */
   .sk-cran{left:11%;top:1%;width:78%;height:60%;border-radius:52% 52% 40% 40%/62% 62% 38% 38%;
-    background:radial-gradient(ellipse at 36% 24%,#efe8d8 0%,#d6cbb5 44%,#ab9f88 80%,#807663 100%);
-    box-shadow:inset -0.055em -0.045em 0.10em #5f5646, inset 0.03em 0.03em 0.06em #fffdf6;}
+    background:radial-gradient(ellipse at 34% 22%,#f5eeda 0%,#d6cbb5 40%,#9c9078 76%,#6d6252 100%);
+    box-shadow:inset -0.065em -0.05em 0.12em #4a4234, inset 0.035em 0.035em 0.07em #fffdf6,
+      inset -0.14em 0.12em 0.22em #00000030;}
+  /* hairline stress-cracks — thin, low-opacity, angled differently on each figure so the pair
+     never look like copies of one texture */
+  .sk-crack{z-index:3;background:linear-gradient(90deg,#00000000,#241f1780,#00000000);
+    border-radius:1px;pointer-events:none;}
+  .sk-crack.c1{left:22%;top:9%;width:0.16em;height:0.014em;transform:rotate(-38deg);}
+  .sk-crack.c2{left:63%;top:6%;width:0.11em;height:0.012em;transform:rotate(52deg);}
+  /* faint grime/age patches — irregular, low-contrast, break up the otherwise-perfect gradient */
+  .sk-grime{z-index:2;border-radius:50%;background:radial-gradient(circle,#3a3226 0%,transparent 68%);
+    opacity:.22;pointer-events:none;}
+  .sk-grime.g1{left:14%;top:8%;width:16%;height:14%;}
+  .sk-grime.g2{left:66%;top:34%;width:14%;height:12%;}
   .sk-temple{top:16%;width:12%;height:26%;border-radius:50%;background:#00000024;}
   .sk-temple.l{left:11%;} .sk-temple.r{right:11%;}
   .sk-brow{left:15%;top:29%;width:70%;height:11%;border-radius:50% 50% 40% 40%;
-    background:linear-gradient(#00000038,#00000000);}
-  /* deep, slightly angled sockets — the single biggest "menacing vs cute" lever */
+    background:linear-gradient(#00000042,#00000000);}
+  /* deep, slightly angled sockets — the single biggest "menacing vs cute" lever, now with a
+     touch more contrast so they read as genuinely hollow rather than just shaded */
   .sk-socket{top:33%;width:22%;height:20%;border-radius:48% 48% 62% 62%/58% 58% 42% 42%;
-    background:radial-gradient(ellipse at 50% 34%,#161009 0%,#070504 62%,#000 100%);
-    box-shadow:inset 0 0.045em 0.06em #000, 0 0.014em 0.01em #fffbf0b0;}
+    background:radial-gradient(ellipse at 50% 34%,#1c150c 0%,#070504 58%,#000 100%);
+    box-shadow:inset 0 0.05em 0.07em #000, 0 0.016em 0.012em #fffbf0c0;}
   .sk-socket.l{left:16%;transform:rotate(7deg);} .sk-socket.r{right:16%;transform:rotate(-7deg);}
   .sk-nose{left:50%;top:54%;width:0;height:0;transform:translateX(-50%);
     border-left:0.055em solid transparent;border-right:0.055em solid transparent;border-bottom:0.10em solid #070504;
@@ -601,20 +649,32 @@
   @keyframes tfTeeth{0%,100%{transform:translateY(0);}50%{transform:translateY(0.012em);}}
 
   /* ── RECRUIT ─────────────────────────────────────────────────────────── */
+  /* Same treatment as the skull: darker occlusion, a hotter rim-light on the same side as the
+     ambient glow behind him, and woven texture on the helmet/collar fabric instead of a flat
+     gradient, so cloth reads as cloth rather than painted plastic. */
   .rc-neck{left:38%;top:74%;width:24%;height:18%;border-radius:12% 12% 26% 26%;
-    background:linear-gradient(#c08a68,#946948);}
+    background:linear-gradient(#c08a68,#8a6142);}
   .rc-collar{left:24%;top:86%;width:52%;height:14%;border-radius:44% 44% 18% 18%;
-    background:linear-gradient(#4a5340,#333b2c);box-shadow:inset 0 0.02em 0.03em #ffffff18;}
+    background:
+      repeating-linear-gradient(115deg,#ffffff0a 0 0.012em,#00000012 0.012em 0.024em),
+      linear-gradient(#4a5340,#2c3325);
+    box-shadow:inset 0 0.02em 0.03em #ffffff18, inset 0 -0.03em 0.04em #00000040;}
   .rc-face{left:20%;top:22%;width:60%;height:60%;border-radius:46% 46% 48% 48%/38% 38% 62% 62%;
-    background:radial-gradient(ellipse at 38% 30%,#f0c09a 0%,#dda87f 46%,#b98460 82%,#9a6a4a 100%);
-    box-shadow:inset -0.045em -0.03em 0.07em #7d543a88, inset 0.03em 0.02em 0.05em #ffd9b8aa;}
+    background:radial-gradient(ellipse at 34% 28%,#f5c8a0 0%,#dda87f 42%,#a97a56 80%,#7d5a3e 100%);
+    box-shadow:inset -0.055em -0.04em 0.09em #6b4630a0, inset 0.035em 0.025em 0.06em #ffe0bfc0,
+      inset -0.16em 0.10em 0.20em #00000022;}
   .rc-ear{top:46%;width:9%;height:15%;border-radius:50%;background:#c99070;box-shadow:inset 0 0 0.02em #8a5c3e;}
   .rc-ear.l{left:16%;} .rc-ear.r{right:16%;}
   .rc-helm{left:11%;top:0%;width:78%;height:41%;border-radius:50% 50% 30% 30%/72% 72% 28% 28%;
-    background:linear-gradient(150deg,#6b7358 0%,#525a42 46%,#3c422f 100%);
-    box-shadow:inset 0.04em 0.035em 0.07em #98a37e88, inset -0.03em -0.02em 0.05em #22261b, 0 0.02em 0.05em #0007;}
+    background:
+      repeating-linear-gradient(122deg,#ffffff08 0 0.014em,#00000010 0.014em 0.028em),
+      linear-gradient(150deg,#6b7358 0%,#4a5138 46%,#2e3322 100%);
+    box-shadow:inset 0.045em 0.04em 0.08em #a8b38fa0, inset -0.035em -0.025em 0.06em #1a1d13, 0 0.02em 0.05em #0009;}
   .rc-helmbrim{left:7%;top:36%;width:86%;height:0.10em;border-radius:0.05em;
-    background:linear-gradient(#5c6449,#343a28);box-shadow:0 0.02em 0.04em #0008;}
+    background:linear-gradient(#5c6449,#2a2f20);box-shadow:0 0.025em 0.05em #000a;}
+  /* small metal buckle on the chin strap — a tiny prop detail that sells "gear," not costume */
+  .rc-buckle{left:20.5%;top:47%;width:0.045em;height:0.045em;border-radius:1px;z-index:5;
+    background:linear-gradient(145deg,#d8d0b8,#7a7358);box-shadow:0 0.006em 0.01em #0008;}
   .rc-strap{left:22%;top:44%;width:0.045em;height:32%;background:#3c422f;transform:rotate(9deg);opacity:.85;}
   .rc-brow{top:41%;width:17%;height:0.055em;border-radius:0.03em;background:#6d4a31;}
   .rc-brow.l{left:24%;transform-origin:100% 50%;} .rc-brow.r{right:24%;transform-origin:0 50%;}
@@ -1303,8 +1363,13 @@
      minimum tap-target size. That IS a property of the input device.
      ═══════════════════════════════════════════════════════════════════════ */
 
-  /* ── Top bar, tier 1: condensed labels. Still words, just tighter. ── */
-  @media (max-width:1320px){
+  /* ── Top bar, tier 1: condensed labels. Still words, just tighter. ──
+     Raised from 1320 to 1420: the topbar carries 11 buttons now (Settings joined it below), and
+     at exactly 1366px — an extremely common laptop width — the full-size row no longer fit once
+     Pause is also showing mid-battle. Condensing a little earlier buys back that room without
+     dropping to icon-only, which tier 2 (below) would do at a width where full words still read
+     fine once they're this tier's slightly tighter size. */
+  @media (max-width:1420px){
     #topbar{gap:7px;padding:0 9px;}
     #topbar .tb-btn,#playtest-link{padding:5px 8px;font-size:11px;}
     #topbar .logo{font-size:13px;}
@@ -1527,7 +1592,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.17.2</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.17.3</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -1544,6 +1609,12 @@
   <button class="tb-btn" id="btn-sound">🔊 Sound</button>
   <button class="tb-btn" id="btn-music">🎵 Music</button>
   <button class="tb-btn hidden" id="btn-news">📰 News</button>
+  <!-- The full Settings screen (colourblind palette, reduce-motion, chaos mode, etc.) used to be
+       reachable only from the title screen — there was no way back to it once a battle started.
+       This button works from inside a live battle too: opening it pauses the fight (same G.paused
+       mechanism as the Pause button) and its own Back button resumes exactly where you left off,
+       see openSettings()/#set-back below, rather than dumping you out to the title mid-match. -->
+  <button class="tb-btn" id="btn-settings">⚙ Settings</button>
   <!-- every dev/testing tool lives behind this one button so the topbar stays a player's toolbar -->
   <button class="tb-btn" id="btn-debug">🐞 Debug/Dev</button>
   <button class="tb-btn hidden" id="btn-pause">⏸ Pause</button>
@@ -2956,13 +3027,19 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.17.2';
+const GAME_VERSION='1.17.3';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.17.3',notes:[
+    'FIXED — a kill credited to a fire (a Flame Trooper\'s burn finishing someone off after the flame itself had already died) could show up in the kill feed as "undefined undefined." The credit is now captured the moment the fire is lit, not looked up later from a unit that may no longer exist — and the kill feed itself can no longer render that literal text under any circumstances.',
+    'Added a Settings button to the in-battle top bar — there was previously no way to reach the full Settings screen (colourblind palette, reduce motion, Chaos Mode, etc.) once a match had started. Opening it pauses the fight exactly like the Pause button and returns you to the same battle, in the same state, when you go back — it does not abandon your match.',
+    'FIXED — on desktop, itch.io draws its own hover toolbar (zoom, fullscreen) directly over the top-right corner of the game, which was landing right on top of the Pause and Menu buttons and making them look broken or unclickable. The top bar now reserves real clearance in that corner on wide screens (itch.io fullscreen sessions especially), and the button row was also re-tuned so a very common laptop width (1366px) no longer runs out of room now that Settings joined it.',
+    'More detail on the title screen\'s recruit and skull figures — deeper shading, a soft team-coloured glow behind each one, hairline cracks and grime on the skull, woven texture on the recruit\'s helmet and collar, and a small strap buckle.',
+  ]},
   {v:'1.17.2',notes:[
     'FIXED — the tutorial could stop dead and never continue. Every step that asked you to do something (pick a card, deploy, kill the tank, call a strike) waited forever for that exact action, and if you did not perform it there was no way forward except the Skip button. Beta data showed roughly three out of four players who started the tutorial never finished it. Now, if a step is waiting, the Marshal restates the ask in plainer words after a few seconds — and if it is still stuck, he simply does it for you and moves on, so you still see the thing you were meant to see.',
     'Tutorial instructions no longer assume a keyboard. "Press 0 for precision" meant nothing on a phone or tablet, which is over a quarter of everyone who plays; every prompt now names the thing you tap.',
@@ -4818,8 +4895,13 @@ function damage(u,dmg,src){
   u.hp-=dmg; u.hitFlash=1;
   u.sup=Math.min(1,(u.sup||0)+0.10); // taking fire suppresses
   if(src&&src.side==='B'){G.dmgDealt+=dmg;}
-  // set alight — refreshes on every hit rather than stacking, so repeated flame hits keep it lit, not escalate it
-  if(src&&src.burnDps){ u.burnT=Math.max(u.burnT||0,src.burnDur||3); u.burnDps=src.burnDps; u.burnSide=src.side; }
+  // set alight — refreshes on every hit rather than stacking, so repeated flame hits keep it lit, not escalate it.
+  // Also remember WHO lit it: the fire can (and usually does) finish the kill several seconds
+  // later in burnTick(), by which point the igniting unit may have moved, died, or simply not be
+  // the thing at hand any more — so the credit has to be captured now, at ignition, not looked
+  // up later from a `src` that no longer describes anything.
+  if(src&&src.burnDps){ u.burnT=Math.max(u.burnT||0,src.burnDur||3); u.burnDps=src.burnDps; u.burnSide=src.side;
+    u.burnSrcGlyph=src.glyph; u.burnSrcName=src.name; }
   if(u.hp<=0){ killUnit(u,src); }
 }
 function burnTick(u,dt){
@@ -4829,7 +4911,7 @@ function burnTick(u,dt){
   u.hp-=bd; u.hitFlash=Math.max(u.hitFlash,0.3);
   if(u.burnSide==='B')G.dmgDealt+=bd; else G.dmgTaken+=bd;
   if(Math.random()<dt*8)G.parts.push({x:u.x+rnd(-u.r*0.5,u.r*0.5),y:u.y-u.r*0.3,vx:rnd(-8,8),vy:-rnd(20,40),life:rnd(0.3,0.55),age:0,col:pick(['#ffce5a','#ff9f40','#ff5a4a']),sz:rnd(1.2,2.2)});
-  if(u.hp<=0){ killUnit(u,{side:u.burnSide,dmgType:null}); u.burnT=0; }
+  if(u.hp<=0){ killUnit(u,{side:u.burnSide,dmgType:null,glyph:u.burnSrcGlyph,name:u.burnSrcName}); u.burnT=0; }
 }
 /* veterancy — units that keep racking up kills mid-battle grow stronger, either side */
 function grantVetXP(u){
@@ -6220,7 +6302,11 @@ function hideCombo(){document.getElementById('combo').style.opacity='0';}
 function killfeed(src,victim){
   const kf=document.getElementById('killfeed');
   const sideCls=src?src.side==='B'?'blue':'red':'';
-  const attacker=src?`<span class="g">${src.glyph}</span>${src.name}`:'☢';
+  /* `src` isn't always a real unit — DOT/strike kills legitimately hand this a bare {side}
+     descriptor. A template literal turns a genuinely undefined field into the literal text
+     "undefined", which is worse than just not naming the attacker, so this only claims an
+     identity when it actually has a glyph or a name to show. */
+  const attacker=(src&&(src.glyph||src.name))?`<span class="g">${src.glyph||'✦'}</span>${src.name||'Unknown'}`:'☢';
   const el=document.createElement('div');
   el.className='kf '+sideCls;
   el.innerHTML=`${attacker} <span style="color:var(--faint)">▸</span> <span class="g" style="color:${victim.col}">${victim.glyph}</span>${victim.name}`;
@@ -7467,6 +7553,9 @@ function openMenu(){
   document.getElementById('results').classList.add('hidden');
   document.getElementById('tut-skip').classList.add('hidden');
   document.getElementById('pauseScreen').classList.add('hidden'); // guard: leaving via the topbar Menu button while paused must not strand the pause overlay on top of the menu
+  // guard: Settings is now reachable mid-battle (see openSettings()) — abandoning via Menu while
+  // it's open must not strand it visible on top of the menu screen underneath.
+  document.getElementById('settings').classList.add('hidden'); _settingsFromBattle=false;
   narrStop(); hideTut();
   document.getElementById('rivalbox').classList.remove('show');
   G=null; window.G=null; LAUNCH=null;
@@ -7792,6 +7881,7 @@ document.getElementById('btn-sound').onclick=()=>{SAVE.sound=!SAVE.sound;persist
 document.getElementById('btn-narr').onclick=()=>{SAVE.narrator=!SAVE.narrator;persist();refreshTopbar();
   if(SAVE.narrator)say("Iron Marshal, back on the net. Let's win something.",'deadpan',2); else narrStop();};
 document.getElementById('btn-menu').onclick=()=>{ if(G&&!G.over){ if(!confirm('Abandon the current battle and return to menu?'))return; } openMenu(); };
+document.getElementById('btn-settings').onclick=()=>openSettings();
 
 /* ═══ VOICE SETTINGS MODAL — picks one of the browser's own voices. No API, no key. ═══ */
 function browserVoices(){
@@ -8165,8 +8255,26 @@ function renderManualBody(tab){
 }
 
 /* ═══ SETTINGS MODAL ═══ */
+/* Settings is reachable from the title screen (the original, only path) AND now from the topbar
+   during a live battle. Those two callers need different "Back" behaviour: from the title, Back
+   goes back to the title; from a battle, Back should resume the SAME battle, not abandon it the
+   way every other secondary screen does. _settingsFromBattle records which case we're in so
+   #set-back (below) can do the right thing without the two call sites needing to know about
+   each other. Tutorial and the title's own attract-mode demo battle are deliberately excluded —
+   both have their own state machines that a mid-flight pause isn't safe to reuse. */
+let _settingsFromBattle=false, _settingsWasPaused=false;
 function openSettings(){
+  _settingsFromBattle=!!(G&&!G.over&&!G.attract&&!G.tutorial);
+  if(_settingsFromBattle){
+    _settingsWasPaused=!!G.paused;   // a player who was already on the Pause screen expects to
+                                      // land back ON it, not have their deliberate pause cleared
+    G.paused=true;                                              // stop the sim while the menu is up
+    document.getElementById('pauseScreen').classList.add('hidden'); // Settings replaces it, not stacks on it
+  }
   ['title','menu','warmap','results','hud','pauseScreen','manual','record','roadmap','cosmetics','rivals','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
+  // Only hide the topbar's own Pause button when we're NOT returning to a battle — it's already
+  // visible during one, and hiding it here would just mean re-showing it again on the way back.
+  if(!_settingsFromBattle)document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('settings').classList.remove('hidden');
   hideDiffAmbient();
   renderSettings();
@@ -8736,7 +8844,20 @@ document.getElementById('pn-back').onclick=()=>showTitle();
 const tVerEl=document.getElementById('t-ver'); if(tVerEl)tVerEl.onclick=()=>openPatchNotes();
 document.getElementById('man-back').onclick=()=>showTitle();
 document.getElementById('t-manual').onclick=()=>openManual('basics');
-document.getElementById('set-back').onclick=()=>showTitle();
+document.getElementById('set-back').onclick=()=>{
+  if(_settingsFromBattle&&G&&!G.over){
+    _settingsFromBattle=false;
+    document.getElementById('settings').classList.add('hidden');
+    document.getElementById('hud').classList.remove('hidden');
+    document.getElementById('btn-pause').classList.remove('hidden');
+    if(_settingsWasPaused){ G.paused=true; document.getElementById('pauseScreen').classList.remove('hidden'); }
+    else G.paused=false;
+    refreshTopbar();
+  } else {
+    _settingsFromBattle=false;
+    showTitle();
+  }
+};
 document.getElementById('t-settings').onclick=()=>openSettings();
 
 // title screen
@@ -8986,6 +9107,8 @@ function skullMarkup(menace){
   const scar=menace>=1, eyes=menace>=2, laugh=menace>=3, cigar=menace>=3;
   return `<div class="tf-art sk-wrap${laugh?' laugh':' sway'}">`
     + `<div class="sk-cran"></div><div class="sk-temple l"></div><div class="sk-temple r"></div>`
+    + `<div class="sk-grime g1"></div><div class="sk-grime g2"></div>`
+    + `<div class="sk-crack c1"></div><div class="sk-crack c2"></div>`
     + `<div class="sk-brow"></div>`
     + `<div class="sk-socket l"></div><div class="sk-socket r"></div>`
     + `<div class="sk-cheek l"></div><div class="sk-cheek r"></div>`
@@ -9012,7 +9135,7 @@ function recruitMarkup(tier){
     + `<div class="rc-eye l"></div><div class="rc-eye r"></div>`
     + `<div class="rc-nose"></div>`
     + `<div class="rc-mouth" style="width:${mouthW}em"></div>`
-    + `<div class="rc-helm"></div><div class="rc-helmbrim"></div><div class="rc-strap"></div>`
+    + `<div class="rc-helm"></div><div class="rc-helmbrim"></div><div class="rc-strap"></div><div class="rc-buckle"></div>`
     + (scar?`<div class="tf-scar"></div>`:'')
     + (cigar?`<div class="tf-cigar"></div><div class="tf-smoke"></div><div class="tf-smoke s2"></div><div class="tf-smoke s3"></div>`:'')
     + `</div>`;
