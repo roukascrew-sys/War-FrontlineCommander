@@ -173,8 +173,9 @@ li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
   <button data-tab="setup" class="on">1 · Store &amp; Budget</button>
   <button data-tab="team">2 · Crew</button>
   <button data-tab="forecast">3 · Sales Forecast</button>
-  <button data-tab="schedule">4 · Schedule</button>
-  <button data-tab="report">5 · Diagnostics</button>
+  <button data-tab="events">4 · Events &amp; Template</button>
+  <button data-tab="schedule">5 · Schedule</button>
+  <button data-tab="report">6 · Diagnostics</button>
 </nav>
 
 <!-- ============ SETUP ============ -->
@@ -239,13 +240,17 @@ li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
       <div><label class="f">…on shifts over (hrs)</label><input type="number" id="s_brkafter" step="0.5" min="0"></div>
       <div><label class="f">Opener capability at least</label><input type="number" id="s_openmin" step="1" min="1" max="5"></div>
       <div><label class="f">Closer capability at least</label><input type="number" id="s_closemin" step="1" min="1" max="5"></div>
+      <div><label class="f">Rest after a closing shift (hrs)</label><input type="number" id="s_restclose" step="1" min="0"></div>
+      <div><label class="f">Max closing shifts per person</label><input type="number" id="s_maxcloses" step="1" min="0"></div>
     </div>
+    <div id="humaneWarn"></div>
     <div class="row" style="margin-top:12px">
       <label class="row" style="gap:6px"><input type="checkbox" id="s_noot"> <span>Never schedule overtime (hard cap)</span></label>
       <label class="row" style="gap:6px"><input type="checkbox" id="s_enforce"> <span>Hold to the daily labor budget</span></label>
       <label class="row" style="gap:6px"><input type="checkbox" id="s_hard"> <span>"Never together" pairs are hard rules</span></label>
       <label class="row" style="gap:6px"><input type="checkbox" id="s_minh"> <span>Honor each person's minimum hours</span></label>
       <label class="row" style="gap:6px"><input type="checkbox" id="s_stable"> <span>Prefer consistent start times per person</span></label>
+      <label class="row" style="gap:6px"><input type="checkbox" id="s_noclopen"> <span>No close-then-open turnarounds</span></label>
     </div>
   </div>
 
@@ -267,7 +272,7 @@ li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
     <h2>Store hours, sales and daily budget</h2>
     <div class="scroll">
       <table id="hoursTable">
-        <thead><tr><th>Day</th><th>Date</th><th>Open</th><th>Close</th><th class="num">Projected sales ($)</th><th class="num">Labor budget ($)</th><th class="num">= % of sales</th></tr></thead>
+        <thead><tr><th>Day</th><th>Date</th><th>Open</th><th>Close</th><th class="num">Base sales ($)</th><th class="num">With events</th><th class="num">Labor budget ($)</th><th class="num">= % of sales</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -299,13 +304,50 @@ li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
       <h2 style="margin:0">Estimated income per hour</h2>
       <button class="btn sm" id="btnRebuild">Rebuild from daily totals</button>
     </div>
-    <p class="hint">Every cell is editable — type over any hour you know better. Required crew per hour is sales ÷ SPLH, floored at your minimum crew.</p>
+    <p class="hint">Every cell is editable — type over any hour you know better. Required crew per hour is sales ÷ SPLH,
+      floored at your minimum crew. Shaded cells are covered by a store event; hover to see which.</p>
     <div class="scroll" style="margin-top:10px"><table id="fcTable"></table></div>
   </div>
   <div class="panel">
     <h2>Demand curve shape</h2>
     <p class="hint">Relative weight per hour used when rebuilding a day from its total.</p>
     <div class="scroll"><table id="curveTable"></table></div>
+  </div>
+</section>
+
+<!-- ============ EVENTS & TEMPLATE ============ -->
+<section class="tab" id="tab-events">
+  <div class="panel">
+    <div class="row spread">
+      <h2 style="margin:0">Store events</h2>
+      <div class="row">
+        <button class="btn sm" id="btnEvPreset">Add common ones</button>
+        <button class="btn sm" id="btnEvAdd">+ Add event</button>
+      </div>
+    </div>
+    <p class="hint">Anything that changes how busy an hour is — half-price drinks, corn dog Tuesday, a ball game
+      letting out, a slow holiday. A positive percent makes those hours busier, a negative percent slower.
+      The hourly forecast and the crew it calls for both move with it.</p>
+    <div id="evList" style="margin-top:10px"></div>
+  </div>
+
+  <div class="panel">
+    <div class="row spread">
+      <h2 style="margin:0">Template to model next week on</h2>
+      <div class="row">
+        <button class="btn sm" id="btnTplFromSchedule">Save current schedule</button>
+        <button class="btn sm" id="btnTplManual">Enter a past week</button>
+        <button class="btn sm" id="btnTplPhoto">From a photo</button>
+      </div>
+    </div>
+    <p class="hint">Give it a week that worked and it will keep people on the same days and start times wherever the
+      rules, availability and budget still allow. People like knowing roughly when they work.</p>
+    <div class="row" style="margin-top:10px">
+      <div style="min-width:260px"><label class="f">Model on</label><select id="tplSelect"></select></div>
+      <div style="min-width:220px"><label class="f">How closely to follow it</label>
+        <input type="range" id="tplWeight" min="0" max="100" step="5"><div class="hint" id="tplWeightLabel"></div></div>
+    </div>
+    <div id="tplList" style="margin-top:12px"></div>
   </div>
 </section>
 
@@ -411,6 +453,7 @@ const PAIR_KINDS = {
   avoid :{label:'Avoid overlapping', score:0.28, prodAdj:0, hard:false},
   never :{label:'Never overlap', score:0.04, prodAdj:0, hard:true}
 };
+const PAIR_NEUTRAL = Object.freeze({score:1, prod:1});
 const SLOT = 30;
 const STORE_KEY = 'driveInScheduler.v2';
 
@@ -496,21 +539,23 @@ function newState(){
       minShift:3, maxShift:8, maxDaily:8, maxDays:6, maxConsec:5,
       otAfter:40, noOT:true, minRest:10, breakMin:30, breakAfter:6,
       openerMinRating:2, closerMinRating:3,
+      restAfterClose:12, maxCloses:4, noClopen:true,
       minorMaxDaily:6, minorCurfew:'21:30', minorMaxDays:5, schoolNights:[0,1,2,3,4],
       enforceBudget:true, hardConflicts:true, honorMinHours:true, stability:true,
       curve:DEFAULT_CURVE.slice(),
       days:[0,1,2,3,4,5,6].map(defaultDay),
-      today:todayISO()
+      today:todayISO(),
+      templateId:'', templateWeight:0.6
     },
-    employees:[], pairs:[], amendments:[],
+    employees:[], pairs:[], amendments:[], events:[], templates:[],
     plans:null, chosen:0, result:null
   };
 }
 function newEmp(name){
   return {
     id:uid(), name:name||'New crew member',
-    pos:'carhop', pos2:'', rating:3, wage:12.00, type:'part',
-    minH:0, targetH:20, maxH:30, note:'',
+    pos:'carhop', pos2:'', rating:3, wage:12.00, wage2:0, type:'part',
+    minH:0, targetH:20, maxH:30, note:'', events:[],
     avail:[0,1,2,3,4,5,6].map(()=>({off:false, from:'10:00', to:'23:00'}))
   };
 }
@@ -519,7 +564,8 @@ let S = load() || newState();
 function save(){
   try{
     localStorage.setItem(STORE_KEY, JSON.stringify({
-      settings:S.settings, employees:S.employees, pairs:S.pairs, amendments:S.amendments
+      settings:S.settings, employees:S.employees, pairs:S.pairs, amendments:S.amendments,
+      events:S.events, templates:S.templates
     }));
   }catch(e){ /* private mode */ }
 }
@@ -530,15 +576,15 @@ function load(){
     const st=Object.assign(base.settings, o.settings||{});
     (st.days||[]).forEach((d,i)=>{ st.days[i]=Object.assign(defaultDay(i), d); });
     return {settings:st, employees:o.employees||[], pairs:o.pairs||[], amendments:o.amendments||[],
-            plans:null, chosen:0, result:null};
+            events:o.events||[], templates:o.templates||[], plans:null, chosen:0, result:null};
   }catch(e){ return null; }
 }
 
 /* ============================ SAMPLE CREW ============================= */
 function sampleCrew(){
-  const mk=(name,pos,pos2,rating,wage,type,minH,targetH,maxH,offDays,win)=>{
+  const mk=(name,pos,pos2,rating,wage,type,minH,targetH,maxH,offDays,win,wage2)=>{
     const e=newEmp(name);
-    Object.assign(e,{pos,pos2,rating,wage,type,minH,targetH,maxH});
+    Object.assign(e,{pos,pos2,rating,wage,wage2:wage2||0,type,minH,targetH,maxH});
     e.avail.forEach((a,i)=>{ a.off=offDays.includes(i); a.from=win[0]; a.to=win[1]; });
     return e;
   };
@@ -548,23 +594,31 @@ function sampleCrew(){
     mk('Chen, Mira','manager','cook',4,18.00,'part',20,28,34,[5,6],['09:00','18:00']),
     mk('Vance, Erin','manager','carhop',4,17.50,'full',24,32,38,[1],['14:00','24:00']),
     mk('Delgado, Rico','cook','',5,15.25,'full',30,38,42,[2],['10:00','22:00']),
-    mk('Ellis, Sam','cook','carhop',3,13.50,'part',12,22,30,[],['11:00','23:00']),
+    mk('Ellis, Sam','cook','carhop',3,13.50,'part',12,22,30,[],['11:00','23:00'],12.5),
     mk('Foster, Kayla','cook','',2,12.75,'part',8,16,24,[1,2],['16:00','24:00']),
-    mk('Grant, Noah','cook','carhop',4,14.00,'part',16,26,34,[6],['10:00','20:00']),
+    mk('Grant, Noah','cook','carhop',4,14.00,'part',16,26,34,[6],['10:00','20:00'],12.75),
     mk('Hughes, Priya','carhop','',5,12.50,'full',28,36,40,[],['10:00','22:00']),
-    mk('Ibarra, Luis','carhop','cook',3,12.00,'part',10,20,28,[4],['15:00','24:00']),
+    mk('Ibarra, Luis','carhop','cook',3,12.00,'part',10,20,28,[4],['15:00','24:00'],13.0),
     mk('Jensen, Abby','carhop','',4,12.25,'part',14,24,30,[0,1],['11:00','21:00']),
     mk('Kowalski, Ben','carhop','',2,11.50,'minor',6,12,18,[],['16:00','22:00']),
     mk('Lopez, Sofia','carhop','',3,12.00,'part',10,18,26,[3],['10:00','17:00']),
-    mk('Moore, Jaylen','carhop','cook',4,12.75,'full',24,32,38,[],['12:00','24:00']),
+    mk('Moore, Jaylen','carhop','cook',4,12.75,'full',24,32,38,[],['12:00','24:00'],13.75),
     mk('Nguyen, Tia','carhop','',1,11.25,'minor',4,10,16,[1,3],['16:00','21:30']),
     mk('Okafor, Chris','carhop','',3,12.00,'part',10,18,26,[5],['10:00','19:00']),
-    mk('Patel, Anish','cook','carhop',3,13.00,'part',14,22,30,[],['11:00','22:00']),
+    mk('Patel, Anish','cook','carhop',3,13.00,'part',14,22,30,[],['11:00','22:00'],12.25),
     mk('Quinn, Maya','carhop','',4,12.25,'part',16,26,32,[2],['10:00','20:00']),
-    mk('Reyes, Dominic','carhop','cook',2,11.75,'minor',6,12,18,[],['15:00','22:00']),
+    mk('Reyes, Dominic','carhop','cook',2,11.75,'minor',6,12,18,[],['15:00','22:00'],12.5),
     mk('Silva, Emma','carhop','',3,12.00,'part',12,20,28,[6],['10:00','18:00']),
     mk('Turner, Jamal','cook','',4,14.25,'full',22,32,38,[0],['12:00','24:00'])
   ];
+  // things people have asked to be free for
+  const ev=(name,d,from,to,label,kind)=>{
+    const e=S.employees.find(x=>x.name===name);
+    e.events.push({id:uid(), d, from, to, label, kind:kind||'prefer'});
+  };
+  ev('Jensen, Abby',3,'17:00','22:00','Sister’s graduation');
+  ev('Kowalski, Ben',5,'12:00','18:00','Soccer tournament','must');
+  ev('Quinn, Maya',1,'18:00','21:00','Night class');
   const byName=n=>S.employees.find(e=>e.name===n).id;
   S.pairs=[
     {id:uid(), a:byName('Kowalski, Ben'),  b:byName('Nguyen, Tia'),    kind:'never'},
@@ -588,12 +642,31 @@ function openHours(d){
   for(let h=Math.floor(open/60); h<Math.ceil(close/60); h++) out.push(h);
   return out;
 }
+/* Combined effect of every store event covering this hour, as a multiplier.
+   Half-price drinks 2-4, corn dog Tuesday, a slow holiday — all the same shape. */
+function eventFactor(d,h){
+  let f=1;
+  for(const ev of (S.events||[])){
+    if(!ev.on || !(ev.days||[]).includes(d)) continue;
+    const from=ev.allDay?0:parseT(ev.from), to=ev.allDay?1440:parseT(ev.to);
+    const hs=h*60, he=hs+60;
+    if(hs < to && from < he) f *= (1 + (+ev.pct||0)/100);
+  }
+  return Math.max(0,f);
+}
+function eventsAt(d,h){
+  return (S.events||[]).filter(ev=>{
+    if(!ev.on || !(ev.days||[]).includes(d)) return false;
+    const from=ev.allDay?0:parseT(ev.from), to=ev.allDay?1440:parseT(ev.to);
+    return h*60 < to && from < (h*60+60);
+  });
+}
 function rebuildDay(d){
   const day=S.settings.days[d], list=openHours(d);
   const w=list.map(h=>S.settings.curve[h%24]||0);
   const sum=w.reduce((a,b)=>a+b,0)||1;
   day.hourly={};
-  list.forEach((h,i)=>{ day.hourly[h]=Math.round(day.sales*w[i]/sum); });
+  list.forEach((h,i)=>{ day.hourly[h]=Math.round(day.sales*w[i]/sum*eventFactor(d,h)); });
 }
 function rebuildAll(){ for(let d=0;d<7;d++) rebuildDay(d); }
 function hourlySales(d,h){
@@ -630,6 +703,13 @@ function buildDemand(){
 
 /* ======================= SHARED RULE PRIMITIVES ======================= */
 function positionsOf(e){ return e.pos2 && e.pos2!==e.pos ? [e.pos,e.pos2] : [e.pos]; }
+/* Cross-trained crew are paid for the job they actually work that shift, so
+   every cost in the app goes through here rather than reading e.wage. */
+function wageFor(e,pos){
+  if(!e) return 0;
+  if(pos && pos===e.pos2 && pos!==e.pos && +e.wage2>0) return +e.wage2;
+  return +e.wage||0;
+}
 function baseProd(e){ return PROD[clamp(Math.round(+e.rating||3),1,5)]; }
 function paidHoursFor(gross){
   const st=S.settings;
@@ -648,8 +728,38 @@ function isSchoolNight(d){
   return (S.settings.schoolNights||[]).includes(dow);
 }
 function empById(id){ return S.employees.find(e=>e.id===id); }
+const normName = n => String(n||'').trim().toLowerCase().replace(/\s+/g,' ');
+
+/* The active template, resolved to employee ids. Rows that match nobody on the
+   current roster are simply ignored rather than guessed at. */
+function activeTemplate(){
+  const id=S.settings.templateId;
+  if(!id) return null;
+  return (S.templates||[]).find(t=>t.id===id)||null;
+}
+function templateMap(){
+  const t=activeTemplate();
+  if(!t) return null;
+  const byName={};
+  S.employees.forEach(e=>{ byName[normName(e.name)]=e.id; });
+  const out={matched:0, unmatched:[], rows:{}, tpl:t};
+  (t.rows||[]).forEach(r=>{
+    const id=byName[normName(r.name)];
+    if(!id){ if(String(r.name||'').trim()) out.unmatched.push(r.name); return; }
+    out.rows[id]=r.days; out.matched++;
+  });
+  return out;
+}
 
 /* Hard limits that apply no matter which strategy is running. */
+/* Was this shift a closing shift on its day? */
+let __closeCache=null, __closeKey='';
+function closeOf(d){
+  const key=S.settings.days.map(x=>x.open+x.close).join('|');
+  if(__closeKey!==key){ __closeKey=key; __closeCache=[0,1,2,3,4,5,6].map(i=>dayMeta(i).close); }
+  return __closeCache[d];
+}
+function isCloser(d, end){ return end >= closeOf(d)-60; }
 function violatesHardRules(e, d, start, end, ctx){
   const st=S.settings;
   const gross=(end-start)/60, paid=paidHoursFor(gross);
@@ -671,6 +781,26 @@ function violatesHardRules(e, d, start, end, ctx){
     const a1=d*1440+start, a2=d*1440+end, b1=sh.d*1440+sh.start, b2=sh.d*1440+sh.end;
     const gap = a1>=b2 ? a1-b2 : (b1>=a2 ? b1-a2 : -1);
     if(gap < st.minRest*60) return 'less than '+st.minRest+'h rest from another shift';
+    // A close followed by an open is the shift nobody recovers from. It can pass a
+    // plain rest check and still be brutal, so closers get their own longer gap.
+    if(st.noClopen){
+      if(a1>=b2 && isCloser(sh.d, sh.end) && gap < st.restAfterClose*60)
+        return 'closing '+DAY_ABBR[dowOf(addDays(st.weekStart,sh.d))]+' then opening with only '+
+               (gap/60).toFixed(1)+'h off (needs '+st.restAfterClose+'h after a close)';
+      if(b1>=a2 && isCloser(d, end) && gap < st.restAfterClose*60)
+        return 'closing this day then working '+DAY_ABBR[dowOf(addDays(st.weekStart,sh.d))]+
+               ' only '+(gap/60).toFixed(1)+'h later';
+    }
+  }
+  if(isCloser(d,end) && st.maxCloses>0){
+    const closes=ctx.shifts.filter(sh=>isCloser(sh.d,sh.end)).length;
+    if(closes >= st.maxCloses) return 'already has '+closes+' closing shifts this week';
+  }
+  // personal commitments the person asked to keep
+  for(const ev of (e.events||[])){
+    if(ev.d!==d || ev.kind!=='must') continue;
+    if(start < parseT(ev.to) && parseT(ev.from) < end)
+      return 'clashes with '+(ev.label||'a commitment they must keep');
   }
   return null;
 }
@@ -683,14 +813,23 @@ function consecOk(daysSet, d, maxConsec){
 }
 
 /* =========================== THE SCHEDULER ============================ */
-const STRATEGIES = [
-  {key:'balanced', name:'Balanced', costExp:1.00, capExp:1.00, budgetUse:1.00, gainFloor:0.5,
+const STRATEGIES = {
+  balanced:{key:'balanced', name:'Balanced', costExp:1.00, capExp:1.00, budgetUse:1.00, gainFloor:0.5, templateBias:1.0,
    blurb:'Even handling of coverage, cost and everyone’s target hours. The default read of your numbers.'},
-  {key:'lean', name:'Cost-lean', costExp:1.40, capExp:0.55, budgetUse:0.93, gainFloor:0.75,
+  lean:{key:'lean', name:'Cost-lean', costExp:1.40, capExp:0.55, budgetUse:0.93, gainFloor:0.75, templateBias:0.5,
    blurb:'Leaves margin under every daily budget by leaning on lower-wage crew and shorter shifts. Thinner at peak.'},
-  {key:'coverage', name:'Coverage-first', costExp:0.72, capExp:2.10, budgetUse:1.00, gainFloor:0.35,
-   blurb:'Spends the full budget on your strongest crew to hold the peaks. Runs closer to the line.'}
-];
+  coverage:{key:'coverage', name:'Coverage-first', costExp:0.72, capExp:2.10, budgetUse:1.00, gainFloor:0.35, templateBias:0.5,
+   blurb:'Spends the full budget on your strongest crew to hold the peaks. Runs closer to the line.'},
+  mirror:{key:'mirror', name:'Like your template', costExp:1.00, capExp:1.00, budgetUse:1.00, gainFloor:0.4, templateBias:2.0,
+   blurb:'Keeps people on the days and start times from your template wherever the rules and budget still allow it.'}
+};
+/* With a template loaded, "follow last week" replaces the generic balanced read
+   — it is what a manager actually wants as the default in that case. */
+function strategyList(){
+  return activeTemplate()
+    ? [STRATEGIES.mirror, STRATEGIES.coverage, STRATEGIES.lean]
+    : [STRATEGIES.balanced, STRATEGIES.coverage, STRATEGIES.lean];
+}
 
 function buildPlan(strat){
   const st=S.settings;
@@ -705,6 +844,12 @@ function buildPlan(strat){
   const stat={};
   emps.forEach(e=>stat[e.id]={gross:0,paid:0,cost:0,days:new Set(),shifts:[]});
   const assigns=[];
+  const byEmpDay={};                       // empId|day -> record, for O(1) pair lookups
+  const partnersOf={};                     // empId -> [{id,kind}], built once
+  emps.forEach(e=>{
+    const m=pm[e.id]||{};
+    partnersOf[e.id]=Object.keys(m).map(id=>({id, kind:m[id]}));
+  });
   const dayCost=[0,0,0,0,0,0,0];
   const budgets=[0,1,2,3,4,5,6].map(d=>dayBudget(d));
   const effBudget=budgets.map(b=>b*strat.budgetUse);
@@ -728,21 +873,33 @@ function buildPlan(strat){
     }
     return (candCache[key]=out);
   }
-  function shiftCost(e,paid,already){
-    const w=+e.wage||0;
+  function shiftCost(e,pos,paid,already){
+    const w=wageFor(e,pos);
     const reg=Math.max(0,Math.min(paid, st.otAfter-already));
     return reg*w + Math.max(0,paid-reg)*w*1.5;
   }
   function ctxOf(e){ return {days:stat[e.id].days, paid:stat[e.id].paid, shifts:stat[e.id].shifts}; }
+  /* Cheap gate on a whole employee-day, so we never enumerate that day's
+     candidates when the day itself is already impossible. */
+  function dayBlocked(e,d){
+    const s=stat[e.id];
+    if(s.days.has(d)) return true;
+    if(s.days.size >= st.maxDays) return true;
+    if(e.avail[d].off) return true;
+    if(!consecOk(s.days,d,st.maxConsec)) return true;
+    if(e.type==='minor' && s.days.size >= st.minorMaxDays) return true;
+    if(s.paid + st.minShift > (+e.maxH||99)+0.01) return true;
+    if(st.noOT && s.paid + st.minShift > st.otAfter+0.01) return true;
+    return false;
+  }
   function blocked(e,d,c){
     const why=violatesHardRules(e,d,c.start,c.end,ctxOf(e));
     if(why) return why;
     if(st.hardConflicts){
-      const mine=pm[e.id]||{};
-      for(const a of assigns){
-        if(a.d!==d) continue;
-        if(mine[a.empId]!=='never') continue;
-        if(c.start < a.end && a.start < c.end) return 'never-together pair';
+      for(const pr of partnersOf[e.id]||[]){
+        if(pr.kind!=='never') continue;
+        const a=byEmpDay[pr.id+'|'+d];
+        if(a && c.start < a.end && a.start < c.end) return 'never-together pair';
       }
     }
     return null;
@@ -750,16 +907,18 @@ function buildPlan(strat){
   /* Pair relationships shift both the desirability of a shift and how much
      work actually gets done while the two overlap. */
   function pairFactors(e,d,start,end){
-    const mine=pm[e.id]||{}; let score=1, prodAdj=0;
-    for(const a of assigns){
-      if(a.d!==d) continue;
-      const k=mine[a.empId]; if(!k) continue;
+    const list=partnersOf[e.id];
+    if(!list || !list.length) return PAIR_NEUTRAL;
+    let score=1, prodAdj=0;
+    for(const pr of list){
+      const a=byEmpDay[pr.id+'|'+d];
+      if(!a) continue;
       if(start < a.end && a.start < end){
-        score *= PAIR_KINDS[k].score;
-        prodAdj += PAIR_KINDS[k].prodAdj;
+        score *= PAIR_KINDS[pr.kind].score;
+        prodAdj += PAIR_KINDS[pr.kind].prodAdj;
       }
     }
-    return {score, prod:clamp(1+prodAdj, 0.7, 1.12)};
+    return score===1 && prodAdj===0 ? PAIR_NEUTRAL : {score, prod:clamp(1+prodAdj,0.7,1.12)};
   }
   function targetFactor(e,addPaid){
     const s=stat[e.id], after=s.paid+addPaid;
@@ -771,6 +930,39 @@ function buildPlan(strat){
       return clamp(1 - over*0.11, 0.35, 1);         // going past what they want costs desirability
     }
     return 1;
+  }
+  const tmap=templateMap();
+  const tw=clamp(+st.templateWeight||0,0,1)*(strat.templateBias!=null?strat.templateBias:1);
+  /* Something the person asked to be free for. Not a hard block unless they
+     marked it as one — this is the "if possible" case. */
+  function eventFactorFor(e,d,start,end){
+    const list=e.events;
+    if(!list || !list.length) return 1;
+    let f=1;
+    for(const ev of list){
+      if(ev.d!==d) continue;
+      if(start < parseT(ev.to) && parseT(ev.from) < end) f *= (ev.kind==='must'?0.02:0.22);
+    }
+    return f;
+  }
+  /* Commitments and template shape are fixed for the whole run, so each
+     candidate only needs them worked out once. */
+  function staticFactor(e,d,c){
+    if(c._sf===undefined) c._sf = eventFactorFor(e,d,c.start,c.end)*templateFactor(e,d,c);
+    return c._sf;
+  }
+  /* How closely a candidate matches what this person worked in the template. */
+  function templateFactor(e,d,c){
+    if(!tmap || !tw) return 1;
+    const row=tmap.rows[e.id];
+    if(!row) return 1;
+    const t=row[d];
+    if(!t){                                  // template had them off that day
+      return 1 - 0.45*tw;
+    }
+    const ds=Math.abs(c.start-parseT(t.start))/60, de=Math.abs(c.end-parseT(t.end))/60;
+    const close=Math.max(0, 1 - (ds+de)/8);  // 1 = identical shift, 0 = nothing alike
+    return 1 + tw*(0.15 + 1.15*close);
   }
   function stabilityFactor(e,start){
     if(!st.stability) return 1;
@@ -793,9 +985,11 @@ function buildPlan(strat){
       if(pos==='manager') heads[d][i]++;
     }
     const gross=(c.end-c.start)/60, paid=paidHoursFor(gross);
-    const cost=shiftCost(e,paid,stat[e.id].paid);
-    const rec={empId:e.id, d, pos, start:c.start, end:c.end, s:c.s, L:c.L, gross, paid, cost, prod:p};
+    const cost=shiftCost(e,pos,paid,stat[e.id].paid);
+    const rec={empId:e.id, d, pos, start:c.start, end:c.end, s:c.s, L:c.L, gross, paid, cost,
+               rate:wageFor(e,pos), prod:p};
     assigns.push(rec);
+    byEmpDay[e.id+'|'+d]=rec;
     const s=stat[e.id];
     s.gross+=gross; s.paid+=paid; s.cost+=cost; s.days.add(d); s.shifts.push(rec);
     dayCost[d]+=cost;
@@ -807,6 +1001,8 @@ function buildPlan(strat){
      close. Days with the fewest available managers are laid down first,
      and each day is walked left to right filling the earliest hole — a
      value-ranked greedy takes a fat midday shift and strands both edges. */
+  const posPrio=Object.fromEntries(POSITIONS.map(p=>[p.k,p.prio]));
+
   const mgrPool=emps.filter(e=>e.pos==='manager'||e.pos2==='manager');
   const mgrOrder=[0,1,2,3,4,5,6].sort((a,b)=>{
     const av=d=>mgrPool.filter(e=>!e.avail[d].off).length;
@@ -823,17 +1019,19 @@ function buildPlan(strat){
       let gapEnd=gap; while(gapEnd<n && holeAt(gapEnd)) gapEnd++;
       let best=null;
       for(const e of mgrPool){
+        if(dayBlocked(e,d)) continue;
         for(const c of candidates(e,d)){
           if(c.s>gap || c.s+c.L<=gap) continue;
           if(blocked(e,d,c)) continue;
           const paid=paidHoursFor((c.end-c.start)/60);
-          const cost=shiftCost(e,paid,stat[e.id].paid);
+          const cost=shiftCost(e,'manager',paid,stat[e.id].paid);
           if(cost<=0) continue;
           const reach=Math.min(c.s+c.L,gapEnd)-gap;
           let eff=reach/cost*1000;
           eff *= (0.88+0.06*clamp(Math.round(+e.rating||3),1,5));
           eff *= targetFactor(e,paid);
           eff *= pairFactors(e,d,c.start,c.end).score;
+          eff *= staticFactor(e,d,c);
           if(e.pos!=='manager') eff*=0.70;
           const score=reach*1000+Math.min(eff,999);
           if(!best||score>best.score) best={score,e,c};
@@ -849,14 +1047,16 @@ function buildPlan(strat){
       if(st.enforceBudget && dayCost[d]>=effBudget[d]) break;
       let best=null;
       for(const e of mgrPool){
+        if(dayBlocked(e,d)) continue;
         for(const c of candidates(e,d)){
           if(blocked(e,d,c)) continue;
           const g=gainOf(e,d,'manager',c,1); if(g<1) continue;
           const paid=paidHoursFor((c.end-c.start)/60);
-          const cost=shiftCost(e,paid,stat[e.id].paid); if(cost<=0) continue;
+          const cost=shiftCost(e,'manager',paid,stat[e.id].paid); if(cost<=0) continue;
           let sc=g/Math.pow(cost,strat.costExp)*100;
           sc *= Math.pow(0.88+0.06*clamp(Math.round(+e.rating||3),1,5), strat.capExp);
           sc *= targetFactor(e,paid) * pairFactors(e,d,c.start,c.end).score;
+          sc *= staticFactor(e,d,c);
           if(e.pos!=='manager') sc*=0.70;
           if(!best||sc>best.score) best={score:sc,e,c};
         }
@@ -869,33 +1069,51 @@ function buildPlan(strat){
   /* --- pass 1: crew coverage, best unmet demand per labor dollar --- */
   let guard=0;
   while(guard++<4000){
+    // where demand still sits, per day and position: everything outside this
+    // window scores zero, so it never needs to be looked at
     const openNeed=remaining.map(r=>{ const o={}; POSITIONS.forEach(p=>o[p.k]=r[p.k].reduce((a,b)=>a+b,0)); return o; });
+    const span=remaining.map(r=>{
+      const o={};
+      POSITIONS.forEach(p=>{
+        const arr=r[p.k]; let lo=-1, hi=-1;
+        for(let i=0;i<arr.length;i++) if(arr[i]>0.25){ if(lo<0) lo=i; hi=i; }
+        o[p.k]={lo,hi};
+      });
+      return o;
+    });
     if(POSITIONS.every(p=>openNeed.every(o=>o[p.k]<0.25))) break;
     let best=null;
     for(const e of emps){
       const s=stat[e.id];
       for(let d=0;d<7;d++){
-        if(s.days.has(d)) continue;
+        if(dayBlocked(e,d)) continue;
         if(st.enforceBudget && dayCost[d] >= effBudget[d]) continue;
         const cands=candidates(e,d); if(!cands.length) continue;
+        const dm=dayMeta(d);                       // was being re-parsed per candidate
+        const rating=clamp(Math.round(+e.rating||3),1,5);
+        const capF=Math.pow(0.88+0.06*rating, strat.capExp);
+        const linearCost=Math.abs(strat.costExp-1)<1e-9;
         for(const pos of positionsOf(e)){
           if(openNeed[d][pos]<0.25) continue;
+          const sp=span[d][pos];
+          const prio=posPrio[pos];
           const secondary=pos!==e.pos;
           for(const c of cands){
+            if(c.s > sp.hi || c.s+c.L <= sp.lo) continue;   // covers no unmet demand
             const pf=pairFactors(e,d,c.start,c.end);
             const g=gainOf(e,d,pos,c,pf.prod);
             if(g<strat.gainFloor) continue;
             if(blocked(e,d,c)) continue;
             const paid=paidHoursFor((c.end-c.start)/60);
-            const cost=shiftCost(e,paid,s.paid); if(cost<=0) continue;
+            const cost=shiftCost(e,pos,paid,s.paid); if(cost<=0) continue;
             if(st.enforceBudget && dayCost[d]+cost > effBudget[d]) continue;
-            let sc=(g*POSITIONS.find(p=>p.k===pos).prio)/Math.pow(cost,strat.costExp)*100;
-            sc *= Math.pow(0.88+0.06*clamp(Math.round(+e.rating||3),1,5), strat.capExp);
+            let sc=(g*prio)/(linearCost?cost:Math.pow(cost,strat.costExp))*100;
+            sc *= capF;
             sc *= targetFactor(e,paid) * pf.score * stabilityFactor(e,c.start);
+            sc *= staticFactor(e,d,c);
             if(secondary) sc*=0.82;
-            const {open,close}=dayMeta(d);
-            if(c.start===open && (+e.rating||3) < st.openerMinRating) sc*=0.20;
-            if(c.end===close && (+e.rating||3) < st.closerMinRating) sc*=0.20;
+            if(c.start===dm.open && rating < st.openerMinRating) sc*=0.20;
+            if(c.end===dm.close && rating < st.closerMinRating) sc*=0.20;
             if(!best||sc>best.score) best={score:sc,e,d,pos,c};
           }
         }
@@ -914,14 +1132,14 @@ function buildPlan(strat){
         const s=stat[e.id], need=(+e.minH||0)-s.paid;
         if(need<=0.25) continue;
         for(let d=0;d<7;d++){
-          if(s.days.has(d)) continue;
+          if(dayBlocked(e,d)) continue;
           for(const c of candidates(e,d)){
             if(blocked(e,d,c)) continue;
             const paid=paidHoursFor((c.end-c.start)/60);
             if(paid > need+st.minShift) continue;
             const pos=positionsOf(e)[0];
             let sc=gainOf(e,d,pos,c,1)+paid*0.6;
-            sc*=pairFactors(e,d,c.start,c.end).score;
+            sc*=pairFactors(e,d,c.start,c.end).score*eventFactorFor(e,d,c.start,c.end);
             if(!best||sc>best.score) best={score:sc,e,d,pos,c};
           }
         }
@@ -957,7 +1175,7 @@ function trimToBudget(plan){
           const i = side==='front' ? a.s : a.s+a.L-1;
           const surplus = plan.covered[d][a.pos][i] - plan.demand[d].need[i][a.pos];
           if(surplus < a.prod*0.9) continue;
-          const score = surplus + (+e.wage||0)/40 + ((+e.rating||3)<=2?0.4:0);
+          const score = surplus + wageFor(e,a.pos)/40 + ((+e.rating||3)<=2?0.4:0);
           if(!best||score>best.score) best={score,a,side,i};
         }
       }
@@ -980,11 +1198,12 @@ function recostPlan(plan){
   for(const id of plan.emps){
     const e=empById(id); const s=plan.stat[id];
     if(!e||!s) continue;
-    const w=+e.wage||0;
     s.shifts=plan.assigns.filter(a=>a.empId===id).sort((x,y)=>(x.d-y.d)||(x.start-y.start));
     let acc=0, cost=0, gross=0;
     const days=new Set();
     for(const a of s.shifts){
+      const w=wageFor(e,a.pos);
+      a.rate=w;
       a.gross=(a.end-a.start)/60;
       a.paid=paidHoursFor(a.gross);
       const reg=Math.max(0,Math.min(a.paid, st.otAfter-acc));
@@ -1027,25 +1246,56 @@ function planMetrics(plan){
     });
     if(short_d && plan.budgets[d]>0) idleBudget += Math.max(0,(plan.budgets[d]-plan.dayCost[d])/plan.budgets[d]);
   }
+  // fairness: how evenly people land against the hours they said they wanted
+  const ratios=[];
+  plan.emps.forEach(id=>{
+    const e=empById(id), s2=plan.stat[id];
+    if(e&&s2&&(+e.targetH||0)>0) ratios.push(s2.paid/(+e.targetH));
+  });
+  const mean=ratios.length?ratios.reduce((a,b)=>a+b,0)/ratios.length:0;
+  const spread=ratios.length?Math.sqrt(ratios.reduce((a,b)=>a+(b-mean)*(b-mean),0)/ratios.length):0;
+  let clopens=0, longDays=0;
+  plan.emps.forEach(id=>{
+    const s2=plan.stat[id]; if(!s2) return;
+    s2.shifts.forEach((a,i)=>{
+      if(a.gross>10.5) longDays++;
+      if(i>0){
+        const prev=s2.shifts[i-1];
+        const gap=(a.d*1440+a.start)-(prev.d*1440+prev.end);
+        if(isCloser(prev.d,prev.end) && gap < S.settings.restAfterClose*60) clopens++;
+      }
+    });
+  });
   const hours=plan.assigns.reduce((a,x)=>a+x.paid,0);
   const atTarget=plan.emps.filter(id=>{
     const e=empById(id), s=plan.stat[id];
     return e&&s&&(+e.targetH||0)>0 && Math.abs(s.paid-(+e.targetH||0))<=4;
   }).length;
   const m={short, slots, mgrHoles, ot:+ot.toFixed(2), targetMiss, atTarget, daysOver, idleBudget:+idleBudget.toFixed(3),
+    fairness:+spread.toFixed(3), clopens, longDays,
     hours:+hours.toFixed(2), cost:+plan.spend.toFixed(2), budget:+plan.budget.toFixed(2),
     laborPct: plan.weekSales>0 ? +(plan.spend/plan.weekSales*100).toFixed(2) : 0,
     budgetUse: plan.budget>0 ? +(plan.spend/plan.budget*100).toFixed(1) : 0};
-  m.rank = m.short*3 + m.mgrHoles*12 + m.ot*2.5 + m.daysOver*10 + m.targetMiss*1.2 + m.idleBudget*14;
+  m.rank = m.short*3 + m.mgrHoles*12 + m.ot*2.5 + m.daysOver*10 + m.targetMiss*1.2 +
+           m.idleBudget*14 + m.fairness*22 + m.clopens*8 + m.longDays*6;
   return m;
 }
 
-function buildAllPlans(){
+/* Builds the options one at a time, yielding between each so the page can
+   repaint. On slow hardware this is the difference between "working" and
+   "frozen". */
+async function buildAllPlans(onProgress){
   if(!S.employees.filter(e=>e.name&&e.name.trim()).length){
     toast('Add at least one crew member first.','bad');
     return false;
   }
-  const plans=STRATEGIES.map(buildPlan).filter(Boolean);
+  const list=strategyList(), plans=[];
+  for(let i=0;i<list.length;i++){
+    if(onProgress) onProgress(i+1, list.length);
+    if(!window.__syncGenerate) await new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));
+    const p=buildPlan(list[i]);
+    if(p) plans.push(p);
+  }
   if(!plans.length) return false;
   plans.sort((a,b)=>a.metrics.rank-b.metrics.rank);
   S.plans=plans; S.chosen=0;
@@ -1155,7 +1405,7 @@ function suggestFor(ev){
       const cut=clamp(ev.from!=null?ev.from:sh.start, sh.start, sh.end);
       hole={start:cut, end:sh.end, pos:sh.pos};
       const e=empById(ev.empId);
-      freed=((sh.end-cut)/60)*(+e.wage||0);
+      freed=((sh.end-cut)/60)*wageFor(e,sh.pos);
     }
   } else if(ev.kind==='needCover'){
     hole={start:clamp(ev.from,open,close), end:clamp(ev.to,open,close), pos:ev.pos||'carhop'};
@@ -1187,7 +1437,7 @@ function suggestFor(ev){
     const why=violatesHardRules(e,ev.d,start,end,ctx);
     if(why) continue;
     const paid=paidHoursFor((end-start)/60);
-    const cost=paid*(+e.wage||0);
+    const cost=paid*wageFor(e,hole.pos);
     const shortBy=Math.max(0,(+e.targetH||0)-ctx.paid);
     const item={empId:e.id, cost,
       change:{type:'add', empId:e.id, d:ev.d, pos:hole.pos, start, end},
@@ -1224,7 +1474,7 @@ function suggestFor(ev){
       if(newEnd>a.end+1e-9){
         const why=violatesHardRules(e,ev.d,a.start,newEnd,ctx);
         const add=paidHoursFor((newEnd-a.start)/60)-a.paid;
-        const cost=add*(+e.wage||0);
+        const cost=add*wageFor(e,a.pos);
         tier2.push({tier:2, empId:e.id, cost, blocked:!!why,
           title:(why?'Cannot extend ':'Ask ')+e.name+' to stay until '+fmt12(newEnd),
           why:'Already on the floor '+fmtShift(a.start,a.end)+'. Capability '+e.rating+
@@ -1240,7 +1490,7 @@ function suggestFor(ev){
       if(newStart<a.start-1e-9){
         const why=violatesHardRules(e,ev.d,newStart,a.end,ctx);
         const add=paidHoursFor((a.end-newStart)/60)-a.paid;
-        const cost=add*(+e.wage||0);
+        const cost=add*wageFor(e,a.pos);
         tier2.push({tier:2, empId:e.id, cost, blocked:!!why,
           title:(why?'Cannot bring in ':'Ask ')+e.name+' to come in at '+fmt12(newStart),
           why:'Already on the floor '+fmtShift(a.start,a.end)+'. Capability '+e.rating+
@@ -1326,16 +1576,16 @@ function suggestCuts(ev, plan){
     }
     return {a,e,surplus};
   }).filter(x=>x.e);
-  list.sort((x,y)=> y.surplus-x.surplus || (+y.e.wage||0)-(+x.e.wage||0));
+  list.sort((x,y)=> y.surplus-x.surplus || wageFor(y.e,y.a.pos)-wageFor(x.e,x.a.pos));
   let cut=0;
   for(const {a,e,surplus} of list){
     if(cut>=goal) break;
     const maxCutHrs=Math.max(0, a.gross-st.minShift);
     if(maxCutHrs<=0.4) continue;
-    const need=(goal-cut)/Math.max(1,+e.wage||1);
+    const need=(goal-cut)/Math.max(1,wageFor(e,a.pos));
     const cutHrs=Math.min(maxCutHrs, Math.max(0.5, Math.round(need*2)/2));
     const newEnd=a.end-cutHrs*60;
-    const saved=cutHrs*(+e.wage||0);
+    const saved=cutHrs*wageFor(e,a.pos);
     const ctx=liveCtx(plan,e,d);
     const why=violatesHardRules(e,d,a.start,newEnd,ctx);
     out.push({tier: surplus>=a.prod*0.9?1:2, empId:e.id, blocked:!!why,
@@ -1343,7 +1593,7 @@ function suggestCuts(ev, plan){
       why:'Saves '+money(saved)+'. '+(surplus>=a.prod*0.9
         ? 'Their last hours are surplus coverage, so the floor holds.'
         : 'This one cuts into covered demand — the floor gets thinner.')+
-        ' Capability '+e.rating+', '+money(+e.wage||0)+'/hr.',
+        ' Capability '+e.rating+', '+money(wageFor(e,a.pos))+'/hr.',
       warn: surplus<a.prod*0.9 ? 'Coverage drops below the forecast for that stretch.' : '',
       no: why?('Blocked: '+why+'.'):'',
       change: why?null:{type:'retime', empId:e.id, d, start:a.start, end:newEnd}});
@@ -1368,6 +1618,303 @@ function pushAmendment(change, label){
   save();
 }
 
+
+/* ===================== EVENTS, TEMPLATES, PHOTOS ====================== */
+/* Loose shift-time parser, for typing off a printed or photographed sheet.
+   Accepts 10-6, 10a-6p, 10:30a-6:30p, 1030-1830, "off". */
+function parseLoose(txt){
+  if(txt==null) return null;
+  const t=String(txt).trim().toLowerCase();
+  if(!t || /^(off|x|-|—|rq|rq off|n\/a)$/.test(t)) return null;
+  const parts=t.split(/\s*(?:-|–|—|to|until)\s*/).filter(Boolean);
+  if(parts.length<2) return null;
+  const one=str=>{
+    const g=str.match(/(\d{1,2})\s*(?::|\.)?\s*(\d{2})?\s*(a|p)?/);
+    if(!g) return null;
+    let h=+g[1], min=+(g[2]||0);
+    if(h>=100 && !g[2]){ min=h%100; h=Math.floor(h/100); }   // 1030 style
+    const mer=g[3]||'';
+    if(mer==='p' && h<12) h+=12;
+    if(mer==='a' && h===12) h=0;
+    if(h>29||min>59) return null;
+    return {t:h*60+min, mer:!!mer};
+  };
+  const a=one(parts[0]), b=one(parts[1]);
+  if(!a||!b) return null;
+  let st=a.t, en=b.t;
+  if(!a.mer && st<6*60) st+=720;              // "1-5" in a drive-in means afternoon
+  if(!b.mer){ let guard=0; while(en<=st && guard++<3) en+=720; }
+  if(en<=st) en+=1440;
+  if(en-st>16*60 || en-st<30) return null;
+  return {start:st, end:en};
+}
+function fmtLoose(v){ return v ? fmtShift(v.start,v.end) : ''; }
+
+const EVENT_PRESETS=[
+  {label:'Half-price drinks', days:[0,1,2,3,4,5,6], from:'14:00', to:'16:00', pct:35, allDay:false},
+  {label:'Corn dog Tuesday',  days:[1],             from:'11:00', to:'20:00', pct:25, allDay:false},
+  {label:'Friday night rush', days:[4],             from:'19:00', to:'23:00', pct:20, allDay:false}
+];
+function newEvent(){ return {id:uid(), label:'New event', days:[], from:'14:00', to:'16:00', pct:20, allDay:false, on:true}; }
+
+function renderEvents(){
+  const box=$('evList'); box.innerHTML='';
+  if(!(S.events||[]).length){ box.innerHTML='<p class="hint">No events yet — the forecast follows the plain demand curve.</p>'; return; }
+  S.events.forEach(ev=>{
+    const card=el('div',{class:'emp'});
+    card.innerHTML=
+      '<div class="grid g4">'+
+        '<div><label class="f">What is it</label><input data-k="label" value="'+esc(ev.label)+'"></div>'+
+        '<div><label class="f">Effect on those hours (%)</label><input data-k="pct" type="number" step="5" value="'+ev.pct+'"></div>'+
+        '<div><label class="f">From</label><input data-k="from" type="time" value="'+ev.from+'"'+(ev.allDay?' disabled':'')+'></div>'+
+        '<div><label class="f">Until</label><input data-k="to" type="time" value="'+ev.to+'"'+(ev.allDay?' disabled':'')+'></div>'+
+      '</div>';
+    const row=el('div',{class:'row'}); row.style.marginTop='10px';
+    row.appendChild(el('span',{class:'chip'},'Days'));
+    for(let d=0;d<7;d++){
+      const lab=el('label',{class:'row'}); lab.style.gap='3px';
+      const cb=el('input',{type:'checkbox'}); cb.checked=(ev.days||[]).includes(d);
+      cb.onchange=()=>{
+        const set=new Set(ev.days||[]);
+        cb.checked?set.add(d):set.delete(d);
+        ev.days=[...set].sort(); save(); rebuildAll(); renderForecast(); renderHours();
+      };
+      lab.appendChild(cb);
+      lab.appendChild(el('span',null,DAY_ABBR[dowOf(addDays(S.settings.weekStart,d))]));
+      row.appendChild(lab);
+    }
+    const allLab=el('label',{class:'row'}); allLab.style.gap='4px';
+    const allCb=el('input',{type:'checkbox'}); allCb.checked=!!ev.allDay;
+    allCb.onchange=()=>{ ev.allDay=allCb.checked; save(); rebuildAll(); renderEvents(); renderForecast(); renderHours(); };
+    allLab.appendChild(allCb); allLab.appendChild(el('span',null,'All open hours'));
+    row.appendChild(allLab);
+    const onLab=el('label',{class:'row'}); onLab.style.gap='4px';
+    const onCb=el('input',{type:'checkbox'}); onCb.checked=ev.on!==false;
+    onCb.onchange=()=>{ ev.on=onCb.checked; save(); rebuildAll(); renderForecast(); renderHours(); };
+    onLab.appendChild(onCb); onLab.appendChild(el('span',null,'Active'));
+    row.appendChild(onLab);
+    const del=el('button',{class:'btn sm danger'},'Remove');
+    del.onclick=()=>{ S.events=S.events.filter(x=>x.id!==ev.id); save(); rebuildAll(); renderEvents(); renderForecast(); renderHours(); };
+    row.appendChild(del);
+    card.appendChild(row);
+    card.querySelectorAll('[data-k]').forEach(inp=>{
+      inp.oninput=()=>{
+        ev[inp.dataset.k]= inp.type==='number' ? (+inp.value||0) : inp.value;
+        save(); rebuildAll(); renderForecast(); renderHours();
+      };
+    });
+    box.appendChild(card);
+  });
+}
+
+/* ---------------------------- templates ------------------------------ */
+function templateFromSchedule(){
+  const r=S.result;
+  if(!r) return null;
+  const rows=r.emps.map(empById).filter(Boolean).map(e=>{
+    const days=[0,1,2,3,4,5,6].map(d=>{
+      const a=r.assigns.find(x=>x.empId===e.id && x.d===d);
+      return a ? {start:toT(a.start), end:toT(a.end), pos:a.pos} : null;
+    });
+    return {name:e.name, days};
+  });
+  return {id:uid(), name:'Week of '+longDate(S.settings.weekStart), source:'schedule',
+          createdAt:todayISO(), rows, image:null};
+}
+/* A cross-trained person has two rates; show both so the sheet is auditable. */
+function rateLabel(e){
+  const a=wageFor(e,e.pos);
+  if(e.pos2 && e.pos2!==e.pos && +e.wage2>0 && +e.wage2!==a) return money(a)+' / '+money(+e.wage2);
+  return money(a);
+}
+function templateBadge(t){
+  const m={schedule:['Built here','k-prefer'], manual:['Typed in','k-slow'], photo:['From a photo — verify','k-avoid']};
+  const b=m[t.source]||['Imported','k-slow'];
+  return '<span class="chip pair '+b[1]+'">'+esc(b[0])+'</span>';
+}
+function renderTemplates(){
+  const sel=$('tplSelect');
+  sel.innerHTML='<option value="">— none, build fresh —</option>'+
+    (S.templates||[]).map(t=>'<option value="'+t.id+'"'+(S.settings.templateId===t.id?' selected':'')+'>'+
+      esc(t.name)+(t.source==='photo'?'  (photo)':'')+'</option>').join('');
+  sel.onchange=()=>{
+    S.settings.templateId=sel.value; save(); renderTemplates();
+    const t=activeTemplate();
+    if(t && t.source==='photo') toast('Using a photo-sourced template — check the shifts before you post it.','warn');
+  };
+  const w=$('tplWeight');
+  w.value=Math.round((S.settings.templateWeight||0)*100);
+  const setLabel=()=>{
+    const v=+w.value;
+    $('tplWeightLabel').textContent = v===0 ? 'Ignore the template' :
+      v<35 ? 'Loose — a nudge toward it' : v<75 ? 'Follow it where the rules allow' : 'Stick to it closely';
+  };
+  setLabel();
+  w.oninput=()=>{ S.settings.templateWeight=(+w.value)/100; setLabel(); save(); };
+
+  const box=$('tplList'); box.innerHTML='';
+  if(!(S.templates||[]).length){ box.innerHTML='<p class="hint">No templates saved yet.</p>'; return; }
+  S.templates.forEach(t=>{
+    const card=el('div',{class:'emp'});
+    const map=(()=>{ const prev=S.settings.templateId; S.settings.templateId=t.id;
+                     const m=templateMap(); S.settings.templateId=prev; return m; })();
+    const shifts=(t.rows||[]).reduce((a,r)=>a+r.days.filter(Boolean).length,0);
+    card.innerHTML='<div class="row spread"><div><b>'+esc(t.name)+'</b> '+templateBadge(t)+
+      '<div class="hint">'+(t.rows||[]).length+' people, '+shifts+' shifts · saved '+longDate(t.createdAt)+
+      ' · matches '+map.matched+' of your current crew'+
+      (map.unmatched.length? ' · no match for: '+esc(map.unmatched.slice(0,4).join(', ')) : '')+'</div></div></div>';
+    const row=el('div',{class:'row'}); row.style.marginTop='8px';
+    const use=el('button',{class:'btn sm'+(S.settings.templateId===t.id?' primary':'')},
+      S.settings.templateId===t.id?'In use':'Use this one');
+    use.onclick=()=>{ S.settings.templateId=t.id; save(); renderTemplates(); toast('Modeling on “'+t.name+'”.','good'); };
+    const edit=el('button',{class:'btn sm'},'View / edit');
+    edit.onclick=()=>templateEditor(t);
+    const del=el('button',{class:'btn sm danger'},'Delete');
+    del.onclick=()=>confirmBox('Delete template?','“'+t.name+'” will be removed.',()=>{
+      S.templates=S.templates.filter(x=>x.id!==t.id);
+      if(S.settings.templateId===t.id) S.settings.templateId='';
+      save(); renderTemplates(); toast('Template deleted.');
+    });
+    row.appendChild(use); row.appendChild(edit); row.appendChild(del);
+    card.appendChild(row);
+    if(t.image){
+      const img=el('img'); img.src=t.image; img.alt='Photographed schedule';
+      img.style.cssText='max-width:100%;margin-top:10px;border:1px solid var(--line);border-radius:8px';
+      card.appendChild(img);
+    }
+    box.appendChild(card);
+  });
+}
+
+/* Grid for typing a past week in — from memory, a printout, or a photo. */
+function templateEditor(t, imageData){
+  const isNew=!t;
+  const tpl = t || {id:uid(), name: imageData?'Photographed week':'Past week',
+                    source: imageData?'photo':'manual', createdAt:todayISO(),
+                    rows:S.employees.map(e=>({name:e.name, days:[null,null,null,null,null,null,null]})),
+                    image:imageData||null};
+  let head='<tr><th style="text-align:left">Person</th>';
+  for(let d=0;d<7;d++) head+='<th>'+DAY_ABBR[dowOf(addDays(S.settings.weekStart,d))]+'</th>';
+  head+='</tr>';
+  let body='';
+  tpl.rows.forEach((r,ri)=>{
+    body+='<tr><td><input data-r="'+ri+'" data-f="name" value="'+esc(r.name)+'" style="min-width:150px"></td>';
+    for(let d=0;d<7;d++){
+      body+='<td><input data-r="'+ri+'" data-d="'+d+'" value="'+esc(fmtLoose(r.days[d]&&{start:parseT(r.days[d].start),end:parseT(r.days[d].end)}))+
+            '" placeholder="10a-6p" style="min-width:96px"></td>';
+    }
+    body+='</tr>';
+  });
+  modal(isNew?'Enter a past week':'Template — '+tpl.name,
+    (tpl.image?'<img src="'+tpl.image+'" alt="Photographed schedule" style="max-width:100%;border:1px solid var(--line);border-radius:8px;margin-bottom:10px">':'')+
+    (tpl.source==='photo'?'<p class="hint" style="color:var(--warn)"><b>From a photo.</b> Nothing is read off the image automatically — '+
+      'type what you see below, and treat the result as less reliable than an exported file until you have checked it.</p>':'')+
+    '<div class="row" style="margin-bottom:8px"><label class="f" style="margin:0">Name this template</label>'+
+    '<input id="tplName" value="'+esc(tpl.name)+'" style="max-width:280px"></div>'+
+    '<p class="hint">Type times any way you like — <code>10a-6p</code>, <code>10-6</code>, <code>1030-1830</code>, or blank for a day off.</p>'+
+    '<div class="scroll"><table id="tplGrid"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>'+
+    '<div id="tplParse" class="hint"></div>',
+    [{label:'Cancel'},
+     {label:'Add a row', onClick:()=>{ tpl.rows.push({name:'', days:[null,null,null,null,null,null,null]});
+        closeModal(); templateEditor(tpl, tpl.image); }, keepOpen:false},
+     {label:'Save template', primary:true, onClick:()=>{
+        const grid=$('tplGrid');
+        grid.querySelectorAll('input[data-f="name"]').forEach(inp=>{ tpl.rows[+inp.dataset.r].name=inp.value; });
+        let bad=0, good=0;
+        grid.querySelectorAll('input[data-d]').forEach(inp=>{
+          const r=+inp.dataset.r, d=+inp.dataset.d, v=inp.value.trim();
+          if(!v){ tpl.rows[r].days[d]=null; return; }
+          const p=parseLoose(v);
+          if(!p){ bad++; tpl.rows[r].days[d]=null; return; }
+          good++;
+          const emp=S.employees.find(e=>normName(e.name)===normName(tpl.rows[r].name));
+          tpl.rows[r].days[d]={start:toT(p.start), end:toT(p.end), pos:emp?emp.pos:'carhop'};
+        });
+        tpl.name=$('tplName').value.trim()||tpl.name;
+        tpl.rows=tpl.rows.filter(r=>String(r.name||'').trim());
+        S.templates=S.templates||[];
+        if(!S.templates.some(x=>x.id===tpl.id)) S.templates.push(tpl);
+        S.settings.templateId=tpl.id;
+        save(); closeModal(); renderTemplates();
+        toast('Saved “'+tpl.name+'” — '+good+' shifts read'+(bad?', '+bad+' entries could not be read and were left blank':'')+'.',
+              bad?'warn':'good');
+     }, keepOpen:true}]);
+  // live feedback while typing
+  const grid=$('tplGrid');
+  grid.addEventListener('input', e=>{
+    if(!e.target.dataset.d) return;
+    const v=e.target.value.trim();
+    e.target.style.borderColor = !v ? '' : (parseLoose(v)? 'var(--good)':'var(--bad)');
+    const bad=[...grid.querySelectorAll('input[data-d]')].filter(i=>i.value.trim()&&!parseLoose(i.value)).length;
+    $('tplParse').textContent = bad? bad+' entr'+(bad===1?'y is':'ies are')+' not readable yet.' : '';
+  });
+}
+
+/* Photo capture: live camera where the browser allows it, file/camera upload
+   everywhere else. The image is never read automatically — it is there to type
+   from, and anything built this way is labeled. */
+function photoCapture(){
+  const supported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  modal('Photograph a schedule',
+    '<p class="hint">Take a picture of a posted schedule, or pick one from this device. '+
+    'The picture is kept beside a grid so you can type the shifts straight off it — '+
+    '<b>nothing is read from the image automatically</b>, and templates made this way are labeled as such.</p>'+
+    (supported?'<video id="camView" playsinline muted style="width:100%;border-radius:8px;background:#000;display:none"></video>'+
+      '<div class="row" style="margin:8px 0"><button class="btn sm" id="camStart">Start camera</button>'+
+      '<button class="btn sm primary" id="camShot" disabled>Take the picture</button></div>':
+      '<p class="hint">This browser will not give the page a live camera, so use the file picker — on a phone it opens the camera.</p>')+
+    '<label class="f">Choose or capture an image</label>'+
+    '<input type="file" id="camFile" accept="image/*" capture="environment">'+
+    '<canvas id="camCanvas" style="display:none"></canvas>'+
+    '<div id="camPreview" style="margin-top:10px"></div>',
+    [{label:'Cancel'}]);
+  let stream=null;
+  const stop=()=>{ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } };
+  const use=dataUrl=>{
+    stop(); closeModal();
+    templateEditor(null, dataUrl);
+  };
+  if(supported){
+    $('camStart').onclick=async ()=>{
+      try{
+        stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
+        const v=$('camView'); v.srcObject=stream; v.style.display=''; await v.play();
+        $('camShot').disabled=false;
+        $('camStart').textContent='Camera on';
+      }catch(err){
+        toast('No camera available here — use the file picker instead.','warn');
+      }
+    };
+    $('camShot').onclick=()=>{
+      const v=$('camView'), c=$('camCanvas');
+      const w=Math.min(1600, v.videoWidth||1280);
+      c.width=w; c.height=Math.round((v.videoHeight||720)*w/(v.videoWidth||1280));
+      c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+      use(c.toDataURL('image/jpeg',0.72));
+    };
+  }
+  $('camFile').onchange=()=>{
+    const f=$('camFile').files[0]; if(!f) return;
+    if(f.size>12*1024*1024) return toast('That image is very large — try a smaller one.','warn');
+    const rd=new FileReader();
+    rd.onload=()=>{
+      // downscale so the stored template stays small enough for local storage
+      const img=new Image();
+      img.onload=()=>{
+        const c=$('camCanvas');
+        const w=Math.min(1600,img.width);
+        c.width=w; c.height=Math.round(img.height*w/img.width);
+        c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+        use(c.toDataURL('image/jpeg',0.72));
+      };
+      img.onerror=()=>toast('That file could not be read as an image.','bad');
+      img.src=rd.result;
+    };
+    rd.onerror=()=>toast('Could not read that file.','bad');
+    rd.readAsDataURL(f);
+  };
+}
+
 /* ============================== RENDERING ============================= */
 function bindSetup(){
   const st=S.settings;
@@ -1376,7 +1923,8 @@ function bindSetup(){
     s_minsh:'minShift', s_maxsh:'maxShift', s_maxdaily:'maxDaily', s_maxdays:'maxDays',
     s_maxconsec:'maxConsec', s_rest:'minRest', s_ot:'otAfter', s_brkmin:'breakMin', s_brkafter:'breakAfter',
     s_openmin:'openerMinRating', s_closemin:'closerMinRating',
-    s_mnrdaily:'minorMaxDaily', s_mnrcurfew:'minorCurfew', s_mnrdays:'minorMaxDays'};
+    s_mnrdaily:'minorMaxDaily', s_mnrcurfew:'minorCurfew', s_mnrdays:'minorMaxDays',
+    s_restclose:'restAfterClose', s_maxcloses:'maxCloses'};
   for(const id in map){
     const inp=$(id); if(!inp) continue;
     inp.value=st[map[id]];
@@ -1388,7 +1936,7 @@ function bindSetup(){
     };
   }
   const cbs={s_enforce:'enforceBudget', s_hard:'hardConflicts', s_minh:'honorMinHours',
-             s_noot:'noOT', s_stable:'stability'};
+             s_noot:'noOT', s_stable:'stability', s_noclopen:'noClopen'};
   for(const id in cbs){
     const c=$(id); c.checked=!!st[cbs[id]];
     c.onchange=()=>{ st[cbs[id]]=c.checked; save(); };
@@ -1408,7 +1956,21 @@ function bindSetup(){
     lab.appendChild(cb); lab.appendChild(el('span',null,DAY_ABBR[dow]));
     sn.appendChild(lab);
   }
+  renderHumaneWarning();
   renderHours();
+}
+/* Say something when the limits themselves are the problem. */
+function renderHumaneWarning(){
+  const st=S.settings, box=$('humaneWarn'); if(!box) return;
+  const w=[];
+  if(st.maxDaily>12) w.push('A '+st.maxDaily+'-hour day is a long shift to hand anyone.');
+  if(st.minRest<8) w.push('Only '+st.minRest+' hours between shifts leaves no room for sleep and a commute.');
+  if(st.maxConsec>6) w.push(st.maxConsec+' days in a row means someone can go a full week without a day off.');
+  if(st.maxShift>st.maxDaily) w.push('Max shift ('+st.maxShift+'h) is longer than the daily cap ('+st.maxDaily+'h), so the daily cap wins.');
+  if(!st.noClopen) w.push('Close-then-open turnarounds are allowed — someone can close at midnight and open the next morning.');
+  box.innerHTML = w.length
+    ? '<ul class="msgs" style="margin-top:10px">'+w.map(x=>'<li class="warn">'+esc(x)+'</li>').join('')+'</ul>'
+    : '';
 }
 
 function renderHours(){
@@ -1429,6 +1991,10 @@ function renderHours(){
     const tdS=el('td',{class:'num'}), inS=el('input',{type:'number',step:'50',min:'0'}); inS.value=day.sales;
     inS.oninput=()=>{ day.sales=+inS.value||0; rebuildDay(d); save(); renderForecast(); renderHours(); };
     tdS.appendChild(inS); tr.appendChild(tdS);
+    const actual=daySalesActual(d);
+    const diff=actual-(+day.sales||0);
+    tr.appendChild(el('td',{class:'num'}, money0(actual)+(Math.abs(diff)>1
+      ? ' <span style="color:'+(diff>0?'var(--good)':'var(--warn)')+'">('+(diff>0?'+':'')+money0(diff)+')</span>' : '')));
     const tdB=el('td',{class:'num'}), inB=el('input',{type:'number',step:'10',min:'0'});
     inB.value=Math.round(dayBudget(d));
     inB.disabled = st.budgetMode!=='dollars';
@@ -1460,6 +2026,10 @@ function renderTeam(){
         '<div><label class="f">Employment</label><select data-k="type">'+typeOpts+'</select></div>'+
         '<div><label class="f">Capability (1–5)</label><input data-k="rating" type="number" min="1" max="5" step="1" value="'+e.rating+'"></div>'+
         '<div><label class="f">Wage ($/hr)</label><input data-k="wage" type="number" min="0" step="0.25" value="'+e.wage+'"></div>'+
+        (e.pos2 && e.pos2!==e.pos
+          ? '<div><label class="f">Rate as '+POS_LABEL[e.pos2].toLowerCase()+' ($/hr)</label>'+
+            '<input data-k="wage2" type="number" min="0" step="0.25" value="'+(e.wage2||0)+'" placeholder="same as above"></div>'
+          : '')+
         '<div><label class="f">Min hours</label><input data-k="minH" type="number" min="0" step="1" value="'+e.minH+'"></div>'+
         '<div><label class="f">Target hours</label><input data-k="targetH" type="number" min="0" step="1" value="'+e.targetH+'"></div>'+
         '<div><label class="f">Max hours</label><input data-k="maxH" type="number" min="0" step="1" value="'+e.maxH+'"></div>'+
@@ -1513,6 +2083,39 @@ function renderTeam(){
     pr.appendChild(addRow);
     card.appendChild(pr);
 
+    // personal commitments — things they have asked to be free for
+    const evWrap=el('div'); evWrap.style.marginTop='10px';
+    evWrap.innerHTML='<label class="f">Things they need time for</label>';
+    (e.events||[]).forEach(ev=>{
+      const r=el('div',{class:'row'}); r.style.marginBottom='4px';
+      const lab=el('input'); lab.value=ev.label||''; lab.placeholder='what is it'; lab.style.maxWidth='200px';
+      const day=el('select'); day.style.maxWidth='120px';
+      day.innerHTML=[0,1,2,3,4,5,6].map(d=>'<option value="'+d+'"'+(ev.d===d?' selected':'')+'>'+
+        DAY_ABBR[dowOf(addDays(S.settings.weekStart,d))]+' '+shortDate(addDays(S.settings.weekStart,d))+'</option>').join('');
+      const f=el('input',{type:'time'}); f.value=ev.from; f.style.maxWidth='120px';
+      const t2=el('input',{type:'time'}); t2.value=ev.to; t2.style.maxWidth='120px';
+      const kind=el('select'); kind.style.maxWidth='190px';
+      kind.innerHTML='<option value="prefer"'+(ev.kind==='prefer'?' selected':'')+'>Keep free if possible</option>'+
+                     '<option value="must"'+(ev.kind==='must'?' selected':'')+'>Cannot work then</option>';
+      const del=el('button',{class:'btn sm danger'},'×');
+      lab.oninput=()=>{ev.label=lab.value;save();};
+      day.onchange=()=>{ev.d=+day.value;save();};
+      f.oninput=()=>{ev.from=f.value;save();};
+      t2.oninput=()=>{ev.to=t2.value;save();};
+      kind.onchange=()=>{ev.kind=kind.value;save();};
+      del.onclick=()=>{ e.events=e.events.filter(x=>x.id!==ev.id); save(); renderTeam(); };
+      [lab,day,f,t2,kind,del].forEach(x=>r.appendChild(x));
+      evWrap.appendChild(r);
+    });
+    const addEv=el('button',{class:'btn sm'},'+ Add commitment');
+    addEv.onclick=()=>{
+      e.events=e.events||[];
+      e.events.push({id:uid(), d:0, from:'17:00', to:'21:00', label:'', kind:'prefer'});
+      save(); renderTeam();
+    };
+    evWrap.appendChild(addEv);
+    card.appendChild(evWrap);
+
     const foot=el('div',{class:'row spread'}); foot.style.marginTop='10px';
     foot.innerHTML='<span class="chip">'+TYPES[e.type]+' · '+POS_LABEL[e.pos]+(e.pos2?' / '+POS_LABEL[e.pos2]:'')+
       ' · capability '+e.rating+' (counts '+PROD[clamp(+e.rating||3,1,5)].toFixed(2)+') · wants '+e.targetH+'h</span>';
@@ -1559,7 +2162,10 @@ function renderForecast(){
     for(let h=minH;h<=maxH;h++){
       if(hs.includes(h)){
         const v=hourlySales(d,h); tot+=v; crew+=Math.max(st.minCrew, v/Math.max(1,st.splh));
-        body+='<td class="num"><input data-d="'+d+'" data-h="'+h+'" type="number" step="25" value="'+v+'" style="width:78px;padding:3px 5px"></td>';
+        const evs=eventsAt(d,h);
+        const tip=evs.length?' title="'+esc(evs.map(x=>x.label+' '+(x.pct>0?'+':'')+x.pct+'%').join(', '))+'"':'';
+        const bg=evs.length?(evs.some(x=>+x.pct>0)?'background:#e2efdd':'background:#f6e8cb'):'';
+        body+='<td class="num" style="'+bg+'"'+tip+'><input data-d="'+d+'" data-h="'+h+'" type="number" step="25" value="'+v+'" style="width:78px;padding:3px 5px"></td>';
       } else body+='<td class="num" style="background:#f0efeb;color:#b3aea4">—</td>';
     }
     body+='<td class="num"><b>'+money0(tot)+'</b></td><td class="num">'+crew.toFixed(1)+'</td></tr>';
@@ -1681,7 +2287,7 @@ function renderPrintout(){
     body+='<tr><td class="nm">'+esc(e.name)+'</td><td class="sh">'+POS_SHORT[e.pos]+
       (e.pos2?'/'+POS_SHORT[e.pos2]:'')+'</td>'+cells+
       '<td class="tot">'+hrs(h)+'</td><td class="tot">'+(tgt||'—')+'</td>'+
-      '<td class="tot">'+money(e.wage)+'</td><td class="tot">'+money(c)+'</td></tr>';
+      '<td class="tot">'+rateLabel(e)+'</td><td class="tot">'+money(c)+'</td></tr>';
   });
   if(group) body+=subtotal();
 
@@ -1831,7 +2437,7 @@ function renderReport(){
   const r=S.result, st=S.settings;
   if(!r){ $('issues').innerHTML='<p class="hint">Nothing generated yet.</p>';
     $('coverage').innerHTML=''; $('empReport').innerHTML=''; $('dayReport').innerHTML=''; return; }
-  const msgs=[];
+  const msgs=[], m0=r.metrics;
   for(let d=0;d<7;d++){
     let holes=0;
     for(let i=0;i<r.demand[d].slots;i++) if(r.heads[d][i]<1) holes++;
@@ -1869,7 +2475,7 @@ function renderReport(){
       // clock all day, plus the minimum crew, at your cheapest available wage
       const mgrCost=r.assigns.filter(a=>a.d===d&&a.pos==='manager').reduce((s,a)=>s+a.cost,0);
       const openH=(dayMeta(d).close-dayMeta(d).open)/60;
-      const wages=r.emps.map(empById).filter(e=>e&&e.pos!=='manager').map(e=>+e.wage||0);
+      const wages=r.emps.map(empById).filter(e=>e&&e.pos!=='manager').map(e=>wageFor(e,e.pos));
       const cheap=wages.length?Math.min(...wages):0;
       const floorCost=mgrCost + openH*Math.max(0,st.minCrew-1)*cheap;
       if(floorCost > r.budgets[d]+0.01)
@@ -1879,6 +2485,35 @@ function renderReport(){
           ', more than the '+money(r.budgets[d])+' budgeted. No legal schedule fits that number; the budget, the store hours or the minimum crew has to give.'});
     }
   }
+  // humane-hours check
+  if(m0.clopens>0) msgs.push({c:'bad', t:m0.clopens+' close-then-open turnaround(s) with less than '+
+    st.restAfterClose+'h off. Raise "rest after a closing shift" or spread the closes.'});
+  if(m0.longDays>0) msgs.push({c:'warn', t:m0.longDays+' shift(s) longer than 10.5 hours.'});
+  r.emps.map(empById).filter(Boolean).forEach(e=>{
+    const s=r.stat[e.id]; if(!s) return;
+    let minGap=Infinity;
+    for(let i=1;i<s.shifts.length;i++)
+      minGap=Math.min(minGap,((s.shifts[i].d*1440+s.shifts[i].start)-(s.shifts[i-1].d*1440+s.shifts[i-1].end))/60);
+    if(minGap<st.minRest-0.01) msgs.push({c:'bad', t:e.name+' has only '+minGap.toFixed(1)+'h between two shifts.'});
+    const closes=s.shifts.filter(x=>isCloser(x.d,x.end)).length;
+    if(st.maxCloses>0 && closes>st.maxCloses) msgs.push({c:'warn', t:e.name+' has '+closes+' closing shifts.'});
+    // commitments people asked to keep
+    (e.events||[]).forEach(ev2=>{
+      const clash=s.shifts.find(x=>x.d===ev2.d && x.start<parseT(ev2.to) && parseT(ev2.from)<x.end);
+      if(clash) msgs.push({c:ev2.kind==='must'?'bad':'warn',
+        t:e.name+' is scheduled over '+(ev2.label||'a commitment')+' on '+
+          DAY_ABBR[dowOf(addDays(st.weekStart,ev2.d))]+' ('+(ev2.kind==='must'?'they cannot work then':'they asked to be free')+').'});
+    });
+  });
+  const spreadPct=Math.round(m0.fairness*100);
+  if(spreadPct>25) msgs.push({c:'warn', t:'Hours are spread unevenly against what people asked for (±'+spreadPct+
+    '%). Check the hours table for who is well over or under.'});
+  const tm=templateMap();
+  if(tm){
+    msgs.push({c:'good', t:'Modeled on “'+tm.tpl.name+'”'+(tm.tpl.source==='photo'?' (typed from a photo — verify before posting)':'')+
+      ', matching '+tm.matched+' of the current crew'+(tm.unmatched.length?'; no match for '+tm.unmatched.join(', '):'')+'.'});
+  }
+
   const m=r.metrics;
   if(m.short>0){
     msgs.push({c:'warn', t:m.short+' half-hour block(s) staffed below projected demand — see the coverage grid.'});
@@ -1925,16 +2560,20 @@ function renderReport(){
 
   let er='<table><thead><tr><th>Name</th><th>Type</th><th>Position</th><th class="num">Cap</th><th class="num">Days</th>'+
     '<th class="num">Hours</th><th class="num">Target</th><th class="num">Min</th><th class="num">Max</th>'+
-    '<th class="num">OT</th><th class="num">Rate</th><th class="num">Cost</th></tr></thead><tbody>';
+    '<th class="num">OT</th><th class="num">Longest day</th><th class="num">Closes</th>'+
+    '<th class="num">Rate</th><th class="num">Cost</th></tr></thead><tbody>';
   r.emps.map(empById).filter(Boolean).sort((a,b)=>r.stat[b.id].paid-r.stat[a.id].paid).forEach(e=>{
     const s=r.stat[e.id];
     const ot=s.shifts.reduce((a,x)=>a+(x.ot||0),0);
+    const longest=s.shifts.reduce((a,x)=>Math.max(a,x.gross),0);
+    const closes=s.shifts.filter(x=>isCloser(x.d,x.end)).length;
     const tgt=+e.targetH||0;
     const bg = ot>0 ? ' style="background:#f7e2de"' : (tgt&&Math.abs(s.paid-tgt)>4 ? ' style="background:#f6eeda"' : '');
     er+='<tr'+bg+'><td>'+esc(e.name)+'</td><td>'+TYPES[e.type]+'</td><td>'+POS_LABEL[e.pos]+(e.pos2?' / '+POS_LABEL[e.pos2]:'')+'</td>'+
       '<td class="num">'+e.rating+'</td><td class="num">'+s.days.size+'</td><td class="num"><b>'+hrs(s.paid)+'</b></td>'+
       '<td class="num">'+(tgt||'—')+'</td><td class="num">'+e.minH+'</td><td class="num">'+e.maxH+'</td>'+
-      '<td class="num">'+(ot>0?hrs(ot):'—')+'</td><td class="num">'+money(e.wage)+'</td><td class="num">'+money(s.cost)+'</td></tr>';
+      '<td class="num">'+(ot>0?hrs(ot):'—')+'</td><td class="num">'+longest.toFixed(1)+'</td>'+
+      '<td class="num">'+closes+'</td><td class="num">'+rateLabel(e)+'</td><td class="num">'+money(s.cost)+'</td></tr>';
   });
   $('empReport').innerHTML=er+'</tbody></table>';
 
@@ -1975,7 +2614,7 @@ function scheduleRows(){
       if(a){ h+=a.paid; c+=a.cost; row.push(fmtShift(a.start,a.end)); }
       else row.push(e.avail[d].off?'RQ OFF':'OFF');
     }
-    row.push(hrs(h), String(e.targetH||''), (+e.wage||0).toFixed(2), c.toFixed(2));
+    row.push(hrs(h), String(e.targetH||''), rateLabel(e).replace(/\$/g,''), c.toFixed(2));
     rows.push(row);
   });
   return rows;
@@ -2017,6 +2656,7 @@ function showTab(name){
   if(name==='forecast') renderForecast();
   if(name==='team') renderTeam();
   if(name==='report') renderReport();
+  if(name==='events'){ renderEvents(); renderTemplates(); }
 }
 document.querySelectorAll('nav.tabs button').forEach(b=>{ b.onclick=()=>showTab(b.dataset.tab); });
 
@@ -2027,11 +2667,12 @@ function runGenerate(){
   const old=btns.map(b=>b.textContent);
   btns.forEach(b=>{ b.disabled=true; b.textContent='Building…'; });
   const finish=()=>btns.forEach((b,i)=>{ b.disabled=false; b.textContent=old[i]; });
-  const work=()=>{
+  const progress=(i,n)=>btns.forEach(b=>{ b.textContent='Building '+i+' of '+n+'…'; });
+  const work=async ()=>{
     try{
-      if(!buildAllPlans()) return;
+      if(!(await buildAllPlans(progress))) return;
       renderAll(); renderAmendments(); showTab('schedule');
-      toast('Built 3 options — '+S.plans[0].strategy.name+' ranked first.','good');
+      toast('Built '+S.plans.length+' options — '+S.plans[0].strategy.name+' ranked first.','good');
     }catch(err){
       toast('Could not build the schedule: '+err.message,'bad');
       console.error(err);
@@ -2082,11 +2723,12 @@ $('btnRebuild').onclick=()=>{ rebuildAll(); save(); renderForecast(); renderHour
 $('btnReset').onclick=()=>confirmBox('Reset everything?','Store settings, crew, pairings and amendments all go back to defaults.',()=>{
   S=newState(); rebuildAll();
   try{ localStorage.removeItem(STORE_KEY); }catch(e){}
-  save(); bindSetup(); renderTeam(); renderForecast(); renderAll(); renderLiveControls(); renderAmendments();
+  save(); bindSetup(); renderTeam(); renderForecast(); renderEvents(); renderTemplates(); renderAll(); renderLiveControls(); renderAmendments();
   toast('Everything reset.','good');
 },'Reset');
 $('btnExport').onclick=()=>{
-  const data=JSON.stringify({settings:S.settings, employees:S.employees, pairs:S.pairs, amendments:S.amendments}, null, 2);
+  const data=JSON.stringify({settings:S.settings, employees:S.employees, pairs:S.pairs,
+    amendments:S.amendments, events:S.events, templates:S.templates}, null, 2);
   deliverText('Export setup','scheduler-'+S.settings.weekStart+'.json',data,'application/json');
 };
 $('btnImport').onclick=()=>{
@@ -2115,17 +2757,43 @@ function doImport(txt){
     (st.days||[]).forEach((d,i)=>{ st.days[i]=Object.assign(defaultDay(i), d); });
     S={settings:st, employees:Array.isArray(o.employees)?o.employees:[],
        pairs:Array.isArray(o.pairs)?o.pairs:[], amendments:Array.isArray(o.amendments)?o.amendments:[],
+       events:Array.isArray(o.events)?o.events:[], templates:Array.isArray(o.templates)?o.templates:[],
        plans:null, chosen:0, result:null};
-    S.employees.forEach(e=>{                       // tolerate files from the earlier version
+    S.employees.forEach(e=>{                       // tolerate files from earlier versions
       if(e.targetH==null) e.targetH=e.maxH||20;
       if(!e.type) e.type='part';
+      if(e.wage2==null) e.wage2=0;
+      if(!Array.isArray(e.events)) e.events=[];
       if(!Array.isArray(e.avail)) e.avail=newEmp().avail;
     });
     save(); closeModal();
-    bindSetup(); renderTeam(); renderForecast(); renderAll(); renderLiveControls(); renderAmendments();
+    bindSetup(); renderTeam(); renderForecast(); renderEvents(); renderTemplates(); renderAll(); renderLiveControls(); renderAmendments();
     toast('Imported '+S.employees.length+' crew members.','good');
   }catch(e){ toast('That did not parse as exported JSON: '+e.message,'bad'); }
 }
+$('btnEvAdd').onclick=()=>{ S.events=S.events||[]; S.events.push(newEvent()); save(); renderEvents(); };
+$('btnEvPreset').onclick=()=>{
+  S.events=S.events||[];
+  let added=0;
+  EVENT_PRESETS.forEach(p=>{
+    if(S.events.some(e=>e.label===p.label)) return;
+    S.events.push(Object.assign({id:uid(), on:true}, p)); added++;
+  });
+  save(); rebuildAll(); renderEvents(); renderForecast(); renderHours();
+  toast(added? 'Added '+added+' event'+(added>1?'s':'')+' — edit the percentages to match your store.' : 'Those are already on the list.', added?'good':'warn');
+};
+$('btnTplFromSchedule').onclick=()=>{
+  const t=templateFromSchedule();
+  if(!t) return toast('Build a schedule first, then it can be saved as a template.','warn');
+  S.templates=S.templates||[]; S.templates.push(t); S.settings.templateId=t.id;
+  save(); renderTemplates(); toast('Saved this week as “'+t.name+'”.','good');
+};
+$('btnTplManual').onclick=()=>{
+  if(!S.employees.length) return toast('Add your crew first so the rows have names.','warn');
+  templateEditor(null,null);
+};
+$('btnTplPhoto').onclick=photoCapture;
+
 $('btnModify').onclick=()=>{
   if(!S.result) return toast('Build a schedule first — the live tools work on the posted week.','warn');
   const p=$('livePanel');
@@ -2157,7 +2825,8 @@ $('btnSuggest').onclick=()=>{
   const empty=[0,1,2,3,4,5,6].every(d=>Object.keys(S.settings.days[d].hourly||{}).length===0);
   if(empty) rebuildAll();
   if(!S.settings.today) S.settings.today=todayISO();
-  bindSetup(); renderTeam(); renderForecast(); renderLiveControls(); renderAmendments();
+  bindSetup(); renderTeam(); renderForecast(); renderEvents(); renderTemplates();
+  renderLiveControls(); renderAmendments();
 })();
 </script>
 </body>
