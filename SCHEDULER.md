@@ -42,6 +42,27 @@ want 40. The printout carries a **TGT** column next to actual hours so you can
 see at a glance who came up short or ran long, and Diagnostics names anyone more
 than four hours off.
 
+## Humane hours
+
+The scheduler will not hand anyone a shift it would be unreasonable to work:
+
+- **Max hours per day** (default 8) — separate from max shift length, so a long
+  day can't be assembled out of parts.
+- **Minimum rest between shifts** (default 10h).
+- **No close-then-open turnarounds.** A plain rest check passes a midnight close
+  followed by a 10am open; that is still brutal, so a closing shift gets its own
+  longer gap before the next shift (default 12h). On by default.
+- **Cap on closing shifts per person** (default 4), so the same person isn't
+  closing every night.
+- **Max days in a row** (default 5) and max days per week (default 6).
+- **Fairness** is scored, not just hoped for: options are ranked partly on how
+  evenly people land against the hours they asked for, and Diagnostics flags the
+  spread when it drifts.
+
+The Store & Budget tab warns you when the *limits themselves* are the problem —
+a 13-hour daily cap, a 6-hour rest gap, seven days in a row, or turnarounds
+switched off.
+
 ## The rules
 
 **Hard — never violated.** Requested time off, availability windows, min and max
@@ -67,6 +88,17 @@ inconsistent start times. Every one that ends up bent is listed in Diagnostics.
 | Avoid overlapping | Strongly discouraged, but possible when nothing else covers |
 | Never overlap | Hard rule |
 
+**Cross-trained pay.** Anyone with a second position can carry a second rate,
+and every shift is costed at the rate for the job actually worked — a carhop who
+cooks that night is paid the cook rate, and the printout shows both rates. Leave
+the second rate blank and it uses their normal one (a manager covering a cook
+shift keeps manager pay).
+
+**Personal commitments.** Each person can list things they need time for — a
+graduation, a night class, a tournament. *Keep free if possible* is a strong
+preference the scheduler works around; *cannot work then* is a hard rule. Both
+are checked in Diagnostics.
+
 **Precedence when it can't have everything:** manager coverage first, then hard
 rules, then guaranteed minimum hours, then the daily budget, then full coverage.
 
@@ -88,6 +120,42 @@ of the day — that was a real bug, and this ordering is the fix.) Then crew
 coverage by unmet demand per labor dollar, then minimum-hour guarantees, then a
 trim pass that shaves surplus half-hours to land under each day's budget.
 
+## Store events
+
+Anything that changes how busy an hour is: half-price drinks 2–4, corn dog
+Tuesday, a Friday night rush, a slow holiday. Each event names its days, its
+hours and a percent effect — positive for busier, negative for slower — and the
+hourly forecast, the crew it calls for, and the percent-of-sales budget all move
+with it. **Add common ones** drops in the usual suspects to edit.
+
+Affected cells are shaded on the forecast grid, and the Store & Budget tab shows
+each day's base sales beside its with-events total.
+
+## Working from a past week
+
+Give it a week that worked and it will keep people on the same days and start
+times wherever the rules, availability and budget still allow — people like
+knowing roughly when they work. A slider sets how closely to follow it, from a
+nudge to sticking close.
+
+Three ways to get one in:
+
+- **Save current schedule** — one click, once you've built a week you like.
+- **Enter a past week** — a grid you type into. Times are read loosely:
+  `10a-6p`, `10-6`, `1030-1830`, `10:30a-6:30p`, or blank for a day off. Entries
+  it can't read are outlined in red as you type rather than silently dropped.
+- **From a photo** — take a picture of a posted schedule with the device camera,
+  or pick an image file. The picture is pinned above the same grid so you can
+  type straight off it.
+
+**About the photo option:** nothing is read off the image automatically. The app
+runs entirely offline with no network access, so there is no text recognition
+available to it — the photo is there to type from, not to import. Templates made
+this way are labeled **"From a photo — verify"** everywhere they appear, the
+label follows them into Diagnostics when used, and selecting one warns you to
+check the shifts before posting. An exported file is always the more reliable
+route.
+
 ## The three options
 
 The same data is run three times with different priorities, then ranked on
@@ -101,7 +169,12 @@ not decoration.
 - **Coverage-first** — spends the full budget on your strongest crew to hold the
   peaks; runs closer to the line.
 
-Which one ranks first depends on your numbers, not on a fixed order.
+With a template loaded, **Like your template** replaces Balanced as the fresh
+read — following last week is what you actually want as the default once you
+have given it a model.
+
+Which one ranks first depends on your numbers, not on a fixed order. Ranking
+also accounts for fairness, close-then-open turnarounds and over-long days.
 
 ## Modifying the schedule live
 
@@ -151,13 +224,29 @@ short, amber thin, green covered, teal overstaffed.
 
 ## Testing
 
-Verified in Chromium against an independent audit that re-checks every hard rule
-on the generated output — 22 scenarios including impossible budgets, everyone a
-minor, a 19:00 curfew, all-pairs-never-together, no managers, a 24-hour
-operation, zero sales, and everyone wanting 8 hours. No violations, no page
-errors. Every button is checked for a handler and exercised with browser dialogs
+Verified in Chromium against an independent audit that re-derives every hard
+rule from the generated output — weekly and daily hour caps, consecutive days,
+rest gaps, close-then-open turnarounds, closing-shift caps, minor curfews and
+day limits, never-together pairs, must-keep commitments, positions the person is
+trained for, and that every shift is costed at the rate for the position worked.
+
+22 scenarios, all passing, including impossible budgets, everyone a minor, a
+19:00 curfew, all-pairs-never-together, no managers, a 24-hour operation, zero
+sales, and everyone wanting 8 hours. No page errors.
+
+Every button is checked for a handler and exercised with browser dialogs
 **blocked**, since the hosted copy runs in a sandbox where `confirm()` silently
 returns false — the original cause of "Clear all does nothing."
+
+The template is tested against a deliberately *different* template (every start
+pushed two hours later): at weight 0 it changes nothing, at full weight it moves
+73% of shifts and follows the template wherever availability allows. Testing it
+against a template built from its own output would have proved nothing, since
+the solver is deterministic.
+
+Building three options takes roughly five seconds. Progress is shown as
+"Building 2 of 3…", and the page yields between options so it never looks frozen
+on slower hardware.
 
 ## A note on the format
 
