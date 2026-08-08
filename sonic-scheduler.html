@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drive-In Auto Scheduler — Expressway Format</title>
+<style>
+:root{
+  --bg:#f4f5f7; --panel:#fff; --ink:#15181d; --muted:#666e7a; --line:#d6dae0;
+  --accent:#0b5fff; --accent-ink:#fff; --good:#1a7f3c; --warn:#a8690a; --bad:#b3261e;
+  --chip:#eef1f5;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+h1,h2,h3{margin:0 0 .4em;line-height:1.2}
+h1{font-size:19px;letter-spacing:.01em}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+h3{font-size:14px}
+a{color:var(--accent)}
+.wrap{max-width:1400px;margin:0 auto;padding:16px}
+header.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+header.top .sub{color:var(--muted);font-size:12.5px}
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+nav.tabs button{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 14px;
+  font:inherit;font-weight:600;color:var(--muted);cursor:pointer}
+nav.tabs button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+section.tab{display:none}
+section.tab.on{display:block}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+label.f{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+input,select,textarea{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+input[type=checkbox]{width:auto}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.hint{color:var(--muted);font-size:12px;margin:.35em 0 0}
+button.btn{font:inherit;font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid var(--line);
+  background:var(--panel);color:var(--ink);cursor:pointer}
+button.btn:hover{background:var(--chip)}
+button.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.btn.danger{color:var(--bad);border-color:#e7c3c0}
+button.btn.sm{padding:4px 9px;font-size:12.5px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.spread{justify-content:space-between}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:middle}
+th{background:var(--chip);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+.emp{border:1px solid var(--line);border-radius:9px;padding:12px;margin-bottom:10px;background:#fcfcfd}
+.emp .hdr{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
+.avail{display:grid;grid-template-columns:repeat(7,minmax(110px,1fr));gap:6px;margin-top:10px}
+.avail .day{border:1px solid var(--line);border-radius:7px;padding:6px;background:#fff}
+.avail .day.off{background:#fbeceb;border-color:#eccbc8}
+.avail .day b{display:block;font-size:11px;letter-spacing:.06em;color:var(--muted)}
+.avail .day input[type=time]{padding:3px 4px;font-size:12px}
+.avail .day .offrow{display:flex;gap:4px;align-items:center;font-size:11.5px;color:var(--muted);margin-top:4px}
+.chip{display:inline-block;background:var(--chip);border-radius:20px;padding:2px 9px;font-size:12px;color:var(--muted)}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
+.kpi b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+.kpi span{font-size:20px;font-variant-numeric:tabular-nums;font-weight:700}
+.kpi.good span{color:var(--good)} .kpi.warn span{color:var(--warn)} .kpi.bad span{color:var(--bad)}
+ul.msgs{margin:0;padding-left:18px} ul.msgs li{margin:.25em 0}
+li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
+.heat{font-variant-numeric:tabular-nums;font-size:11px;text-align:center;padding:2px 4px}
+
+/* ------- Expressway-format printout ------- */
+#printout{background:#fff;color:#000;border:1px solid #000;padding:14px;font-family:"Courier New",Courier,ui-monospace,monospace;font-size:12px}
+#printout .xw-head{display:flex;justify-content:space-between;gap:10px;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:8px}
+#printout .xw-title{font-weight:700;font-size:14px;letter-spacing:.08em}
+#printout table{border-collapse:collapse;width:100%;font-size:11.5px}
+#printout th,#printout td{border:1px solid #000;padding:2px 4px;white-space:nowrap}
+#printout th{background:#e8e8e8;color:#000;font-family:inherit;font-size:10.5px;letter-spacing:.04em;text-align:center}
+#printout td.nm{text-align:left;font-weight:700}
+#printout td.sh{text-align:center}
+#printout td.tot{text-align:right;font-weight:700}
+#printout tr.grp td{background:#d9d9d9;font-weight:700;letter-spacing:.1em}
+#printout tr.sub td{background:#f2f2f2;font-weight:700}
+#printout tr.tot td{background:#d9d9d9;font-weight:700}
+#printout .xw-foot{margin-top:10px;border-top:2px solid #000;padding-top:6px;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px 18px;font-size:11.5px}
+#printout .xw-foot div span{font-weight:700}
+#printout .xw-note{margin-top:8px;font-size:10.5px;border-top:1px dashed #000;padding-top:5px;white-space:pre-wrap}
+@media print{
+  body{background:#fff}
+  .noprint{display:none !important}
+  .wrap{max-width:none;padding:0}
+  section.tab{display:none !important}
+  section.tab.on{display:block !important}
+  #printout{border:none;padding:0;font-size:10.5px}
+  #printout table{font-size:9.5px}
+  @page{size:landscape;margin:10mm}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top noprint">
+  <div>
+    <h1>Drive-In Auto Scheduler</h1>
+    <div class="sub">Builds a labor-balanced weekly crew schedule and prints it in Expressway weekly-schedule format.</div>
+  </div>
+  <div class="row">
+    <button class="btn" id="btnSample">Load sample crew</button>
+    <button class="btn" id="btnExport">Export JSON</button>
+    <button class="btn" id="btnImport">Import JSON</button>
+    <button class="btn primary" id="btnGen">Generate schedule</button>
+  </div>
+</header>
+
+<nav class="tabs noprint">
+  <button data-tab="setup" class="on">1 · Store &amp; Budget</button>
+  <button data-tab="team">2 · Crew</button>
+  <button data-tab="forecast">3 · Sales Forecast</button>
+  <button data-tab="schedule">4 · Schedule (Expressway)</button>
+  <button data-tab="report">5 · Diagnostics</button>
+</nav>
+
+<!-- ============ SETUP ============ -->
+<section class="tab on" id="tab-setup">
+  <div class="panel">
+    <h2>Store</h2>
+    <div class="grid g4">
+      <div><label class="f">Store #</label><input id="s_num" placeholder="4412"></div>
+      <div><label class="f">Store name / city</label><input id="s_name" placeholder="Sonic Drive-In — Main St"></div>
+      <div><label class="f">Week starts</label><input type="date" id="s_start"></div>
+      <div><label class="f">Manager on duty</label><input id="s_mgr" placeholder="Prepared by"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Labor budget &amp; productivity</h2>
+    <div class="grid g4">
+      <div>
+        <label class="f">Labor budget (% of sales)</label>
+        <input type="number" id="s_pct" step="0.1" min="1" max="60">
+        <p class="hint">Target crew labor as a percent of projected sales.</p>
+      </div>
+      <div>
+        <label class="f">Sales per labor hour (SPLH)</label>
+        <input type="number" id="s_splh" step="1" min="10">
+        <p class="hint">Income per hour you expect one crew hour to support. Higher = leaner schedule.</p>
+      </div>
+      <div>
+        <label class="f">Minimum crew on the clock</label>
+        <input type="number" id="s_mincrew" step="1" min="1">
+        <p class="hint">Never staff below this, regardless of sales.</p>
+      </div>
+      <div>
+        <label class="f">Back-of-house share</label>
+        <input type="number" id="s_cook" step="1" min="0" max="100">
+        <p class="hint">% of non-manager demand assigned to cooks; the rest goes to carhops.</p>
+      </div>
+    </div>
+    <div class="grid g4" style="margin-top:12px">
+      <div><label class="f">Min shift (hrs)</label><input type="number" id="s_minsh" step="0.5" min="1"></div>
+      <div><label class="f">Max shift (hrs)</label><input type="number" id="s_maxsh" step="0.5" min="2"></div>
+      <div><label class="f">Max days / person</label><input type="number" id="s_maxdays" step="1" min="1" max="7"></div>
+      <div><label class="f">Overtime after (hrs)</label><input type="number" id="s_ot" step="1" min="20"></div>
+      <div><label class="f">Min rest between shifts (hrs)</label><input type="number" id="s_rest" step="1" min="0"></div>
+      <div><label class="f">Unpaid break (min) on shifts over</label><input type="number" id="s_brkmin" step="5" min="0"></div>
+      <div><label class="f">…this many hours</label><input type="number" id="s_brkafter" step="0.5" min="0"></div>
+      <div><label class="f">2nd manager when crew hits</label><input type="number" id="s_mgr2" step="1" min="2"></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label class="row" style="gap:6px"><input type="checkbox" id="s_enforce"> <span>Hold to labor budget (trim shifts that push over)</span></label>
+      <label class="row" style="gap:6px"><input type="checkbox" id="s_hard"> <span>Treat "never together" pairs as hard rules</span></label>
+      <label class="row" style="gap:6px"><input type="checkbox" id="s_minh"> <span>Honor each person's minimum hours</span></label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Store hours</h2>
+    <div class="scroll">
+      <table id="hoursTable">
+        <thead><tr><th>Day</th><th>Date</th><th>Open</th><th>Close</th><th class="num">Projected sales ($)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="hint">Sales here drive the hour-by-hour demand curve on the Forecast tab.</p>
+  </div>
+
+  <div class="panel">
+    <h2>Who can't work together</h2>
+    <div class="row">
+      <select id="c_a" style="max-width:220px"></select>
+      <span>&amp;</span>
+      <select id="c_b" style="max-width:220px"></select>
+      <select id="c_kind" style="max-width:200px">
+        <option value="soft">Avoid overlapping</option>
+        <option value="hard">Never overlap</option>
+      </select>
+      <button class="btn sm" id="c_add">Add rule</button>
+    </div>
+    <div id="conflictList" style="margin-top:10px"></div>
+  </div>
+</section>
+
+<!-- ============ TEAM ============ -->
+<section class="tab" id="tab-team">
+  <div class="panel">
+    <div class="row spread">
+      <h2 style="margin:0">Crew</h2>
+      <div class="row">
+        <button class="btn sm" id="btnAddEmp">+ Add person</button>
+        <button class="btn sm" id="btnClearEmp">Clear all</button>
+      </div>
+    </div>
+    <p class="hint">Capability rating drives both who gets scheduled first and how much coverage they count for:
+      1 = still training (counts 0.72 of a crew slot) … 5 = carries the shift (counts 1.28). Uncheck a day to log requested time off.</p>
+  </div>
+  <div id="empList"></div>
+</section>
+
+<!-- ============ FORECAST ============ -->
+<section class="tab" id="tab-forecast">
+  <div class="panel">
+    <div class="row spread">
+      <h2 style="margin:0">Estimated income per hour</h2>
+      <div class="row">
+        <button class="btn sm" id="btnRebuild">Rebuild from daily totals</button>
+      </div>
+    </div>
+    <p class="hint">Every cell is editable — type over any hour you know better (half-price drink rush, game night, etc.).
+      Required crew per hour is computed as sales ÷ SPLH, floored at your minimum crew.</p>
+    <div class="scroll" style="margin-top:10px"><table id="fcTable"></table></div>
+  </div>
+  <div class="panel">
+    <h2>Demand curve shape</h2>
+    <p class="hint">Relative weight per hour used when rebuilding a day from its total. Sonic-ish default: lunch peak, 2–4pm drink rush, dinner.</p>
+    <div class="scroll"><table id="curveTable"></table></div>
+  </div>
+</section>
+
+<!-- ============ SCHEDULE ============ -->
+<section class="tab" id="tab-schedule">
+  <div class="panel noprint">
+    <div class="row spread">
+      <div class="row">
+        <button class="btn primary" id="btnGen2">Generate schedule</button>
+        <button class="btn" id="btnPrint">Print / PDF</button>
+        <button class="btn" id="btnCsv">Download CSV</button>
+        <button class="btn" id="btnTsv">Copy for spreadsheet</button>
+      </div>
+      <label class="row" style="gap:6px"><input type="checkbox" id="opt_showpos" checked> <span>Group by position</span></label>
+    </div>
+  </div>
+  <div id="kpis" class="grid g4 noprint" style="margin-bottom:14px"></div>
+  <div id="printout"><div class="xw-note">Press <b>Generate schedule</b> to build the week.</div></div>
+</section>
+
+<!-- ============ REPORT ============ -->
+<section class="tab" id="tab-report">
+  <div class="panel"><h2>Rule check</h2><div id="issues"><p class="hint">Nothing generated yet.</p></div></div>
+  <div class="panel"><h2>Coverage by hour</h2>
+    <p class="hint">Scheduled crew units vs. required. Red = short, amber = thin, green = covered, blue = overstaffed.</p>
+    <div class="scroll" id="coverage"></div>
+  </div>
+  <div class="panel"><h2>Hours &amp; cost by person</h2><div class="scroll" id="empReport"></div></div>
+  <div class="panel"><h2>Day-by-day labor</h2><div class="scroll" id="dayReport"></div></div>
+</section>
+
+<textarea id="ioBox" class="noprint" style="display:none;height:180px"></textarea>
+
+</div>
+
+<script>
+"use strict";
+/* =======================================================================
+   Drive-In auto scheduler
+   Model: hour-by-hour sales -> crew-unit demand by position -> greedy
+   shift assignment scored on coverage gained per labor dollar, then a
+   budget trim pass. Output renders in Expressway weekly-schedule format.
+   ======================================================================= */
+
+const DAY_ABBR = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const DAY_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const POSITIONS = [
+  {k:'manager', label:'Manager', short:'MGR', prio:1.60},
+  {k:'cook',    label:'Cook',    short:'COOK',prio:1.15},
+  {k:'carhop',  label:'Carhop',  short:'CH',  prio:1.00}
+];
+const POS_LABEL = Object.fromEntries(POSITIONS.map(p=>[p.k,p.label]));
+const PROD = {1:0.72, 2:0.86, 3:1.00, 4:1.14, 5:1.28};
+const SLOT = 30;                       // minutes per scheduling slot
+const STORE_KEY = 'driveInScheduler.v1';
+
+/* ---------------------------- time helpers ---------------------------- */
+const pad = n => String(n).padStart(2,'0');
+function parseT(s){ if(!s) return 0; const [h,m]=s.split(':').map(Number); return h*60+(m||0); }
+function toT(min){ return pad(Math.floor(min/60)%24)+':'+pad(min%60); }
+function fmt12(min){
+  let h=Math.floor(min/60), m=min%60, ap=h>=12&&h<24?'P':'A';
+  let hh=h%12; if(hh===0) hh=12;
+  if(h>=24){ const h2=h-24; hh=h2%12||12; ap=h2>=12?'P':'A'; }
+  return hh+':'+pad(m)+ap;
+}
+function fmtShift(a,b){ return fmt12(a)+'-'+fmt12(b); }
+const money = n => '$'+(Math.round(n*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const money0 = n => '$'+Math.round(n).toLocaleString();
+const hrs = n => (Math.round(n*100)/100).toFixed(2);
+function addDays(iso,n){ const d=new Date(iso+'T12:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function shortDate(iso){ const d=new Date(iso+'T12:00:00'); return (d.getMonth()+1)+'/'+d.getDate(); }
+function longDate(iso){ const d=new Date(iso+'T12:00:00'); return pad(d.getMonth()+1)+'/'+pad(d.getDate())+'/'+d.getFullYear(); }
+function dowOf(iso){ return new Date(iso+'T12:00:00').getDay(); }
+const uid = () => Math.random().toString(36).slice(2,9);
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+function esc(s){ return String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ------------------------------- state -------------------------------- */
+const DEFAULT_CURVE = [0,0,0,0,0,0, .35,.75,.85,.70,.95, 1.65,1.90,1.35, 1.55,1.60,1.15, 1.30,1.45,1.20, .95,.70,.45,.25];
+
+function defaultDay(i){
+  const weekend = (i===5||i===6);
+  return { open:'10:00', close: weekend?'24:00':'23:00', sales: weekend?5200:3800, hourly:{} };
+}
+function newState(){
+  const start = mondayOfThisWeek();
+  return {
+    settings:{
+      storeNum:'', storeName:'', weekStart:start, preparedBy:'',
+      laborPct:24, splh:58, minCrew:3, cookShare:45,
+      minShift:3, maxShift:8, maxDays:6, otAfter:40, minRest:10,
+      breakMin:30, breakAfter:6, mgr2At:9,
+      enforceBudget:true, hardConflicts:true, honorMinHours:true,
+      curve:DEFAULT_CURVE.slice(),
+      days:[0,1,2,3,4,5,6].map(defaultDay)
+    },
+    employees:[],
+    conflicts:[],
+    result:null
+  };
+}
+function mondayOfThisWeek(){
+  const d=new Date(); const off=(d.getDay()+6)%7; d.setDate(d.getDate()-off);
+  return d.toISOString().slice(0,10);
+}
+function newEmp(name){
+  return {
+    id:uid(), name:name||'New crew member',
+    pos:'carhop', pos2:'', rating:3, wage:12.00,
+    minH:0, maxH:38, note:'',
+    avail:[0,1,2,3,4,5,6].map(()=>({off:false, from:'10:00', to:'23:00'}))
+  };
+}
+
+let S = load() || newState();
+
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify({settings:S.settings, employees:S.employees, conflicts:S.conflicts})); }
+  catch(e){ /* private mode — ignore */ }
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY); if(!raw) return null;
+    const o = JSON.parse(raw); const base = newState();
+    return {settings:Object.assign(base.settings,o.settings||{}), employees:o.employees||[], conflicts:o.conflicts||[], result:null};
+  }catch(e){ return null; }
+}
+
+/* ============================ SAMPLE CREW ============================= */
+function sampleCrew(){
+  const mk=(name,pos,pos2,rating,wage,minH,maxH,offDays,win)=>{
+    const e=newEmp(name); e.pos=pos; e.pos2=pos2; e.rating=rating; e.wage=wage; e.minH=minH; e.maxH=maxH;
+    e.avail.forEach((a,i)=>{ a.off=offDays.includes(i); if(win){a.from=win[0];a.to=win[1];} });
+    return e;
+  };
+  S.employees = [
+    mk('Alvarez, Dana','manager','cook',5,21.50,38,45,[3],['09:00','23:30']),
+    mk('Brooks, Trey','manager','carhop',4,18.75,32,40,[0],['12:00','24:00']),
+    mk('Chen, Mira','manager','cook',4,18.00,24,36,[5,6],['09:00','18:00']),
+    mk('Delgado, Rico','cook','',5,15.25,30,40,[2],['10:00','22:00']),
+    mk('Ellis, Sam','cook','carhop',3,13.50,20,32,[],['11:00','23:00']),
+    mk('Foster, Kayla','cook','',2,12.75,12,24,[1,2],['16:00','24:00']),
+    mk('Grant, Noah','cook','carhop',4,14.00,24,36,[6],['10:00','20:00']),
+    mk('Hughes, Priya','carhop','',5,12.50,28,38,[],['10:00','22:00']),
+    mk('Ibarra, Luis','carhop','cook',3,12.00,18,30,[4],['15:00','24:00']),
+    mk('Jensen, Abby','carhop','',4,12.25,20,32,[0,1],['11:00','21:00']),
+    mk('Kowalski, Ben','carhop','',2,11.50,10,20,[],['16:00','23:00']),
+    mk('Lopez, Sofia','carhop','',3,12.00,16,28,[3],['10:00','17:00']),
+    mk('Moore, Jaylen','carhop','cook',4,12.75,24,36,[],['12:00','24:00']),
+    mk('Nguyen, Tia','carhop','',1,11.25,8,18,[1,3],['16:00','22:00']),
+    mk('Okafor, Chris','carhop','',3,12.00,15,26,[5],['10:00','19:00']),
+    mk('Patel, Anish','cook','carhop',3,13.00,18,30,[],['11:00','22:00']),
+    mk('Quinn, Maya','carhop','',4,12.25,20,32,[2],['10:00','20:00']),
+    mk('Reyes, Dominic','carhop','cook',2,11.75,12,24,[],['15:00','24:00']),
+    mk('Silva, Emma','carhop','',3,12.00,16,28,[6],['10:00','18:00']),
+    mk('Turner, Jamal','cook','',4,14.25,22,34,[0],['12:00','24:00'])
+  ];
+  const id = n => S.employees[n].id;
+  S.conflicts = [
+    {id:uid(), a:id(10), b:id(13), kind:'hard'},   // Kowalski + Nguyen: never together
+    {id:uid(), a:id(4),  b:id(5),  kind:'soft'},   // Ellis + Foster: avoid
+    {id:uid(), a:id(8),  b:id(12), kind:'soft'}
+  ];
+}
+
+/* ========================= DEMAND / FORECAST ========================== */
+function dayMeta(d){
+  const day = S.settings.days[d];
+  const open = parseT(day.open);
+  let close = parseT(day.close); if(close<=open) close += 24*60;
+  return {open, close, slots: Math.max(0, Math.round((close-open)/SLOT)), day};
+}
+function openHours(d){
+  const {open,close}=dayMeta(d); const out=[];
+  for(let h=Math.floor(open/60); h<Math.ceil(close/60); h++) out.push(h);
+  return out;
+}
+function rebuildDay(d){
+  const day = S.settings.days[d];
+  const hoursList = openHours(d);
+  const w = hoursList.map(h=>S.settings.curve[h%24]||0);
+  const sum = w.reduce((a,b)=>a+b,0) || 1;
+  day.hourly = {};
+  hoursList.forEach((h,i)=>{ day.hourly[h] = Math.round((day.sales * w[i]/sum)); });
+}
+function rebuildAll(){ for(let d=0;d<7;d++) rebuildDay(d); }
+function hourlySales(d,h){
+  const day=S.settings.days[d];
+  if(day.hourly && day.hourly[h]!=null) return +day.hourly[h];
+  return 0;
+}
+function daySalesActual(d){ return openHours(d).reduce((a,h)=>a+hourlySales(d,h),0); }
+
+/* Crew-unit demand per slot, split by position. */
+function buildDemand(){
+  const st=S.settings, out=[];
+  for(let d=0;d<7;d++){
+    const {open,slots}=dayMeta(d);
+    const need=[], sales=[];
+    for(let i=0;i<slots;i++){
+      const t = open + i*SLOT;
+      const hs = hourlySales(d, Math.floor(t/60));
+      const units = Math.max(st.minCrew, hs/Math.max(1,st.splh));
+      const mgr = units >= st.mgr2At ? 2 : 1;
+      const rest = Math.max(0, units - mgr);
+      const cook = rest * clamp(st.cookShare,0,100)/100;
+      need.push({manager:mgr, cook:cook, carhop:Math.max(0,rest-cook), total:units});
+      sales.push(hs/2);
+    }
+    out.push({open, slots, need, sales});
+  }
+  return out;
+}
+
+/* =========================== THE SCHEDULER ============================ */
+function positionsOf(e){ return e.pos2 && e.pos2!==e.pos ? [e.pos, e.pos2] : [e.pos]; }
+function prodOf(e){ return PROD[clamp(Math.round(+e.rating||3),1,5)]; }
+function paidHoursFor(gross){
+  const st=S.settings;
+  return gross > st.breakAfter && st.breakMin>0 ? gross - st.breakMin/60 : gross;
+}
+function conflictMap(){
+  const m={};
+  S.conflicts.forEach(c=>{
+    (m[c.a]=m[c.a]||{})[c.b]=c.kind;
+    (m[c.b]=m[c.b]||{})[c.a]=c.kind;
+  });
+  return m;
+}
+
+function generate(){
+  const st=S.settings;
+  const demand = buildDemand();
+  const cmap = conflictMap();
+  const emps = S.employees.filter(e=>e.name && e.name.trim());
+  if(!emps.length){ alert('Add at least one crew member first.'); return null; }
+
+  // remaining[d][pos][slot]
+  const remaining = demand.map(dd=>{
+    const o={}; POSITIONS.forEach(p=>{ o[p.k]=dd.need.map(n=>n[p.k]); }); return o;
+  });
+  const covered = demand.map(dd=>{
+    const o={}; POSITIONS.forEach(p=>{ o[p.k]=dd.need.map(()=>0); }); return o;
+  });
+  // manager presence is headcount, not productivity: a trainee manager is still
+  // the person holding the keys, so the open-to-close line counts bodies
+  const heads = demand.map(dd=>dd.need.map(()=>0));
+
+  const stat = {};
+  emps.forEach(e=>{ stat[e.id]={gross:0, paid:0, cost:0, days:new Set(), shifts:[]}; });
+
+  const assigns = [];                       // {empId, d, pos, start, end, gross, paid, cost}
+  const weekSales = [0,1,2,3,4,5,6].reduce((a,d)=>a+daySalesActual(d),0);
+  const budget = weekSales * st.laborPct/100;
+  let spend = 0;
+
+  /* --- candidate shift enumeration (cached: availability never changes mid-run) --- */
+  const candCache = {};
+  function candidates(e,d){
+    const key = e.id+'|'+d;
+    if(candCache[key]) return candCache[key];
+    return (candCache[key] = buildCandidates(e,d));
+  }
+  function buildCandidates(e,d){
+    const av = e.avail[d];
+    if(av.off) return [];
+    const {open,close} = dayMeta(d);
+    let a = Math.max(open, parseT(av.from));
+    let b = parseT(av.to); if(b<=parseT(av.from)) b+=24*60;
+    b = Math.min(close, b);
+    const out=[];
+    const minL = Math.round(st.minShift*60/SLOT), maxL = Math.round(st.maxShift*60/SLOT);
+    const first = Math.ceil((a-open)/SLOT), last = Math.floor((b-open)/SLOT);
+    for(let s=first; s<=last-minL; s++){
+      for(let L=minL; L<=maxL && s+L<=last; L++){
+        out.push({s, L, start:open+s*SLOT, end:open+(s+L)*SLOT});
+      }
+    }
+    return out;
+  }
+
+  function shiftCost(e, paid){
+    const w=+e.wage||0, already=stat[e.id].paid;
+    const reg = Math.max(0, Math.min(paid, st.otAfter-already));
+    const ot  = Math.max(0, paid-reg);
+    return reg*w + ot*w*1.5;
+  }
+
+  function hardBlocked(e,d,start,end){
+    const s=stat[e.id];
+    if(s.days.has(d)) return true;                                  // one shift per day
+    if(s.days.size >= st.maxDays) return true;
+    const gross=(end-start)/60;
+    if(s.paid + paidHoursFor(gross) > (+e.maxH||99)+0.01) return true;
+    // rest between days
+    const absStart = d*1440+start, absEnd = d*1440+end;
+    for(const sh of s.shifts){
+      const oS=sh.d*1440+sh.start, oE=sh.d*1440+sh.end;
+      const gap = absStart>=oE ? absStart-oE : (oS>=absEnd ? oS-absEnd : -1);
+      if(gap < st.minRest*60) return true;
+    }
+    // hard conflicts
+    if(st.hardConflicts){
+      const mine = cmap[e.id]||{};
+      for(const a of assigns){
+        if(a.d!==d) continue;
+        if(mine[a.empId]!=='hard') continue;
+        if(start < a.end && a.start < end) return true;
+      }
+    }
+    return false;
+  }
+
+  function softPenalty(e,d,start,end){
+    const mine = cmap[e.id]||{}; let pen=1;
+    for(const a of assigns){
+      if(a.d!==d) continue;
+      const k = mine[a.empId]; if(!k) continue;
+      if(start < a.end && a.start < end){
+        pen *= (k==='hard' ? 0.05 : 0.30);
+      }
+    }
+    return pen;
+  }
+
+  function gainOf(e,d,pos,c){
+    const rem = remaining[d][pos], p = prodOf(e);
+    let g=0;
+    for(let i=c.s;i<c.s+c.L;i++){ const r=rem[i]; if(r>0) g += Math.min(r,p); }
+    return g*(SLOT/60);                                    // unit-hours of demand actually met
+  }
+
+  function apply(e,d,pos,c){
+    const p = prodOf(e), gross=(c.end-c.start)/60, paid=paidHoursFor(gross);
+    for(let i=c.s;i<c.s+c.L;i++){
+      remaining[d][pos][i] = Math.max(0, remaining[d][pos][i]-p);
+      covered[d][pos][i] += p;
+      if(pos==='manager') heads[d][i]++;
+    }
+    const cost = shiftCost(e,paid);
+    const rec = {empId:e.id, d, pos, start:c.start, end:c.end, s:c.s, L:c.L, gross, paid, cost};
+    assigns.push(rec);
+    const s=stat[e.id];
+    s.gross+=gross; s.paid+=paid; s.cost+=cost; s.days.add(d); s.shifts.push(rec);
+    spend += cost;
+  }
+
+  const posPrio = Object.fromEntries(POSITIONS.map(p=>[p.k,p.prio]));
+
+  /* --- pass 0: manager spine ---------------------------------------------
+     A drive-in cannot open without a manager, and manager capacity is the
+     scarcest thing on the board. So lay down open-to-close leadership before
+     any crew shift is written, and do the hardest days first: a day with only
+     one manager available must get first claim on that manager's week.      */
+  const mgrPool = emps.filter(e=>e.pos==='manager' || e.pos2==='manager');
+  const mgrDayOrder = [0,1,2,3,4,5,6].sort((a,b)=>{
+    const av = d => mgrPool.filter(e=>!e.avail[d].off).length;
+    if(av(a)!==av(b)) return av(a)-av(b);              // scarce days first
+    return daySalesActual(b)-daySalesActual(a);        // then busiest
+  });
+  for(const d of mgrDayOrder){
+    const nSlots = demand[d].slots;
+    const uncoveredBase = i => demand[d].need[i].manager > 0.25 && heads[d][i] < 1;
+
+    // Round A — one manager on the clock from open to close. Walk the day left
+    // to right filling the earliest hole, so we never strand an edge of the day
+    // that nobody left on the roster is available to reach.
+    let cursor = 0, gA = 0;
+    while(gA++ < 40){
+      let gap = -1;
+      for(let i=cursor; i<nSlots; i++) if(uncoveredBase(i)){ gap=i; break; }
+      if(gap < 0) break;
+      let gapEnd = gap;
+      while(gapEnd < nSlots && uncoveredBase(gapEnd)) gapEnd++;
+
+      let best=null;
+      for(const e of mgrPool){
+        if(stat[e.id].days.has(d)) continue;
+        for(const c of candidates(e,d)){
+          if(c.s > gap) continue;                       // starting late would leave a hole
+          if(c.s + c.L <= gap) continue;                // never reaches the hole
+          if(hardBlocked(e,d,c.start,c.end)) continue;
+          const paid = paidHoursFor((c.end-c.start)/60);
+          const cost = shiftCost(e,paid);
+          if(cost<=0) continue;
+          const reach = Math.min(c.s+c.L, gapEnd) - gap;          // hole slots closed
+          let eff = reach/cost*1000;
+          eff *= (0.88 + 0.06*clamp(Math.round(+e.rating||3),1,5));
+          if(e.pos!=='manager') eff *= 0.70;                       // assistant stepping up
+          if(stat[e.id].paid + paid > st.otAfter) eff *= 0.45;
+          eff *= softPenalty(e,d,c.start,c.end);
+          const score = reach*1000 + Math.min(eff, 999);           // reach first, then cost
+          if(!best || score>best.score) best={score,e,c};
+        }
+      }
+      if(!best){ cursor = gap+1; continue; }            // nobody can open this hole; move on
+      apply(best.e,d,'manager',best.c);
+    }
+
+    // Round B — the extra manager the peak calls for. Nice to have, so this one
+    // is plain best-value and is allowed to come up short.
+    let gB = 0;
+    while(gB++ < 12){
+      if(remaining[d].manager.reduce((a,b)=>a+b,0) < 0.5) break;
+      let best=null;
+      for(const e of mgrPool){
+        if(stat[e.id].days.has(d)) continue;
+        for(const c of candidates(e,d)){
+          const g = gainOf(e,d,'manager',c);
+          if(g < 1.0) continue;
+          if(hardBlocked(e,d,c.start,c.end)) continue;
+          const paid = paidHoursFor((c.end-c.start)/60);
+          const cost = shiftCost(e,paid);
+          if(cost<=0) continue;
+          let score = g/cost*100;
+          score *= (0.88 + 0.06*clamp(Math.round(+e.rating||3),1,5));
+          if(e.pos!=='manager') score *= 0.70;
+          if(stat[e.id].paid + paid > st.otAfter) score *= 0.45;
+          score *= softPenalty(e,d,c.start,c.end);
+          if(!best || score>best.score) best={score,e,c};
+        }
+      }
+      if(!best) break;
+      apply(best.e,d,'manager',best.c);
+    }
+  }
+
+  /* --- pass 1: greedy coverage, best unit-hours per labor dollar --- */
+  let guard = 0;
+  while(guard++ < 4000){
+    // where is demand still open? skips whole day/position combinations cheaply
+    const openNeed = remaining.map(r=>{
+      const o={}; POSITIONS.forEach(p=>{ o[p.k]=r[p.k].reduce((a,b)=>a+b,0); }); return o;
+    });
+    if(POSITIONS.every(p=>openNeed.every(o=>o[p.k] < 0.25))) break;
+
+    let best=null;
+    for(const e of emps){
+      const s=stat[e.id];
+      const underMin = st.honorMinHours && s.paid < (+e.minH||0);
+      for(let d=0; d<7; d++){
+        if(s.days.has(d)) continue;
+        const cands = candidates(e,d);
+        if(!cands.length) continue;
+        for(const pos of positionsOf(e)){
+          if(openNeed[d][pos] < 0.25) continue;
+          const isSecondary = pos!==e.pos;
+          for(const c of cands){
+            const g = gainOf(e,d,pos,c);
+            if(g < 0.5) continue;
+            if(hardBlocked(e,d,c.start,c.end)) continue;
+            const paid = paidHoursFor((c.end-c.start)/60);
+            const cost = shiftCost(e,paid);
+            if(cost<=0) continue;
+            let score = (g*posPrio[pos]) / cost * 100;
+            score *= (0.88 + 0.06*clamp(Math.round(+e.rating||3),1,5));   // capability preference
+            if(isSecondary) score *= 0.82;
+            if(underMin) score *= 1.55;
+            if(s.paid + paid > st.otAfter) score *= 0.45;                 // discourage overtime
+            score *= softPenalty(e,d,c.start,c.end);
+            if(st.enforceBudget && spend + cost > budget) score *= 0.25;  // budget drag, not a wall
+            if(!best || score > best.score) best = {score, e, d, pos, c, cost, g};
+          }
+        }
+      }
+    }
+    if(!best) break;
+    if(st.enforceBudget && spend + best.cost > budget*1.02 && best.g < 1.5) break;
+    apply(best.e, best.d, best.pos, best.c);
+  }
+
+  /* --- pass 2: bring people up to their minimum hours --- */
+  if(st.honorMinHours){
+    let g2=0;
+    while(g2++ < 600){
+      let best=null;
+      for(const e of emps){
+        const s=stat[e.id]; const need=(+e.minH||0) - s.paid;
+        if(need <= 0.25) continue;
+        for(let d=0; d<7; d++){
+          if(s.days.has(d)) continue;
+          for(const c of candidates(e,d)){
+            if(hardBlocked(e,d,c.start,c.end)) continue;
+            const paid = paidHoursFor((c.end-c.start)/60);
+            if(paid > need + st.minShift) continue;             // don't wildly overshoot
+            const pos = positionsOf(e)[0];
+            let score = gainOf(e,d,pos,c) + paid*0.6;
+            score *= softPenalty(e,d,c.start,c.end);
+            if(!best || score>best.score) best={score,e,d,pos,c};
+          }
+        }
+      }
+      if(!best) break;
+      apply(best.e,best.d,best.pos,best.c);
+    }
+  }
+
+  /* --- pass 3: trim the edges of overstaffed shifts to hit budget --- */
+  const trims=[];
+  if(st.enforceBudget){
+    let g3=0;
+    while(spend > budget && g3++ < 800){
+      let best=null;
+      for(const a of assigns){
+        const e = emps.find(x=>x.id===a.empId); if(!e) continue;
+        if(a.pos==='manager') continue;                         // never trim manager coverage
+        const grossAfter = (a.L-1)*SLOT/60;
+        if(grossAfter < st.minShift - 1e-9) continue;
+        const p = prodOf(e);
+        for(const side of ['front','back']){
+          const i = side==='front' ? a.s : a.s+a.L-1;
+          const surplus = covered[a.d][a.pos][i] - demandAt(a.d,a.pos,i);
+          if(surplus < p*0.9) continue;                          // trimming would create a hole
+          const score = surplus + (e.rating<=2?0.4:0) + (+e.wage||0)/40;
+          if(!best || score>best.score) best={score, a, side, i, p};
+        }
+      }
+      if(!best) break;
+      const {a,side,i,p}=best;
+      covered[a.d][a.pos][i] -= p;
+      remaining[a.d][a.pos][i] = Math.max(0, demandAt(a.d,a.pos,i) - covered[a.d][a.pos][i]);
+      if(side==='front'){ a.s+=1; a.start+=SLOT; } else { a.end-=SLOT; }
+      a.L -= 1;
+      recost();                                    // trimming can move someone out of overtime
+      trims.push(a);
+    }
+  }
+
+  function demandAt(d,pos,i){ return demand[d].need[i] ? demand[d].need[i][pos] : 0; }
+
+  /* Rebuild hours and cost from scratch so overtime is charged against the
+     week in chronological order — the incremental math drifts once shifts
+     get trimmed. */
+  function recost(){
+    spend = 0;
+    for(const e of emps){
+      const s = stat[e.id], w = +e.wage||0;
+      s.shifts.sort((x,y)=>(x.d-y.d)||(x.start-y.start));
+      let acc=0, cost=0, gross=0;
+      for(const a of s.shifts){
+        a.gross = (a.end-a.start)/60;
+        a.paid  = paidHoursFor(a.gross);
+        const reg = Math.max(0, Math.min(a.paid, st.otAfter-acc));
+        const ot  = a.paid - reg;
+        a.cost = reg*w + ot*w*1.5;
+        acc += a.paid; cost += a.cost; gross += a.gross;
+      }
+      s.paid=acc; s.cost=cost; s.gross=gross;
+      spend += cost;
+    }
+  }
+  recost();
+
+  const result = {demand, remaining, covered, heads, assigns, stat, budget, weekSales, spend, emps};
+  S.result = result;
+  return result;
+}
+
+/* ============================== RENDERING ============================= */
+function $(id){ return document.getElementById(id); }
+function el(tag, attrs, html){
+  const n=document.createElement(tag);
+  if(attrs) for(const k in attrs){ if(k==='class') n.className=attrs[k]; else n.setAttribute(k,attrs[k]); }
+  if(html!=null) n.innerHTML=html;
+  return n;
+}
+
+/* ---------- setup tab ---------- */
+function bindSetup(){
+  const st=S.settings;
+  const map = {
+    s_num:'storeNum', s_name:'storeName', s_start:'weekStart', s_mgr:'preparedBy',
+    s_pct:'laborPct', s_splh:'splh', s_mincrew:'minCrew', s_cook:'cookShare',
+    s_minsh:'minShift', s_maxsh:'maxShift', s_maxdays:'maxDays', s_ot:'otAfter',
+    s_rest:'minRest', s_brkmin:'breakMin', s_brkafter:'breakAfter', s_mgr2:'mgr2At'
+  };
+  for(const id in map){
+    const inp=$(id); inp.value = st[map[id]];
+    inp.oninput = ()=>{
+      const v = inp.type==='number' ? (+inp.value||0) : inp.value;
+      st[map[id]] = v; save();
+      if(id==='s_start') renderHours();
+      if(id==='s_splh'||id==='s_mincrew'||id==='s_cook') renderForecast();
+    };
+  }
+  const cbs={s_enforce:'enforceBudget', s_hard:'hardConflicts', s_minh:'honorMinHours'};
+  for(const id in cbs){
+    const c=$(id); c.checked=!!st[cbs[id]];
+    c.onchange=()=>{ st[cbs[id]]=c.checked; save(); };
+  }
+  renderHours(); renderConflicts();
+}
+
+function renderHours(){
+  const tb=$('hoursTable').querySelector('tbody'); tb.innerHTML='';
+  const st=S.settings;
+  for(let d=0; d<7; d++){
+    const iso = addDays(st.weekStart, d);
+    const day = st.days[d];
+    const tr=el('tr');
+    tr.appendChild(el('td',null,'<b>'+DAY_FULL[dowOf(iso)]+'</b>'));
+    tr.appendChild(el('td',null,shortDate(iso)));
+    const tdO=el('td'), inO=el('input',{type:'time'}); inO.value=day.open;
+    inO.oninput=()=>{ day.open=inO.value; rebuildDay(d); save(); renderForecast(); };
+    tdO.appendChild(inO); tr.appendChild(tdO);
+    const tdC=el('td'), inC=el('input',{type:'time'});
+    inC.value = day.close==='24:00' ? '23:59' : day.close;
+    inC.oninput=()=>{ day.close = inC.value==='23:59'?'24:00':inC.value; rebuildDay(d); save(); renderForecast(); };
+    tdC.appendChild(inC); tr.appendChild(tdC);
+    const tdS=el('td',{class:'num'}), inS=el('input',{type:'number',step:'50',min:'0'}); inS.value=day.sales;
+    inS.oninput=()=>{ day.sales=+inS.value||0; rebuildDay(d); save(); renderForecast(); };
+    tdS.appendChild(inS); tr.appendChild(tdS);
+    tb.appendChild(tr);
+  }
+}
+
+function renderConflicts(){
+  const a=$('c_a'), b=$('c_b');
+  const opts = S.employees.map(e=>'<option value="'+e.id+'">'+esc(e.name)+'</option>').join('');
+  a.innerHTML=opts; b.innerHTML=opts;
+  const list=$('conflictList');
+  if(!S.conflicts.length){ list.innerHTML='<p class="hint">No pair rules yet.</p>'; return; }
+  list.innerHTML='';
+  S.conflicts.forEach(c=>{
+    const na=(S.employees.find(e=>e.id===c.a)||{}).name||'?';
+    const nb=(S.employees.find(e=>e.id===c.b)||{}).name||'?';
+    const row=el('div',{class:'row'},
+      '<span class="chip">'+(c.kind==='hard'?'NEVER':'AVOID')+'</span> <b>'+esc(na)+'</b> &nbsp;+&nbsp; <b>'+esc(nb)+'</b>');
+    const rm=el('button',{class:'btn sm danger'},'Remove');
+    rm.onclick=()=>{ S.conflicts=S.conflicts.filter(x=>x.id!==c.id); save(); renderConflicts(); };
+    row.appendChild(rm); row.style.marginBottom='6px'; list.appendChild(row);
+  });
+}
+
+/* ---------- crew tab ---------- */
+function renderTeam(){
+  const wrap=$('empList'); wrap.innerHTML='';
+  if(!S.employees.length){ wrap.innerHTML='<div class="panel"><p class="hint">No crew yet — add people or load the sample crew.</p></div>'; return; }
+  S.employees.forEach(e=>{
+    const card=el('div',{class:'emp'});
+    const posOpts = p => POSITIONS.map(x=>'<option value="'+x.k+'"'+(p===x.k?' selected':'')+'>'+x.label+'</option>').join('');
+    card.innerHTML =
+      '<div class="grid g4">'+
+        '<div><label class="f">Name</label><input data-k="name" value="'+esc(e.name)+'"></div>'+
+        '<div><label class="f">Position</label><select data-k="pos">'+posOpts(e.pos)+'</select></div>'+
+        '<div><label class="f">Also trained as</label><select data-k="pos2"><option value="">— none —</option>'+posOpts(e.pos2)+'</select></div>'+
+        '<div><label class="f">Capability (1–5)</label><input data-k="rating" type="number" min="1" max="5" step="1" value="'+e.rating+'"></div>'+
+        '<div><label class="f">Wage ($/hr)</label><input data-k="wage" type="number" min="0" step="0.25" value="'+e.wage+'"></div>'+
+        '<div><label class="f">Min hours</label><input data-k="minH" type="number" min="0" step="1" value="'+e.minH+'"></div>'+
+        '<div><label class="f">Max hours</label><input data-k="maxH" type="number" min="0" step="1" value="'+e.maxH+'"></div>'+
+        '<div><label class="f">Note</label><input data-k="note" value="'+esc(e.note||'')+'" placeholder="school nights, etc."></div>'+
+      '</div>';
+    const av=el('div',{class:'avail'});
+    e.avail.forEach((a,i)=>{
+      const iso=addDays(S.settings.weekStart,i);
+      const dv=el('div',{class:'day'+(a.off?' off':'')});
+      dv.innerHTML='<b>'+DAY_ABBR[dowOf(iso)]+' '+shortDate(iso)+'</b>';
+      const f=el('input',{type:'time'}); f.value=a.from;
+      const t=el('input',{type:'time'}); t.value=a.to==='24:00'?'23:59':a.to;
+      f.oninput=()=>{a.from=f.value;save();}; t.oninput=()=>{a.to=t.value==='23:59'?'24:00':t.value;save();};
+      dv.appendChild(f); dv.appendChild(t);
+      const or=el('div',{class:'offrow'});
+      const cb=el('input',{type:'checkbox'}); cb.checked=a.off;
+      cb.onchange=()=>{ a.off=cb.checked; dv.classList.toggle('off',a.off); save(); };
+      or.appendChild(cb); or.appendChild(el('span',null,'Requested off'));
+      dv.appendChild(or); av.appendChild(dv);
+    });
+    card.appendChild(av);
+    const foot=el('div',{class:'row spread'});
+    foot.style.marginTop='10px';
+    foot.innerHTML='<span class="chip">'+POS_LABEL[e.pos]+(e.pos2?' / '+POS_LABEL[e.pos2]:'')+' · rating '+e.rating+' · counts '+PROD[clamp(+e.rating||3,1,5)].toFixed(2)+' crew</span>';
+    const del=el('button',{class:'btn sm danger'},'Remove');
+    del.onclick=()=>{
+      S.employees=S.employees.filter(x=>x.id!==e.id);
+      S.conflicts=S.conflicts.filter(c=>c.a!==e.id&&c.b!==e.id);
+      save(); renderTeam(); renderConflicts();
+    };
+    foot.appendChild(del); card.appendChild(foot);
+    card.querySelectorAll('[data-k]').forEach(inp=>{
+      inp.oninput=()=>{
+        const k=inp.dataset.k;
+        e[k] = (inp.type==='number') ? (+inp.value||0) : inp.value;
+        save(); if(k==='name') renderConflicts();
+      };
+    });
+    wrap.appendChild(card);
+  });
+}
+
+/* ---------- forecast tab ---------- */
+function renderForecast(){
+  const t=$('fcTable'); const st=S.settings;
+  let minH=24, maxH=0;
+  for(let d=0;d<7;d++){ const hs=openHours(d); if(hs.length){ minH=Math.min(minH,hs[0]); maxH=Math.max(maxH,hs[hs.length-1]); } }
+  if(maxH<minH){ t.innerHTML=''; return; }
+  let head='<tr><th>Day</th>';
+  for(let h=minH;h<=maxH;h++) head+='<th class="num">'+fmt12((h%24)*60)+'</th>';
+  head+='<th class="num">Day total</th><th class="num">Crew hrs</th></tr>';
+  let body='';
+  for(let d=0;d<7;d++){
+    const iso=addDays(st.weekStart,d);
+    const hs=openHours(d);
+    body+='<tr><td><b>'+DAY_ABBR[dowOf(iso)]+'</b> '+shortDate(iso)+'</td>';
+    let tot=0, crew=0;
+    for(let h=minH;h<=maxH;h++){
+      if(hs.includes(h)){
+        const v=hourlySales(d,h); tot+=v;
+        crew += Math.max(st.minCrew, v/Math.max(1,st.splh));
+        body+='<td class="num"><input data-d="'+d+'" data-h="'+h+'" type="number" step="25" value="'+v+'" style="width:78px;padding:3px 5px"></td>';
+      } else {
+        body+='<td class="num" style="background:#f0f1f3;color:#aab">—</td>';
+      }
+    }
+    body+='<td class="num"><b>'+money0(tot)+'</b></td><td class="num">'+crew.toFixed(1)+'</td></tr>';
+  }
+  t.innerHTML='<thead>'+head+'</thead><tbody>'+body+'</tbody>';
+  t.querySelectorAll('input[data-d]').forEach(inp=>{
+    inp.oninput=()=>{
+      const d=+inp.dataset.d, h=+inp.dataset.h;
+      S.settings.days[d].hourly[h]=+inp.value||0;
+      S.settings.days[d].sales = daySalesActual(d);
+      save(); renderHours();
+    };
+  });
+  renderCurve();
+}
+function renderCurve(){
+  const t=$('curveTable');
+  let head='<tr><th>Hour</th>', body='<tr><td><b>Weight</b></td>';
+  for(let h=5;h<24;h++){
+    head+='<th class="num">'+fmt12(h*60)+'</th>';
+    body+='<td class="num"><input data-c="'+h+'" type="number" step="0.05" min="0" value="'+S.settings.curve[h]+'" style="width:64px;padding:3px 5px"></td>';
+  }
+  t.innerHTML='<thead>'+head+'</thead><tbody>'+body+'</tr></tbody>';
+  t.querySelectorAll('input[data-c]').forEach(inp=>{
+    inp.oninput=()=>{ S.settings.curve[+inp.dataset.c]=+inp.value||0; save(); };
+  });
+}
+
+/* ---------- Expressway printout ---------- */
+function renderPrintout(){
+  const r=S.result, st=S.settings, out=$('printout');
+  if(!r){ out.innerHTML='<div class="xw-note">Press <b>Generate schedule</b> to build the week.</div>'; return; }
+  const group = $('opt_showpos').checked;
+  const dayIso = i=>addDays(st.weekStart,i);
+
+  // shift lookup: empId -> day -> record
+  const byEmp={};
+  r.assigns.forEach(a=>{ (byEmp[a.empId]=byEmp[a.empId]||{})[a.d]=a; });
+
+  const order = r.emps.slice().sort((x,y)=>{
+    const px=POSITIONS.findIndex(p=>p.k===x.pos), py=POSITIONS.findIndex(p=>p.k===y.pos);
+    if(group && px!==py) return px-py;
+    return x.name.localeCompare(y.name);
+  });
+
+  let head='<tr><th style="text-align:left">EMPLOYEE</th><th>POS</th>';
+  for(let d=0;d<7;d++){
+    const iso=dayIso(d);
+    head+='<th>'+DAY_ABBR[dowOf(iso)]+'<br>'+shortDate(iso)+'</th>';
+  }
+  head+='<th>HRS</th><th>RATE</th><th>LABOR $</th></tr>';
+
+  let body='', lastPos=null;
+  const dayTot=[0,0,0,0,0,0,0], dayCost=[0,0,0,0,0,0,0];
+  let grandH=0, grandC=0, grpH=0, grpC=0;
+
+  function subtotal(pos){
+    if(lastPos===null) return '';
+    const row='<tr class="sub"><td class="nm" colspan="9">'+POS_LABEL[lastPos].toUpperCase()+' SUBTOTAL</td>'+
+      '<td class="tot">'+hrs(grpH)+'</td><td></td><td class="tot">'+money(grpC)+'</td></tr>';
+    grpH=0; grpC=0; return row;
+  }
+
+  order.forEach(e=>{
+    if(group && e.pos!==lastPos){
+      body += subtotal(e.pos);
+      body += '<tr class="grp"><td colspan="12">'+POS_LABEL[e.pos].toUpperCase()+'S</td></tr>';
+      lastPos=e.pos;
+    }
+    let h=0, c=0, cells='';
+    for(let d=0; d<7; d++){
+      const a=(byEmp[e.id]||{})[d];
+      if(a){
+        h+=a.paid; c+=a.cost; dayTot[d]+=a.paid; dayCost[d]+=a.cost;
+        const tag = a.pos!==e.pos ? '<br>('+POSITIONS.find(p=>p.k===a.pos).short+')' : '';
+        cells+='<td class="sh">'+fmtShift(a.start,a.end)+tag+'</td>';
+      } else {
+        const av=e.avail[d];
+        cells+='<td class="sh" style="color:#888">'+(av.off?'RQ OFF':'OFF')+'</td>';
+      }
+    }
+    grandH+=h; grandC+=c; grpH+=h; grpC+=c;
+    body+='<tr><td class="nm">'+esc(e.name)+'</td><td class="sh">'+POSITIONS.find(p=>p.k===e.pos).short+
+      (e.pos2?'/'+POSITIONS.find(p=>p.k===e.pos2).short:'')+'</td>'+cells+
+      '<td class="tot">'+hrs(h)+'</td><td class="tot">'+money(e.wage)+'</td><td class="tot">'+money(c)+'</td></tr>';
+  });
+  if(group) body += subtotal(null);
+
+  let totRow='<tr class="tot"><td class="nm" colspan="2">DAILY HOURS</td>';
+  for(let d=0;d<7;d++) totRow+='<td class="sh">'+hrs(dayTot[d])+'</td>';
+  totRow+='<td class="tot">'+hrs(grandH)+'</td><td></td><td class="tot">'+money(grandC)+'</td></tr>';
+  let salesRow='<tr class="tot"><td class="nm" colspan="2">PROJ SALES</td>';
+  for(let d=0;d<7;d++) salesRow+='<td class="sh">'+money0(daySalesActual(d))+'</td>';
+  salesRow+='<td class="tot">'+money0(r.weekSales)+'</td><td></td><td></td></tr>';
+  let pctRow='<tr class="tot"><td class="nm" colspan="2">LABOR %</td>';
+  for(let d=0;d<7;d++){
+    const s=daySalesActual(d);
+    pctRow+='<td class="sh">'+(s>0?(dayCost[d]/s*100).toFixed(1)+'%':'—')+'</td>';
+  }
+  const wkPct = r.weekSales>0 ? grandC/r.weekSales*100 : 0;
+  pctRow+='<td class="tot">'+wkPct.toFixed(1)+'%</td><td></td><td></td></tr>';
+
+  const endIso = addDays(st.weekStart,6);
+  const notes = [];
+  if(st.enforceBudget) notes.push('Schedule held to '+st.laborPct+'% labor budget.');
+  notes.push('Built at '+st.splh+' SPLH, minimum crew '+st.minCrew+', '+st.cookShare+'% back-of-house split.');
+  if(st.breakMin>0) notes.push('Shifts over '+st.breakAfter+' hrs show clock time; '+st.breakMin+' min unpaid break deducted from paid hours.');
+
+  out.innerHTML =
+    '<div class="xw-head">'+
+      '<div><div class="xw-title">WEEKLY CREW SCHEDULE</div>'+
+        '<div>STORE #'+esc(st.storeNum||'____')+'&nbsp;&nbsp;'+esc(st.storeName||'')+'</div></div>'+
+      '<div style="text-align:right">'+
+        '<div>WEEK OF '+longDate(st.weekStart)+' - '+longDate(endIso)+'</div>'+
+        '<div>PREPARED BY: '+esc(st.preparedBy||'________')+'</div>'+
+        '<div>PRINTED: '+longDate(new Date().toISOString().slice(0,10))+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<table><thead>'+head+'</thead><tbody>'+body+totRow+salesRow+pctRow+'</tbody></table>'+
+    '<div class="xw-foot">'+
+      '<div>TOTAL SCHEDULED HOURS: <span>'+hrs(grandH)+'</span></div>'+
+      '<div>TOTAL LABOR COST: <span>'+money(grandC)+'</span></div>'+
+      '<div>PROJECTED SALES: <span>'+money0(r.weekSales)+'</span></div>'+
+      '<div>LABOR BUDGET ('+st.laborPct+'%): <span>'+money(r.budget)+'</span></div>'+
+      '<div>PROJECTED LABOR %: <span>'+wkPct.toFixed(2)+'%</span></div>'+
+      '<div>VARIANCE TO BUDGET: <span>'+(grandC<=r.budget?'-':'+')+money(Math.abs(r.budget-grandC))+'</span></div>'+
+      '<div>SALES PER LABOR HOUR: <span>'+(grandH>0?money(r.weekSales/grandH):'—')+'</span></div>'+
+      '<div>CREW SCHEDULED: <span>'+Object.keys(byEmp).length+' of '+r.emps.length+'</span></div>'+
+    '</div>'+
+    '<div class="xw-note">'+esc(notes.join('\n'))+'</div>';
+
+  renderKpis(grandH, grandC, wkPct);
+}
+
+function renderKpis(h,c,pct){
+  const r=S.result, st=S.settings, k=$('kpis');
+  const over = c - r.budget;
+  const cls = pct <= st.laborPct ? 'good' : (pct <= st.laborPct+2 ? 'warn' : 'bad');
+  const short = countShortSlots();
+  k.innerHTML =
+    '<div class="kpi"><b>Scheduled hours</b><span>'+hrs(h)+'</span></div>'+
+    '<div class="kpi '+cls+'"><b>Projected labor %</b><span>'+pct.toFixed(2)+'%</span></div>'+
+    '<div class="kpi '+(over<=0?'good':'bad')+'"><b>Vs. budget</b><span>'+(over<=0?'-':'+')+money(Math.abs(over))+'</span></div>'+
+    '<div class="kpi '+(short===0?'good':(short<8?'warn':'bad'))+'"><b>Understaffed half-hours</b><span>'+short+'</span></div>';
+}
+function countShortSlots(){
+  const r=S.result; if(!r) return 0; let n=0;
+  for(let d=0;d<7;d++) for(let i=0;i<r.demand[d].slots;i++){
+    let need=0, have=0;
+    POSITIONS.forEach(p=>{ need+=r.demand[d].need[i][p.k]; have+=r.covered[d][p.k][i]; });
+    if(have < need-0.35) n++;
+  }
+  return n;
+}
+
+/* ---------- diagnostics ---------- */
+function renderReport(){
+  const r=S.result;
+  if(!r){ $('issues').innerHTML='<p class="hint">Nothing generated yet.</p>'; $('coverage').innerHTML=''; $('empReport').innerHTML=''; $('dayReport').innerHTML=''; return; }
+  const st=S.settings, msgs=[];
+
+  // manager coverage holes
+  for(let d=0;d<7;d++){
+    let holes=0;
+    for(let i=0;i<r.demand[d].slots;i++) if(r.heads[d][i] < 1) holes++;
+    if(holes>0) msgs.push({c:'bad', t:DAY_FULL[dowOf(addDays(st.weekStart,d))]+': '+holes+' half-hour(s) with no manager on the clock.'});
+  }
+  // conflicts violated
+  const cmap=conflictMap();
+  for(let d=0;d<7;d++){
+    const list=r.assigns.filter(a=>a.d===d);
+    for(let i=0;i<list.length;i++) for(let j=i+1;j<list.length;j++){
+      const k=(cmap[list[i].empId]||{})[list[j].empId];
+      if(!k) continue;
+      if(list[i].start < list[j].end && list[j].start < list[i].end){
+        const na=r.emps.find(e=>e.id===list[i].empId).name, nb=r.emps.find(e=>e.id===list[j].empId).name;
+        msgs.push({c:k==='hard'?'bad':'warn', t:DAY_ABBR[dowOf(addDays(st.weekStart,d))]+': '+na+' overlaps '+nb+' ('+(k==='hard'?'NEVER pair — could not avoid':'avoid pair')+').'});
+      }
+    }
+  }
+  // hours vs min/max, overtime
+  r.emps.forEach(e=>{
+    const s=r.stat[e.id];
+    if(s.paid > st.otAfter+0.01) msgs.push({c:'warn', t:e.name+' is scheduled '+hrs(s.paid)+' hrs — '+hrs(s.paid-st.otAfter)+' hrs of overtime.'});
+    if(st.honorMinHours && s.paid < (+e.minH||0)-0.5) msgs.push({c:'warn', t:e.name+' is '+hrs((+e.minH||0)-s.paid)+' hrs under their '+e.minH+'-hour minimum (availability or demand ran out).'});
+    if(s.paid===0) msgs.push({c:'warn', t:e.name+' is not scheduled at all this week.'});
+  });
+  const shortN = countShortSlots();
+  if(shortN>0){
+    msgs.push({c:'warn', t:shortN+' half-hour block(s) are staffed below projected demand — see coverage grid.'});
+    // being short on people and being short on money are different problems
+    let demandHrs=0;
+    for(let d=0;d<7;d++) for(let i=0;i<r.demand[d].slots;i++) demandHrs += r.demand[d].need[i].total/2;
+    const sched = r.assigns.reduce((a,x)=>a+x.paid,0);
+    const gap = demandHrs - sched;
+    if(gap > 1){
+      if(r.spend < r.budget*0.97){
+        msgs.push({c:'bad', t:'Capacity-limited, not budget-limited: the forecast asks for '+hrs(demandHrs)+
+          ' crew hours and the roster could only supply '+hrs(sched)+'. You have '+money(r.budget-r.spend)+
+          ' of budget left but nobody available to spend it on — open up availability, raise someone\'s max hours, or add crew.'});
+      } else {
+        msgs.push({c:'warn', t:'Budget-limited: covering the forecast needs about '+hrs(gap)+
+          ' more crew hours, which would push you past the '+st.laborPct+'% labor budget. Raise the budget or the SPLH target.'});
+      }
+    }
+  }
+  if(r.spend > r.budget){
+    msgs.push({c:'bad', t:'Schedule is '+money(r.spend-r.budget)+' over the labor budget.'});
+    if(st.enforceBudget){
+      const why = [];
+      if(shortN>0) why.push('trimming stops at the point where it would cut into hours the forecast still needs');
+      if(st.honorMinHours && r.emps.some(e=>(+e.minH||0)>0)) why.push('guaranteed minimum hours are honored ahead of the budget');
+      if(why.length) msgs.push({c:'warn', t:'Budget hold could not close the gap: '+why.join('; ')+
+        '. Raise the SPLH target to demand less crew, cut minimum-hour guarantees, or accept the higher labor %.'});
+    }
+  }
+  else msgs.push({c:'good', t:'Labor cost is '+money(r.budget-r.spend)+' under budget.'});
+  if(!msgs.some(m=>m.c==='bad')) msgs.unshift({c:'good', t:'No hard rule violations.'});
+
+  $('issues').innerHTML='<ul class="msgs">'+msgs.map(m=>'<li class="'+m.c+'">'+esc(m.t)+'</li>').join('')+'</ul>';
+
+  // coverage heat grid
+  let minH=24,maxH=0;
+  for(let d=0;d<7;d++){ const hsl=openHours(d); if(hsl.length){minH=Math.min(minH,hsl[0]);maxH=Math.max(maxH,hsl[hsl.length-1]);} }
+  let ch='<table><thead><tr><th>Day</th>';
+  for(let h=minH;h<=maxH;h++) ch+='<th class="heat">'+fmt12((h%24)*60)+'</th>';
+  ch+='</tr></thead><tbody>';
+  for(let d=0;d<7;d++){
+    ch+='<tr><td><b>'+DAY_ABBR[dowOf(addDays(st.weekStart,d))]+'</b></td>';
+    const meta=dayMeta(d);
+    for(let h=minH;h<=maxH;h++){
+      const i=Math.round((h*60-meta.open)/SLOT);
+      if(i<0||i>=r.demand[d].slots){ ch+='<td class="heat" style="background:#f0f1f3">—</td>'; continue; }
+      let need=0,have=0;
+      POSITIONS.forEach(p=>{ need+=r.demand[d].need[i][p.k]; have+=r.covered[d][p.k][i]; });
+      const diff=have-need;
+      let bg='#e3f5e6';
+      if(diff<-0.8) bg='#f7d2cf'; else if(diff<-0.3) bg='#fbeacd'; else if(diff>1.2) bg='#d9e6fb';
+      ch+='<td class="heat" style="background:'+bg+'" title="need '+need.toFixed(1)+' / have '+have.toFixed(1)+'">'+have.toFixed(1)+'<br><span style="color:#777">'+need.toFixed(1)+'</span></td>';
+    }
+    ch+='</tr>';
+  }
+  $('coverage').innerHTML=ch+'</tbody></table>';
+
+  // per-person
+  let er='<table><thead><tr><th>Name</th><th>Position</th><th class="num">Rating</th><th class="num">Days</th>'+
+    '<th class="num">Paid hrs</th><th class="num">Min</th><th class="num">Max</th><th class="num">Rate</th><th class="num">Cost</th></tr></thead><tbody>';
+  r.emps.slice().sort((a,b)=>r.stat[b.id].paid-r.stat[a.id].paid).forEach(e=>{
+    const s=r.stat[e.id];
+    const flag = s.paid>st.otAfter ? ' style="background:#fdeeec"' : (s.paid<(+e.minH||0)-0.5?' style="background:#fdf6e6"':'');
+    er+='<tr'+flag+'><td>'+esc(e.name)+'</td><td>'+POS_LABEL[e.pos]+(e.pos2?' / '+POS_LABEL[e.pos2]:'')+'</td>'+
+      '<td class="num">'+e.rating+'</td><td class="num">'+s.days.size+'</td><td class="num"><b>'+hrs(s.paid)+'</b></td>'+
+      '<td class="num">'+e.minH+'</td><td class="num">'+e.maxH+'</td><td class="num">'+money(e.wage)+'</td><td class="num">'+money(s.cost)+'</td></tr>';
+  });
+  $('empReport').innerHTML=er+'</tbody></table>';
+
+  // per-day
+  let dr='<table><thead><tr><th>Day</th><th class="num">Proj sales</th><th class="num">Budget $</th>'+
+    '<th class="num">Sched hrs</th><th class="num">Labor $</th><th class="num">Labor %</th><th class="num">SPLH</th><th class="num">Shifts</th></tr></thead><tbody>';
+  for(let d=0;d<7;d++){
+    const list=r.assigns.filter(a=>a.d===d);
+    const h=list.reduce((a,x)=>a+x.paid,0), c=list.reduce((a,x)=>a+x.cost,0);
+    const s=daySalesActual(d), bud=s*st.laborPct/100, pct=s>0?c/s*100:0;
+    const cls = pct<=st.laborPct?'style="color:#1a7f3c"':'style="color:#b3261e"';
+    dr+='<tr><td><b>'+DAY_ABBR[dowOf(addDays(st.weekStart,d))]+'</b> '+shortDate(addDays(st.weekStart,d))+'</td>'+
+      '<td class="num">'+money0(s)+'</td><td class="num">'+money0(bud)+'</td><td class="num">'+hrs(h)+'</td>'+
+      '<td class="num">'+money(c)+'</td><td class="num" '+cls+'>'+pct.toFixed(1)+'%</td>'+
+      '<td class="num">'+(h>0?money(s/h):'—')+'</td><td class="num">'+list.length+'</td></tr>';
+  }
+  $('dayReport').innerHTML=dr+'</tbody></table>';
+}
+
+/* ------------------------------ exports ------------------------------- */
+function scheduleRows(){
+  const r=S.result, st=S.settings; if(!r) return [];
+  const byEmp={}; r.assigns.forEach(a=>{ (byEmp[a.empId]=byEmp[a.empId]||{})[a.d]=a; });
+  const head=['EMPLOYEE','POS'];
+  for(let d=0;d<7;d++) head.push(DAY_ABBR[dowOf(addDays(st.weekStart,d))]+' '+shortDate(addDays(st.weekStart,d)));
+  head.push('HRS','RATE','LABOR $');
+  const rows=[head];
+  r.emps.slice().sort((x,y)=>{
+    const px=POSITIONS.findIndex(p=>p.k===x.pos), py=POSITIONS.findIndex(p=>p.k===y.pos);
+    return px!==py?px-py:x.name.localeCompare(y.name);
+  }).forEach(e=>{
+    const row=[e.name, POSITIONS.find(p=>p.k===e.pos).short];
+    let h=0,c=0;
+    for(let d=0;d<7;d++){
+      const a=(byEmp[e.id]||{})[d];
+      if(a){ h+=a.paid; c+=a.cost; row.push(fmtShift(a.start,a.end)); }
+      else row.push(e.avail[d].off?'RQ OFF':'OFF');
+    }
+    row.push(hrs(h), e.wage.toFixed(2), c.toFixed(2));
+    rows.push(row);
+  });
+  return rows;
+}
+function download(name, text, type){
+  const b=new Blob([text],{type:type||'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b); a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+/* ------------------------------- wiring ------------------------------- */
+document.querySelectorAll('nav.tabs button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('section.tab').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); $('tab-'+b.dataset.tab).classList.add('on');
+    if(b.dataset.tab==='forecast') renderForecast();
+    if(b.dataset.tab==='team') renderTeam();
+    if(b.dataset.tab==='report') renderReport();
+  };
+});
+function runGenerate(){
+  const r=generate(); if(!r) return;
+  renderPrintout(); renderReport();
+  document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('section.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelector('nav.tabs button[data-tab="schedule"]').classList.add('on');
+  $('tab-schedule').classList.add('on');
+}
+$('btnGen').onclick = runGenerate;
+$('btnGen2').onclick = runGenerate;
+$('btnPrint').onclick = ()=>window.print();
+$('opt_showpos').onchange = renderPrintout;
+$('btnCsv').onclick = ()=>{
+  const rows=scheduleRows(); if(!rows.length) return alert('Generate a schedule first.');
+  const csv=rows.map(r=>r.map(c=>/[",\n]/.test(c)?'"'+String(c).replace(/"/g,'""')+'"':c).join(',')).join('\n');
+  download('schedule-'+S.settings.weekStart+'.csv', csv, 'text/csv');
+};
+$('btnTsv').onclick = async ()=>{
+  const rows=scheduleRows(); if(!rows.length) return alert('Generate a schedule first.');
+  const tsv=rows.map(r=>r.join('\t')).join('\n');
+  try{ await navigator.clipboard.writeText(tsv); $('btnTsv').textContent='Copied!';
+       setTimeout(()=>$('btnTsv').textContent='Copy for spreadsheet',1500); }
+  catch(e){ const box=$('ioBox'); box.style.display='block'; box.value=tsv; box.select(); }
+};
+$('btnAddEmp').onclick = ()=>{ S.employees.push(newEmp()); save(); renderTeam(); renderConflicts(); };
+$('btnClearEmp').onclick = ()=>{
+  if(!confirm('Remove every crew member and pair rule?')) return;
+  S.employees=[]; S.conflicts=[]; save(); renderTeam(); renderConflicts();
+};
+$('btnSample').onclick = ()=>{
+  if(S.employees.length && !confirm('Replace the current crew with the sample crew?')) return;
+  sampleCrew(); rebuildAll(); save(); renderTeam(); renderConflicts(); renderForecast(); renderHours();
+  alert('Sample crew loaded — 20 people, 3 pair rules. Hit Generate schedule.');
+};
+$('c_add').onclick = ()=>{
+  const a=$('c_a').value, b=$('c_b').value;
+  if(!a||!b||a===b) return alert('Pick two different people.');
+  if(S.conflicts.some(c=>(c.a===a&&c.b===b)||(c.a===b&&c.b===a))) return alert('That pair already has a rule.');
+  S.conflicts.push({id:uid(), a, b, kind:$('c_kind').value}); save(); renderConflicts();
+};
+$('btnRebuild').onclick = ()=>{ rebuildAll(); save(); renderForecast(); renderHours(); };
+$('btnExport').onclick = ()=>{
+  download('scheduler-setup-'+S.settings.weekStart+'.json',
+    JSON.stringify({settings:S.settings, employees:S.employees, conflicts:S.conflicts}, null, 2), 'application/json');
+};
+$('btnImport').onclick = ()=>{
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
+  inp.onchange=()=>{
+    const f=inp.files[0]; if(!f) return;
+    const rd=new FileReader();
+    rd.onload=()=>{
+      try{
+        const o=JSON.parse(rd.result); const base=newState();
+        S={settings:Object.assign(base.settings,o.settings||{}), employees:o.employees||[], conflicts:o.conflicts||[], result:null};
+        save(); bindSetup(); renderTeam(); renderForecast(); renderPrintout(); renderReport();
+        alert('Loaded.');
+      }catch(e){ alert('That file did not parse: '+e.message); }
+    };
+    rd.readAsText(f);
+  };
+  inp.click();
+};
+
+/* ------------------------------- boot --------------------------------- */
+(function init(){
+  const empty = [0,1,2,3,4,5,6].every(d=>Object.keys(S.settings.days[d].hourly||{}).length===0);
+  if(empty) rebuildAll();
+  bindSetup(); renderTeam(); renderForecast();
+  if(!S.employees.length){ /* leave empty; user can load sample */ }
+})();
+</script>
+</body>
+</html>
