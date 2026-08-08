@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Drive-In Auto Scheduler — Expressway Format</title>
+<title>Drive-In Auto Scheduler</title>
 <style>
 :root{
   /* Warm paper neutrals — this is a tool that ends up printed and taped to a
@@ -22,8 +22,7 @@ h1,h2,h3{margin:0 0 .4em;line-height:1.2}
 h1{font-size:19px;letter-spacing:.01em}
 h2{font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 h3{font-size:14px}
-a{color:var(--accent)}
-.wrap{max-width:1400px;margin:0 auto;padding:16px}
+.wrap{max-width:1440px;margin:0 auto;padding:16px}
 header.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
   background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
 header.top .sub{color:var(--muted);font-size:12.5px}
@@ -35,20 +34,22 @@ section.tab{display:none}
 section.tab.on{display:block}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
 .grid{display:grid;gap:12px}
-.g2{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
-.g3{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
-.g4{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 label.f{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
 input,select,textarea{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);width:100%}
 input[type=checkbox]{width:auto}
-input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input:disabled{background:#f0eeea;color:var(--muted)}
 .hint{color:var(--muted);font-size:12px;margin:.35em 0 0}
 button.btn{font:inherit;font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid var(--line);
   background:var(--panel);color:var(--ink);cursor:pointer}
 button.btn:hover{background:var(--chip)}
 button.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-button.btn.danger{color:var(--bad);border-color:#e7c3c0}
+button.btn.danger{color:var(--bad);border-color:#e0c4bd}
 button.btn.sm{padding:4px 9px;font-size:12.5px}
+button.btn:disabled{opacity:.45;cursor:not-allowed}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .spread{justify-content:space-between}
 table{border-collapse:collapse;width:100%}
@@ -57,15 +58,20 @@ th{background:var(--chip);font-size:11.5px;text-transform:uppercase;letter-spaci
 td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono)}
 th.num{font-family:var(--sans)}
 .scroll{overflow-x:auto}
-.emp{border:1px solid var(--line);border-radius:9px;padding:12px;margin-bottom:10px;background:#fcfcfd}
-.emp .hdr{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
-.avail{display:grid;grid-template-columns:repeat(7,minmax(110px,1fr));gap:6px;margin-top:10px}
+.emp{border:1px solid var(--line);border-radius:9px;padding:12px;margin-bottom:10px;background:#fcfcfa}
+.avail{display:grid;grid-template-columns:repeat(7,minmax(112px,1fr));gap:6px;margin-top:10px}
 .avail .day{border:1px solid var(--line);border-radius:7px;padding:6px;background:#fff}
 .avail .day.off{background:#f6e7e3;border-color:#e0c4bd}
 .avail .day b{display:block;font-size:11px;letter-spacing:.06em;color:var(--muted)}
 .avail .day input[type=time]{padding:3px 4px;font-size:12px}
 .avail .day .offrow{display:flex;gap:4px;align-items:center;font-size:11.5px;color:var(--muted);margin-top:4px}
 .chip{display:inline-block;background:var(--chip);border-radius:20px;padding:2px 9px;font-size:12px;color:var(--muted);letter-spacing:.02em}
+.chip.pair{background:#fff;border:1px solid var(--line);margin:2px 4px 2px 0}
+.chip.pair b{font-weight:700}
+.chip.k-prefer{border-color:#b6d3b4;background:#eaf3e8}
+.chip.k-slow{border-color:#e2cfa4;background:#f8f1de}
+.chip.k-avoid{border-color:#e6c9a8;background:#faeedd}
+.chip.k-never{border-color:#e0b7b1;background:#f8e6e2}
 .kpi{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--muted);border-radius:9px;padding:10px 12px}
 .kpi b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
 .kpi span{font-size:22px;font-variant-numeric:tabular-nums;font-family:var(--mono);font-weight:700;letter-spacing:-.01em}
@@ -74,6 +80,44 @@ th.num{font-family:var(--sans)}
 ul.msgs{margin:0;padding-left:18px} ul.msgs li{margin:.25em 0}
 li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
 .heat{font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:11px;text-align:center;padding:2px 4px}
+
+/* option cards */
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:10px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--panel);cursor:pointer;text-align:left;font:inherit;color:inherit}
+.opt:hover{border-color:var(--accent)}
+.opt.on{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent);background:#fff}
+.opt .rank{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  background:var(--chip);color:var(--muted);border-radius:4px;padding:2px 7px;margin-bottom:6px}
+.opt.on .rank{background:var(--accent);color:#fff}
+.opt h3{margin:0 0 3px}
+.opt .blurb{font-size:12px;color:var(--muted);min-height:32px}
+.opt dl{display:grid;grid-template-columns:1fr auto;gap:2px 10px;margin:8px 0 0;font-size:12px}
+.opt dt{color:var(--muted)} .opt dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+
+/* live modify */
+.sug{border:1px solid var(--line);border-left:4px solid var(--muted);border-radius:8px;padding:10px 12px;margin-bottom:8px;background:#fff}
+.sug.t1{border-left-color:var(--good)} .sug.t2{border-left-color:var(--accent)}
+.sug.t3{border-left-color:var(--warn)} .sug.t4{border-left-color:var(--muted)}
+.sug.blocked{border-left-color:var(--bad);background:#fbf4f3}
+.sug .t{font-weight:700}
+.sug .why{font-size:12.5px;color:var(--muted);margin-top:3px}
+.sug .warn{font-size:12.5px;color:var(--warn);margin-top:3px}
+.sug .no{font-size:12.5px;color:var(--bad);margin-top:3px}
+.tierlabel{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.amd{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:6px;background:#fff;font-size:13px}
+.locked{opacity:.55}
+
+/* toast + modal, so no button depends on a browser dialog that may be blocked */
+#toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:60}
+.toast{background:var(--ink);color:#fff;padding:10px 14px;border-radius:8px;font-size:13px;max-width:380px;
+  box-shadow:0 4px 18px rgba(28,26,23,.28)}
+.toast.good{background:#2f5e2c} .toast.bad{background:#8d2a24} .toast.warn{background:#7d550d}
+#modalBack{position:fixed;inset:0;background:rgba(28,26,23,.45);display:none;align-items:center;justify-content:center;z-index:70;padding:16px}
+#modalBack.on{display:flex}
+#modal{background:var(--panel);border-radius:12px;padding:18px;max-width:720px;width:100%;max-height:86vh;overflow:auto;
+  box-shadow:0 10px 40px rgba(28,26,23,.35)}
+#modal h3{font-size:16px}
+#modal textarea{font-family:var(--mono);font-size:12px;height:220px;white-space:pre;overflow:auto}
 
 /* ------- Expressway-format printout ------- */
 #printout{background:#fff;color:#000;border:1px solid #b9b3a8;box-shadow:0 2px 14px rgba(28,26,23,.13);padding:18px;font-family:"Courier New",Courier,ui-monospace,monospace;font-size:12px}
@@ -85,6 +129,9 @@ li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
 #printout td.nm{text-align:left;font-weight:700}
 #printout td.sh{text-align:center}
 #printout td.tot{text-align:right;font-weight:700}
+#printout td.today{background:#fff6cc}
+#printout td.past{color:#777}
+#printout s{color:#777}
 #printout tr.grp td{background:#d9d9d9;font-weight:700;letter-spacing:.1em}
 #printout tr.sub td{background:#f2f2f2;font-weight:700}
 #printout tr.tot td{background:#d9d9d9;font-weight:700}
@@ -98,10 +145,11 @@ li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
   .wrap{max-width:none;padding:0}
   section.tab{display:none !important}
   section.tab.on{display:block !important}
-  #printout{border:none;padding:0;font-size:10.5px}
+  #printout{border:none;padding:0;box-shadow:none;font-size:10.5px}
   #printout table{font-size:9.5px}
   @page{size:landscape;margin:10mm}
 }
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 </style>
 </head>
 <body>
@@ -110,13 +158,14 @@ li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
 <header class="top noprint">
   <div>
     <h1>Drive-In Auto Scheduler</h1>
-    <div class="sub">Builds a labor-balanced weekly crew schedule and prints it in Expressway weekly-schedule format.</div>
+    <div class="sub">Three ranked schedule options for next week, plus live suggestions as this week changes.</div>
   </div>
   <div class="row">
     <button class="btn" id="btnSample">Load sample crew</button>
-    <button class="btn" id="btnExport">Export JSON</button>
-    <button class="btn" id="btnImport">Import JSON</button>
-    <button class="btn primary" id="btnGen">Generate schedule</button>
+    <button class="btn" id="btnExport">Export</button>
+    <button class="btn" id="btnImport">Import</button>
+    <button class="btn danger" id="btnReset">Reset all</button>
+    <button class="btn primary" id="btnGen">Build 3 options</button>
   </div>
 </header>
 
@@ -124,7 +173,7 @@ li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
   <button data-tab="setup" class="on">1 · Store &amp; Budget</button>
   <button data-tab="team">2 · Crew</button>
   <button data-tab="forecast">3 · Sales Forecast</button>
-  <button data-tab="schedule">4 · Schedule (Expressway)</button>
+  <button data-tab="schedule">4 · Schedule</button>
   <button data-tab="report">5 · Diagnostics</button>
 </nav>
 
@@ -134,77 +183,94 @@ li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
     <h2>Store</h2>
     <div class="grid g4">
       <div><label class="f">Store #</label><input id="s_num" placeholder="4412"></div>
-      <div><label class="f">Store name / city</label><input id="s_name" placeholder="Sonic Drive-In — Main St"></div>
+      <div><label class="f">Store name / city</label><input id="s_name" placeholder="Main St"></div>
       <div><label class="f">Week starts</label><input type="date" id="s_start"></div>
-      <div><label class="f">Manager on duty</label><input id="s_mgr" placeholder="Prepared by"></div>
+      <div><label class="f">Prepared by</label><input id="s_mgr" placeholder="Manager name"></div>
     </div>
   </div>
 
   <div class="panel">
-    <h2>Labor budget &amp; productivity</h2>
+    <h2>Labor budget</h2>
     <div class="grid g4">
       <div>
-        <label class="f">Labor budget (% of sales)</label>
+        <label class="f">Budget is given as</label>
+        <select id="s_bmode">
+          <option value="dollars">Dollars per day</option>
+          <option value="pct">Percent of sales</option>
+        </select>
+        <p class="hint">Budget is enforced day by day, not averaged across the week.</p>
+      </div>
+      <div>
+        <label class="f">Labor % (used if percent mode)</label>
         <input type="number" id="s_pct" step="0.1" min="1" max="60">
-        <p class="hint">Target crew labor as a percent of projected sales.</p>
       </div>
       <div>
         <label class="f">Sales per labor hour (SPLH)</label>
         <input type="number" id="s_splh" step="1" min="10">
-        <p class="hint">Income per hour you expect one crew hour to support. Higher = leaner schedule.</p>
+        <p class="hint">Income per hour one crew hour should support. Higher = leaner.</p>
       </div>
       <div>
         <label class="f">Minimum crew on the clock</label>
         <input type="number" id="s_mincrew" step="1" min="1">
-        <p class="hint">Never staff below this, regardless of sales.</p>
       </div>
       <div>
-        <label class="f">Back-of-house share</label>
+        <label class="f">Back-of-house share (%)</label>
         <input type="number" id="s_cook" step="1" min="0" max="100">
-        <p class="hint">% of non-manager demand assigned to cooks; the rest goes to carhops.</p>
+        <p class="hint">Share of non-manager demand going to cooks.</p>
       </div>
-    </div>
-    <div class="grid g4" style="margin-top:12px">
-      <div><label class="f">Min shift (hrs)</label><input type="number" id="s_minsh" step="0.5" min="1"></div>
-      <div><label class="f">Max shift (hrs)</label><input type="number" id="s_maxsh" step="0.5" min="2"></div>
-      <div><label class="f">Max days / person</label><input type="number" id="s_maxdays" step="1" min="1" max="7"></div>
-      <div><label class="f">Overtime after (hrs)</label><input type="number" id="s_ot" step="1" min="20"></div>
-      <div><label class="f">Min rest between shifts (hrs)</label><input type="number" id="s_rest" step="1" min="0"></div>
-      <div><label class="f">Unpaid break (min) on shifts over</label><input type="number" id="s_brkmin" step="5" min="0"></div>
-      <div><label class="f">…this many hours</label><input type="number" id="s_brkafter" step="0.5" min="0"></div>
-      <div><label class="f">2nd manager when crew hits</label><input type="number" id="s_mgr2" step="1" min="2"></div>
-    </div>
-    <div class="row" style="margin-top:12px">
-      <label class="row" style="gap:6px"><input type="checkbox" id="s_enforce"> <span>Hold to labor budget (trim shifts that push over)</span></label>
-      <label class="row" style="gap:6px"><input type="checkbox" id="s_hard"> <span>Treat "never together" pairs as hard rules</span></label>
-      <label class="row" style="gap:6px"><input type="checkbox" id="s_minh"> <span>Honor each person's minimum hours</span></label>
+      <div>
+        <label class="f">2nd manager once crew hits</label>
+        <input type="number" id="s_mgr2" step="1" min="2">
+      </div>
     </div>
   </div>
 
   <div class="panel">
-    <h2>Store hours</h2>
+    <h2>Shift rules</h2>
+    <div class="grid g4">
+      <div><label class="f">Min shift (hrs)</label><input type="number" id="s_minsh" step="0.5" min="1"></div>
+      <div><label class="f">Max shift (hrs)</label><input type="number" id="s_maxsh" step="0.5" min="2"></div>
+      <div><label class="f">Max hours per day</label><input type="number" id="s_maxdaily" step="0.5" min="1"></div>
+      <div><label class="f">Max days per week</label><input type="number" id="s_maxdays" step="1" min="1" max="7"></div>
+      <div><label class="f">Max days in a row</label><input type="number" id="s_maxconsec" step="1" min="1" max="7"></div>
+      <div><label class="f">Min rest between shifts (hrs)</label><input type="number" id="s_rest" step="1" min="0"></div>
+      <div><label class="f">Overtime after (hrs)</label><input type="number" id="s_ot" step="1" min="20"></div>
+      <div><label class="f">Unpaid break (min)</label><input type="number" id="s_brkmin" step="5" min="0"></div>
+      <div><label class="f">…on shifts over (hrs)</label><input type="number" id="s_brkafter" step="0.5" min="0"></div>
+      <div><label class="f">Opener capability at least</label><input type="number" id="s_openmin" step="1" min="1" max="5"></div>
+      <div><label class="f">Closer capability at least</label><input type="number" id="s_closemin" step="1" min="1" max="5"></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label class="row" style="gap:6px"><input type="checkbox" id="s_noot"> <span>Never schedule overtime (hard cap)</span></label>
+      <label class="row" style="gap:6px"><input type="checkbox" id="s_enforce"> <span>Hold to the daily labor budget</span></label>
+      <label class="row" style="gap:6px"><input type="checkbox" id="s_hard"> <span>"Never together" pairs are hard rules</span></label>
+      <label class="row" style="gap:6px"><input type="checkbox" id="s_minh"> <span>Honor each person's minimum hours</span></label>
+      <label class="row" style="gap:6px"><input type="checkbox" id="s_stable"> <span>Prefer consistent start times per person</span></label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Minor / student rules</h2>
+    <p class="hint">Applied to anyone marked <b>Minor (student)</b> on the Crew tab.</p>
+    <div class="grid g4">
+      <div><label class="f">Max hours on a school night</label><input type="number" id="s_mnrdaily" step="0.5" min="1"></div>
+      <div><label class="f">Must be clocked out by</label><input type="time" id="s_mnrcurfew"></div>
+      <div><label class="f">Max days per week</label><input type="number" id="s_mnrdays" step="1" min="1" max="7"></div>
+      <div>
+        <label class="f">School nights</label>
+        <div class="row" id="schoolNights" style="gap:10px;padding-top:4px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Store hours, sales and daily budget</h2>
     <div class="scroll">
       <table id="hoursTable">
-        <thead><tr><th>Day</th><th>Date</th><th>Open</th><th>Close</th><th class="num">Projected sales ($)</th></tr></thead>
+        <thead><tr><th>Day</th><th>Date</th><th>Open</th><th>Close</th><th class="num">Projected sales ($)</th><th class="num">Labor budget ($)</th><th class="num">= % of sales</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
-    <p class="hint">Sales here drive the hour-by-hour demand curve on the Forecast tab.</p>
-  </div>
-
-  <div class="panel">
-    <h2>Who can't work together</h2>
-    <div class="row">
-      <select id="c_a" style="max-width:220px"></select>
-      <span>&amp;</span>
-      <select id="c_b" style="max-width:220px"></select>
-      <select id="c_kind" style="max-width:200px">
-        <option value="soft">Avoid overlapping</option>
-        <option value="hard">Never overlap</option>
-      </select>
-      <button class="btn sm" id="c_add">Add rule</button>
-    </div>
-    <div id="conflictList" style="margin-top:10px"></div>
   </div>
 </section>
 
@@ -215,11 +281,13 @@ li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
       <h2 style="margin:0">Crew</h2>
       <div class="row">
         <button class="btn sm" id="btnAddEmp">+ Add person</button>
-        <button class="btn sm" id="btnClearEmp">Clear all</button>
+        <button class="btn sm danger" id="btnClearEmp">Clear all</button>
       </div>
     </div>
-    <p class="hint">Capability rating drives both who gets scheduled first and how much coverage they count for:
-      1 = still training (counts 0.72 of a crew slot) … 5 = carries the shift (counts 1.28). Uncheck a day to log requested time off.</p>
+    <p class="hint">
+      <b>Target hours</b> is what the person actually wants in a normal week — the scheduler aims there, not at their maximum.
+      <b>Capability</b> drives how much coverage they provide: 1 counts as 0.72 of a crew slot, 3 as 1.00, 5 as 1.28.
+      Uncheck a day to log requested time off.</p>
   </div>
   <div id="empList"></div>
 </section>
@@ -229,17 +297,14 @@ li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
   <div class="panel">
     <div class="row spread">
       <h2 style="margin:0">Estimated income per hour</h2>
-      <div class="row">
-        <button class="btn sm" id="btnRebuild">Rebuild from daily totals</button>
-      </div>
+      <button class="btn sm" id="btnRebuild">Rebuild from daily totals</button>
     </div>
-    <p class="hint">Every cell is editable — type over any hour you know better (half-price drink rush, game night, etc.).
-      Required crew per hour is computed as sales ÷ SPLH, floored at your minimum crew.</p>
+    <p class="hint">Every cell is editable — type over any hour you know better. Required crew per hour is sales ÷ SPLH, floored at your minimum crew.</p>
     <div class="scroll" style="margin-top:10px"><table id="fcTable"></table></div>
   </div>
   <div class="panel">
     <h2>Demand curve shape</h2>
-    <p class="hint">Relative weight per hour used when rebuilding a day from its total. Sonic-ish default: lunch peak, 2–4pm drink rush, dinner.</p>
+    <p class="hint">Relative weight per hour used when rebuilding a day from its total.</p>
     <div class="scroll"><table id="curveTable"></table></div>
   </div>
 </section>
@@ -249,40 +314,84 @@ li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
   <div class="panel noprint">
     <div class="row spread">
       <div class="row">
-        <button class="btn primary" id="btnGen2">Generate schedule</button>
+        <button class="btn primary" id="btnGen2">Build 3 options</button>
         <button class="btn" id="btnPrint">Print / PDF</button>
         <button class="btn" id="btnCsv">Download CSV</button>
         <button class="btn" id="btnTsv">Copy for spreadsheet</button>
       </div>
-      <label class="row" style="gap:6px"><input type="checkbox" id="opt_showpos" checked> <span>Group by position</span></label>
+      <div class="row">
+        <label class="row" style="gap:6px"><input type="checkbox" id="opt_showpos" checked> <span>Group by position</span></label>
+        <button class="btn" id="btnModify">Modify schedule</button>
+      </div>
     </div>
   </div>
+
+  <div class="panel noprint" id="optPanel" style="display:none">
+    <h2>Recommended options</h2>
+    <p class="hint" id="optIntro"></p>
+    <div class="opts" id="opts"></div>
+  </div>
+
+  <!-- live modify -->
+  <div class="panel noprint" id="livePanel" style="display:none">
+    <div class="row spread">
+      <h2 style="margin:0">Modify schedule — live</h2>
+      <button class="btn sm" id="btnCloseLive">Close</button>
+    </div>
+    <p class="hint">The posted schedule is treated as set in stone. Everything below is a <b>suggestion</b> for the manager,
+      recorded as an amendment — days already past are locked, and a shift can't be moved on a person with less than
+      two days' notice.</p>
+    <div class="grid g4" style="margin-top:10px">
+      <div><label class="f">Today's date</label><input type="date" id="l_today"></div>
+      <div>
+        <label class="f">What came up</label>
+        <select id="l_kind">
+          <option value="callout">Someone can't work a shift</option>
+          <option value="sentHome">Send someone home early</option>
+          <option value="needCover">Need extra coverage</option>
+          <option value="cutLabor">Need to cut labor dollars</option>
+        </select>
+      </div>
+      <div><label class="f">Day</label><select id="l_day"></select></div>
+      <div id="l_empWrap"><label class="f">Person</label><select id="l_emp"></select></div>
+      <div id="l_timeWrap" style="display:none"><label class="f">From</label><input type="time" id="l_from"></div>
+      <div id="l_time2Wrap" style="display:none"><label class="f">Until</label><input type="time" id="l_to"></div>
+      <div id="l_amtWrap" style="display:none"><label class="f">Dollars to cut</label><input type="number" id="l_amt" step="10" min="0"></div>
+      <div style="align-self:end"><button class="btn primary" id="btnSuggest">Get suggestions</button></div>
+    </div>
+    <div id="sugList" style="margin-top:14px"></div>
+    <div id="amdList" style="margin-top:14px"></div>
+  </div>
+
   <div id="kpis" class="grid g4 noprint" style="margin-bottom:14px"></div>
-  <div id="printout"><div class="xw-note">Press <b>Generate schedule</b> to build the week.</div></div>
+  <div id="printout"><div class="xw-note">Press <b>Build 3 options</b> to generate the week.</div></div>
 </section>
 
 <!-- ============ REPORT ============ -->
 <section class="tab" id="tab-report">
   <div class="panel"><h2>Rule check</h2><div id="issues"><p class="hint">Nothing generated yet.</p></div></div>
   <div class="panel"><h2>Coverage by hour</h2>
-    <p class="hint">Scheduled crew units vs. required. Red = short, amber = thin, green = covered, blue = overstaffed.</p>
+    <p class="hint">Scheduled crew units over required. Red = short, amber = thin, green = covered, teal = overstaffed.</p>
     <div class="scroll" id="coverage"></div>
   </div>
-  <div class="panel"><h2>Hours &amp; cost by person</h2><div class="scroll" id="empReport"></div></div>
-  <div class="panel"><h2>Day-by-day labor</h2><div class="scroll" id="dayReport"></div></div>
+  <div class="panel"><h2>Hours by person</h2><div class="scroll" id="empReport"></div></div>
+  <div class="panel"><h2>Day-by-day labor vs budget</h2><div class="scroll" id="dayReport"></div></div>
 </section>
 
-<textarea id="ioBox" class="noprint" style="display:none;height:180px"></textarea>
-
 </div>
+
+<div id="toasts"></div>
+<div id="modalBack"><div id="modal"></div></div>
 
 <script>
 "use strict";
 /* =======================================================================
-   Drive-In auto scheduler
-   Model: hour-by-hour sales -> crew-unit demand by position -> greedy
-   shift assignment scored on coverage gained per labor dollar, then a
-   budget trim pass. Output renders in Expressway weekly-schedule format.
+   Drive-In auto scheduler.
+
+   Pipeline: hourly sales -> crew-unit demand per position -> shift
+   assignment under hard rules -> daily budget trim. Runs three times with
+   different priorities to produce three ranked options. A live layer then
+   proposes amendments as the week actually unfolds.
    ======================================================================= */
 
 const DAY_ABBR = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
@@ -293,18 +402,27 @@ const POSITIONS = [
   {k:'carhop',  label:'Carhop',  short:'CH',  prio:1.00}
 ];
 const POS_LABEL = Object.fromEntries(POSITIONS.map(p=>[p.k,p.label]));
+const POS_SHORT = Object.fromEntries(POSITIONS.map(p=>[p.k,p.short]));
 const PROD = {1:0.72, 2:0.86, 3:1.00, 4:1.14, 5:1.28};
-const SLOT = 30;                       // minutes per scheduling slot
-const STORE_KEY = 'driveInScheduler.v1';
+const TYPES = {full:'Full-time', part:'Part-time', minor:'Minor (student)'};
+const PAIR_KINDS = {
+  prefer:{label:'Works well together', score:1.30, prodAdj:+0.03, hard:false},
+  slow  :{label:'Less efficient together', score:0.72, prodAdj:-0.08, hard:false},
+  avoid :{label:'Avoid overlapping', score:0.28, prodAdj:0, hard:false},
+  never :{label:'Never overlap', score:0.04, prodAdj:0, hard:true}
+};
+const SLOT = 30;
+const STORE_KEY = 'driveInScheduler.v2';
 
-/* ---------------------------- time helpers ---------------------------- */
+/* ---------------------------- helpers -------------------------------- */
 const pad = n => String(n).padStart(2,'0');
-function parseT(s){ if(!s) return 0; const [h,m]=s.split(':').map(Number); return h*60+(m||0); }
-function toT(min){ return pad(Math.floor(min/60)%24)+':'+pad(min%60); }
+function parseT(s){ if(!s) return 0; const [h,m]=String(s).split(':').map(Number); return h*60+(m||0); }
+function toT(min){ return pad(Math.floor(min/60))+':'+pad(min%60); }
 function fmt12(min){
-  let h=Math.floor(min/60), m=min%60, ap=h>=12&&h<24?'P':'A';
+  let h=Math.floor(min/60), m=min%60;
+  if(h>=24) h-=24;
+  const ap = h>=12 ? 'P':'A';
   let hh=h%12; if(hh===0) hh=12;
-  if(h>=24){ const h2=h-24; hh=h2%12||12; ap=h2>=12?'P':'A'; }
   return hh+':'+pad(m)+ap;
 }
 function fmtShift(a,b){ return fmt12(a)+'-'+fmt12(b); }
@@ -315,104 +433,155 @@ function addDays(iso,n){ const d=new Date(iso+'T12:00:00'); d.setDate(d.getDate(
 function shortDate(iso){ const d=new Date(iso+'T12:00:00'); return (d.getMonth()+1)+'/'+d.getDate(); }
 function longDate(iso){ const d=new Date(iso+'T12:00:00'); return pad(d.getMonth()+1)+'/'+pad(d.getDate())+'/'+d.getFullYear(); }
 function dowOf(iso){ return new Date(iso+'T12:00:00').getDay(); }
+function daysBetween(a,b){ return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000); }
+function todayISO(){ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
 const uid = () => Math.random().toString(36).slice(2,9);
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 function esc(s){ return String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function $(id){ return document.getElementById(id); }
+function el(tag, attrs, html){
+  const n=document.createElement(tag);
+  if(attrs) for(const k in attrs){ if(k==='class') n.className=attrs[k]; else n.setAttribute(k,attrs[k]); }
+  if(html!=null) n.innerHTML=html;
+  return n;
+}
+const clone = o => JSON.parse(JSON.stringify(o));
+
+/* ------- in-page toast + modal (never depend on a browser dialog) ------ */
+function toast(msg, kind){
+  const t=el('div',{class:'toast'+(kind?' '+kind:'')}, esc(msg));
+  $('toasts').appendChild(t);
+  setTimeout(()=>t.remove(), 4200);
+}
+function closeModal(){ $('modalBack').classList.remove('on'); $('modal').innerHTML=''; }
+function modal(title, bodyHtml, buttons){
+  const m=$('modal');
+  m.innerHTML='<h3>'+esc(title)+'</h3><div id="modalBody">'+bodyHtml+'</div>';
+  const row=el('div',{class:'row'}); row.style.marginTop='14px'; row.style.justifyContent='flex-end';
+  (buttons||[{label:'Close'}]).forEach(b=>{
+    const btn=el('button',{class:'btn'+(b.primary?' primary':'')+(b.danger?' danger':'')}, esc(b.label));
+    btn.onclick=()=>{ if(b.onClick) b.onClick(); if(b.keepOpen!==true) closeModal(); };
+    row.appendChild(btn);
+  });
+  m.appendChild(row);
+  $('modalBack').classList.add('on');
+  return m;
+}
+function confirmBox(title, msg, onYes, yesLabel){
+  modal(title, '<p>'+esc(msg)+'</p>', [
+    {label:'Cancel'},
+    {label:yesLabel||'Confirm', danger:true, onClick:onYes}
+  ]);
+}
+$('modalBack').addEventListener('click', e=>{ if(e.target.id==='modalBack') closeModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
 
 /* ------------------------------- state -------------------------------- */
 const DEFAULT_CURVE = [0,0,0,0,0,0, .35,.75,.85,.70,.95, 1.65,1.90,1.35, 1.55,1.60,1.15, 1.30,1.45,1.20, .95,.70,.45,.25];
 
 function defaultDay(i){
   const weekend = (i===5||i===6);
-  return { open:'10:00', close: weekend?'24:00':'23:00', sales: weekend?5200:3800, hourly:{} };
-}
-function newState(){
-  const start = mondayOfThisWeek();
-  return {
-    settings:{
-      storeNum:'', storeName:'', weekStart:start, preparedBy:'',
-      laborPct:24, splh:58, minCrew:3, cookShare:45,
-      minShift:3, maxShift:8, maxDays:6, otAfter:40, minRest:10,
-      breakMin:30, breakAfter:6, mgr2At:9,
-      enforceBudget:true, hardConflicts:true, honorMinHours:true,
-      curve:DEFAULT_CURVE.slice(),
-      days:[0,1,2,3,4,5,6].map(defaultDay)
-    },
-    employees:[],
-    conflicts:[],
-    result:null
-  };
+  return { open:'10:00', close: weekend?'24:00':'23:00', sales: weekend?5200:3800, budget:0, hourly:{} };
 }
 function mondayOfThisWeek(){
   const d=new Date(); const off=(d.getDay()+6)%7; d.setDate(d.getDate()-off);
-  return d.toISOString().slice(0,10);
+  return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+}
+function newState(){
+  return {
+    settings:{
+      storeNum:'', storeName:'', weekStart:mondayOfThisWeek(), preparedBy:'',
+      budgetMode:'dollars',
+      laborPct:24, splh:58, minCrew:3, cookShare:45, mgr2At:9,
+      minShift:3, maxShift:8, maxDaily:8, maxDays:6, maxConsec:5,
+      otAfter:40, noOT:true, minRest:10, breakMin:30, breakAfter:6,
+      openerMinRating:2, closerMinRating:3,
+      minorMaxDaily:6, minorCurfew:'21:30', minorMaxDays:5, schoolNights:[0,1,2,3,4],
+      enforceBudget:true, hardConflicts:true, honorMinHours:true, stability:true,
+      curve:DEFAULT_CURVE.slice(),
+      days:[0,1,2,3,4,5,6].map(defaultDay),
+      today:todayISO()
+    },
+    employees:[], pairs:[], amendments:[],
+    plans:null, chosen:0, result:null
+  };
 }
 function newEmp(name){
   return {
     id:uid(), name:name||'New crew member',
-    pos:'carhop', pos2:'', rating:3, wage:12.00,
-    minH:0, maxH:38, note:'',
+    pos:'carhop', pos2:'', rating:3, wage:12.00, type:'part',
+    minH:0, targetH:20, maxH:30, note:'',
     avail:[0,1,2,3,4,5,6].map(()=>({off:false, from:'10:00', to:'23:00'}))
   };
 }
-
 let S = load() || newState();
 
 function save(){
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify({settings:S.settings, employees:S.employees, conflicts:S.conflicts})); }
-  catch(e){ /* private mode — ignore */ }
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      settings:S.settings, employees:S.employees, pairs:S.pairs, amendments:S.amendments
+    }));
+  }catch(e){ /* private mode */ }
 }
 function load(){
   try{
-    const raw = localStorage.getItem(STORE_KEY); if(!raw) return null;
-    const o = JSON.parse(raw); const base = newState();
-    return {settings:Object.assign(base.settings,o.settings||{}), employees:o.employees||[], conflicts:o.conflicts||[], result:null};
+    const raw=localStorage.getItem(STORE_KEY); if(!raw) return null;
+    const o=JSON.parse(raw); const base=newState();
+    const st=Object.assign(base.settings, o.settings||{});
+    (st.days||[]).forEach((d,i)=>{ st.days[i]=Object.assign(defaultDay(i), d); });
+    return {settings:st, employees:o.employees||[], pairs:o.pairs||[], amendments:o.amendments||[],
+            plans:null, chosen:0, result:null};
   }catch(e){ return null; }
 }
 
 /* ============================ SAMPLE CREW ============================= */
 function sampleCrew(){
-  const mk=(name,pos,pos2,rating,wage,minH,maxH,offDays,win)=>{
-    const e=newEmp(name); e.pos=pos; e.pos2=pos2; e.rating=rating; e.wage=wage; e.minH=minH; e.maxH=maxH;
-    e.avail.forEach((a,i)=>{ a.off=offDays.includes(i); if(win){a.from=win[0];a.to=win[1];} });
+  const mk=(name,pos,pos2,rating,wage,type,minH,targetH,maxH,offDays,win)=>{
+    const e=newEmp(name);
+    Object.assign(e,{pos,pos2,rating,wage,type,minH,targetH,maxH});
+    e.avail.forEach((a,i)=>{ a.off=offDays.includes(i); a.from=win[0]; a.to=win[1]; });
     return e;
   };
-  S.employees = [
-    mk('Alvarez, Dana','manager','cook',5,21.50,38,45,[3],['09:00','23:30']),
-    mk('Brooks, Trey','manager','carhop',4,18.75,32,40,[0],['12:00','24:00']),
-    mk('Chen, Mira','manager','cook',4,18.00,24,36,[5,6],['09:00','18:00']),
-    mk('Delgado, Rico','cook','',5,15.25,30,40,[2],['10:00','22:00']),
-    mk('Ellis, Sam','cook','carhop',3,13.50,20,32,[],['11:00','23:00']),
-    mk('Foster, Kayla','cook','',2,12.75,12,24,[1,2],['16:00','24:00']),
-    mk('Grant, Noah','cook','carhop',4,14.00,24,36,[6],['10:00','20:00']),
-    mk('Hughes, Priya','carhop','',5,12.50,28,38,[],['10:00','22:00']),
-    mk('Ibarra, Luis','carhop','cook',3,12.00,18,30,[4],['15:00','24:00']),
-    mk('Jensen, Abby','carhop','',4,12.25,20,32,[0,1],['11:00','21:00']),
-    mk('Kowalski, Ben','carhop','',2,11.50,10,20,[],['16:00','23:00']),
-    mk('Lopez, Sofia','carhop','',3,12.00,16,28,[3],['10:00','17:00']),
-    mk('Moore, Jaylen','carhop','cook',4,12.75,24,36,[],['12:00','24:00']),
-    mk('Nguyen, Tia','carhop','',1,11.25,8,18,[1,3],['16:00','22:00']),
-    mk('Okafor, Chris','carhop','',3,12.00,15,26,[5],['10:00','19:00']),
-    mk('Patel, Anish','cook','carhop',3,13.00,18,30,[],['11:00','22:00']),
-    mk('Quinn, Maya','carhop','',4,12.25,20,32,[2],['10:00','20:00']),
-    mk('Reyes, Dominic','carhop','cook',2,11.75,12,24,[],['15:00','24:00']),
-    mk('Silva, Emma','carhop','',3,12.00,16,28,[6],['10:00','18:00']),
-    mk('Turner, Jamal','cook','',4,14.25,22,34,[0],['12:00','24:00'])
+  S.employees=[
+    mk('Alvarez, Dana','manager','cook',5,21.50,'full',36,40,45,[3],['09:00','23:30']),
+    mk('Brooks, Trey','manager','carhop',4,18.75,'full',32,38,42,[0],['12:00','24:00']),
+    mk('Chen, Mira','manager','cook',4,18.00,'part',20,28,34,[5,6],['09:00','18:00']),
+    mk('Vance, Erin','manager','carhop',4,17.50,'full',24,32,38,[1],['14:00','24:00']),
+    mk('Delgado, Rico','cook','',5,15.25,'full',30,38,42,[2],['10:00','22:00']),
+    mk('Ellis, Sam','cook','carhop',3,13.50,'part',12,22,30,[],['11:00','23:00']),
+    mk('Foster, Kayla','cook','',2,12.75,'part',8,16,24,[1,2],['16:00','24:00']),
+    mk('Grant, Noah','cook','carhop',4,14.00,'part',16,26,34,[6],['10:00','20:00']),
+    mk('Hughes, Priya','carhop','',5,12.50,'full',28,36,40,[],['10:00','22:00']),
+    mk('Ibarra, Luis','carhop','cook',3,12.00,'part',10,20,28,[4],['15:00','24:00']),
+    mk('Jensen, Abby','carhop','',4,12.25,'part',14,24,30,[0,1],['11:00','21:00']),
+    mk('Kowalski, Ben','carhop','',2,11.50,'minor',6,12,18,[],['16:00','22:00']),
+    mk('Lopez, Sofia','carhop','',3,12.00,'part',10,18,26,[3],['10:00','17:00']),
+    mk('Moore, Jaylen','carhop','cook',4,12.75,'full',24,32,38,[],['12:00','24:00']),
+    mk('Nguyen, Tia','carhop','',1,11.25,'minor',4,10,16,[1,3],['16:00','21:30']),
+    mk('Okafor, Chris','carhop','',3,12.00,'part',10,18,26,[5],['10:00','19:00']),
+    mk('Patel, Anish','cook','carhop',3,13.00,'part',14,22,30,[],['11:00','22:00']),
+    mk('Quinn, Maya','carhop','',4,12.25,'part',16,26,32,[2],['10:00','20:00']),
+    mk('Reyes, Dominic','carhop','cook',2,11.75,'minor',6,12,18,[],['15:00','22:00']),
+    mk('Silva, Emma','carhop','',3,12.00,'part',12,20,28,[6],['10:00','18:00']),
+    mk('Turner, Jamal','cook','',4,14.25,'full',22,32,38,[0],['12:00','24:00'])
   ];
-  const id = n => S.employees[n].id;
-  S.conflicts = [
-    {id:uid(), a:id(10), b:id(13), kind:'hard'},   // Kowalski + Nguyen: never together
-    {id:uid(), a:id(4),  b:id(5),  kind:'soft'},   // Ellis + Foster: avoid
-    {id:uid(), a:id(8),  b:id(12), kind:'soft'}
+  const byName=n=>S.employees.find(e=>e.name===n).id;
+  S.pairs=[
+    {id:uid(), a:byName('Kowalski, Ben'),  b:byName('Nguyen, Tia'),    kind:'never'},
+    {id:uid(), a:byName('Ellis, Sam'),     b:byName('Foster, Kayla'),  kind:'avoid'},
+    {id:uid(), a:byName('Ibarra, Luis'),   b:byName('Moore, Jaylen'),  kind:'slow'},
+    {id:uid(), a:byName('Delgado, Rico'),  b:byName('Hughes, Priya'),  kind:'prefer'},
+    {id:uid(), a:byName('Alvarez, Dana'),  b:byName('Patel, Anish'),   kind:'prefer'}
   ];
+  S.amendments=[];
 }
 
 /* ========================= DEMAND / FORECAST ========================== */
 function dayMeta(d){
-  const day = S.settings.days[d];
-  const open = parseT(day.open);
-  let close = parseT(day.close); if(close<=open) close += 24*60;
-  return {open, close, slots: Math.max(0, Math.round((close-open)/SLOT)), day};
+  const day=S.settings.days[d];
+  const open=parseT(day.open);
+  let close=parseT(day.close); if(close<=open) close+=24*60;
+  return {open, close, slots:Math.max(0,Math.round((close-open)/SLOT)), day};
 }
 function openHours(d){
   const {open,close}=dayMeta(d); const out=[];
@@ -420,248 +589,276 @@ function openHours(d){
   return out;
 }
 function rebuildDay(d){
-  const day = S.settings.days[d];
-  const hoursList = openHours(d);
-  const w = hoursList.map(h=>S.settings.curve[h%24]||0);
-  const sum = w.reduce((a,b)=>a+b,0) || 1;
-  day.hourly = {};
-  hoursList.forEach((h,i)=>{ day.hourly[h] = Math.round((day.sales * w[i]/sum)); });
+  const day=S.settings.days[d], list=openHours(d);
+  const w=list.map(h=>S.settings.curve[h%24]||0);
+  const sum=w.reduce((a,b)=>a+b,0)||1;
+  day.hourly={};
+  list.forEach((h,i)=>{ day.hourly[h]=Math.round(day.sales*w[i]/sum); });
 }
 function rebuildAll(){ for(let d=0;d<7;d++) rebuildDay(d); }
 function hourlySales(d,h){
   const day=S.settings.days[d];
-  if(day.hourly && day.hourly[h]!=null) return +day.hourly[h];
-  return 0;
+  return (day.hourly && day.hourly[h]!=null) ? +day.hourly[h] : 0;
 }
 function daySalesActual(d){ return openHours(d).reduce((a,h)=>a+hourlySales(d,h),0); }
-
-/* Crew-unit demand per slot, split by position. */
+function dayBudget(d){
+  const st=S.settings;
+  if(st.budgetMode==='dollars'){
+    const b=+st.days[d].budget||0;
+    return b>0 ? b : daySalesActual(d)*st.laborPct/100;   // fall back until one is entered
+  }
+  return daySalesActual(d)*st.laborPct/100;
+}
 function buildDemand(){
   const st=S.settings, out=[];
   for(let d=0;d<7;d++){
     const {open,slots}=dayMeta(d);
-    const need=[], sales=[];
+    const need=[];
     for(let i=0;i<slots;i++){
-      const t = open + i*SLOT;
-      const hs = hourlySales(d, Math.floor(t/60));
-      const units = Math.max(st.minCrew, hs/Math.max(1,st.splh));
-      const mgr = units >= st.mgr2At ? 2 : 1;
-      const rest = Math.max(0, units - mgr);
-      const cook = rest * clamp(st.cookShare,0,100)/100;
+      const t=open+i*SLOT;
+      const hs=hourlySales(d, Math.floor(t/60));
+      const units=Math.max(st.minCrew, hs/Math.max(1,st.splh));
+      const mgr=units>=st.mgr2At?2:1;
+      const rest=Math.max(0,units-mgr);
+      const cook=rest*clamp(st.cookShare,0,100)/100;
       need.push({manager:mgr, cook:cook, carhop:Math.max(0,rest-cook), total:units});
-      sales.push(hs/2);
     }
-    out.push({open, slots, need, sales});
+    out.push({open, slots, need});
   }
   return out;
 }
 
-/* =========================== THE SCHEDULER ============================ */
-function positionsOf(e){ return e.pos2 && e.pos2!==e.pos ? [e.pos, e.pos2] : [e.pos]; }
-function prodOf(e){ return PROD[clamp(Math.round(+e.rating||3),1,5)]; }
+/* ======================= SHARED RULE PRIMITIVES ======================= */
+function positionsOf(e){ return e.pos2 && e.pos2!==e.pos ? [e.pos,e.pos2] : [e.pos]; }
+function baseProd(e){ return PROD[clamp(Math.round(+e.rating||3),1,5)]; }
 function paidHoursFor(gross){
   const st=S.settings;
-  return gross > st.breakAfter && st.breakMin>0 ? gross - st.breakMin/60 : gross;
+  return gross>st.breakAfter && st.breakMin>0 ? gross-st.breakMin/60 : gross;
 }
-function conflictMap(){
+function pairMap(){
   const m={};
-  S.conflicts.forEach(c=>{
-    (m[c.a]=m[c.a]||{})[c.b]=c.kind;
-    (m[c.b]=m[c.b]||{})[c.a]=c.kind;
+  (S.pairs||[]).forEach(p=>{
+    (m[p.a]=m[p.a]||{})[p.b]=p.kind;
+    (m[p.b]=m[p.b]||{})[p.a]=p.kind;
   });
   return m;
 }
+function isSchoolNight(d){
+  const dow=dowOf(addDays(S.settings.weekStart,d));
+  return (S.settings.schoolNights||[]).includes(dow);
+}
+function empById(id){ return S.employees.find(e=>e.id===id); }
 
-function generate(){
+/* Hard limits that apply no matter which strategy is running. */
+function violatesHardRules(e, d, start, end, ctx){
   const st=S.settings;
-  const demand = buildDemand();
-  const cmap = conflictMap();
-  const emps = S.employees.filter(e=>e.name && e.name.trim());
-  if(!emps.length){ alert('Add at least one crew member first.'); return null; }
+  const gross=(end-start)/60, paid=paidHoursFor(gross);
+  if(ctx.days.has(d)) return 'already scheduled that day';
+  if(ctx.days.size >= st.maxDays) return 'at max days per week';
+  if(!consecOk(ctx.days, d, st.maxConsec)) return 'would exceed '+st.maxConsec+' days in a row';
+  if(gross > st.maxDaily+1e-9) return 'over max hours per day';
+  if(ctx.paid + paid > (+e.maxH||99)+0.01) return 'over their max weekly hours';
+  if(st.noOT && ctx.paid + paid > st.otAfter+0.01) return 'would create overtime';
+  const av=e.avail[d];
+  if(av.off) return 'requested off';
+  if(start < parseT(av.from)-1e-9 || end > (av.to==='24:00'?1440:parseT(av.to))+1e-9) return 'outside their availability';
+  if(e.type==='minor'){
+    if(gross > st.minorMaxDaily+1e-9) return 'over the minor daily hour limit';
+    if(ctx.days.size >= st.minorMaxDays) return 'at the minor weekly day limit';
+    if(isSchoolNight(d) && end > parseT(st.minorCurfew)+1e-9) return 'past the school-night curfew';
+  }
+  for(const sh of ctx.shifts){
+    const a1=d*1440+start, a2=d*1440+end, b1=sh.d*1440+sh.start, b2=sh.d*1440+sh.end;
+    const gap = a1>=b2 ? a1-b2 : (b1>=a2 ? b1-a2 : -1);
+    if(gap < st.minRest*60) return 'less than '+st.minRest+'h rest from another shift';
+  }
+  return null;
+}
+function consecOk(daysSet, d, maxConsec){
+  let run=1, i=d-1;
+  while(i>=0 && daysSet.has(i)){ run++; i--; }
+  i=d+1;
+  while(i<7 && daysSet.has(i)){ run++; i++; }
+  return run<=maxConsec;
+}
 
-  // remaining[d][pos][slot]
-  const remaining = demand.map(dd=>{
-    const o={}; POSITIONS.forEach(p=>{ o[p.k]=dd.need.map(n=>n[p.k]); }); return o;
-  });
-  const covered = demand.map(dd=>{
-    const o={}; POSITIONS.forEach(p=>{ o[p.k]=dd.need.map(()=>0); }); return o;
-  });
-  // manager presence is headcount, not productivity: a trainee manager is still
-  // the person holding the keys, so the open-to-close line counts bodies
-  const heads = demand.map(dd=>dd.need.map(()=>0));
+/* =========================== THE SCHEDULER ============================ */
+const STRATEGIES = [
+  {key:'balanced', name:'Balanced', costExp:1.00, capExp:1.00, budgetUse:1.00, gainFloor:0.5,
+   blurb:'Even handling of coverage, cost and everyone’s target hours. The default read of your numbers.'},
+  {key:'lean', name:'Cost-lean', costExp:1.40, capExp:0.55, budgetUse:0.93, gainFloor:0.75,
+   blurb:'Leaves margin under every daily budget by leaning on lower-wage crew and shorter shifts. Thinner at peak.'},
+  {key:'coverage', name:'Coverage-first', costExp:0.72, capExp:2.10, budgetUse:1.00, gainFloor:0.35,
+   blurb:'Spends the full budget on your strongest crew to hold the peaks. Runs closer to the line.'}
+];
 
-  const stat = {};
-  emps.forEach(e=>{ stat[e.id]={gross:0, paid:0, cost:0, days:new Set(), shifts:[]}; });
+function buildPlan(strat){
+  const st=S.settings;
+  const demand=buildDemand();
+  const pm=pairMap();
+  const emps=S.employees.filter(e=>e.name && e.name.trim());
+  if(!emps.length) return null;
 
-  const assigns = [];                       // {empId, d, pos, start, end, gross, paid, cost}
-  const weekSales = [0,1,2,3,4,5,6].reduce((a,d)=>a+daySalesActual(d),0);
-  const budget = weekSales * st.laborPct/100;
-  let spend = 0;
+  const remaining=demand.map(dd=>{ const o={}; POSITIONS.forEach(p=>o[p.k]=dd.need.map(n=>n[p.k])); return o; });
+  const covered =demand.map(dd=>{ const o={}; POSITIONS.forEach(p=>o[p.k]=dd.need.map(()=>0)); return o; });
+  const heads   =demand.map(dd=>dd.need.map(()=>0));   // manager presence is headcount, not units
+  const stat={};
+  emps.forEach(e=>stat[e.id]={gross:0,paid:0,cost:0,days:new Set(),shifts:[]});
+  const assigns=[];
+  const dayCost=[0,0,0,0,0,0,0];
+  const budgets=[0,1,2,3,4,5,6].map(d=>dayBudget(d));
+  const effBudget=budgets.map(b=>b*strat.budgetUse);
 
-  /* --- candidate shift enumeration (cached: availability never changes mid-run) --- */
-  const candCache = {};
+  const candCache={};
   function candidates(e,d){
-    const key = e.id+'|'+d;
+    const key=e.id+'|'+d;
     if(candCache[key]) return candCache[key];
-    return (candCache[key] = buildCandidates(e,d));
-  }
-  function buildCandidates(e,d){
-    const av = e.avail[d];
-    if(av.off) return [];
-    const {open,close} = dayMeta(d);
-    let a = Math.max(open, parseT(av.from));
-    let b = parseT(av.to); if(b<=parseT(av.from)) b+=24*60;
-    b = Math.min(close, b);
-    const out=[];
-    const minL = Math.round(st.minShift*60/SLOT), maxL = Math.round(st.maxShift*60/SLOT);
-    const first = Math.ceil((a-open)/SLOT), last = Math.floor((b-open)/SLOT);
-    for(let s=first; s<=last-minL; s++){
-      for(let L=minL; L<=maxL && s+L<=last; L++){
-        out.push({s, L, start:open+s*SLOT, end:open+(s+L)*SLOT});
-      }
+    const av=e.avail[d], out=[];
+    if(!av.off){
+      const {open,close}=dayMeta(d);
+      const a=Math.max(open, parseT(av.from));
+      let b=av.to==='24:00'?1440:parseT(av.to);
+      b=Math.min(close,b);
+      const maxLen=Math.min(st.maxShift, st.maxDaily, e.type==='minor'?st.minorMaxDaily:99);
+      const minL=Math.round(st.minShift*60/SLOT), maxL=Math.round(maxLen*60/SLOT);
+      const first=Math.ceil((a-open)/SLOT), last=Math.floor((b-open)/SLOT);
+      for(let s=first;s<=last-minL;s++)
+        for(let L=minL;L<=maxL && s+L<=last;L++)
+          out.push({s,L,start:open+s*SLOT,end:open+(s+L)*SLOT});
     }
-    return out;
+    return (candCache[key]=out);
   }
-
-  function shiftCost(e, paid){
-    const w=+e.wage||0, already=stat[e.id].paid;
-    const reg = Math.max(0, Math.min(paid, st.otAfter-already));
-    const ot  = Math.max(0, paid-reg);
-    return reg*w + ot*w*1.5;
+  function shiftCost(e,paid,already){
+    const w=+e.wage||0;
+    const reg=Math.max(0,Math.min(paid, st.otAfter-already));
+    return reg*w + Math.max(0,paid-reg)*w*1.5;
   }
-
-  function hardBlocked(e,d,start,end){
-    const s=stat[e.id];
-    if(s.days.has(d)) return true;                                  // one shift per day
-    if(s.days.size >= st.maxDays) return true;
-    const gross=(end-start)/60;
-    if(s.paid + paidHoursFor(gross) > (+e.maxH||99)+0.01) return true;
-    // rest between days
-    const absStart = d*1440+start, absEnd = d*1440+end;
-    for(const sh of s.shifts){
-      const oS=sh.d*1440+sh.start, oE=sh.d*1440+sh.end;
-      const gap = absStart>=oE ? absStart-oE : (oS>=absEnd ? oS-absEnd : -1);
-      if(gap < st.minRest*60) return true;
-    }
-    // hard conflicts
+  function ctxOf(e){ return {days:stat[e.id].days, paid:stat[e.id].paid, shifts:stat[e.id].shifts}; }
+  function blocked(e,d,c){
+    const why=violatesHardRules(e,d,c.start,c.end,ctxOf(e));
+    if(why) return why;
     if(st.hardConflicts){
-      const mine = cmap[e.id]||{};
+      const mine=pm[e.id]||{};
       for(const a of assigns){
         if(a.d!==d) continue;
-        if(mine[a.empId]!=='hard') continue;
-        if(start < a.end && a.start < end) return true;
+        if(mine[a.empId]!=='never') continue;
+        if(c.start < a.end && a.start < c.end) return 'never-together pair';
       }
     }
-    return false;
+    return null;
   }
-
-  function softPenalty(e,d,start,end){
-    const mine = cmap[e.id]||{}; let pen=1;
+  /* Pair relationships shift both the desirability of a shift and how much
+     work actually gets done while the two overlap. */
+  function pairFactors(e,d,start,end){
+    const mine=pm[e.id]||{}; let score=1, prodAdj=0;
     for(const a of assigns){
       if(a.d!==d) continue;
-      const k = mine[a.empId]; if(!k) continue;
+      const k=mine[a.empId]; if(!k) continue;
       if(start < a.end && a.start < end){
-        pen *= (k==='hard' ? 0.05 : 0.30);
+        score *= PAIR_KINDS[k].score;
+        prodAdj += PAIR_KINDS[k].prodAdj;
       }
     }
-    return pen;
+    return {score, prod:clamp(1+prodAdj, 0.7, 1.12)};
   }
-
-  function gainOf(e,d,pos,c){
-    const rem = remaining[d][pos], p = prodOf(e);
+  function targetFactor(e,addPaid){
+    const s=stat[e.id], after=s.paid+addPaid;
+    const target=+e.targetH||0, min=+e.minH||0;
+    if(st.honorMinHours && s.paid < min) return 1.75;
+    if(target>0){
+      if(after <= target+0.01) return 1.15;
+      const over=after-target;
+      return clamp(1 - over*0.11, 0.35, 1);         // going past what they want costs desirability
+    }
+    return 1;
+  }
+  function stabilityFactor(e,start){
+    if(!st.stability) return 1;
+    const s=stat[e.id]; if(!s.shifts.length) return 1;
+    const avg=s.shifts.reduce((a,x)=>a+x.start,0)/s.shifts.length;
+    return clamp(1.12 - Math.abs(start-avg)/600, 0.85, 1.12);
+  }
+  function gainOf(e,d,pos,c,prodMul){
+    const rem=remaining[d][pos], p=baseProd(e)*prodMul;
     let g=0;
-    for(let i=c.s;i<c.s+c.L;i++){ const r=rem[i]; if(r>0) g += Math.min(r,p); }
-    return g*(SLOT/60);                                    // unit-hours of demand actually met
+    for(let i=c.s;i<c.s+c.L;i++){ const r=rem[i]; if(r>0) g+=Math.min(r,p); }
+    return g*(SLOT/60);
   }
-
   function apply(e,d,pos,c){
-    const p = prodOf(e), gross=(c.end-c.start)/60, paid=paidHoursFor(gross);
+    const pf=pairFactors(e,d,c.start,c.end);
+    const p=baseProd(e)*pf.prod;
     for(let i=c.s;i<c.s+c.L;i++){
-      remaining[d][pos][i] = Math.max(0, remaining[d][pos][i]-p);
-      covered[d][pos][i] += p;
+      remaining[d][pos][i]=Math.max(0, remaining[d][pos][i]-p);
+      covered[d][pos][i]+=p;
       if(pos==='manager') heads[d][i]++;
     }
-    const cost = shiftCost(e,paid);
-    const rec = {empId:e.id, d, pos, start:c.start, end:c.end, s:c.s, L:c.L, gross, paid, cost};
+    const gross=(c.end-c.start)/60, paid=paidHoursFor(gross);
+    const cost=shiftCost(e,paid,stat[e.id].paid);
+    const rec={empId:e.id, d, pos, start:c.start, end:c.end, s:c.s, L:c.L, gross, paid, cost, prod:p};
     assigns.push(rec);
     const s=stat[e.id];
     s.gross+=gross; s.paid+=paid; s.cost+=cost; s.days.add(d); s.shifts.push(rec);
-    spend += cost;
+    dayCost[d]+=cost;
+    return rec;
   }
 
-  const posPrio = Object.fromEntries(POSITIONS.map(p=>[p.k,p.prio]));
-
-  /* --- pass 0: manager spine ---------------------------------------------
-     A drive-in cannot open without a manager, and manager capacity is the
-     scarcest thing on the board. So lay down open-to-close leadership before
-     any crew shift is written, and do the hardest days first: a day with only
-     one manager available must get first claim on that manager's week.      */
-  const mgrPool = emps.filter(e=>e.pos==='manager' || e.pos2==='manager');
-  const mgrDayOrder = [0,1,2,3,4,5,6].sort((a,b)=>{
-    const av = d => mgrPool.filter(e=>!e.avail[d].off).length;
-    if(av(a)!==av(b)) return av(a)-av(b);              // scarce days first
-    return daySalesActual(b)-daySalesActual(a);        // then busiest
+  /* --- pass 0: manager spine ------------------------------------------
+     Nobody else is scheduled until every day has a manager from open to
+     close. Days with the fewest available managers are laid down first,
+     and each day is walked left to right filling the earliest hole — a
+     value-ranked greedy takes a fat midday shift and strands both edges. */
+  const mgrPool=emps.filter(e=>e.pos==='manager'||e.pos2==='manager');
+  const mgrOrder=[0,1,2,3,4,5,6].sort((a,b)=>{
+    const av=d=>mgrPool.filter(e=>!e.avail[d].off).length;
+    return av(a)!==av(b) ? av(a)-av(b) : daySalesActual(b)-daySalesActual(a);
   });
-  for(const d of mgrDayOrder){
-    const nSlots = demand[d].slots;
-    const uncoveredBase = i => demand[d].need[i].manager > 0.25 && heads[d][i] < 1;
-
-    // Round A — one manager on the clock from open to close. Walk the day left
-    // to right filling the earliest hole, so we never strand an edge of the day
-    // that nobody left on the roster is available to reach.
-    let cursor = 0, gA = 0;
-    while(gA++ < 40){
-      let gap = -1;
-      for(let i=cursor; i<nSlots; i++) if(uncoveredBase(i)){ gap=i; break; }
-      if(gap < 0) break;
-      let gapEnd = gap;
-      while(gapEnd < nSlots && uncoveredBase(gapEnd)) gapEnd++;
-
+  for(const d of mgrOrder){
+    const n=demand[d].slots;
+    const holeAt=i=>demand[d].need[i].manager>0.25 && heads[d][i]<1;
+    let cursor=0, guard=0;
+    while(guard++<40){
+      let gap=-1;
+      for(let i=cursor;i<n;i++) if(holeAt(i)){ gap=i; break; }
+      if(gap<0) break;
+      let gapEnd=gap; while(gapEnd<n && holeAt(gapEnd)) gapEnd++;
       let best=null;
       for(const e of mgrPool){
-        if(stat[e.id].days.has(d)) continue;
         for(const c of candidates(e,d)){
-          if(c.s > gap) continue;                       // starting late would leave a hole
-          if(c.s + c.L <= gap) continue;                // never reaches the hole
-          if(hardBlocked(e,d,c.start,c.end)) continue;
-          const paid = paidHoursFor((c.end-c.start)/60);
-          const cost = shiftCost(e,paid);
+          if(c.s>gap || c.s+c.L<=gap) continue;
+          if(blocked(e,d,c)) continue;
+          const paid=paidHoursFor((c.end-c.start)/60);
+          const cost=shiftCost(e,paid,stat[e.id].paid);
           if(cost<=0) continue;
-          const reach = Math.min(c.s+c.L, gapEnd) - gap;          // hole slots closed
-          let eff = reach/cost*1000;
-          eff *= (0.88 + 0.06*clamp(Math.round(+e.rating||3),1,5));
-          if(e.pos!=='manager') eff *= 0.70;                       // assistant stepping up
-          if(stat[e.id].paid + paid > st.otAfter) eff *= 0.45;
-          eff *= softPenalty(e,d,c.start,c.end);
-          const score = reach*1000 + Math.min(eff, 999);           // reach first, then cost
-          if(!best || score>best.score) best={score,e,c};
+          const reach=Math.min(c.s+c.L,gapEnd)-gap;
+          let eff=reach/cost*1000;
+          eff *= (0.88+0.06*clamp(Math.round(+e.rating||3),1,5));
+          eff *= targetFactor(e,paid);
+          eff *= pairFactors(e,d,c.start,c.end).score;
+          if(e.pos!=='manager') eff*=0.70;
+          const score=reach*1000+Math.min(eff,999);
+          if(!best||score>best.score) best={score,e,c};
         }
       }
-      if(!best){ cursor = gap+1; continue; }            // nobody can open this hole; move on
+      if(!best){ cursor=gap+1; continue; }
       apply(best.e,d,'manager',best.c);
     }
-
-    // Round B — the extra manager the peak calls for. Nice to have, so this one
-    // is plain best-value and is allowed to come up short.
-    let gB = 0;
-    while(gB++ < 12){
-      if(remaining[d].manager.reduce((a,b)=>a+b,0) < 0.5) break;
+    // second manager at peak — nice to have, allowed to come up short
+    let g2=0;
+    while(g2++<12){
+      if(remaining[d].manager.reduce((a,b)=>a+b,0)<0.5) break;
+      if(st.enforceBudget && dayCost[d]>=effBudget[d]) break;
       let best=null;
       for(const e of mgrPool){
-        if(stat[e.id].days.has(d)) continue;
         for(const c of candidates(e,d)){
-          const g = gainOf(e,d,'manager',c);
-          if(g < 1.0) continue;
-          if(hardBlocked(e,d,c.start,c.end)) continue;
-          const paid = paidHoursFor((c.end-c.start)/60);
-          const cost = shiftCost(e,paid);
-          if(cost<=0) continue;
-          let score = g/cost*100;
-          score *= (0.88 + 0.06*clamp(Math.round(+e.rating||3),1,5));
-          if(e.pos!=='manager') score *= 0.70;
-          if(stat[e.id].paid + paid > st.otAfter) score *= 0.45;
-          score *= softPenalty(e,d,c.start,c.end);
-          if(!best || score>best.score) best={score,e,c};
+          if(blocked(e,d,c)) continue;
+          const g=gainOf(e,d,'manager',c,1); if(g<1) continue;
+          const paid=paidHoursFor((c.end-c.start)/60);
+          const cost=shiftCost(e,paid,stat[e.id].paid); if(cost<=0) continue;
+          let sc=g/Math.pow(cost,strat.costExp)*100;
+          sc *= Math.pow(0.88+0.06*clamp(Math.round(+e.rating||3),1,5), strat.capExp);
+          sc *= targetFactor(e,paid) * pairFactors(e,d,c.start,c.end).score;
+          if(e.pos!=='manager') sc*=0.70;
+          if(!best||sc>best.score) best={score:sc,e,c};
         }
       }
       if(!best) break;
@@ -669,68 +866,63 @@ function generate(){
     }
   }
 
-  /* --- pass 1: greedy coverage, best unit-hours per labor dollar --- */
-  let guard = 0;
-  while(guard++ < 4000){
-    // where is demand still open? skips whole day/position combinations cheaply
-    const openNeed = remaining.map(r=>{
-      const o={}; POSITIONS.forEach(p=>{ o[p.k]=r[p.k].reduce((a,b)=>a+b,0); }); return o;
-    });
-    if(POSITIONS.every(p=>openNeed.every(o=>o[p.k] < 0.25))) break;
-
+  /* --- pass 1: crew coverage, best unmet demand per labor dollar --- */
+  let guard=0;
+  while(guard++<4000){
+    const openNeed=remaining.map(r=>{ const o={}; POSITIONS.forEach(p=>o[p.k]=r[p.k].reduce((a,b)=>a+b,0)); return o; });
+    if(POSITIONS.every(p=>openNeed.every(o=>o[p.k]<0.25))) break;
     let best=null;
     for(const e of emps){
       const s=stat[e.id];
-      const underMin = st.honorMinHours && s.paid < (+e.minH||0);
-      for(let d=0; d<7; d++){
+      for(let d=0;d<7;d++){
         if(s.days.has(d)) continue;
-        const cands = candidates(e,d);
-        if(!cands.length) continue;
+        if(st.enforceBudget && dayCost[d] >= effBudget[d]) continue;
+        const cands=candidates(e,d); if(!cands.length) continue;
         for(const pos of positionsOf(e)){
-          if(openNeed[d][pos] < 0.25) continue;
-          const isSecondary = pos!==e.pos;
+          if(openNeed[d][pos]<0.25) continue;
+          const secondary=pos!==e.pos;
           for(const c of cands){
-            const g = gainOf(e,d,pos,c);
-            if(g < 0.5) continue;
-            if(hardBlocked(e,d,c.start,c.end)) continue;
-            const paid = paidHoursFor((c.end-c.start)/60);
-            const cost = shiftCost(e,paid);
-            if(cost<=0) continue;
-            let score = (g*posPrio[pos]) / cost * 100;
-            score *= (0.88 + 0.06*clamp(Math.round(+e.rating||3),1,5));   // capability preference
-            if(isSecondary) score *= 0.82;
-            if(underMin) score *= 1.55;
-            if(s.paid + paid > st.otAfter) score *= 0.45;                 // discourage overtime
-            score *= softPenalty(e,d,c.start,c.end);
-            if(st.enforceBudget && spend + cost > budget) score *= 0.25;  // budget drag, not a wall
-            if(!best || score > best.score) best = {score, e, d, pos, c, cost, g};
+            const pf=pairFactors(e,d,c.start,c.end);
+            const g=gainOf(e,d,pos,c,pf.prod);
+            if(g<strat.gainFloor) continue;
+            if(blocked(e,d,c)) continue;
+            const paid=paidHoursFor((c.end-c.start)/60);
+            const cost=shiftCost(e,paid,s.paid); if(cost<=0) continue;
+            if(st.enforceBudget && dayCost[d]+cost > effBudget[d]) continue;
+            let sc=(g*POSITIONS.find(p=>p.k===pos).prio)/Math.pow(cost,strat.costExp)*100;
+            sc *= Math.pow(0.88+0.06*clamp(Math.round(+e.rating||3),1,5), strat.capExp);
+            sc *= targetFactor(e,paid) * pf.score * stabilityFactor(e,c.start);
+            if(secondary) sc*=0.82;
+            const {open,close}=dayMeta(d);
+            if(c.start===open && (+e.rating||3) < st.openerMinRating) sc*=0.20;
+            if(c.end===close && (+e.rating||3) < st.closerMinRating) sc*=0.20;
+            if(!best||sc>best.score) best={score:sc,e,d,pos,c};
           }
         }
       }
     }
     if(!best) break;
-    if(st.enforceBudget && spend + best.cost > budget*1.02 && best.g < 1.5) break;
-    apply(best.e, best.d, best.pos, best.c);
+    apply(best.e,best.d,best.pos,best.c);
   }
 
-  /* --- pass 2: bring people up to their minimum hours --- */
+  /* --- pass 2: bring anyone under their guaranteed minimum up --- */
   if(st.honorMinHours){
-    let g2=0;
-    while(g2++ < 600){
+    let g3=0;
+    while(g3++<600){
       let best=null;
       for(const e of emps){
-        const s=stat[e.id]; const need=(+e.minH||0) - s.paid;
-        if(need <= 0.25) continue;
-        for(let d=0; d<7; d++){
+        const s=stat[e.id], need=(+e.minH||0)-s.paid;
+        if(need<=0.25) continue;
+        for(let d=0;d<7;d++){
           if(s.days.has(d)) continue;
           for(const c of candidates(e,d)){
-            if(hardBlocked(e,d,c.start,c.end)) continue;
-            const paid = paidHoursFor((c.end-c.start)/60);
-            if(paid > need + st.minShift) continue;             // don't wildly overshoot
-            const pos = positionsOf(e)[0];
-            let score = gainOf(e,d,pos,c) + paid*0.6;
-            score *= softPenalty(e,d,c.start,c.end);
-            if(!best || score>best.score) best={score,e,d,pos,c};
+            if(blocked(e,d,c)) continue;
+            const paid=paidHoursFor((c.end-c.start)/60);
+            if(paid > need+st.minShift) continue;
+            const pos=positionsOf(e)[0];
+            let sc=gainOf(e,d,pos,c,1)+paid*0.6;
+            sc*=pairFactors(e,d,c.start,c.end).score;
+            if(!best||sc>best.score) best={score:sc,e,d,pos,c};
           }
         }
       }
@@ -739,160 +931,539 @@ function generate(){
     }
   }
 
-  /* --- pass 3: trim the edges of overstaffed shifts to hit budget --- */
-  const trims=[];
-  if(st.enforceBudget){
-    let g3=0;
-    while(spend > budget && g3++ < 800){
+  const plan={strategy:strat, demand, remaining, covered, heads, assigns, stat, dayCost,
+              budgets, emps:emps.map(e=>e.id), weekSales:[0,1,2,3,4,5,6].reduce((a,d)=>a+daySalesActual(d),0)};
+
+  /* --- pass 3: trim to the daily budget --- */
+  if(st.enforceBudget) trimToBudget(plan);
+  recostPlan(plan);
+  plan.metrics=planMetrics(plan);
+  return plan;
+}
+
+/* Shave half-hours off the ends of shifts where coverage is in surplus,
+   day by day, never touching manager coverage or unmet demand. */
+function trimToBudget(plan){
+  const st=S.settings;
+  for(let d=0; d<7; d++){
+    let guard=0;
+    while(plan.dayCost[d] > plan.budgets[d] && guard++<400){
       let best=null;
-      for(const a of assigns){
-        const e = emps.find(x=>x.id===a.empId); if(!e) continue;
-        if(a.pos==='manager') continue;                         // never trim manager coverage
-        const grossAfter = (a.L-1)*SLOT/60;
-        if(grossAfter < st.minShift - 1e-9) continue;
-        const p = prodOf(e);
+      for(const a of plan.assigns){
+        if(a.d!==d || a.pos==='manager') continue;
+        if((a.L-1)*SLOT/60 < st.minShift-1e-9) continue;
+        const e=empById(a.empId); if(!e) continue;
         for(const side of ['front','back']){
           const i = side==='front' ? a.s : a.s+a.L-1;
-          const surplus = covered[a.d][a.pos][i] - demandAt(a.d,a.pos,i);
-          if(surplus < p*0.9) continue;                          // trimming would create a hole
-          const score = surplus + (e.rating<=2?0.4:0) + (+e.wage||0)/40;
-          if(!best || score>best.score) best={score, a, side, i, p};
+          const surplus = plan.covered[d][a.pos][i] - plan.demand[d].need[i][a.pos];
+          if(surplus < a.prod*0.9) continue;
+          const score = surplus + (+e.wage||0)/40 + ((+e.rating||3)<=2?0.4:0);
+          if(!best||score>best.score) best={score,a,side,i};
         }
       }
       if(!best) break;
-      const {a,side,i,p}=best;
-      covered[a.d][a.pos][i] -= p;
-      remaining[a.d][a.pos][i] = Math.max(0, demandAt(a.d,a.pos,i) - covered[a.d][a.pos][i]);
+      const {a,side,i}=best;
+      plan.covered[d][a.pos][i]-=a.prod;
+      plan.remaining[d][a.pos][i]=Math.max(0, plan.demand[d].need[i][a.pos]-plan.covered[d][a.pos][i]);
       if(side==='front'){ a.s+=1; a.start+=SLOT; } else { a.end-=SLOT; }
-      a.L -= 1;
-      recost();                                    // trimming can move someone out of overtime
-      trims.push(a);
+      a.L-=1;
+      recostPlan(plan);
     }
   }
+}
 
-  function demandAt(d,pos,i){ return demand[d].need[i] ? demand[d].need[i][pos] : 0; }
+/* Rebuild hours and cost from scratch, charging overtime against the week in
+   chronological order — incremental math drifts once shifts are trimmed. */
+function recostPlan(plan){
+  const st=S.settings;
+  plan.dayCost=[0,0,0,0,0,0,0];
+  for(const id of plan.emps){
+    const e=empById(id); const s=plan.stat[id];
+    if(!e||!s) continue;
+    const w=+e.wage||0;
+    s.shifts=plan.assigns.filter(a=>a.empId===id).sort((x,y)=>(x.d-y.d)||(x.start-y.start));
+    let acc=0, cost=0, gross=0;
+    const days=new Set();
+    for(const a of s.shifts){
+      a.gross=(a.end-a.start)/60;
+      a.paid=paidHoursFor(a.gross);
+      const reg=Math.max(0,Math.min(a.paid, st.otAfter-acc));
+      a.ot=Math.max(0,a.paid-reg);
+      a.cost=reg*w + a.ot*w*1.5;
+      acc+=a.paid; cost+=a.cost; gross+=a.gross; days.add(a.d);
+      plan.dayCost[a.d]+=a.cost;
+    }
+    s.paid=acc; s.cost=cost; s.gross=gross; s.days=days;
+  }
+  plan.spend=plan.dayCost.reduce((a,b)=>a+b,0);
+  plan.budget=plan.budgets.reduce((a,b)=>a+b,0);
+}
 
-  /* Rebuild hours and cost from scratch so overtime is charged against the
-     week in chronological order — the incremental math drifts once shifts
-     get trimmed. */
-  function recost(){
-    spend = 0;
-    for(const e of emps){
-      const s = stat[e.id], w = +e.wage||0;
-      s.shifts.sort((x,y)=>(x.d-y.d)||(x.start-y.start));
-      let acc=0, cost=0, gross=0;
-      for(const a of s.shifts){
-        a.gross = (a.end-a.start)/60;
-        a.paid  = paidHoursFor(a.gross);
-        const reg = Math.max(0, Math.min(a.paid, st.otAfter-acc));
-        const ot  = a.paid - reg;
-        a.cost = reg*w + ot*w*1.5;
-        acc += a.paid; cost += a.cost; gross += a.gross;
+function planMetrics(plan){
+  const st=S.settings;
+  let short=0, slots=0, mgrHoles=0, ot=0, targetMiss=0, daysOver=0, idleBudget=0;
+  for(let d=0;d<7;d++){
+    for(let i=0;i<plan.demand[d].slots;i++){
+      slots++;
+      if(plan.heads[d][i]<1) mgrHoles++;
+      let need=0, have=0;
+      POSITIONS.forEach(p=>{ need+=plan.demand[d].need[i][p.k]; have+=plan.covered[d][p.k][i]; });
+      if(have<need-0.35) short++;
+    }
+    if(plan.dayCost[d] > plan.budgets[d]+0.01) daysOver++;
+  }
+  plan.emps.forEach(id=>{
+    const e=empById(id), s=plan.stat[id]; if(!e||!s) return;
+    ot += s.shifts.reduce((a,x)=>a+(x.ot||0),0);
+    const t=+e.targetH||0;
+    if(t>0 && Math.abs(s.paid-t)>4) targetMiss++;
+  });
+  // money left on the table on a day that is also short-staffed
+  for(let d=0;d<7;d++){
+    const short_d = plan.demand[d].need.some((n,i)=>{
+      let need=0, have=0;
+      POSITIONS.forEach(p=>{ need+=n[p.k]; have+=plan.covered[d][p.k][i]; });
+      return have<need-0.35;
+    });
+    if(short_d && plan.budgets[d]>0) idleBudget += Math.max(0,(plan.budgets[d]-plan.dayCost[d])/plan.budgets[d]);
+  }
+  const hours=plan.assigns.reduce((a,x)=>a+x.paid,0);
+  const atTarget=plan.emps.filter(id=>{
+    const e=empById(id), s=plan.stat[id];
+    return e&&s&&(+e.targetH||0)>0 && Math.abs(s.paid-(+e.targetH||0))<=4;
+  }).length;
+  const m={short, slots, mgrHoles, ot:+ot.toFixed(2), targetMiss, atTarget, daysOver, idleBudget:+idleBudget.toFixed(3),
+    hours:+hours.toFixed(2), cost:+plan.spend.toFixed(2), budget:+plan.budget.toFixed(2),
+    laborPct: plan.weekSales>0 ? +(plan.spend/plan.weekSales*100).toFixed(2) : 0,
+    budgetUse: plan.budget>0 ? +(plan.spend/plan.budget*100).toFixed(1) : 0};
+  m.rank = m.short*3 + m.mgrHoles*12 + m.ot*2.5 + m.daysOver*10 + m.targetMiss*1.2 + m.idleBudget*14;
+  return m;
+}
+
+function buildAllPlans(){
+  if(!S.employees.filter(e=>e.name&&e.name.trim()).length){
+    toast('Add at least one crew member first.','bad');
+    return false;
+  }
+  const plans=STRATEGIES.map(buildPlan).filter(Boolean);
+  if(!plans.length) return false;
+  plans.sort((a,b)=>a.metrics.rank-b.metrics.rank);
+  S.plans=plans; S.chosen=0;
+  S.amendments=[];                    // a fresh build supersedes live amendments
+  S.result=workingPlan();
+  return true;
+}
+
+/* The plan actually on display: the chosen option with amendments applied. */
+function workingPlan(){
+  if(!S.plans) return null;
+  const base=S.plans[S.chosen];
+  const p={...base, assigns:clone(base.assigns), covered:clone(base.covered), heads:clone(base.heads),
+           remaining:clone(base.remaining), stat:{}, dayCost:base.dayCost.slice()};
+  base.emps.forEach(id=>p.stat[id]={gross:0,paid:0,cost:0,days:new Set(),shifts:[]});
+  (S.amendments||[]).forEach(a=>applyAmendment(p,a));
+  recomputeCoverage(p);
+  recostPlan(p);
+  p.metrics=planMetrics(p);
+  return p;
+}
+function recomputeCoverage(plan){
+  plan.covered=plan.demand.map(dd=>{ const o={}; POSITIONS.forEach(x=>o[x.k]=dd.need.map(()=>0)); return o; });
+  plan.heads  =plan.demand.map(dd=>dd.need.map(()=>0));
+  const pm=pairMap();
+  for(const a of plan.assigns){
+    const e=empById(a.empId); if(!e) continue;
+    let adj=0;
+    for(const b of plan.assigns){
+      if(b===a||b.d!==a.d) continue;
+      const k=(pm[a.empId]||{})[b.empId]; if(!k) continue;
+      if(a.start<b.end && b.start<a.end) adj+=PAIR_KINDS[k].prodAdj;
+    }
+    a.prod=baseProd(e)*clamp(1+adj,0.7,1.12);
+    for(let i=a.s;i<a.s+a.L;i++){
+      if(!plan.covered[a.d][a.pos]) continue;
+      plan.covered[a.d][a.pos][i]+=a.prod;
+      if(a.pos==='manager') plan.heads[a.d][i]++;
+    }
+  }
+  plan.remaining=plan.demand.map((dd,d)=>{
+    const o={}; POSITIONS.forEach(p=>o[p.k]=dd.need.map((n,i)=>Math.max(0,n[p.k]-plan.covered[d][p.k][i]))); return o;
+  });
+}
+function applyAmendment(plan,a){
+  const idx=i=>plan.assigns.findIndex(x=>x.empId===a.empId && x.d===a.d);
+  if(a.type==='remove'){
+    const i=idx(); if(i>=0) plan.assigns.splice(i,1);
+  } else if(a.type==='add'){
+    const {open}=dayMeta(a.d);
+    plan.assigns.push({empId:a.empId, d:a.d, pos:a.pos, start:a.start, end:a.end,
+      s:Math.round((a.start-open)/SLOT), L:Math.round((a.end-a.start)/SLOT),
+      gross:(a.end-a.start)/60, paid:paidHoursFor((a.end-a.start)/60), cost:0, prod:1, amended:true});
+  } else if(a.type==='retime'){
+    const i=idx();
+    if(i>=0){
+      const {open}=dayMeta(a.d);
+      const sh=plan.assigns[i];
+      sh.orig=sh.orig||{start:sh.start,end:sh.end};
+      sh.start=a.start; sh.end=a.end;
+      sh.s=Math.round((a.start-open)/SLOT); sh.L=Math.round((a.end-a.start)/SLOT);
+      sh.amended=true;
+    }
+  }
+}
+
+/* ========================== LIVE SUGGESTIONS ========================== */
+function todayIndex(){
+  const i=daysBetween(S.settings.weekStart, S.settings.today);
+  return (i>=0&&i<7) ? i : -1;
+}
+function noticeDays(d){
+  const t=todayIndex();
+  return t<0 ? 99 : d-t;
+}
+/* Context for an employee inside the live plan, excluding one day if we are
+   about to replace that day's shift. */
+function liveCtx(plan, e, skipDay){
+  const shifts=plan.assigns.filter(a=>a.empId===e.id && a.d!==skipDay);
+  return {
+    days:new Set(shifts.map(a=>a.d)),
+    paid:shifts.reduce((a,x)=>a+x.paid,0),
+    shifts
+  };
+}
+function dayCostOf(plan,d){ return plan.assigns.filter(a=>a.d===d).reduce((s,a)=>s+a.cost,0); }
+
+function suggestFor(ev){
+  const plan=S.result, st=S.settings, out=[];
+  if(!plan) return out;
+  const t=todayIndex();
+  if(ev.d < t) return [{tier:4, blocked:true, title:'That day has already been worked',
+    why:'Days before today are locked. Amendments only apply from today forward.'}];
+
+  const budget=plan.budgets[ev.d], costNow=dayCostOf(plan,ev.d);
+  const {open,close}=dayMeta(ev.d);
+
+  // Work out the hole this event creates
+  let hole=null, freed=0, removed=null;
+  if(ev.kind==='callout' || ev.kind==='sentHome'){
+    const sh=plan.assigns.find(a=>a.empId===ev.empId && a.d===ev.d);
+    if(!sh) return [{tier:4, blocked:true, title:'Not scheduled that day',
+      why:(empById(ev.empId)||{}).name+' has no shift on that day, so there is nothing to cover.'}];
+    removed=sh;
+    if(ev.kind==='callout'){ hole={start:sh.start, end:sh.end, pos:sh.pos}; freed=sh.cost; }
+    else {
+      const cut=clamp(ev.from!=null?ev.from:sh.start, sh.start, sh.end);
+      hole={start:cut, end:sh.end, pos:sh.pos};
+      const e=empById(ev.empId);
+      freed=((sh.end-cut)/60)*(+e.wage||0);
+    }
+  } else if(ev.kind==='needCover'){
+    hole={start:clamp(ev.from,open,close), end:clamp(ev.to,open,close), pos:ev.pos||'carhop'};
+    if(hole.end<=hole.start) return [{tier:4, blocked:true, title:'Check the times', why:'The end time needs to be after the start time.'}];
+  } else if(ev.kind==='cutLabor'){
+    return suggestCuts(ev, plan);
+  }
+
+  const holeHrs=(hole.end-hole.start)/60;
+  const header={tier:0, info:true,
+    title:'Hole to cover: '+fmtShift(hole.start,hole.end)+' ('+hrs(holeHrs)+' hrs, '+POS_LABEL[hole.pos]+')',
+    why:'Day labor is '+money(costNow)+' of '+money(budget)+' budgeted'+
+        (freed>0? '. Dropping this shift frees '+money(freed)+'.' : '.')};
+  out.push(header);
+
+  const roster=S.employees.filter(e=>e.id!==ev.empId);
+
+  /* ---- Tier 1: call in someone who is under their hours ---- */
+  const tier1=[], tier2call=[];
+  for(const e of roster){
+    if(plan.assigns.some(a=>a.empId===e.id && a.d===ev.d)) continue;   // already on today
+    if(!positionsOf(e).includes(hole.pos)) continue;
+    const ctx=liveCtx(plan,e,null);
+    const av=e.avail[ev.d];
+    if(av.off) continue;
+    const availFrom=parseT(av.from), availTo=(av.to==='24:00'?1440:parseT(av.to));
+    const start=Math.max(hole.start, availFrom), end=Math.min(hole.end, availTo);
+    if((end-start)/60 < Math.min(st.minShift, holeHrs) - 1e-9) continue;
+    const why=violatesHardRules(e,ev.d,start,end,ctx);
+    if(why) continue;
+    const paid=paidHoursFor((end-start)/60);
+    const cost=paid*(+e.wage||0);
+    const shortBy=Math.max(0,(+e.targetH||0)-ctx.paid);
+    const item={empId:e.id, cost,
+      change:{type:'add', empId:e.id, d:ev.d, pos:hole.pos, start, end},
+      warn:(costNow+cost>budget) ? 'Puts the day '+money(costNow+cost-budget)+' over budget.' : '',
+      sort:[-shortBy, cost]};
+    if(shortBy>0.5){
+      tier1.push(Object.assign(item,{tier:1,
+        title:'Call in '+e.name+' — '+fmtShift(start,end),
+        why:e.name+' is at '+hrs(ctx.paid)+' hrs against a '+e.targetH+'-hour target, so these are hours they want. '+
+            'Adds '+money(cost)+', taking the day to '+money(costNow+cost)+' of '+money(budget)+'.'}));
+    } else {
+      // already has the hours they asked for — still better than moving a posted shift
+      tier2call.push(Object.assign(item,{tier:2,
+        title:'Call in '+e.name+' — '+fmtShift(start,end),
+        why:'Already at '+hrs(ctx.paid)+' hrs against a '+(e.targetH||'—')+'-hour target, so this is extra — ask, don’t assume. '+
+            'Adds '+money(cost)+', taking the day to '+money(costNow+cost)+' of '+money(budget)+'.'}));
+    }
+  }
+  tier1.sort((a,b)=>a.sort[0]-b.sort[0] || a.sort[1]-b.sort[1]);
+  tier2call.sort((a,b)=>a.sort[1]-b.sort[1]);
+  out.push(...tier1.slice(0,4));
+
+  /* ---- Tier 2: extend someone already on the floor ---- */
+  const tier2=[];
+  for(const a of plan.assigns.filter(x=>x.d===ev.d && x.empId!==ev.empId)){
+    const e=empById(a.empId); if(!e) continue;
+    if(!positionsOf(e).includes(hole.pos) && a.pos!==hole.pos) continue;
+    const av=e.avail[ev.d];
+    const availTo=(av.to==='24:00'?1440:parseT(av.to)), availFrom=parseT(av.from);
+    const ctx=liveCtx(plan,e,ev.d);
+    // stay later
+    if(a.end<=hole.start+1e-9 || (a.end>hole.start && a.end<hole.end)){
+      const newEnd=Math.min(hole.end, availTo);
+      if(newEnd>a.end+1e-9){
+        const why=violatesHardRules(e,ev.d,a.start,newEnd,ctx);
+        const add=paidHoursFor((newEnd-a.start)/60)-a.paid;
+        const cost=add*(+e.wage||0);
+        tier2.push({tier:2, empId:e.id, cost, blocked:!!why,
+          title:(why?'Cannot extend ':'Ask ')+e.name+' to stay until '+fmt12(newEnd),
+          why:'Already on the floor '+fmtShift(a.start,a.end)+'. Capability '+e.rating+
+              (e.pos==='manager'?', manager':'')+'. Adds '+hrs(add)+' hrs, '+money(cost)+'.',
+          no: why?('Blocked: '+why+'.'):'',
+          change: why?null:{type:'retime', empId:e.id, d:ev.d, start:a.start, end:newEnd},
+          sort:[-( (e.pos==='manager'?2:0) + (+e.rating||3) ), cost]});
       }
-      s.paid=acc; s.cost=cost; s.gross=gross;
-      spend += cost;
+    }
+    // come in earlier
+    if(a.start>=hole.end-1e-9 || (a.start<hole.end && a.start>hole.start)){
+      const newStart=Math.max(hole.start, availFrom);
+      if(newStart<a.start-1e-9){
+        const why=violatesHardRules(e,ev.d,newStart,a.end,ctx);
+        const add=paidHoursFor((a.end-newStart)/60)-a.paid;
+        const cost=add*(+e.wage||0);
+        tier2.push({tier:2, empId:e.id, cost, blocked:!!why,
+          title:(why?'Cannot bring in ':'Ask ')+e.name+' to come in at '+fmt12(newStart),
+          why:'Already on the floor '+fmtShift(a.start,a.end)+'. Capability '+e.rating+
+              (e.pos==='manager'?', manager':'')+'. Adds '+hrs(add)+' hrs, '+money(cost)+'.',
+          no: why?('Blocked: '+why+'.'):'',
+          change: why?null:{type:'retime', empId:e.id, d:ev.d, start:newStart, end:a.end},
+          sort:[-( (e.pos==='manager'?2:0) + (+e.rating||3) ), cost]});
+      }
     }
   }
-  recost();
+  // actionable options first; a blocked one is only worth showing when there is
+  // little else on the table, otherwise it buries the usable answer
+  const t2ok=tier2.filter(x=>!x.blocked).sort((a,b)=>a.sort[0]-b.sort[0] || a.sort[1]-b.sort[1]);
+  const t2no=tier2.filter(x=>x.blocked);
+  const actionable=tier1.length+t2ok.length+tier2call.length;
+  out.push(...t2ok.slice(0,3));
+  out.push(...tier2call.slice(0, tier1.length?1:2));
+  if(actionable<2) out.push(...t2no.slice(0,2));
 
-  const result = {demand, remaining, covered, heads, assigns, stat, budget, weekSales, spend, emps};
-  S.result = result;
-  return result;
+  /* ---- Tier 3: move somebody else's shift — only with notice ---- */
+  const notice=noticeDays(ev.d);
+  const tier3=[];
+  for(const e of roster){
+    if(plan.assigns.some(a=>a.empId===e.id && a.d===ev.d)) continue;
+    if(!positionsOf(e).includes(hole.pos)) continue;
+    const other=plan.assigns.find(a=>a.empId===e.id && a.d>todayIndex());
+    if(!other) continue;
+    const otherNotice=noticeDays(other.d);
+    const av=e.avail[ev.d]; if(av.off) continue;
+    const start=Math.max(hole.start, parseT(av.from));
+    const end=Math.min(hole.end, av.to==='24:00'?1440:parseT(av.to));
+    if((end-start)/60 < st.minShift-1e-9) continue;
+    const ctx=liveCtx(plan,e,other.d);
+    const why=violatesHardRules(e,ev.d,start,end,ctx);
+    const tooSoon = notice<2 || otherNotice<2;
+    tier3.push({tier:3, empId:e.id, blocked:tooSoon||!!why,
+      title:(tooSoon?'Not allowed — ':'Suggestion only — ')+'move '+e.name+' from '+
+            DAY_ABBR[dowOf(addDays(S.settings.weekStart,other.d))]+' to '+
+            DAY_ABBR[dowOf(addDays(S.settings.weekStart,ev.d))]+' '+fmtShift(start,end),
+      why:'They are currently scheduled '+DAY_ABBR[dowOf(addDays(S.settings.weekStart,other.d))]+' '+
+          fmtShift(other.start,other.end)+'.',
+      no: tooSoon
+        ? 'Less than two days’ notice ('+Math.min(notice,otherNotice)+'), so this move is off the table.'
+        : (why?('Blocked: '+why+'.'):''),
+      warn: (!tooSoon&&!why) ? 'Needs the employee’s agreement before anything changes — people plan around posted shifts.':'',
+      change:(!tooSoon&&!why)?{type:'moveShift', empId:e.id, fromDay:other.d, d:ev.d, pos:hole.pos, start, end}:null,
+      sort:[0,0]});
+  }
+  out.push(...tier3.slice(0,3));
+
+  /* ---- Tier 4: leave it ---- */
+  const after=costNow-freed;
+  out.push({tier:4,
+    title:'Leave the hole open',
+    why:'Day lands at '+money(after)+' of '+money(budget)+' budgeted'+
+        (after<budget? ' — '+money(budget-after)+' under.' : ' — '+money(after-budget)+' over.')+
+        ' Coverage runs '+hrs(holeHrs)+' crew hours short for that stretch.',
+    change: removed && ev.kind==='callout' ? {type:'remove', empId:ev.empId, d:ev.d} : null,
+    applyLabel: removed && ev.kind==='callout' ? 'Record the call-out, leave uncovered' : null});
+
+  if(!tier1.length && !t2ok.length && !tier2call.length){
+    out.splice(1,0,{tier:4, info:true, title:'Nobody is available to pick this up',
+      why:'No one can legally be called in, and nobody on the floor can extend into it. '+
+          'The realistic choices are a move with notice or running short.'});
+  }
+  return out;
+}
+
+/* "I need to cut $X of labor today" */
+function suggestCuts(ev, plan){
+  const st=S.settings, out=[], d=ev.d;
+  const budget=plan.budgets[d], costNow=dayCostOf(plan,d);
+  const goal=+ev.amount||Math.max(0,costNow-budget);
+  out.push({tier:0, info:true, title:'Cutting '+money(goal)+' from '+DAY_FULL[dowOf(addDays(st.weekStart,d))],
+    why:'Day is at '+money(costNow)+' against '+money(budget)+' budgeted.'});
+  const list=plan.assigns.filter(a=>a.d===d && a.pos!=='manager').map(a=>{
+    const e=empById(a.empId);
+    // who can go without opening a hole: measure surplus over the tail of their shift
+    let surplus=Infinity;
+    for(let i=a.s;i<a.s+a.L;i++){
+      const have=plan.covered[d][a.pos][i], need=plan.demand[d].need[i][a.pos];
+      surplus=Math.min(surplus, have-need);
+    }
+    return {a,e,surplus};
+  }).filter(x=>x.e);
+  list.sort((x,y)=> y.surplus-x.surplus || (+y.e.wage||0)-(+x.e.wage||0));
+  let cut=0;
+  for(const {a,e,surplus} of list){
+    if(cut>=goal) break;
+    const maxCutHrs=Math.max(0, a.gross-st.minShift);
+    if(maxCutHrs<=0.4) continue;
+    const need=(goal-cut)/Math.max(1,+e.wage||1);
+    const cutHrs=Math.min(maxCutHrs, Math.max(0.5, Math.round(need*2)/2));
+    const newEnd=a.end-cutHrs*60;
+    const saved=cutHrs*(+e.wage||0);
+    const ctx=liveCtx(plan,e,d);
+    const why=violatesHardRules(e,d,a.start,newEnd,ctx);
+    out.push({tier: surplus>=a.prod*0.9?1:2, empId:e.id, blocked:!!why,
+      title:'Send '+e.name+' home at '+fmt12(newEnd)+' (was '+fmt12(a.end)+')',
+      why:'Saves '+money(saved)+'. '+(surplus>=a.prod*0.9
+        ? 'Their last hours are surplus coverage, so the floor holds.'
+        : 'This one cuts into covered demand — the floor gets thinner.')+
+        ' Capability '+e.rating+', '+money(+e.wage||0)+'/hr.',
+      warn: surplus<a.prod*0.9 ? 'Coverage drops below the forecast for that stretch.' : '',
+      no: why?('Blocked: '+why+'.'):'',
+      change: why?null:{type:'retime', empId:e.id, d, start:a.start, end:newEnd}});
+    cut+=saved;
+  }
+  if(out.length===1) out.push({tier:4, info:true, title:'Nothing can be cut without breaking a rule',
+    why:'Every remaining shift is either a manager, already at the minimum length, or blocked.'});
+  return out;
+}
+
+function pushAmendment(change, label){
+  const st=S.settings;
+  const stamp=st.today;
+  if(change.type==='moveShift'){
+    S.amendments.push({id:uid(), type:'remove', empId:change.empId, d:change.fromDay, note:label, on:stamp});
+    S.amendments.push({id:uid(), type:'add', empId:change.empId, d:change.d, pos:change.pos,
+      start:change.start, end:change.end, note:label, on:stamp});
+  } else {
+    S.amendments.push(Object.assign({id:uid(), note:label, on:stamp}, change));
+  }
+  S.result=workingPlan();
+  save();
 }
 
 /* ============================== RENDERING ============================= */
-function $(id){ return document.getElementById(id); }
-function el(tag, attrs, html){
-  const n=document.createElement(tag);
-  if(attrs) for(const k in attrs){ if(k==='class') n.className=attrs[k]; else n.setAttribute(k,attrs[k]); }
-  if(html!=null) n.innerHTML=html;
-  return n;
-}
-
-/* ---------- setup tab ---------- */
 function bindSetup(){
   const st=S.settings;
-  const map = {
-    s_num:'storeNum', s_name:'storeName', s_start:'weekStart', s_mgr:'preparedBy',
-    s_pct:'laborPct', s_splh:'splh', s_mincrew:'minCrew', s_cook:'cookShare',
-    s_minsh:'minShift', s_maxsh:'maxShift', s_maxdays:'maxDays', s_ot:'otAfter',
-    s_rest:'minRest', s_brkmin:'breakMin', s_brkafter:'breakAfter', s_mgr2:'mgr2At'
-  };
+  const map={s_num:'storeNum', s_name:'storeName', s_start:'weekStart', s_mgr:'preparedBy',
+    s_pct:'laborPct', s_splh:'splh', s_mincrew:'minCrew', s_cook:'cookShare', s_mgr2:'mgr2At',
+    s_minsh:'minShift', s_maxsh:'maxShift', s_maxdaily:'maxDaily', s_maxdays:'maxDays',
+    s_maxconsec:'maxConsec', s_rest:'minRest', s_ot:'otAfter', s_brkmin:'breakMin', s_brkafter:'breakAfter',
+    s_openmin:'openerMinRating', s_closemin:'closerMinRating',
+    s_mnrdaily:'minorMaxDaily', s_mnrcurfew:'minorCurfew', s_mnrdays:'minorMaxDays'};
   for(const id in map){
-    const inp=$(id); inp.value = st[map[id]];
-    inp.oninput = ()=>{
-      const v = inp.type==='number' ? (+inp.value||0) : inp.value;
-      st[map[id]] = v; save();
-      if(id==='s_start') renderHours();
-      if(id==='s_splh'||id==='s_mincrew'||id==='s_cook') renderForecast();
+    const inp=$(id); if(!inp) continue;
+    inp.value=st[map[id]];
+    inp.oninput=()=>{
+      st[map[id]] = inp.type==='number' ? (+inp.value||0) : inp.value;
+      save();
+      if(id==='s_start'){ renderHours(); renderTeam(); renderLiveControls(); }
+      if(['s_splh','s_mincrew','s_cook','s_pct'].includes(id)){ renderForecast(); renderHours(); }
     };
   }
-  const cbs={s_enforce:'enforceBudget', s_hard:'hardConflicts', s_minh:'honorMinHours'};
+  const cbs={s_enforce:'enforceBudget', s_hard:'hardConflicts', s_minh:'honorMinHours',
+             s_noot:'noOT', s_stable:'stability'};
   for(const id in cbs){
     const c=$(id); c.checked=!!st[cbs[id]];
     c.onchange=()=>{ st[cbs[id]]=c.checked; save(); };
   }
-  renderHours(); renderConflicts();
+  const bm=$('s_bmode'); bm.value=st.budgetMode;
+  bm.onchange=()=>{ st.budgetMode=bm.value; save(); renderHours(); };
+  // school nights
+  const sn=$('schoolNights'); sn.innerHTML='';
+  for(let dow=0;dow<7;dow++){
+    const lab=el('label',{class:'row'}); lab.style.gap='3px';
+    const cb=el('input',{type:'checkbox'}); cb.checked=(st.schoolNights||[]).includes(dow);
+    cb.onchange=()=>{
+      const set=new Set(st.schoolNights||[]);
+      cb.checked?set.add(dow):set.delete(dow);
+      st.schoolNights=[...set].sort(); save();
+    };
+    lab.appendChild(cb); lab.appendChild(el('span',null,DAY_ABBR[dow]));
+    sn.appendChild(lab);
+  }
+  renderHours();
 }
 
 function renderHours(){
   const tb=$('hoursTable').querySelector('tbody'); tb.innerHTML='';
   const st=S.settings;
-  for(let d=0; d<7; d++){
-    const iso = addDays(st.weekStart, d);
-    const day = st.days[d];
+  for(let d=0;d<7;d++){
+    const iso=addDays(st.weekStart,d), day=st.days[d];
     const tr=el('tr');
     tr.appendChild(el('td',null,'<b>'+DAY_FULL[dowOf(iso)]+'</b>'));
     tr.appendChild(el('td',null,shortDate(iso)));
     const tdO=el('td'), inO=el('input',{type:'time'}); inO.value=day.open;
-    inO.oninput=()=>{ day.open=inO.value; rebuildDay(d); save(); renderForecast(); };
+    inO.oninput=()=>{ day.open=inO.value; rebuildDay(d); save(); renderForecast(); renderHours(); };
     tdO.appendChild(inO); tr.appendChild(tdO);
     const tdC=el('td'), inC=el('input',{type:'time'});
-    inC.value = day.close==='24:00' ? '23:59' : day.close;
-    inC.oninput=()=>{ day.close = inC.value==='23:59'?'24:00':inC.value; rebuildDay(d); save(); renderForecast(); };
+    inC.value=day.close==='24:00'?'23:59':day.close;
+    inC.oninput=()=>{ day.close=inC.value==='23:59'?'24:00':inC.value; rebuildDay(d); save(); renderForecast(); renderHours(); };
     tdC.appendChild(inC); tr.appendChild(tdC);
     const tdS=el('td',{class:'num'}), inS=el('input',{type:'number',step:'50',min:'0'}); inS.value=day.sales;
-    inS.oninput=()=>{ day.sales=+inS.value||0; rebuildDay(d); save(); renderForecast(); };
+    inS.oninput=()=>{ day.sales=+inS.value||0; rebuildDay(d); save(); renderForecast(); renderHours(); };
     tdS.appendChild(inS); tr.appendChild(tdS);
+    const tdB=el('td',{class:'num'}), inB=el('input',{type:'number',step:'10',min:'0'});
+    inB.value=Math.round(dayBudget(d));
+    inB.disabled = st.budgetMode!=='dollars';
+    inB.oninput=()=>{ day.budget=+inB.value||0; save(); renderHours(); };
+    tdB.appendChild(inB); tr.appendChild(tdB);
+    const sales=daySalesActual(d);
+    tr.appendChild(el('td',{class:'num'}, sales>0 ? (dayBudget(d)/sales*100).toFixed(1)+'%' : '—'));
     tb.appendChild(tr);
   }
 }
 
-function renderConflicts(){
-  const a=$('c_a'), b=$('c_b');
-  const opts = S.employees.map(e=>'<option value="'+e.id+'">'+esc(e.name)+'</option>').join('');
-  a.innerHTML=opts; b.innerHTML=opts;
-  const list=$('conflictList');
-  if(!S.conflicts.length){ list.innerHTML='<p class="hint">No pair rules yet.</p>'; return; }
-  list.innerHTML='';
-  S.conflicts.forEach(c=>{
-    const na=(S.employees.find(e=>e.id===c.a)||{}).name||'?';
-    const nb=(S.employees.find(e=>e.id===c.b)||{}).name||'?';
-    const row=el('div',{class:'row'},
-      '<span class="chip">'+(c.kind==='hard'?'NEVER':'AVOID')+'</span> <b>'+esc(na)+'</b> &nbsp;+&nbsp; <b>'+esc(nb)+'</b>');
-    const rm=el('button',{class:'btn sm danger'},'Remove');
-    rm.onclick=()=>{ S.conflicts=S.conflicts.filter(x=>x.id!==c.id); save(); renderConflicts(); };
-    row.appendChild(rm); row.style.marginBottom='6px'; list.appendChild(row);
-  });
-}
-
-/* ---------- crew tab ---------- */
+/* ---------- crew ---------- */
 function renderTeam(){
   const wrap=$('empList'); wrap.innerHTML='';
-  if(!S.employees.length){ wrap.innerHTML='<div class="panel"><p class="hint">No crew yet — add people or load the sample crew.</p></div>'; return; }
+  if(!S.employees.length){
+    wrap.innerHTML='<div class="panel"><p class="hint">No crew yet — add people, or load the sample crew from the top bar.</p></div>';
+    return;
+  }
+  const pm=pairMap();
   S.employees.forEach(e=>{
     const card=el('div',{class:'emp'});
-    const posOpts = p => POSITIONS.map(x=>'<option value="'+x.k+'"'+(p===x.k?' selected':'')+'>'+x.label+'</option>').join('');
-    card.innerHTML =
+    const posOpts=p=>POSITIONS.map(x=>'<option value="'+x.k+'"'+(p===x.k?' selected':'')+'>'+x.label+'</option>').join('');
+    const typeOpts=Object.keys(TYPES).map(k=>'<option value="'+k+'"'+(e.type===k?' selected':'')+'>'+TYPES[k]+'</option>').join('');
+    card.innerHTML=
       '<div class="grid g4">'+
         '<div><label class="f">Name</label><input data-k="name" value="'+esc(e.name)+'"></div>'+
         '<div><label class="f">Position</label><select data-k="pos">'+posOpts(e.pos)+'</select></div>'+
         '<div><label class="f">Also trained as</label><select data-k="pos2"><option value="">— none —</option>'+posOpts(e.pos2)+'</select></div>'+
+        '<div><label class="f">Employment</label><select data-k="type">'+typeOpts+'</select></div>'+
         '<div><label class="f">Capability (1–5)</label><input data-k="rating" type="number" min="1" max="5" step="1" value="'+e.rating+'"></div>'+
         '<div><label class="f">Wage ($/hr)</label><input data-k="wage" type="number" min="0" step="0.25" value="'+e.wage+'"></div>'+
         '<div><label class="f">Min hours</label><input data-k="minH" type="number" min="0" step="1" value="'+e.minH+'"></div>'+
+        '<div><label class="f">Target hours</label><input data-k="targetH" type="number" min="0" step="1" value="'+e.targetH+'"></div>'+
         '<div><label class="f">Max hours</label><input data-k="maxH" type="number" min="0" step="1" value="'+e.maxH+'"></div>'+
-        '<div><label class="f">Note</label><input data-k="note" value="'+esc(e.note||'')+'" placeholder="school nights, etc."></div>'+
+        '<div><label class="f">Note</label><input data-k="note" value="'+esc(e.note||'')+'" placeholder="school nights, transport…"></div>'+
       '</div>';
     const av=el('div',{class:'avail'});
     e.avail.forEach((a,i)=>{
@@ -901,7 +1472,8 @@ function renderTeam(){
       dv.innerHTML='<b>'+DAY_ABBR[dowOf(iso)]+' '+shortDate(iso)+'</b>';
       const f=el('input',{type:'time'}); f.value=a.from;
       const t=el('input',{type:'time'}); t.value=a.to==='24:00'?'23:59':a.to;
-      f.oninput=()=>{a.from=f.value;save();}; t.oninput=()=>{a.to=t.value==='23:59'?'24:00':t.value;save();};
+      f.oninput=()=>{a.from=f.value;save();};
+      t.oninput=()=>{a.to=t.value==='23:59'?'24:00':t.value;save();};
       dv.appendChild(f); dv.appendChild(t);
       const or=el('div',{class:'offrow'});
       const cb=el('input',{type:'checkbox'}); cb.checked=a.off;
@@ -910,30 +1482,69 @@ function renderTeam(){
       dv.appendChild(or); av.appendChild(dv);
     });
     card.appendChild(av);
-    const foot=el('div',{class:'row spread'});
-    foot.style.marginTop='10px';
-    foot.innerHTML='<span class="chip">'+POS_LABEL[e.pos]+(e.pos2?' / '+POS_LABEL[e.pos2]:'')+' · rating '+e.rating+' · counts '+PROD[clamp(+e.rating||3,1,5)].toFixed(2)+' crew</span>';
+
+    // per-person pairing rules
+    const pr=el('div'); pr.style.marginTop='10px';
+    const mine=pm[e.id]||{};
+    const chips=Object.keys(mine).map(oid=>{
+      const o=empById(oid); if(!o) return '';
+      return '<span class="chip pair k-'+mine[oid]+'">'+esc(PAIR_KINDS[mine[oid]].label)+': <b>'+esc(o.name)+'</b></span>';
+    }).join('');
+    pr.innerHTML='<label class="f">Pairing with others</label>'+(chips||'<span class="hint">No pairing notes.</span>');
+    const addRow=el('div',{class:'row'}); addRow.style.marginTop='6px';
+    const sel=el('select'); sel.style.maxWidth='210px';
+    sel.innerHTML=S.employees.filter(o=>o.id!==e.id).map(o=>'<option value="'+o.id+'">'+esc(o.name)+'</option>').join('');
+    const kind=el('select'); kind.style.maxWidth='210px';
+    kind.innerHTML=Object.keys(PAIR_KINDS).map(k=>'<option value="'+k+'">'+PAIR_KINDS[k].label+'</option>').join('');
+    const addBtn=el('button',{class:'btn sm'},'Add pairing');
+    addBtn.onclick=()=>{
+      const other=sel.value; if(!other) return toast('Add another person first.','warn');
+      S.pairs=(S.pairs||[]).filter(p=>!((p.a===e.id&&p.b===other)||(p.a===other&&p.b===e.id)));
+      S.pairs.push({id:uid(), a:e.id, b:other, kind:kind.value});
+      save(); renderTeam();
+      toast(PAIR_KINDS[kind.value].label+' recorded.','good');
+    };
+    const clrBtn=el('button',{class:'btn sm'},'Clear pairings');
+    clrBtn.onclick=()=>{
+      S.pairs=(S.pairs||[]).filter(p=>p.a!==e.id&&p.b!==e.id);
+      save(); renderTeam(); toast('Pairings cleared for '+e.name+'.');
+    };
+    addRow.appendChild(sel); addRow.appendChild(kind); addRow.appendChild(addBtn); addRow.appendChild(clrBtn);
+    pr.appendChild(addRow);
+    card.appendChild(pr);
+
+    const foot=el('div',{class:'row spread'}); foot.style.marginTop='10px';
+    foot.innerHTML='<span class="chip">'+TYPES[e.type]+' · '+POS_LABEL[e.pos]+(e.pos2?' / '+POS_LABEL[e.pos2]:'')+
+      ' · capability '+e.rating+' (counts '+PROD[clamp(+e.rating||3,1,5)].toFixed(2)+') · wants '+e.targetH+'h</span>';
     const del=el('button',{class:'btn sm danger'},'Remove');
     del.onclick=()=>{
       S.employees=S.employees.filter(x=>x.id!==e.id);
-      S.conflicts=S.conflicts.filter(c=>c.a!==e.id&&c.b!==e.id);
-      save(); renderTeam(); renderConflicts();
+      S.pairs=(S.pairs||[]).filter(p=>p.a!==e.id&&p.b!==e.id);
+      save(); renderTeam(); toast('Removed '+e.name+'.');
     };
     foot.appendChild(del); card.appendChild(foot);
+
     card.querySelectorAll('[data-k]').forEach(inp=>{
-      inp.oninput=()=>{
+      const ev = inp.tagName==='SELECT' ? 'onchange' : 'oninput';
+      inp[ev]=()=>{
         const k=inp.dataset.k;
-        e[k] = (inp.type==='number') ? (+inp.value||0) : inp.value;
-        save(); if(k==='name') renderConflicts();
+        e[k] = inp.type==='number' ? (+inp.value||0) : inp.value;
+        save();
+        if(k==='name'||k==='type'||k==='pos'||k==='pos2'||k==='rating'||k==='targetH') renderTeamFoot(card,e);
       };
     });
     wrap.appendChild(card);
   });
 }
+function renderTeamFoot(card,e){
+  const chip=card.querySelector('.row.spread .chip');
+  if(chip) chip.innerHTML=TYPES[e.type]+' · '+POS_LABEL[e.pos]+(e.pos2?' / '+POS_LABEL[e.pos2]:'')+
+    ' · capability '+e.rating+' (counts '+PROD[clamp(+e.rating||3,1,5)].toFixed(2)+') · wants '+e.targetH+'h';
+}
 
-/* ---------- forecast tab ---------- */
+/* ---------- forecast ---------- */
 function renderForecast(){
-  const t=$('fcTable'); const st=S.settings;
+  const t=$('fcTable'), st=S.settings;
   let minH=24, maxH=0;
   for(let d=0;d<7;d++){ const hs=openHours(d); if(hs.length){ minH=Math.min(minH,hs[0]); maxH=Math.max(maxH,hs[hs.length-1]); } }
   if(maxH<minH){ t.innerHTML=''; return; }
@@ -942,18 +1553,14 @@ function renderForecast(){
   head+='<th class="num">Day total</th><th class="num">Crew hrs</th></tr>';
   let body='';
   for(let d=0;d<7;d++){
-    const iso=addDays(st.weekStart,d);
-    const hs=openHours(d);
+    const iso=addDays(st.weekStart,d), hs=openHours(d);
     body+='<tr><td><b>'+DAY_ABBR[dowOf(iso)]+'</b> '+shortDate(iso)+'</td>';
     let tot=0, crew=0;
     for(let h=minH;h<=maxH;h++){
       if(hs.includes(h)){
-        const v=hourlySales(d,h); tot+=v;
-        crew += Math.max(st.minCrew, v/Math.max(1,st.splh));
+        const v=hourlySales(d,h); tot+=v; crew+=Math.max(st.minCrew, v/Math.max(1,st.splh));
         body+='<td class="num"><input data-d="'+d+'" data-h="'+h+'" type="number" step="25" value="'+v+'" style="width:78px;padding:3px 5px"></td>';
-      } else {
-        body+='<td class="num" style="background:#f0f1f3;color:#aab">—</td>';
-      }
+      } else body+='<td class="num" style="background:#f0efeb;color:#b3aea4">—</td>';
     }
     body+='<td class="num"><b>'+money0(tot)+'</b></td><td class="num">'+crew.toFixed(1)+'</td></tr>';
   }
@@ -962,7 +1569,7 @@ function renderForecast(){
     inp.oninput=()=>{
       const d=+inp.dataset.d, h=+inp.dataset.h;
       S.settings.days[d].hourly[h]=+inp.value||0;
-      S.settings.days[d].sales = daySalesActual(d);
+      S.settings.days[d].sales=daySalesActual(d);
       save(); renderHours();
     };
   });
@@ -981,18 +1588,55 @@ function renderCurve(){
   });
 }
 
+/* ---------- option cards ---------- */
+function renderOptions(){
+  const panel=$('optPanel');
+  if(!S.plans){ panel.style.display='none'; return; }
+  panel.style.display='';
+  const labels=['Recommended','Second option','Third option'];
+  $('optIntro').textContent='Three schedules built from the same data with different priorities, ranked by coverage held, '+
+    'overtime created, days over budget, and how many people land near the hours they want. Click one to load it.';
+  const box=$('opts'); box.innerHTML='';
+  S.plans.forEach((p,i)=>{
+    const m=p.metrics;
+    const b=el('button',{class:'opt'+(i===S.chosen?' on':''), type:'button'});
+    b.innerHTML='<span class="rank">'+labels[i]+'</span>'+
+      '<h3>'+esc(p.strategy.name)+'</h3>'+
+      '<div class="blurb">'+esc(p.strategy.blurb)+'</div>'+
+      '<dl>'+
+        '<dt>Scheduled hours</dt><dd>'+hrs(m.hours)+'</dd>'+
+        '<dt>Labor cost</dt><dd>'+money(m.cost)+'</dd>'+
+        '<dt>Of budget</dt><dd>'+m.budgetUse+'%</dd>'+
+        '<dt>Labor %</dt><dd>'+m.laborPct+'%</dd>'+
+        '<dt>Days over budget</dt><dd>'+m.daysOver+'</dd>'+
+        '<dt>Understaffed ½hrs</dt><dd>'+m.short+'</dd>'+
+        '<dt>Manager holes</dt><dd>'+m.mgrHoles+'</dd>'+
+        '<dt>Overtime hrs</dt><dd>'+hrs(m.ot)+'</dd>'+
+        '<dt>Near target hours</dt><dd>'+m.atTarget+'/'+p.emps.length+'</dd>'+
+      '</dl>';
+    b.onclick=()=>{
+      if(S.amendments.length){
+        confirmBox('Switch option?','You have '+S.amendments.length+' live amendment(s) on the current option. Switching clears them.',
+          ()=>{ S.amendments=[]; S.chosen=i; S.result=workingPlan(); save(); renderAll(); toast('Loaded '+S.plans[i].strategy.name+'.','good'); });
+      } else {
+        S.chosen=i; S.result=workingPlan(); renderAll();
+        toast('Loaded '+p.strategy.name+'.','good');
+      }
+    };
+    box.appendChild(b);
+  });
+}
+
 /* ---------- Expressway printout ---------- */
 function renderPrintout(){
   const r=S.result, st=S.settings, out=$('printout');
-  if(!r){ out.innerHTML='<div class="xw-note">Press <b>Generate schedule</b> to build the week.</div>'; return; }
-  const group = $('opt_showpos').checked;
-  const dayIso = i=>addDays(st.weekStart,i);
-
-  // shift lookup: empId -> day -> record
+  if(!r){ out.innerHTML='<div class="xw-note">Press <b>Build 3 options</b> to generate the week.</div>'; return; }
+  const group=$('opt_showpos').checked;
+  const tIdx=todayIndex();
   const byEmp={};
   r.assigns.forEach(a=>{ (byEmp[a.empId]=byEmp[a.empId]||{})[a.d]=a; });
-
-  const order = r.emps.slice().sort((x,y)=>{
+  const roster=r.emps.map(empById).filter(Boolean);
+  const order=roster.slice().sort((x,y)=>{
     const px=POSITIONS.findIndex(p=>p.k===x.pos), py=POSITIONS.findIndex(p=>p.k===y.pos);
     if(group && px!==py) return px-py;
     return x.name.localeCompare(y.name);
@@ -1000,183 +1644,264 @@ function renderPrintout(){
 
   let head='<tr><th style="text-align:left">EMPLOYEE</th><th>POS</th>';
   for(let d=0;d<7;d++){
-    const iso=dayIso(d);
+    const iso=addDays(st.weekStart,d);
     head+='<th>'+DAY_ABBR[dowOf(iso)]+'<br>'+shortDate(iso)+'</th>';
   }
-  head+='<th>HRS</th><th>RATE</th><th>LABOR $</th></tr>';
+  head+='<th>HRS</th><th>TGT</th><th>RATE</th><th>LABOR $</th></tr>';
 
-  let body='', lastPos=null;
+  let body='', lastPos=null, grpH=0, grpC=0, grandH=0, grandC=0;
   const dayTot=[0,0,0,0,0,0,0], dayCost=[0,0,0,0,0,0,0];
-  let grandH=0, grandC=0, grpH=0, grpC=0;
-
-  function subtotal(pos){
+  function subtotal(){
     if(lastPos===null) return '';
     const row='<tr class="sub"><td class="nm" colspan="9">'+POS_LABEL[lastPos].toUpperCase()+' SUBTOTAL</td>'+
-      '<td class="tot">'+hrs(grpH)+'</td><td></td><td class="tot">'+money(grpC)+'</td></tr>';
+      '<td class="tot">'+hrs(grpH)+'</td><td></td><td></td><td class="tot">'+money(grpC)+'</td></tr>';
     grpH=0; grpC=0; return row;
   }
-
   order.forEach(e=>{
     if(group && e.pos!==lastPos){
-      body += subtotal(e.pos);
-      body += '<tr class="grp"><td colspan="12">'+POS_LABEL[e.pos].toUpperCase()+'S</td></tr>';
+      body+=subtotal();
+      body+='<tr class="grp"><td colspan="13">'+POS_LABEL[e.pos].toUpperCase()+'S</td></tr>';
       lastPos=e.pos;
     }
-    let h=0, c=0, cells='';
-    for(let d=0; d<7; d++){
+    let h=0,c=0,cells='';
+    for(let d=0;d<7;d++){
       const a=(byEmp[e.id]||{})[d];
+      const cls='sh'+(d===tIdx?' today':'')+(tIdx>=0&&d<tIdx?' past':'');
       if(a){
         h+=a.paid; c+=a.cost; dayTot[d]+=a.paid; dayCost[d]+=a.cost;
-        const tag = a.pos!==e.pos ? '<br>('+POSITIONS.find(p=>p.k===a.pos).short+')' : '';
-        cells+='<td class="sh">'+fmtShift(a.start,a.end)+tag+'</td>';
+        const tag=a.pos!==e.pos ? '<br>('+POS_SHORT[a.pos]+')' : '';
+        const orig=a.orig ? '<br><s>'+fmtShift(a.orig.start,a.orig.end)+'</s>' : '';
+        cells+='<td class="'+cls+'">'+(a.amended?'*':'')+fmtShift(a.start,a.end)+tag+orig+'</td>';
       } else {
-        const av=e.avail[d];
-        cells+='<td class="sh" style="color:#888">'+(av.off?'RQ OFF':'OFF')+'</td>';
+        cells+='<td class="'+cls+'" style="color:#888">'+(e.avail[d].off?'RQ OFF':'OFF')+'</td>';
       }
     }
     grandH+=h; grandC+=c; grpH+=h; grpC+=c;
-    body+='<tr><td class="nm">'+esc(e.name)+'</td><td class="sh">'+POSITIONS.find(p=>p.k===e.pos).short+
-      (e.pos2?'/'+POSITIONS.find(p=>p.k===e.pos2).short:'')+'</td>'+cells+
-      '<td class="tot">'+hrs(h)+'</td><td class="tot">'+money(e.wage)+'</td><td class="tot">'+money(c)+'</td></tr>';
+    const tgt=+e.targetH||0;
+    body+='<tr><td class="nm">'+esc(e.name)+'</td><td class="sh">'+POS_SHORT[e.pos]+
+      (e.pos2?'/'+POS_SHORT[e.pos2]:'')+'</td>'+cells+
+      '<td class="tot">'+hrs(h)+'</td><td class="tot">'+(tgt||'—')+'</td>'+
+      '<td class="tot">'+money(e.wage)+'</td><td class="tot">'+money(c)+'</td></tr>';
   });
-  if(group) body += subtotal(null);
+  if(group) body+=subtotal();
 
   let totRow='<tr class="tot"><td class="nm" colspan="2">DAILY HOURS</td>';
   for(let d=0;d<7;d++) totRow+='<td class="sh">'+hrs(dayTot[d])+'</td>';
-  totRow+='<td class="tot">'+hrs(grandH)+'</td><td></td><td class="tot">'+money(grandC)+'</td></tr>';
-  let salesRow='<tr class="tot"><td class="nm" colspan="2">PROJ SALES</td>';
-  for(let d=0;d<7;d++) salesRow+='<td class="sh">'+money0(daySalesActual(d))+'</td>';
-  salesRow+='<td class="tot">'+money0(r.weekSales)+'</td><td></td><td></td></tr>';
-  let pctRow='<tr class="tot"><td class="nm" colspan="2">LABOR %</td>';
+  totRow+='<td class="tot">'+hrs(grandH)+'</td><td></td><td></td><td class="tot">'+money(grandC)+'</td></tr>';
+  let costRow='<tr class="tot"><td class="nm" colspan="2">LABOR $</td>';
+  for(let d=0;d<7;d++) costRow+='<td class="sh">'+money0(dayCost[d])+'</td>';
+  costRow+='<td class="tot"></td><td></td><td></td><td class="tot">'+money(grandC)+'</td></tr>';
+  let budRow='<tr class="tot"><td class="nm" colspan="2">BUDGET $</td>';
+  for(let d=0;d<7;d++) budRow+='<td class="sh">'+money0(r.budgets[d])+'</td>';
+  budRow+='<td class="tot">'+money0(r.budget)+'</td><td></td><td></td><td></td></tr>';
+  let varRow='<tr class="tot"><td class="nm" colspan="2">OVER / UNDER</td>';
   for(let d=0;d<7;d++){
-    const s=daySalesActual(d);
-    pctRow+='<td class="sh">'+(s>0?(dayCost[d]/s*100).toFixed(1)+'%':'—')+'</td>';
+    const v=dayCost[d]-r.budgets[d];
+    varRow+='<td class="sh">'+(v<=0?'-':'+')+money0(Math.abs(v))+'</td>';
   }
-  const wkPct = r.weekSales>0 ? grandC/r.weekSales*100 : 0;
-  pctRow+='<td class="tot">'+wkPct.toFixed(1)+'%</td><td></td><td></td></tr>';
+  varRow+='<td class="tot">'+((grandC-r.budget)<=0?'-':'+')+money0(Math.abs(grandC-r.budget))+'</td><td></td><td></td><td></td></tr>';
 
-  const endIso = addDays(st.weekStart,6);
-  const notes = [];
-  if(st.enforceBudget) notes.push('Schedule held to '+st.laborPct+'% labor budget.');
-  notes.push('Built at '+st.splh+' SPLH, minimum crew '+st.minCrew+', '+st.cookShare+'% back-of-house split.');
-  if(st.breakMin>0) notes.push('Shifts over '+st.breakAfter+' hrs show clock time; '+st.breakMin+' min unpaid break deducted from paid hours.');
+  const notes=[];
+  notes.push('Option: '+r.strategy.name+' — '+r.strategy.blurb);
+  notes.push('Budget enforced per day. Built at '+st.splh+' SPLH, minimum crew '+st.minCrew+', '+st.cookShare+'% back-of-house.');
+  if(st.breakMin>0) notes.push('Clock times shown; '+st.breakMin+' min unpaid break deducted from paid hours over '+st.breakAfter+' hrs.');
+  if(S.amendments.length){
+    notes.push('');
+    notes.push('AMENDMENTS (live changes, most recent last):');
+    S.amendments.forEach(a=>{
+      const e=empById(a.empId);
+      notes.push('  * '+longDate(a.on)+' — '+(e?e.name:'?')+' — '+(a.note||a.type)+
+        (a.type==='add'?' ('+DAY_ABBR[dowOf(addDays(st.weekStart,a.d))]+' '+fmtShift(a.start,a.end)+')':
+         a.type==='retime'?' ('+DAY_ABBR[dowOf(addDays(st.weekStart,a.d))]+' now '+fmtShift(a.start,a.end)+')':
+         ' ('+DAY_ABBR[dowOf(addDays(st.weekStart,a.d))]+')'));
+    });
+  }
 
-  out.innerHTML =
+  out.innerHTML=
     '<div class="xw-head">'+
       '<div><div class="xw-title">WEEKLY CREW SCHEDULE</div>'+
         '<div>STORE #'+esc(st.storeNum||'____')+'&nbsp;&nbsp;'+esc(st.storeName||'')+'</div></div>'+
       '<div style="text-align:right">'+
-        '<div>WEEK OF '+longDate(st.weekStart)+' - '+longDate(endIso)+'</div>'+
+        '<div>WEEK OF '+longDate(st.weekStart)+' - '+longDate(addDays(st.weekStart,6))+'</div>'+
         '<div>PREPARED BY: '+esc(st.preparedBy||'________')+'</div>'+
-        '<div>PRINTED: '+longDate(new Date().toISOString().slice(0,10))+'</div>'+
+        '<div>PRINTED: '+longDate(todayISO())+'</div>'+
       '</div>'+
     '</div>'+
-    '<table><thead>'+head+'</thead><tbody>'+body+totRow+salesRow+pctRow+'</tbody></table>'+
+    '<table><thead>'+head+'</thead><tbody>'+body+totRow+costRow+budRow+varRow+'</tbody></table>'+
     '<div class="xw-foot">'+
       '<div>TOTAL SCHEDULED HOURS: <span>'+hrs(grandH)+'</span></div>'+
       '<div>TOTAL LABOR COST: <span>'+money(grandC)+'</span></div>'+
+      '<div>WEEK BUDGET: <span>'+money(r.budget)+'</span></div>'+
+      '<div>BUDGET USED: <span>'+(r.budget>0?(grandC/r.budget*100).toFixed(1):'0')+'%</span></div>'+
       '<div>PROJECTED SALES: <span>'+money0(r.weekSales)+'</span></div>'+
-      '<div>LABOR BUDGET ('+st.laborPct+'%): <span>'+money(r.budget)+'</span></div>'+
-      '<div>PROJECTED LABOR %: <span>'+wkPct.toFixed(2)+'%</span></div>'+
-      '<div>VARIANCE TO BUDGET: <span>'+(grandC<=r.budget?'-':'+')+money(Math.abs(r.budget-grandC))+'</span></div>'+
+      '<div>PROJECTED LABOR %: <span>'+(r.weekSales>0?(grandC/r.weekSales*100).toFixed(2):'0')+'%</span></div>'+
       '<div>SALES PER LABOR HOUR: <span>'+(grandH>0?money(r.weekSales/grandH):'—')+'</span></div>'+
-      '<div>CREW SCHEDULED: <span>'+Object.keys(byEmp).length+' of '+r.emps.length+'</span></div>'+
+      '<div>CREW SCHEDULED: <span>'+Object.keys(byEmp).length+' of '+roster.length+'</span></div>'+
     '</div>'+
     '<div class="xw-note">'+esc(notes.join('\n'))+'</div>';
 
-  renderKpis(grandH, grandC, wkPct);
+  renderKpis(grandH, grandC);
+}
+function renderKpis(h,c){
+  const r=S.result, st=S.settings, k=$('kpis');
+  const m=r.metrics;
+  const over=c-r.budget;
+  const useCls = m.daysOver>0 ? 'bad' : (r.budget>0 && c/r.budget>=0.9 ? 'good':'warn');
+  k.innerHTML=
+    '<div class="kpi"><b>Scheduled hours</b><span>'+hrs(h)+'</span></div>'+
+    '<div class="kpi '+useCls+'"><b>Budget used</b><span>'+(r.budget>0?(c/r.budget*100).toFixed(1):'0')+'%</span></div>'+
+    '<div class="kpi '+(m.daysOver===0?'good':'bad')+'"><b>Days over budget</b><span>'+m.daysOver+'</span></div>'+
+    '<div class="kpi '+(m.short===0?'good':(m.short<8?'warn':'bad'))+'"><b>Understaffed ½hrs</b><span>'+m.short+'</span></div>';
 }
 
-function renderKpis(h,c,pct){
-  const r=S.result, st=S.settings, k=$('kpis');
-  const over = c - r.budget;
-  const cls = pct <= st.laborPct ? 'good' : (pct <= st.laborPct+2 ? 'warn' : 'bad');
-  const short = countShortSlots();
-  k.innerHTML =
-    '<div class="kpi"><b>Scheduled hours</b><span>'+hrs(h)+'</span></div>'+
-    '<div class="kpi '+cls+'"><b>Projected labor %</b><span>'+pct.toFixed(2)+'%</span></div>'+
-    '<div class="kpi '+(over<=0?'good':'bad')+'"><b>Vs. budget</b><span>'+(over<=0?'-':'+')+money(Math.abs(over))+'</span></div>'+
-    '<div class="kpi '+(short===0?'good':(short<8?'warn':'bad'))+'"><b>Understaffed half-hours</b><span>'+short+'</span></div>';
-}
-function countShortSlots(){
-  const r=S.result; if(!r) return 0; let n=0;
-  for(let d=0;d<7;d++) for(let i=0;i<r.demand[d].slots;i++){
-    let need=0, have=0;
-    POSITIONS.forEach(p=>{ need+=r.demand[d].need[i][p.k]; have+=r.covered[d][p.k][i]; });
-    if(have < need-0.35) n++;
+/* ---------- live modify UI ---------- */
+function renderLiveControls(){
+  const st=S.settings;
+  $('l_today').value=st.today;
+  const daySel=$('l_day'); daySel.innerHTML='';
+  for(let d=0;d<7;d++){
+    const iso=addDays(st.weekStart,d);
+    const o=el('option',{value:d}, DAY_ABBR[dowOf(iso)]+' '+shortDate(iso)+(d===todayIndex()?' (today)':''));
+    daySel.appendChild(o);
   }
-  return n;
+  if(todayIndex()>=0) daySel.value=todayIndex();
+  const empSel=$('l_emp');
+  empSel.innerHTML=S.employees.map(e=>'<option value="'+e.id+'">'+esc(e.name)+'</option>').join('');
+  syncLiveFields();
+}
+function syncLiveFields(){
+  const k=$('l_kind').value;
+  $('l_empWrap').style.display = (k==='callout'||k==='sentHome') ? '' : 'none';
+  $('l_timeWrap').style.display = (k==='sentHome'||k==='needCover') ? '' : 'none';
+  $('l_time2Wrap').style.display = (k==='needCover') ? '' : 'none';
+  $('l_amtWrap').style.display = (k==='cutLabor') ? '' : 'none';
+}
+function renderSuggestions(list){
+  const box=$('sugList'); box.innerHTML='';
+  if(!list.length){ box.innerHTML='<p class="hint">Nothing to suggest.</p>'; return; }
+  const tierNames={1:'First choice — call in someone who wants hours',2:'Next — extend someone already on the floor',
+                   3:'Last resort — move a posted shift',4:'Or accept it'};
+  let lastTier=null;
+  list.forEach(s=>{
+    if(s.tier!==lastTier && !s.info && tierNames[s.tier]){
+      box.appendChild(el('div',{class:'tierlabel'}, tierNames[s.tier]));
+      lastTier=s.tier;
+    }
+    const d=el('div',{class:'sug t'+s.tier+(s.blocked?' blocked':'')});
+    d.innerHTML='<div class="t">'+esc(s.title)+'</div>'+
+      (s.why?'<div class="why">'+esc(s.why)+'</div>':'')+
+      (s.warn?'<div class="warn">'+esc(s.warn)+'</div>':'')+
+      (s.no?'<div class="no">'+esc(s.no)+'</div>':'');
+    if(s.change){
+      const b=el('button',{class:'btn sm primary'}, s.applyLabel||'Apply as amendment');
+      b.style.marginTop='8px';
+      b.onclick=()=>{ pushAmendment(s.change, s.title); renderAll(); renderAmendments();
+        toast('Amendment recorded.','good'); };
+      d.appendChild(b);
+    }
+    box.appendChild(d);
+  });
+}
+function renderAmendments(){
+  const box=$('amdList'); box.innerHTML='';
+  if(!S.amendments.length) return;
+  box.appendChild(el('h3',null,'Amendments this week'));
+  S.amendments.forEach(a=>{
+    const e=empById(a.empId);
+    const d=el('div',{class:'amd'});
+    d.innerHTML='<b>'+longDate(a.on)+'</b> — '+esc(e?e.name:'?')+' — '+esc(a.note||a.type);
+    const u=el('button',{class:'btn sm danger'},'Undo');
+    u.style.marginLeft='8px';
+    u.onclick=()=>{
+      S.amendments=S.amendments.filter(x=>x.id!==a.id);
+      S.result=workingPlan(); save(); renderAll(); renderAmendments(); toast('Amendment removed.');
+    };
+    d.appendChild(u);
+    box.appendChild(d);
+  });
+  const clr=el('button',{class:'btn sm'},'Clear all amendments');
+  clr.onclick=()=>confirmBox('Clear amendments?','This returns the week to the option as originally built.',()=>{
+    S.amendments=[]; S.result=workingPlan(); save(); renderAll(); renderAmendments(); toast('Amendments cleared.');
+  });
+  box.appendChild(clr);
 }
 
 /* ---------- diagnostics ---------- */
 function renderReport(){
-  const r=S.result;
-  if(!r){ $('issues').innerHTML='<p class="hint">Nothing generated yet.</p>'; $('coverage').innerHTML=''; $('empReport').innerHTML=''; $('dayReport').innerHTML=''; return; }
-  const st=S.settings, msgs=[];
-
-  // manager coverage holes
+  const r=S.result, st=S.settings;
+  if(!r){ $('issues').innerHTML='<p class="hint">Nothing generated yet.</p>';
+    $('coverage').innerHTML=''; $('empReport').innerHTML=''; $('dayReport').innerHTML=''; return; }
+  const msgs=[];
   for(let d=0;d<7;d++){
     let holes=0;
-    for(let i=0;i<r.demand[d].slots;i++) if(r.heads[d][i] < 1) holes++;
+    for(let i=0;i<r.demand[d].slots;i++) if(r.heads[d][i]<1) holes++;
     if(holes>0) msgs.push({c:'bad', t:DAY_FULL[dowOf(addDays(st.weekStart,d))]+': '+holes+' half-hour(s) with no manager on the clock.'});
   }
-  // conflicts violated
-  const cmap=conflictMap();
+  const pm=pairMap();
   for(let d=0;d<7;d++){
     const list=r.assigns.filter(a=>a.d===d);
     for(let i=0;i<list.length;i++) for(let j=i+1;j<list.length;j++){
-      const k=(cmap[list[i].empId]||{})[list[j].empId];
-      if(!k) continue;
-      if(list[i].start < list[j].end && list[j].start < list[i].end){
-        const na=r.emps.find(e=>e.id===list[i].empId).name, nb=r.emps.find(e=>e.id===list[j].empId).name;
-        msgs.push({c:k==='hard'?'bad':'warn', t:DAY_ABBR[dowOf(addDays(st.weekStart,d))]+': '+na+' overlaps '+nb+' ('+(k==='hard'?'NEVER pair — could not avoid':'avoid pair')+').'});
+      const k=(pm[list[i].empId]||{})[list[j].empId];
+      if(!k||k==='prefer') continue;
+      if(list[i].start<list[j].end && list[j].start<list[i].end){
+        const na=(empById(list[i].empId)||{}).name, nb=(empById(list[j].empId)||{}).name;
+        msgs.push({c:k==='never'?'bad':'warn',
+          t:DAY_ABBR[dowOf(addDays(st.weekStart,d))]+': '+na+' overlaps '+nb+' ('+PAIR_KINDS[k].label.toLowerCase()+').'});
       }
     }
   }
-  // hours vs min/max, overtime
-  r.emps.forEach(e=>{
-    const s=r.stat[e.id];
-    if(s.paid > st.otAfter+0.01) msgs.push({c:'warn', t:e.name+' is scheduled '+hrs(s.paid)+' hrs — '+hrs(s.paid-st.otAfter)+' hrs of overtime.'});
-    if(st.honorMinHours && s.paid < (+e.minH||0)-0.5) msgs.push({c:'warn', t:e.name+' is '+hrs((+e.minH||0)-s.paid)+' hrs under their '+e.minH+'-hour minimum (availability or demand ran out).'});
+  r.emps.map(empById).filter(Boolean).forEach(e=>{
+    const s=r.stat[e.id]; if(!s) return;
+    const ot=s.shifts.reduce((a,x)=>a+(x.ot||0),0);
+    if(ot>0.01) msgs.push({c:'warn', t:e.name+' has '+hrs(ot)+' hrs of overtime.'});
+    if(st.honorMinHours && s.paid<(+e.minH||0)-0.5)
+      msgs.push({c:'warn', t:e.name+' is '+hrs((+e.minH||0)-s.paid)+' hrs under their '+e.minH+'-hour minimum.'});
+    const tgt=+e.targetH||0;
+    if(tgt>0 && s.paid>tgt+4) msgs.push({c:'warn', t:e.name+' is '+hrs(s.paid-tgt)+' hrs above the '+tgt+' they want.'});
     if(s.paid===0) msgs.push({c:'warn', t:e.name+' is not scheduled at all this week.'});
   });
-  const shortN = countShortSlots();
-  if(shortN>0){
-    msgs.push({c:'warn', t:shortN+' half-hour block(s) are staffed below projected demand — see coverage grid.'});
-    // being short on people and being short on money are different problems
+  for(let d=0;d<7;d++){
+    if(r.dayCost[d] > r.budgets[d]+0.01){
+      msgs.push({c:'bad', t:DAY_FULL[dowOf(addDays(st.weekStart,d))]+' is '+money(r.dayCost[d]-r.budgets[d])+
+        ' over its '+money(r.budgets[d])+' budget.'});
+      // distinguish "this schedule is fat" from "no schedule can open the doors
+      // for that money": price the floor you cannot go under — a manager on the
+      // clock all day, plus the minimum crew, at your cheapest available wage
+      const mgrCost=r.assigns.filter(a=>a.d===d&&a.pos==='manager').reduce((s,a)=>s+a.cost,0);
+      const openH=(dayMeta(d).close-dayMeta(d).open)/60;
+      const wages=r.emps.map(empById).filter(e=>e&&e.pos!=='manager').map(e=>+e.wage||0);
+      const cheap=wages.length?Math.min(...wages):0;
+      const floorCost=mgrCost + openH*Math.max(0,st.minCrew-1)*cheap;
+      if(floorCost > r.budgets[d]+0.01)
+        msgs.push({c:'bad', t:'   → '+DAY_ABBR[dowOf(addDays(st.weekStart,d))]+
+          ': the floor for that day — one manager open to close plus your '+st.minCrew+
+          '-crew minimum at the cheapest wage on the roster — costs about '+money(floorCost)+
+          ', more than the '+money(r.budgets[d])+' budgeted. No legal schedule fits that number; the budget, the store hours or the minimum crew has to give.'});
+    }
+  }
+  const m=r.metrics;
+  if(m.short>0){
+    msgs.push({c:'warn', t:m.short+' half-hour block(s) staffed below projected demand — see the coverage grid.'});
     let demandHrs=0;
-    for(let d=0;d<7;d++) for(let i=0;i<r.demand[d].slots;i++) demandHrs += r.demand[d].need[i].total/2;
-    const sched = r.assigns.reduce((a,x)=>a+x.paid,0);
-    const gap = demandHrs - sched;
-    if(gap > 1){
-      if(r.spend < r.budget*0.97){
+    for(let d=0;d<7;d++) for(let i=0;i<r.demand[d].slots;i++) demandHrs+=r.demand[d].need[i].total/2;
+    const gap=demandHrs-m.hours;
+    if(gap>1){
+      if(m.cost < m.budget*0.97)
         msgs.push({c:'bad', t:'Capacity-limited, not budget-limited: the forecast asks for '+hrs(demandHrs)+
-          ' crew hours and the roster could only supply '+hrs(sched)+'. You have '+money(r.budget-r.spend)+
-          ' of budget left but nobody available to spend it on — open up availability, raise someone\'s max hours, or add crew.'});
-      } else {
+          ' crew hours and the roster could only supply '+hrs(m.hours)+'. '+money(m.budget-m.cost)+
+          ' of budget is unspent with nobody available to spend it on — open availability, raise someone’s max, or add crew.'});
+      else
         msgs.push({c:'warn', t:'Budget-limited: covering the forecast needs about '+hrs(gap)+
-          ' more crew hours, which would push you past the '+st.laborPct+'% labor budget. Raise the budget or the SPLH target.'});
-      }
+          ' more crew hours, which the daily budgets will not carry. Raise the budget or the SPLH target.'});
     }
   }
-  if(r.spend > r.budget){
-    msgs.push({c:'bad', t:'Schedule is '+money(r.spend-r.budget)+' over the labor budget.'});
-    if(st.enforceBudget){
-      const why = [];
-      if(shortN>0) why.push('trimming stops at the point where it would cut into hours the forecast still needs');
-      if(st.honorMinHours && r.emps.some(e=>(+e.minH||0)>0)) why.push('guaranteed minimum hours are honored ahead of the budget');
-      if(why.length) msgs.push({c:'warn', t:'Budget hold could not close the gap: '+why.join('; ')+
-        '. Raise the SPLH target to demand less crew, cut minimum-hour guarantees, or accept the higher labor %.'});
-    }
-  }
-  else msgs.push({c:'good', t:'Labor cost is '+money(r.budget-r.spend)+' under budget.'});
-  if(!msgs.some(m=>m.c==='bad')) msgs.unshift({c:'good', t:'No hard rule violations.'});
+  if(m.daysOver===0) msgs.push({c:'good', t:'Every day is within its labor budget ('+money(m.budget-m.cost)+' unspent across the week).'});
+  if(!msgs.some(x=>x.c==='bad')) msgs.unshift({c:'good', t:'No hard rule violations.'});
+  $('issues').innerHTML='<ul class="msgs">'+msgs.map(x=>'<li class="'+x.c+'">'+esc(x.t)+'</li>').join('')+'</ul>';
 
-  $('issues').innerHTML='<ul class="msgs">'+msgs.map(m=>'<li class="'+m.c+'">'+esc(m.t)+'</li>').join('')+'</ul>';
-
-  // coverage heat grid
+  // coverage heat
   let minH=24,maxH=0;
-  for(let d=0;d<7;d++){ const hsl=openHours(d); if(hsl.length){minH=Math.min(minH,hsl[0]);maxH=Math.max(maxH,hsl[hsl.length-1]);} }
+  for(let d=0;d<7;d++){ const hs=openHours(d); if(hs.length){minH=Math.min(minH,hs[0]);maxH=Math.max(maxH,hs[hs.length-1]);} }
   let ch='<table><thead><tr><th>Day</th>';
   for(let h=minH;h<=maxH;h++) ch+='<th class="heat">'+fmt12((h%24)*60)+'</th>';
   ch+='</tr></thead><tbody>';
@@ -1185,42 +1910,48 @@ function renderReport(){
     const meta=dayMeta(d);
     for(let h=minH;h<=maxH;h++){
       const i=Math.round((h*60-meta.open)/SLOT);
-      if(i<0||i>=r.demand[d].slots){ ch+='<td class="heat" style="background:#f0f1f3">—</td>'; continue; }
+      if(i<0||i>=r.demand[d].slots){ ch+='<td class="heat" style="background:#f0efeb">—</td>'; continue; }
       let need=0,have=0;
       POSITIONS.forEach(p=>{ need+=r.demand[d].need[i][p.k]; have+=r.covered[d][p.k][i]; });
       const diff=have-need;
       let bg='#e2efdd';
       if(diff<-0.8) bg='#f2d6d0'; else if(diff<-0.3) bg='#f6e8cb'; else if(diff>1.2) bg='#d7e6e3';
-      ch+='<td class="heat" style="background:'+bg+'" title="need '+need.toFixed(1)+' / have '+have.toFixed(1)+'">'+have.toFixed(1)+'<br><span style="color:#777">'+need.toFixed(1)+'</span></td>';
+      ch+='<td class="heat" style="background:'+bg+'" title="need '+need.toFixed(1)+' / have '+have.toFixed(1)+'">'+
+          have.toFixed(1)+'<br><span style="color:#8a857c">'+need.toFixed(1)+'</span></td>';
     }
     ch+='</tr>';
   }
   $('coverage').innerHTML=ch+'</tbody></table>';
 
-  // per-person
-  let er='<table><thead><tr><th>Name</th><th>Position</th><th class="num">Rating</th><th class="num">Days</th>'+
-    '<th class="num">Paid hrs</th><th class="num">Min</th><th class="num">Max</th><th class="num">Rate</th><th class="num">Cost</th></tr></thead><tbody>';
-  r.emps.slice().sort((a,b)=>r.stat[b.id].paid-r.stat[a.id].paid).forEach(e=>{
+  let er='<table><thead><tr><th>Name</th><th>Type</th><th>Position</th><th class="num">Cap</th><th class="num">Days</th>'+
+    '<th class="num">Hours</th><th class="num">Target</th><th class="num">Min</th><th class="num">Max</th>'+
+    '<th class="num">OT</th><th class="num">Rate</th><th class="num">Cost</th></tr></thead><tbody>';
+  r.emps.map(empById).filter(Boolean).sort((a,b)=>r.stat[b.id].paid-r.stat[a.id].paid).forEach(e=>{
     const s=r.stat[e.id];
-    const flag = s.paid>st.otAfter ? ' style="background:#f7e2de"' : (s.paid<(+e.minH||0)-0.5?' style="background:#f6eeda"':'');
-    er+='<tr'+flag+'><td>'+esc(e.name)+'</td><td>'+POS_LABEL[e.pos]+(e.pos2?' / '+POS_LABEL[e.pos2]:'')+'</td>'+
+    const ot=s.shifts.reduce((a,x)=>a+(x.ot||0),0);
+    const tgt=+e.targetH||0;
+    const bg = ot>0 ? ' style="background:#f7e2de"' : (tgt&&Math.abs(s.paid-tgt)>4 ? ' style="background:#f6eeda"' : '');
+    er+='<tr'+bg+'><td>'+esc(e.name)+'</td><td>'+TYPES[e.type]+'</td><td>'+POS_LABEL[e.pos]+(e.pos2?' / '+POS_LABEL[e.pos2]:'')+'</td>'+
       '<td class="num">'+e.rating+'</td><td class="num">'+s.days.size+'</td><td class="num"><b>'+hrs(s.paid)+'</b></td>'+
-      '<td class="num">'+e.minH+'</td><td class="num">'+e.maxH+'</td><td class="num">'+money(e.wage)+'</td><td class="num">'+money(s.cost)+'</td></tr>';
+      '<td class="num">'+(tgt||'—')+'</td><td class="num">'+e.minH+'</td><td class="num">'+e.maxH+'</td>'+
+      '<td class="num">'+(ot>0?hrs(ot):'—')+'</td><td class="num">'+money(e.wage)+'</td><td class="num">'+money(s.cost)+'</td></tr>';
   });
   $('empReport').innerHTML=er+'</tbody></table>';
 
-  // per-day
   let dr='<table><thead><tr><th>Day</th><th class="num">Proj sales</th><th class="num">Budget $</th>'+
-    '<th class="num">Sched hrs</th><th class="num">Labor $</th><th class="num">Labor %</th><th class="num">SPLH</th><th class="num">Shifts</th></tr></thead><tbody>';
+    '<th class="num">Labor $</th><th class="num">Over/under</th><th class="num">Used</th>'+
+    '<th class="num">Hours</th><th class="num">Labor %</th><th class="num">SPLH</th><th class="num">Shifts</th></tr></thead><tbody>';
   for(let d=0;d<7;d++){
     const list=r.assigns.filter(a=>a.d===d);
     const h=list.reduce((a,x)=>a+x.paid,0), c=list.reduce((a,x)=>a+x.cost,0);
-    const s=daySalesActual(d), bud=s*st.laborPct/100, pct=s>0?c/s*100:0;
-    const cls = pct<=st.laborPct?'style="color:#3e7a3a"':'style="color:#a5322b"';
+    const sales=daySalesActual(d), bud=r.budgets[d], v=c-bud;
+    const cls=v<=0?'style="color:#3e7a3a"':'style="color:#a5322b"';
     dr+='<tr><td><b>'+DAY_ABBR[dowOf(addDays(st.weekStart,d))]+'</b> '+shortDate(addDays(st.weekStart,d))+'</td>'+
-      '<td class="num">'+money0(s)+'</td><td class="num">'+money0(bud)+'</td><td class="num">'+hrs(h)+'</td>'+
-      '<td class="num">'+money(c)+'</td><td class="num" '+cls+'>'+pct.toFixed(1)+'%</td>'+
-      '<td class="num">'+(h>0?money(s/h):'—')+'</td><td class="num">'+list.length+'</td></tr>';
+      '<td class="num">'+money0(sales)+'</td><td class="num">'+money0(bud)+'</td><td class="num">'+money(c)+'</td>'+
+      '<td class="num" '+cls+'>'+(v<=0?'-':'+')+money0(Math.abs(v))+'</td>'+
+      '<td class="num">'+(bud>0?(c/bud*100).toFixed(0)+'%':'—')+'</td>'+
+      '<td class="num">'+hrs(h)+'</td><td class="num">'+(sales>0?(c/sales*100).toFixed(1)+'%':'—')+'</td>'+
+      '<td class="num">'+(h>0?money(sales/h):'—')+'</td><td class="num">'+list.length+'</td></tr>';
   }
   $('dayReport').innerHTML=dr+'</tbody></table>';
 }
@@ -1231,111 +1962,202 @@ function scheduleRows(){
   const byEmp={}; r.assigns.forEach(a=>{ (byEmp[a.empId]=byEmp[a.empId]||{})[a.d]=a; });
   const head=['EMPLOYEE','POS'];
   for(let d=0;d<7;d++) head.push(DAY_ABBR[dowOf(addDays(st.weekStart,d))]+' '+shortDate(addDays(st.weekStart,d)));
-  head.push('HRS','RATE','LABOR $');
+  head.push('HRS','TARGET','RATE','LABOR $');
   const rows=[head];
-  r.emps.slice().sort((x,y)=>{
+  r.emps.map(empById).filter(Boolean).sort((x,y)=>{
     const px=POSITIONS.findIndex(p=>p.k===x.pos), py=POSITIONS.findIndex(p=>p.k===y.pos);
     return px!==py?px-py:x.name.localeCompare(y.name);
   }).forEach(e=>{
-    const row=[e.name, POSITIONS.find(p=>p.k===e.pos).short];
+    const row=[e.name, POS_SHORT[e.pos]];
     let h=0,c=0;
     for(let d=0;d<7;d++){
       const a=(byEmp[e.id]||{})[d];
       if(a){ h+=a.paid; c+=a.cost; row.push(fmtShift(a.start,a.end)); }
       else row.push(e.avail[d].off?'RQ OFF':'OFF');
     }
-    row.push(hrs(h), e.wage.toFixed(2), c.toFixed(2));
+    row.push(hrs(h), String(e.targetH||''), (+e.wage||0).toFixed(2), c.toFixed(2));
     rows.push(row);
   });
   return rows;
 }
-function download(name, text, type){
-  const b=new Blob([text],{type:type||'text/plain'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(b); a.download=name; a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+function tryDownload(name, text, type){
+  try{
+    const b=new Blob([text],{type:type||'text/plain'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(b); a.download=name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    return true;
+  }catch(e){ return false; }
+}
+/* Always give a copyable copy as well — downloads are blocked in some
+   embedded contexts, and a button that silently does nothing is worse. */
+function deliverText(title, filename, text, type){
+  modal(title,
+    '<p class="hint">Download it, or select and copy the text below.</p>'+
+    '<textarea id="dlBox" spellcheck="false"></textarea>',
+    [{label:'Copy', onClick:async ()=>{
+        try{ await navigator.clipboard.writeText(text); toast('Copied.','good'); }
+        catch(e){ toast('Press Ctrl/Cmd+C to copy the selected text.','warn'); }
+      }, keepOpen:true},
+     {label:'Download', primary:true, onClick:()=>{
+        tryDownload(filename,text,type) ? toast('Downloaded '+filename,'good') : toast('Download blocked here — copy the text instead.','warn');
+      }, keepOpen:true},
+     {label:'Close'}]);
+  const box=$('dlBox'); box.value=text; box.focus(); box.select();
 }
 
 /* ------------------------------- wiring ------------------------------- */
-document.querySelectorAll('nav.tabs button').forEach(b=>{
-  b.onclick=()=>{
-    document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('on'));
-    document.querySelectorAll('section.tab').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on'); $('tab-'+b.dataset.tab).classList.add('on');
-    if(b.dataset.tab==='forecast') renderForecast();
-    if(b.dataset.tab==='team') renderTeam();
-    if(b.dataset.tab==='report') renderReport();
-  };
-});
-function runGenerate(){
-  const r=generate(); if(!r) return;
-  renderPrintout(); renderReport();
-  document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('on'));
-  document.querySelectorAll('section.tab').forEach(x=>x.classList.remove('on'));
-  document.querySelector('nav.tabs button[data-tab="schedule"]').classList.add('on');
-  $('tab-schedule').classList.add('on');
+function renderAll(){
+  renderOptions(); renderPrintout(); renderReport();
 }
-$('btnGen').onclick = runGenerate;
-$('btnGen2').onclick = runGenerate;
-$('btnPrint').onclick = ()=>window.print();
-$('opt_showpos').onchange = renderPrintout;
-$('btnCsv').onclick = ()=>{
-  const rows=scheduleRows(); if(!rows.length) return alert('Generate a schedule first.');
+function showTab(name){
+  document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.toggle('on', x.dataset.tab===name));
+  document.querySelectorAll('section.tab').forEach(x=>x.classList.toggle('on', x.id==='tab-'+name));
+  if(name==='forecast') renderForecast();
+  if(name==='team') renderTeam();
+  if(name==='report') renderReport();
+}
+document.querySelectorAll('nav.tabs button').forEach(b=>{ b.onclick=()=>showTab(b.dataset.tab); });
+
+function runGenerate(){
+  // building three plans is a second or so of solid work — show it, so the
+  // button never looks like a dead click
+  const btns=[$('btnGen'),$('btnGen2')];
+  const old=btns.map(b=>b.textContent);
+  btns.forEach(b=>{ b.disabled=true; b.textContent='Building…'; });
+  const finish=()=>btns.forEach((b,i)=>{ b.disabled=false; b.textContent=old[i]; });
+  const work=()=>{
+    try{
+      if(!buildAllPlans()) return;
+      renderAll(); renderAmendments(); showTab('schedule');
+      toast('Built 3 options — '+S.plans[0].strategy.name+' ranked first.','good');
+    }catch(err){
+      toast('Could not build the schedule: '+err.message,'bad');
+      console.error(err);
+    }finally{ finish(); }
+  };
+  if(window.__syncGenerate) work(); else setTimeout(work,20);
+}
+$('btnGen').onclick=runGenerate;
+$('btnGen2').onclick=runGenerate;
+$('btnPrint').onclick=()=>{
+  if(!S.result) return toast('Build a schedule first.','warn');
+  window.print();
+};
+$('opt_showpos').onchange=renderPrintout;
+$('btnCsv').onclick=()=>{
+  const rows=scheduleRows();
+  if(!rows.length) return toast('Build a schedule first.','warn');
   const csv=rows.map(r=>r.map(c=>/[",\n]/.test(c)?'"'+String(c).replace(/"/g,'""')+'"':c).join(',')).join('\n');
-  download('schedule-'+S.settings.weekStart+'.csv', csv, 'text/csv');
+  deliverText('Schedule CSV','schedule-'+S.settings.weekStart+'.csv',csv,'text/csv');
 };
-$('btnTsv').onclick = async ()=>{
-  const rows=scheduleRows(); if(!rows.length) return alert('Generate a schedule first.');
+$('btnTsv').onclick=async ()=>{
+  const rows=scheduleRows();
+  if(!rows.length) return toast('Build a schedule first.','warn');
   const tsv=rows.map(r=>r.join('\t')).join('\n');
-  try{ await navigator.clipboard.writeText(tsv); $('btnTsv').textContent='Copied!';
-       setTimeout(()=>$('btnTsv').textContent='Copy for spreadsheet',1500); }
-  catch(e){ const box=$('ioBox'); box.style.display='block'; box.value=tsv; box.select(); }
+  try{ await navigator.clipboard.writeText(tsv); toast('Copied — paste into your spreadsheet.','good'); }
+  catch(e){ deliverText('Copy for spreadsheet','schedule-'+S.settings.weekStart+'.tsv',tsv,'text/tab-separated-values'); }
 };
-$('btnAddEmp').onclick = ()=>{ S.employees.push(newEmp()); save(); renderTeam(); renderConflicts(); };
-$('btnClearEmp').onclick = ()=>{
-  if(!confirm('Remove every crew member and pair rule?')) return;
-  S.employees=[]; S.conflicts=[]; save(); renderTeam(); renderConflicts();
+$('btnAddEmp').onclick=()=>{
+  S.employees.push(newEmp()); save(); showTab('team'); renderTeam();
+  toast('Added a crew member — fill in their details.','good');
+  window.scrollTo(0, document.body.scrollHeight);
 };
-$('btnSample').onclick = ()=>{
-  if(S.employees.length && !confirm('Replace the current crew with the sample crew?')) return;
-  sampleCrew(); rebuildAll(); save(); renderTeam(); renderConflicts(); renderForecast(); renderHours();
-  alert('Sample crew loaded — 20 people, 3 pair rules. Hit Generate schedule.');
+$('btnClearEmp').onclick=()=>{
+  if(!S.employees.length) return toast('There is no crew to clear.','warn');
+  confirmBox('Clear the whole crew?','This removes all '+S.employees.length+' crew members and every pairing rule. Export first if you want a copy.',
+    ()=>{ S.employees=[]; S.pairs=[]; S.plans=null; S.result=null; S.amendments=[];
+          save(); renderTeam(); renderAll(); toast('Crew cleared.','good'); },
+    'Clear crew');
 };
-$('c_add').onclick = ()=>{
-  const a=$('c_a').value, b=$('c_b').value;
-  if(!a||!b||a===b) return alert('Pick two different people.');
-  if(S.conflicts.some(c=>(c.a===a&&c.b===b)||(c.a===b&&c.b===a))) return alert('That pair already has a rule.');
-  S.conflicts.push({id:uid(), a, b, kind:$('c_kind').value}); save(); renderConflicts();
+$('btnSample').onclick=()=>{
+  const go=()=>{ sampleCrew(); rebuildAll(); save(); renderTeam(); renderForecast(); renderHours();
+                 renderLiveControls(); toast('Sample crew loaded — 21 people, 5 pairing rules.','good'); };
+  if(S.employees.length)
+    confirmBox('Replace the current crew?','The sample crew will replace all '+S.employees.length+' people currently on the roster.', go, 'Replace');
+  else go();
 };
-$('btnRebuild').onclick = ()=>{ rebuildAll(); save(); renderForecast(); renderHours(); };
-$('btnExport').onclick = ()=>{
-  download('scheduler-setup-'+S.settings.weekStart+'.json',
-    JSON.stringify({settings:S.settings, employees:S.employees, conflicts:S.conflicts}, null, 2), 'application/json');
+$('btnRebuild').onclick=()=>{ rebuildAll(); save(); renderForecast(); renderHours(); toast('Hourly forecast rebuilt from daily totals.','good'); };
+$('btnReset').onclick=()=>confirmBox('Reset everything?','Store settings, crew, pairings and amendments all go back to defaults.',()=>{
+  S=newState(); rebuildAll();
+  try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+  save(); bindSetup(); renderTeam(); renderForecast(); renderAll(); renderLiveControls(); renderAmendments();
+  toast('Everything reset.','good');
+},'Reset');
+$('btnExport').onclick=()=>{
+  const data=JSON.stringify({settings:S.settings, employees:S.employees, pairs:S.pairs, amendments:S.amendments}, null, 2);
+  deliverText('Export setup','scheduler-'+S.settings.weekStart+'.json',data,'application/json');
 };
-$('btnImport').onclick = ()=>{
-  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
-  inp.onchange=()=>{
-    const f=inp.files[0]; if(!f) return;
+$('btnImport').onclick=()=>{
+  modal('Import setup',
+    '<p class="hint">Choose a file you exported earlier, or paste its contents.</p>'+
+    '<input type="file" id="impFile" accept=".json,application/json" style="margin-bottom:10px">'+
+    '<textarea id="impBox" spellcheck="false" placeholder="…or paste exported JSON here"></textarea>',
+    [{label:'Cancel'},{label:'Import', primary:true, onClick:()=>{
+      const txt=$('impBox').value.trim();
+      if(txt) doImport(txt); else toast('Nothing to import — choose a file or paste JSON.','warn');
+    }, keepOpen:true}]);
+  $('impFile').onchange=()=>{
+    const f=$('impFile').files[0]; if(!f) return;
     const rd=new FileReader();
-    rd.onload=()=>{
-      try{
-        const o=JSON.parse(rd.result); const base=newState();
-        S={settings:Object.assign(base.settings,o.settings||{}), employees:o.employees||[], conflicts:o.conflicts||[], result:null};
-        save(); bindSetup(); renderTeam(); renderForecast(); renderPrintout(); renderReport();
-        alert('Loaded.');
-      }catch(e){ alert('That file did not parse: '+e.message); }
-    };
+    rd.onload=()=>{ $('impBox').value=rd.result; toast('File read — press Import.','good'); };
+    rd.onerror=()=>toast('Could not read that file.','bad');
     rd.readAsText(f);
   };
-  inp.click();
+};
+function doImport(txt){
+  try{
+    const o=JSON.parse(txt);
+    if(!o || typeof o!=='object') throw new Error('not an object');
+    const base=newState();
+    const st=Object.assign(base.settings, o.settings||{});
+    (st.days||[]).forEach((d,i)=>{ st.days[i]=Object.assign(defaultDay(i), d); });
+    S={settings:st, employees:Array.isArray(o.employees)?o.employees:[],
+       pairs:Array.isArray(o.pairs)?o.pairs:[], amendments:Array.isArray(o.amendments)?o.amendments:[],
+       plans:null, chosen:0, result:null};
+    S.employees.forEach(e=>{                       // tolerate files from the earlier version
+      if(e.targetH==null) e.targetH=e.maxH||20;
+      if(!e.type) e.type='part';
+      if(!Array.isArray(e.avail)) e.avail=newEmp().avail;
+    });
+    save(); closeModal();
+    bindSetup(); renderTeam(); renderForecast(); renderAll(); renderLiveControls(); renderAmendments();
+    toast('Imported '+S.employees.length+' crew members.','good');
+  }catch(e){ toast('That did not parse as exported JSON: '+e.message,'bad'); }
+}
+$('btnModify').onclick=()=>{
+  if(!S.result) return toast('Build a schedule first — the live tools work on the posted week.','warn');
+  const p=$('livePanel');
+  const showing=p.style.display!=='none';
+  p.style.display=showing?'none':'';
+  if(!showing){ renderLiveControls(); renderAmendments(); p.scrollIntoView({block:'nearest'}); }
+};
+$('btnCloseLive').onclick=()=>{ $('livePanel').style.display='none'; };
+$('l_kind').onchange=syncLiveFields;
+$('l_today').onchange=()=>{
+  S.settings.today=$('l_today').value||todayISO(); save();
+  renderLiveControls(); renderPrintout();
+  const t=todayIndex();
+  toast(t<0 ? 'That date is outside the scheduled week — everything is treated as future.' :
+              'Today set to '+DAY_FULL[dowOf(S.settings.today)]+'.', t<0?'warn':'good');
+};
+$('btnSuggest').onclick=()=>{
+  if(!S.result) return toast('Build a schedule first.','warn');
+  const kind=$('l_kind').value, d=+$('l_day').value;
+  const ev={kind, d, empId:$('l_emp').value};
+  if(kind==='sentHome') ev.from=parseT($('l_from').value||'');
+  if(kind==='needCover'){ ev.from=parseT($('l_from').value||'17:00'); ev.to=parseT($('l_to').value||'20:00'); }
+  if(kind==='cutLabor') ev.amount=+$('l_amt').value||0;
+  renderSuggestions(suggestFor(ev));
 };
 
 /* ------------------------------- boot --------------------------------- */
 (function init(){
-  const empty = [0,1,2,3,4,5,6].every(d=>Object.keys(S.settings.days[d].hourly||{}).length===0);
+  const empty=[0,1,2,3,4,5,6].every(d=>Object.keys(S.settings.days[d].hourly||{}).length===0);
   if(empty) rebuildAll();
-  bindSetup(); renderTeam(); renderForecast();
-  if(!S.employees.length){ /* leave empty; user can load sample */ }
+  if(!S.settings.today) S.settings.today=todayISO();
+  bindSetup(); renderTeam(); renderForecast(); renderLiveControls(); renderAmendments();
 })();
 </script>
 </body>
