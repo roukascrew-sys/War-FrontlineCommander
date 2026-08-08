@@ -6,13 +6,18 @@
 <title>Drive-In Auto Scheduler — Expressway Format</title>
 <style>
 :root{
-  --bg:#f4f5f7; --panel:#fff; --ink:#15181d; --muted:#666e7a; --line:#d6dae0;
-  --accent:#0b5fff; --accent-ink:#fff; --good:#1a7f3c; --warn:#a8690a; --bad:#b3261e;
-  --chip:#eef1f5;
+  /* Warm paper neutrals — this is a tool that ends up printed and taped to a
+     wall, so the ground is stock, not screen-grey. Deep teal accent stays out
+     of the way of the semantic good/warn/bad colors. */
+  --bg:#eceae5; --panel:#fbfaf8; --ink:#1c1a17; --muted:#6b665e; --line:#d8d3ca;
+  --accent:#155e57; --accent-ink:#fff; --good:#3e7a3a; --warn:#9c6a10; --bad:#a5322b;
+  --chip:#e4e1da;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,"Liberation Mono",monospace;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans)}
 h1,h2,h3{margin:0 0 .4em;line-height:1.2}
 h1{font-size:19px;letter-spacing:.01em}
 h2{font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
@@ -48,28 +53,30 @@ button.btn.sm{padding:4px 9px;font-size:12.5px}
 .spread{justify-content:space-between}
 table{border-collapse:collapse;width:100%}
 th,td{border:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:middle}
-th{background:var(--chip);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
-td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+th{background:var(--chip);font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+th.num{font-family:var(--sans)}
 .scroll{overflow-x:auto}
 .emp{border:1px solid var(--line);border-radius:9px;padding:12px;margin-bottom:10px;background:#fcfcfd}
 .emp .hdr{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
 .avail{display:grid;grid-template-columns:repeat(7,minmax(110px,1fr));gap:6px;margin-top:10px}
 .avail .day{border:1px solid var(--line);border-radius:7px;padding:6px;background:#fff}
-.avail .day.off{background:#fbeceb;border-color:#eccbc8}
+.avail .day.off{background:#f6e7e3;border-color:#e0c4bd}
 .avail .day b{display:block;font-size:11px;letter-spacing:.06em;color:var(--muted)}
 .avail .day input[type=time]{padding:3px 4px;font-size:12px}
 .avail .day .offrow{display:flex;gap:4px;align-items:center;font-size:11.5px;color:var(--muted);margin-top:4px}
-.chip{display:inline-block;background:var(--chip);border-radius:20px;padding:2px 9px;font-size:12px;color:var(--muted)}
-.kpi{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
-.kpi b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
-.kpi span{font-size:20px;font-variant-numeric:tabular-nums;font-weight:700}
+.chip{display:inline-block;background:var(--chip);border-radius:20px;padding:2px 9px;font-size:12px;color:var(--muted);letter-spacing:.02em}
+.kpi{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--muted);border-radius:9px;padding:10px 12px}
+.kpi b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
+.kpi span{font-size:22px;font-variant-numeric:tabular-nums;font-family:var(--mono);font-weight:700;letter-spacing:-.01em}
+.kpi.good{border-left-color:var(--good)} .kpi.warn{border-left-color:var(--warn)} .kpi.bad{border-left-color:var(--bad)}
 .kpi.good span{color:var(--good)} .kpi.warn span{color:var(--warn)} .kpi.bad span{color:var(--bad)}
 ul.msgs{margin:0;padding-left:18px} ul.msgs li{margin:.25em 0}
 li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
-.heat{font-variant-numeric:tabular-nums;font-size:11px;text-align:center;padding:2px 4px}
+.heat{font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:11px;text-align:center;padding:2px 4px}
 
 /* ------- Expressway-format printout ------- */
-#printout{background:#fff;color:#000;border:1px solid #000;padding:14px;font-family:"Courier New",Courier,ui-monospace,monospace;font-size:12px}
+#printout{background:#fff;color:#000;border:1px solid #b9b3a8;box-shadow:0 2px 14px rgba(28,26,23,.13);padding:18px;font-family:"Courier New",Courier,ui-monospace,monospace;font-size:12px}
 #printout .xw-head{display:flex;justify-content:space-between;gap:10px;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:8px}
 #printout .xw-title{font-weight:700;font-size:14px;letter-spacing:.08em}
 #printout table{border-collapse:collapse;width:100%;font-size:11.5px}
@@ -1182,8 +1189,8 @@ function renderReport(){
       let need=0,have=0;
       POSITIONS.forEach(p=>{ need+=r.demand[d].need[i][p.k]; have+=r.covered[d][p.k][i]; });
       const diff=have-need;
-      let bg='#e3f5e6';
-      if(diff<-0.8) bg='#f7d2cf'; else if(diff<-0.3) bg='#fbeacd'; else if(diff>1.2) bg='#d9e6fb';
+      let bg='#e2efdd';
+      if(diff<-0.8) bg='#f2d6d0'; else if(diff<-0.3) bg='#f6e8cb'; else if(diff>1.2) bg='#d7e6e3';
       ch+='<td class="heat" style="background:'+bg+'" title="need '+need.toFixed(1)+' / have '+have.toFixed(1)+'">'+have.toFixed(1)+'<br><span style="color:#777">'+need.toFixed(1)+'</span></td>';
     }
     ch+='</tr>';
@@ -1195,7 +1202,7 @@ function renderReport(){
     '<th class="num">Paid hrs</th><th class="num">Min</th><th class="num">Max</th><th class="num">Rate</th><th class="num">Cost</th></tr></thead><tbody>';
   r.emps.slice().sort((a,b)=>r.stat[b.id].paid-r.stat[a.id].paid).forEach(e=>{
     const s=r.stat[e.id];
-    const flag = s.paid>st.otAfter ? ' style="background:#fdeeec"' : (s.paid<(+e.minH||0)-0.5?' style="background:#fdf6e6"':'');
+    const flag = s.paid>st.otAfter ? ' style="background:#f7e2de"' : (s.paid<(+e.minH||0)-0.5?' style="background:#f6eeda"':'');
     er+='<tr'+flag+'><td>'+esc(e.name)+'</td><td>'+POS_LABEL[e.pos]+(e.pos2?' / '+POS_LABEL[e.pos2]:'')+'</td>'+
       '<td class="num">'+e.rating+'</td><td class="num">'+s.days.size+'</td><td class="num"><b>'+hrs(s.paid)+'</b></td>'+
       '<td class="num">'+e.minH+'</td><td class="num">'+e.maxH+'</td><td class="num">'+money(e.wage)+'</td><td class="num">'+money(s.cost)+'</td></tr>';
@@ -1209,7 +1216,7 @@ function renderReport(){
     const list=r.assigns.filter(a=>a.d===d);
     const h=list.reduce((a,x)=>a+x.paid,0), c=list.reduce((a,x)=>a+x.cost,0);
     const s=daySalesActual(d), bud=s*st.laborPct/100, pct=s>0?c/s*100:0;
-    const cls = pct<=st.laborPct?'style="color:#1a7f3c"':'style="color:#b3261e"';
+    const cls = pct<=st.laborPct?'style="color:#3e7a3a"':'style="color:#a5322b"';
     dr+='<tr><td><b>'+DAY_ABBR[dowOf(addDays(st.weekStart,d))]+'</b> '+shortDate(addDays(st.weekStart,d))+'</td>'+
       '<td class="num">'+money0(s)+'</td><td class="num">'+money0(bud)+'</td><td class="num">'+hrs(h)+'</td>'+
       '<td class="num">'+money(c)+'</td><td class="num" '+cls+'>'+pct.toFixed(1)+'%</td>'+
