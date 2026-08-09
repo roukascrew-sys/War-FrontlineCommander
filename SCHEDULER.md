@@ -24,8 +24,11 @@ Two jobs:
 4. **Build 3 options** — pick one, then print, export CSV, or copy to a spreadsheet.
 5. **Modify schedule** — live changes once the week is underway.
 
-**Load sample crew** fills in a 21-person roster with pairings, minors and
-part-timers already set up.
+**Load sample crew** fills in a 28-person roster with pairings, minors,
+part-timers, second-position pay rates and personal commitments already set up.
+
+Stores default to **6:30am–midnight, seven days**, and a new crew member starts
+available for that whole span — narrow it per person on the Crew tab.
 
 ## Hours people actually want
 
@@ -113,12 +116,17 @@ slot, a 3 as 1.00, a 5 as 1.28, so a strong shift covers the same demand with
 fewer bodies. Manager *presence* is the exception — counted as headcount,
 because a new manager still holds the keys.
 
-**Four passes.** The manager spine goes down first: days ordered by which have
-the fewest managers available, each walked open to close filling the earliest
-hole. (A plain best-value greedy takes a fat midday shift and strands both edges
-of the day — that was a real bug, and this ordering is the fix.) Then crew
-coverage by unmet demand per labor dollar, then minimum-hour guarantees, then a
-trim pass that shaves surplus half-hours to land under each day's budget.
+**Four passes.** The manager spine goes down first, built the way a manager
+builds one by hand: every **close** in the week is locked in first (fewest-
+possible-closers day first), then every **open**, then the middles are walked
+left to right filling the earliest hole. That ordering matters twice over. A
+plain best-value greedy takes a fat midday shift and strands both edges of the
+day; and filling day-by-day burns your only late-availability managers on
+afternoons before the last day's close is even considered — on a seventeen-hour
+trading day that leaves the final ninety minutes bare. Both were real bugs found
+in testing. Then crew coverage by unmet demand per labor dollar, then
+minimum-hour guarantees, then a trim pass that shaves surplus half-hours to land
+under each day's budget.
 
 ## Store events
 
@@ -230,13 +238,21 @@ rest gaps, close-then-open turnarounds, closing-shift caps, minor curfews and
 day limits, never-together pairs, must-keep commitments, positions the person is
 trained for, and that every shift is costed at the rate for the position worked.
 
-22 scenarios, all passing, including impossible budgets, everyone a minor, a
+22 scheduling scenarios, all passing: impossible budgets, everyone a minor, a
 19:00 curfew, all-pairs-never-together, no managers, a 24-hour operation, zero
-sales, and everyone wanting 8 hours. No page errors.
+sales, huge sales, and everyone wanting 8 hours.
 
-Every button is checked for a handler and exercised with browser dialogs
-**blocked**, since the hosted copy runs in a sandbox where `confirm()` silently
-returns false — the original cause of "Clear all does nothing."
+On top of that, a **52-point capability check** drives the app the way a manager
+would — clicking every button on every tab, then verifying the data behind it
+actually changed. Cold start, sample load, export, build, option switching, live
+suggestions, applying and undoing an amendment, add and clear crew, import,
+forecast edits, events, all three template routes, settings edits,
+rebuild-and-regenerate, diagnostics, reset, and survival across a page reload.
+All 52 pass, with no page errors.
+
+Both suites run with browser dialogs **blocked**, since the hosted copy runs in
+a sandbox where `confirm()` silently returns false — the original cause of
+"Clear all does nothing." The suite fails if the app ever calls a native dialog.
 
 The template is tested against a deliberately *different* template (every start
 pushed two hours later): at weight 0 it changes nothing, at full weight it moves
