@@ -564,13 +564,41 @@ function newEmp(name){
 }
 let S = load() || newState();
 
+/* Writing storage and re-rendering the forecast on every keystroke is what
+   makes a mid-range phone stutter. Both are coalesced, and any pending write is
+   flushed the moment the page is hidden or closed so nothing is lost. */
+let saveTimer=null, forecastTimer=null;
+function saveSoon(){
+  if(saveTimer) clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{ saveTimer=null; save(); }, 400);
+}
+function flushSave(){ if(saveTimer){ clearTimeout(saveTimer); saveTimer=null; save(); } }
+function forecastSoon(){
+  if(forecastTimer) clearTimeout(forecastTimer);
+  forecastTimer=setTimeout(()=>{ forecastTimer=null;
+    if($('tab-forecast').classList.contains('on')) renderForecast(); }, 350);
+}
+window.addEventListener('visibilitychange', ()=>{ if(document.hidden) flushSave(); });
+window.addEventListener('pagehide', flushSave);
+
+let storageWarned=false;
 function save(){
   try{
     localStorage.setItem(STORE_KEY, JSON.stringify({
       settings:S.settings, employees:S.employees, pairs:S.pairs, amendments:S.amendments,
       events:S.events, templates:S.templates
     }));
-  }catch(e){ /* private mode */ }
+  }catch(e){
+    // Out of room, or storage blocked (private browsing, embedded view). Say so
+    // once — silently losing a manager's work is not acceptable.
+    if(!storageWarned){
+      storageWarned=true;
+      const full=/quota/i.test(e.name||'')||/quota/i.test(e.message||'');
+      toast(full
+        ? 'This device is out of storage room, so changes are not being saved. Delete a photo template, then use Export to keep a copy.'
+        : 'This browser is not allowing saved data here, so changes will be lost on reload. Use Export to keep a copy.','bad');
+    }
+  }
 }
 function load(){
   try{
@@ -1105,61 +1133,80 @@ function buildPlan(strat){
     }
   }
 
-  /* --- pass 1: crew coverage, best unmet demand per labor dollar --- */
+  /* --- pass 1: crew coverage, best unmet demand per labor dollar ---------
+     Placing a shift only changes two things: that day (its remaining demand,
+     who is now on the floor, what it has spent) and that person (their hours
+     and days). So each employee-day-position keeps its best candidate, and
+     only the affected rows are recomputed. Same answer as rescanning the whole
+     week every time — roughly seven times less work, which is the difference
+     between usable and unusable on a phone. */
+  const bestCache={};
+  const freshRow=()=>[0,1,2,3,4,5,6].map(()=>({}));
+  emps.forEach(e=>{ bestCache[e.id]=freshRow(); });
+  const clearEmp=id=>{ bestCache[id]=freshRow(); };
+  const clearDay=d=>{ for(const id in bestCache) bestCache[id][d]={}; };
+
+  function bestFor(e,d,pos){
+    const slot=bestCache[e.id][d];
+    if(slot[pos]!==undefined) return slot[pos];
+    const rem=remaining[d][pos];
+    let lo=-1, hi=-1;
+    for(let i=0;i<rem.length;i++) if(rem[i]>0.25){ if(lo<0) lo=i; hi=i; }
+    if(lo<0) return (slot[pos]=null);                  // nothing left to cover
+    const cands=candidates(e,d);
+    if(!cands.length) return (slot[pos]=null);
+    const dm=dayMeta(d);
+    const rating=clamp(Math.round(+e.rating||3),1,5);
+    const capF=Math.pow(0.88+0.06*rating, strat.capExp);
+    const linearCost=Math.abs(strat.costExp-1)<1e-9;
+    const prio=posPrio[pos];
+    const secondary=pos!==e.pos;
+    let best=null;
+    for(const c of cands){
+      if(c.s>hi || c.s+c.L<=lo) continue;              // covers no unmet demand
+      const pf=pairFactors(e,d,c.start,c.end);
+      const g=gainOf(e,d,pos,c,pf.prod);
+      if(g<strat.gainFloor) continue;
+      if(blocked(e,d,c)) continue;
+      const paid=paidHoursFor((c.end-c.start)/60);
+      const cost=shiftCost(e,pos,paid,stat[e.id].paid);
+      if(cost<=0) continue;
+      if(st.enforceBudget && dayCost[d]+cost > effBudget[d]) continue;
+      let sc=(g*prio)/(linearCost?cost:Math.pow(cost,strat.costExp))*100;
+      sc *= capF;
+      sc *= targetFactor(e,paid) * pf.score * stabilityFactor(e,c.start);
+      sc *= staticFactor(e,d,c);
+      if(secondary) sc*=0.82;
+      if(c.start===dm.open && rating < st.openerMinRating) sc*=0.20;
+      if(c.end===dm.close && rating < st.closerMinRating) sc*=0.20;
+      if(!best||sc>best.score) best={score:sc, c};
+    }
+    return (slot[pos]=best);
+  }
+
   let guard=0;
   while(guard++<4000){
-    // where demand still sits, per day and position: everything outside this
-    // window scores zero, so it never needs to be looked at
-    const openNeed=remaining.map(r=>{ const o={}; POSITIONS.forEach(p=>o[p.k]=r[p.k].reduce((a,b)=>a+b,0)); return o; });
-    const span=remaining.map(r=>{
-      const o={};
-      POSITIONS.forEach(p=>{
-        const arr=r[p.k]; let lo=-1, hi=-1;
-        for(let i=0;i<arr.length;i++) if(arr[i]>0.25){ if(lo<0) lo=i; hi=i; }
-        o[p.k]={lo,hi};
-      });
-      return o;
-    });
-    if(POSITIONS.every(p=>openNeed.every(o=>o[p.k]<0.25))) break;
+    let anyNeed=false;
+    for(let d=0;d<7 && !anyNeed;d++)
+      for(const p of POSITIONS)
+        if(remaining[d][p.k].some(v=>v>0.25)){ anyNeed=true; break; }
+    if(!anyNeed) break;
+
     let best=null;
     for(const e of emps){
-      const s=stat[e.id];
       for(let d=0;d<7;d++){
         if(dayBlocked(e,d)) continue;
         if(st.enforceBudget && dayCost[d] >= effBudget[d]) continue;
-        const cands=candidates(e,d); if(!cands.length) continue;
-        const dm=dayMeta(d);                       // was being re-parsed per candidate
-        const rating=clamp(Math.round(+e.rating||3),1,5);
-        const capF=Math.pow(0.88+0.06*rating, strat.capExp);
-        const linearCost=Math.abs(strat.costExp-1)<1e-9;
         for(const pos of positionsOf(e)){
-          if(openNeed[d][pos]<0.25) continue;
-          const sp=span[d][pos];
-          const prio=posPrio[pos];
-          const secondary=pos!==e.pos;
-          for(const c of cands){
-            if(c.s > sp.hi || c.s+c.L <= sp.lo) continue;   // covers no unmet demand
-            const pf=pairFactors(e,d,c.start,c.end);
-            const g=gainOf(e,d,pos,c,pf.prod);
-            if(g<strat.gainFloor) continue;
-            if(blocked(e,d,c)) continue;
-            const paid=paidHoursFor((c.end-c.start)/60);
-            const cost=shiftCost(e,pos,paid,s.paid); if(cost<=0) continue;
-            if(st.enforceBudget && dayCost[d]+cost > effBudget[d]) continue;
-            let sc=(g*prio)/(linearCost?cost:Math.pow(cost,strat.costExp))*100;
-            sc *= capF;
-            sc *= targetFactor(e,paid) * pf.score * stabilityFactor(e,c.start);
-            sc *= staticFactor(e,d,c);
-            if(secondary) sc*=0.82;
-            if(c.start===dm.open && rating < st.openerMinRating) sc*=0.20;
-            if(c.end===dm.close && rating < st.closerMinRating) sc*=0.20;
-            if(!best||sc>best.score) best={score:sc,e,d,pos,c};
-          }
+          const cand=bestFor(e,d,pos);
+          if(cand && (!best || cand.score>best.score)) best={score:cand.score, c:cand.c, e, d, pos};
         }
       }
     }
     if(!best) break;
     apply(best.e,best.d,best.pos,best.c);
+    clearDay(best.d);
+    clearEmp(best.e.id);
   }
 
   /* --- pass 2: bring anyone under their guaranteed minimum up --- */
@@ -1320,25 +1367,52 @@ function planMetrics(plan){
   return m;
 }
 
+/* Yield long enough for the page to repaint, WITHOUT depending on
+   requestAnimationFrame: a phone that locks its screen, switches apps, or
+   scrolls this page out of view stops firing rAF entirely, and anything
+   awaiting it waits forever. The timer is the guarantee; rAF is just the
+   fast path when the page really is visible. */
+function yieldToPaint(){
+  return new Promise(resolve=>{
+    let done=false;
+    const finish=()=>{ if(!done){ done=true; resolve(); } };
+    try{ requestAnimationFrame(()=>setTimeout(finish,0)); }catch(e){ /* ignore */ }
+    setTimeout(finish, 150);
+  });
+}
+
 /* Builds the options one at a time, yielding between each so the page can
    repaint. On slow hardware this is the difference between "working" and
    "frozen". */
-async function buildAllPlans(onProgress){
+let userPickedOption=false;
+async function buildAllPlans(onProgress, onFirst){
   if(!S.employees.filter(e=>e.name&&e.name.trim()).length){
     toast('Add at least one crew member first.','bad');
     return false;
   }
   const list=strategyList(), plans=[];
+  S.amendments=[];                    // a fresh build supersedes live amendments
+  userPickedOption=false;
   for(let i=0;i<list.length;i++){
     if(onProgress) onProgress(i+1, list.length);
-    if(!window.__syncGenerate) await new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));
+    if(!window.__syncGenerate) await yieldToPaint();
     const p=buildPlan(list[i]);
-    if(p) plans.push(p);
+    if(!p) continue;
+    plans.push(p);
+    // Show the first finished schedule straight away rather than making
+    // someone watch a disabled button for the whole run.
+    if(plans.length===1){
+      S.plans=plans.slice(); S.chosen=0; S.result=workingPlan();
+      if(onFirst) onFirst();
+      if(!window.__syncGenerate) await yieldToPaint();
+    }
   }
   if(!plans.length) return false;
+  const showing = S.plans && S.plans[S.chosen];
   plans.sort((a,b)=>a.metrics.rank-b.metrics.rank);
-  S.plans=plans; S.chosen=0;
-  S.amendments=[];                    // a fresh build supersedes live amendments
+  S.plans=plans;
+  // once everything is ranked, land on the best — unless they already chose
+  S.chosen = userPickedOption ? Math.max(0, plans.indexOf(showing)) : 0;
   S.result=workingPlan();
   return true;
 }
@@ -1926,10 +2000,10 @@ function photoCapture(){
     };
     $('camShot').onclick=()=>{
       const v=$('camView'), c=$('camCanvas');
-      const w=Math.min(1600, v.videoWidth||1280);
+      const w=Math.min(1200, v.videoWidth||1280);
       c.width=w; c.height=Math.round((v.videoHeight||720)*w/(v.videoWidth||1280));
       c.getContext('2d').drawImage(v,0,0,c.width,c.height);
-      use(c.toDataURL('image/jpeg',0.72));
+      use(c.toDataURL('image/jpeg',0.6));
     };
   }
   $('camFile').onchange=()=>{
@@ -1941,10 +2015,10 @@ function photoCapture(){
       const img=new Image();
       img.onload=()=>{
         const c=$('camCanvas');
-        const w=Math.min(1600,img.width);
+        const w=Math.min(1200,img.width);          // small enough to store, big enough to read
         c.width=w; c.height=Math.round(img.height*w/img.width);
         c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-        use(c.toDataURL('image/jpeg',0.72));
+        use(c.toDataURL('image/jpeg',0.6));
       };
       img.onerror=()=>toast('That file could not be read as an image.','bad');
       img.src=rd.result;
@@ -1969,10 +2043,10 @@ function bindSetup(){
     inp.value=st[map[id]];
     inp.oninput=()=>{
       st[map[id]] = inp.type==='number' ? (+inp.value||0) : inp.value;
-      save();
+      saveSoon();
       renderHumaneWarning();                       // limits changed — re-check them
       if(id==='s_start'){ renderHours(); renderTeam(); renderLiveControls(); }
-      if(['s_splh','s_mincrew','s_cook','s_pct'].includes(id)){ renderForecast(); renderHours(); }
+      if(['s_splh','s_mincrew','s_cook','s_pct'].includes(id)){ forecastSoon(); refreshHours(); }
     };
   }
   const cbs={s_enforce:'enforceBudget', s_hard:'hardConflicts', s_minh:'honorMinHours',
@@ -2013,8 +2087,14 @@ function renderHumaneWarning(){
     : '';
 }
 
+/* The rows are built once and then only their *computed* cells are refreshed.
+   Rebuilding the table from inside its own input handler destroys the field
+   being edited — on a phone that closes the keyboard or time picker mid-edit
+   and looks like the page has frozen. */
+let hoursRows=[];
 function renderHours(){
   const tb=$('hoursTable').querySelector('tbody'); tb.innerHTML='';
+  hoursRows=[];
   const st=S.settings;
   for(let d=0;d<7;d++){
     const iso=addDays(st.weekStart,d), day=st.days[d];
@@ -2022,29 +2102,38 @@ function renderHours(){
     tr.appendChild(el('td',null,'<b>'+DAY_FULL[dowOf(iso)]+'</b>'));
     tr.appendChild(el('td',null,shortDate(iso)));
     const tdO=el('td'), inO=el('input',{type:'time'}); inO.value=day.open;
-    inO.oninput=()=>{ day.open=inO.value; rebuildDay(d); save(); renderForecast(); renderHours(); };
     tdO.appendChild(inO); tr.appendChild(tdO);
     const tdC=el('td'), inC=el('input',{type:'time'});
     inC.value=day.close==='24:00'?'23:59':day.close;
-    inC.oninput=()=>{ day.close=inC.value==='23:59'?'24:00':inC.value; rebuildDay(d); save(); renderForecast(); renderHours(); };
     tdC.appendChild(inC); tr.appendChild(tdC);
-    const tdS=el('td',{class:'num'}), inS=el('input',{type:'number',step:'50',min:'0'}); inS.value=day.sales;
-    inS.oninput=()=>{ day.sales=+inS.value||0; rebuildDay(d); save(); renderForecast(); renderHours(); };
-    tdS.appendChild(inS); tr.appendChild(tdS);
-    const actual=daySalesActual(d);
-    const diff=actual-(+day.sales||0);
-    tr.appendChild(el('td',{class:'num'}, money0(actual)+(Math.abs(diff)>1
-      ? ' <span style="color:'+(diff>0?'var(--good)':'var(--warn)')+'">('+(diff>0?'+':'')+money0(diff)+')</span>' : '')));
+    const tdS=el('td',{class:'num'}), inS=el('input',{type:'number',step:'50',min:'0'});
+    inS.value=day.sales; tdS.appendChild(inS); tr.appendChild(tdS);
+    const tdEv=el('td',{class:'num'}); tr.appendChild(tdEv);
     const tdB=el('td',{class:'num'}), inB=el('input',{type:'number',step:'10',min:'0'});
     inB.value=Math.round(dayBudget(d));
     inB.disabled = st.budgetMode!=='dollars';
-    inB.oninput=()=>{ day.budget=+inB.value||0; save(); renderHours(); };
     tdB.appendChild(inB); tr.appendChild(tdB);
-    const sales=daySalesActual(d);
-    tr.appendChild(el('td',{class:'num'}, sales>0 ? (dayBudget(d)/sales*100).toFixed(1)+'%' : '—'));
+    const tdPct=el('td',{class:'num'}); tr.appendChild(tdPct);
+
+    const refresh=()=>{
+      const actual=daySalesActual(d), diff=actual-(+day.sales||0);
+      tdEv.innerHTML=money0(actual)+(Math.abs(diff)>1
+        ? ' <span style="color:'+(diff>0?'var(--good)':'var(--warn)')+'">('+(diff>0?'+':'')+money0(diff)+')</span>' : '');
+      if(document.activeElement!==inB) inB.value=Math.round(dayBudget(d));
+      inB.disabled = S.settings.budgetMode!=='dollars';
+      tdPct.textContent = actual>0 ? (dayBudget(d)/actual*100).toFixed(1)+'%' : '—';
+    };
+    const touched=()=>{ rebuildDay(d); saveSoon(); refresh(); forecastSoon(); };
+    inO.oninput=()=>{ day.open=inO.value; touched(); };
+    inC.oninput=()=>{ day.close=inC.value==='23:59'?'24:00':inC.value; touched(); };
+    inS.oninput=()=>{ day.sales=+inS.value||0; touched(); };
+    inB.oninput=()=>{ day.budget=+inB.value||0; saveSoon(); refresh(); };
+    refresh();
+    hoursRows.push(refresh);
     tb.appendChild(tr);
   }
 }
+function refreshHours(){ hoursRows.forEach(f=>f()); }
 
 /* ---------- crew ---------- */
 function renderTeam(){
@@ -2216,7 +2305,7 @@ function renderForecast(){
       const d=+inp.dataset.d, h=+inp.dataset.h;
       S.settings.days[d].hourly[h]=+inp.value||0;
       S.settings.days[d].sales=daySalesActual(d);
-      save(); renderHours();
+      saveSoon(); refreshHours();
     };
   });
   renderCurve();
@@ -2239,9 +2328,14 @@ function renderOptions(){
   const panel=$('optPanel');
   if(!S.plans){ panel.style.display='none'; return; }
   panel.style.display='';
-  const labels=['Recommended','Second option','Third option'];
-  $('optIntro').textContent='Three schedules built from the same data with different priorities, ranked by coverage held, '+
-    'overtime created, days over budget, and how many people land near the hours they want. Click one to load it.';
+  const building=S.plans.length<strategyList().length;
+  const labels=building
+    ? ['Ready now','Second option','Third option']
+    : ['Recommended','Second option','Third option'];
+  $('optIntro').textContent = building
+    ? 'Here is the first schedule so you can start reading it. The other options are still building and will be ranked against this one when they finish.'
+    : 'Three schedules built from the same data with different priorities, ranked by coverage held, '+
+      'overtime created, days over budget, and how many people land near the hours they want. Click one to load it.';
   const box=$('opts'); box.innerHTML='';
   S.plans.forEach((p,i)=>{
     const m=p.metrics;
@@ -2261,6 +2355,7 @@ function renderOptions(){
         '<dt>Near target hours</dt><dd>'+m.atTarget+'/'+p.emps.length+'</dd>'+
       '</dl>';
     b.onclick=()=>{
+      userPickedOption=true;
       if(S.amendments.length){
         confirmBox('Switch option?','You have '+S.amendments.length+' live amendment(s) on the current option. Switching clears them.',
           ()=>{ S.amendments=[]; S.chosen=i; S.result=workingPlan(); save(); renderAll(); toast('Loaded '+S.plans[i].strategy.name+'.','good'); });
@@ -2709,15 +2804,24 @@ function runGenerate(){
   btns.forEach(b=>{ b.disabled=true; b.textContent='Building…'; });
   const finish=()=>btns.forEach((b,i)=>{ b.disabled=false; b.textContent=old[i]; });
   const progress=(i,n)=>btns.forEach(b=>{ b.textContent='Building '+i+' of '+n+'…'; });
+  // last-resort watchdog: whatever happens, the controls come back
+  const watchdog=setTimeout(()=>{
+    finish();
+    toast('That took too long and was stopped. Try again, or reduce the crew or trading hours.','bad');
+  }, 120000);
+  const firstReady=()=>{
+    renderOptions(); renderPrintout(); showTab('schedule');
+    toast('First option ready — still comparing the other two…','good');
+  };
   const work=async ()=>{
     try{
-      if(!(await buildAllPlans(progress))) return;
+      if(!(await buildAllPlans(progress, firstReady))) return;
       renderAll(); renderAmendments(); showTab('schedule');
       toast('Built '+S.plans.length+' options — '+S.plans[0].strategy.name+' ranked first.','good');
     }catch(err){
       toast('Could not build the schedule: '+err.message,'bad');
       console.error(err);
-    }finally{ finish(); }
+    }finally{ clearTimeout(watchdog); finish(); }
   };
   if(window.__syncGenerate) work(); else setTimeout(work,20);
 }
@@ -2862,12 +2966,61 @@ $('btnSuggest').onclick=()=>{
 };
 
 /* ------------------------------- boot --------------------------------- */
+/* If saved data ever leaves the page unable to start, the user has no console
+   and often no easy way to clear site storage on a phone. So: start-up is
+   guarded, and a failure offers a one-tap way out instead of a dead screen.
+   Adding #reset to the address also clears everything on load. */
+function recoveryScreen(err){
+  document.querySelector('.wrap').innerHTML=
+    '<div class="panel" style="max-width:640px;margin:40px auto">'+
+      '<h2>The scheduler could not start</h2>'+
+      '<p>Saved data on this device looks damaged, so the page stopped instead of '+
+      'showing you half a schedule.</p>'+
+      '<p class="hint" style="font-family:var(--mono);white-space:pre-wrap">'+esc(String(err&&err.message||err))+'</p>'+
+      '<div class="row" style="margin-top:14px">'+
+        '<button class="btn" id="recSave">Copy my data out first</button>'+
+        '<button class="btn danger" id="recClear">Clear saved data and restart</button>'+
+      '</div>'+
+      '<p class="hint">Clearing removes this device\u2019s crew, settings and templates. '+
+      'An exported file you saved earlier can be imported straight back in.</p>'+
+    '</div>';
+  document.getElementById('recSave').onclick=()=>{
+    let raw='';
+    try{ raw=localStorage.getItem(STORE_KEY)||''; }catch(e){}
+    const box=document.createElement('textarea');
+    box.value=raw; box.style.cssText='width:100%;height:200px;margin-top:12px;font-family:var(--mono);font-size:12px';
+    document.querySelector('.wrap .panel').appendChild(box);
+    box.focus(); box.select();
+  };
+  document.getElementById('recClear').onclick=()=>{
+    try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+    location.hash=''; location.reload();
+  };
+}
+/* Typing #reset on an already-open page is a same-document navigation, so
+   nothing re-runs — catch that too. */
+window.addEventListener('hashchange', ()=>{
+  if(/(^|[#&?])reset\b/i.test(location.hash)){
+    try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+    location.hash='';
+    location.reload();
+  }
+});
 (function init(){
-  const empty=[0,1,2,3,4,5,6].every(d=>Object.keys(S.settings.days[d].hourly||{}).length===0);
-  if(empty) rebuildAll();
-  if(!S.settings.today) S.settings.today=todayISO();
-  bindSetup(); renderTeam(); renderForecast(); renderEvents(); renderTemplates();
-  renderLiveControls(); renderAmendments();
+  try{
+    if(/(^|[#&?])reset\b/i.test(location.hash+location.search)){
+      try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+      S=newState();
+    }
+    const empty=[0,1,2,3,4,5,6].every(d=>Object.keys((S.settings.days[d]||{}).hourly||{}).length===0);
+    if(empty) rebuildAll();
+    if(!S.settings.today) S.settings.today=todayISO();
+    bindSetup(); renderTeam(); renderForecast(); renderEvents(); renderTemplates();
+    renderLiveControls(); renderAmendments();
+  }catch(err){
+    console.error(err);
+    try{ recoveryScreen(err); }catch(e){ document.body.textContent='The scheduler could not start. Add #reset to the address and reload.'; }
+  }
 })();
 </script>
 </body>

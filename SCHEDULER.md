@@ -230,6 +230,29 @@ The useful distinction is *why* you're short:
 The coverage grid shows scheduled crew over required for every half hour: red is
 short, amber thin, green covered, teal overstaffed.
 
+## On phones
+
+The whole thing runs on a phone, with a few things done specifically for that:
+
+- **Nothing waits on `requestAnimationFrame`.** A phone that locks its screen or
+  switches apps stops firing rAF entirely; anything awaiting it waits forever.
+  Every yield has a timer behind it, and the build has a watchdog that restores
+  the controls no matter what.
+- **Fields are never rebuilt while you are editing them.** Tables update only
+  their computed cells, so the keyboard and time picker stay put.
+- **Saving and redrawing are coalesced** rather than run on every keystroke, and
+  any pending write is flushed the moment the page is hidden.
+- **The first schedule appears as soon as it exists** — about six seconds on a
+  mid-range phone — and the other two are ranked against it in the background.
+
+**If it ever gets stuck**, add `#reset` to the address and it clears this
+device's saved data and restarts. If saved data is damaged badly enough that the
+page cannot start, it shows a recovery screen with a button to copy the data out
+and another to clear it, instead of a blank page.
+
+If storage is full or blocked (private browsing, some embedded views), it says
+so once rather than silently dropping your work.
+
 ## Testing
 
 Verified in Chromium against an independent audit that re-derives every hard
@@ -238,21 +261,21 @@ rest gaps, close-then-open turnarounds, closing-shift caps, minor curfews and
 day limits, never-together pairs, must-keep commitments, positions the person is
 trained for, and that every shift is costed at the rate for the position worked.
 
-22 scheduling scenarios, all passing: impossible budgets, everyone a minor, a
-19:00 curfew, all-pairs-never-together, no managers, a 24-hour operation, zero
-sales, huge sales, and everyone wanting 8 hours.
+- **22 scheduling scenarios**, all passing: impossible budgets, everyone a
+  minor, a 19:00 curfew, all-pairs-never-together, no managers, a 24-hour
+  operation, zero sales, huge sales, and everyone wanting 8 hours.
+- **52 capability checks**, all passing: every button on every tab clicked, then
+  the data behind it verified — including applying *and undoing* an amendment,
+  import/export round trips, all three template routes, and survival across a
+  page reload.
+- **A mobile suite** on an emulated Galaxy-class device at 6× CPU throttling,
+  covering the screen-off build, mid-edit field survival, keystroke cost,
+  storage limits, and all three recovery paths.
 
-On top of that, a **52-point capability check** drives the app the way a manager
-would — clicking every button on every tab, then verifying the data behind it
-actually changed. Cold start, sample load, export, build, option switching, live
-suggestions, applying and undoing an amendment, add and clear crew, import,
-forecast edits, events, all three template routes, settings edits,
-rebuild-and-regenerate, diagnostics, reset, and survival across a page reload.
-All 52 pass, with no page errors.
-
-Both suites run with browser dialogs **blocked**, since the hosted copy runs in
-a sandbox where `confirm()` silently returns false — the original cause of
-"Clear all does nothing." The suite fails if the app ever calls a native dialog.
+Both desktop suites run with browser dialogs **blocked**, since the hosted copy
+runs in a sandbox where `confirm()` silently returns false — the original cause
+of "Clear all does nothing." The suite fails if the app ever calls a native
+dialog.
 
 The template is tested against a deliberately *different* template (every start
 pushed two hours later): at weight 0 it changes nothing, at full weight it moves
@@ -260,9 +283,9 @@ pushed two hours later): at weight 0 it changes nothing, at full weight it moves
 against a template built from its own output would have proved nothing, since
 the solver is deterministic.
 
-Building three options takes roughly five seconds. Progress is shown as
-"Building 2 of 3…", and the page yields between options so it never looks frozen
-on slower hardware.
+The solver is incremental: placing a shift only changes that day and that
+person, so only those rows are recomputed. Verified to produce byte-identical
+schedules to the full rescan it replaced, at roughly twice the speed.
 
 ## A note on the format
 
