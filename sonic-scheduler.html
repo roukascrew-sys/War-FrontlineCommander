@@ -22,7 +22,7 @@ h1,h2,h3{margin:0 0 .4em;line-height:1.2}
 h1{font-size:19px;letter-spacing:.01em}
 h2{font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 h3{font-size:14px}
-.wrap{max-width:1440px;margin:0 auto;padding:16px}
+.wrap{max-width:1680px;margin:0 auto;padding:16px}
 header.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
   background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
 header.top .sub{color:var(--muted);font-size:12.5px}
@@ -120,12 +120,13 @@ li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
 #modal textarea{font-family:var(--mono);font-size:12px;height:220px;white-space:pre;overflow:auto}
 
 /* ------- Expressway-format printout ------- */
-#printout{background:#fff;color:#000;border:1px solid #b9b3a8;box-shadow:0 2px 14px rgba(28,26,23,.13);padding:18px;font-family:"Courier New",Courier,ui-monospace,monospace;font-size:12px}
+#printout{background:#fff;color:#000;border:1px solid #b9b3a8;box-shadow:0 2px 14px rgba(28,26,23,.13);padding:20px;font-family:"Courier New",Courier,ui-monospace,monospace;font-size:14px}
+#printout .xw-scroll{overflow-x:auto}
 #printout .xw-head{display:flex;justify-content:space-between;gap:10px;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:8px}
-#printout .xw-title{font-weight:700;font-size:14px;letter-spacing:.08em}
-#printout table{border-collapse:collapse;width:100%;font-size:11.5px}
-#printout th,#printout td{border:1px solid #000;padding:2px 4px;white-space:nowrap}
-#printout th{background:#e8e8e8;color:#000;font-family:inherit;font-size:10.5px;letter-spacing:.04em;text-align:center}
+#printout .xw-title{font-weight:700;font-size:17px;letter-spacing:.08em}
+#printout table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:960px}
+#printout th,#printout td{border:1px solid #000;padding:5px 7px;white-space:nowrap}
+#printout th{background:#e8e8e8;color:#000;font-family:inherit;font-size:12px;letter-spacing:.04em;text-align:center}
 #printout td.nm{text-align:left;font-weight:700}
 #printout td.sh{text-align:center}
 #printout td.tot{text-align:right;font-weight:700}
@@ -135,18 +136,20 @@ li.bad{color:var(--bad)} li.warn{color:var(--warn)} li.good{color:var(--good)}
 #printout tr.grp td{background:#d9d9d9;font-weight:700;letter-spacing:.1em}
 #printout tr.sub td{background:#f2f2f2;font-weight:700}
 #printout tr.tot td{background:#d9d9d9;font-weight:700}
-#printout .xw-foot{margin-top:10px;border-top:2px solid #000;padding-top:6px;display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px 18px;font-size:11.5px}
+#printout .xw-foot{margin-top:12px;border-top:2px solid #000;padding-top:8px;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px 20px;font-size:13px}
 #printout .xw-foot div span{font-weight:700}
-#printout .xw-note{margin-top:8px;font-size:10.5px;border-top:1px dashed #000;padding-top:5px;white-space:pre-wrap}
+#printout .xw-note{margin-top:10px;font-size:12px;line-height:1.5;border-top:1px dashed #000;padding-top:7px;white-space:pre-wrap}
 @media print{
   body{background:#fff}
   .noprint{display:none !important}
   .wrap{max-width:none;padding:0}
   section.tab{display:none !important}
   section.tab.on{display:block !important}
-  #printout{border:none;padding:0;box-shadow:none;font-size:10.5px}
-  #printout table{font-size:9.5px}
+  #printout{border:none;padding:0;box-shadow:none;font-size:11px}
+  #printout table{font-size:10.5px;min-width:0}
+  #printout th,#printout td{padding:3px 4px}
+  #printout .xw-scroll{overflow:visible}
   @page{size:landscape;margin:10mm}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
@@ -520,11 +523,11 @@ $('modalBack').addEventListener('click', e=>{ if(e.target.id==='modalBack') clos
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
 
 /* ------------------------------- state -------------------------------- */
-const DEFAULT_CURVE = [0,0,0,0,0,0, .35,.75,.85,.70,.95, 1.65,1.90,1.35, 1.55,1.60,1.15, 1.30,1.45,1.20, .95,.70,.45,.25];
+const DEFAULT_CURVE = [0,0,0,0,0,0, .55,.95,1.00,.80,.95, 1.65,1.90,1.35, 1.55,1.60,1.15, 1.30,1.45,1.20, .95,.70,.45,.25];
 
 function defaultDay(i){
   const weekend = (i===5||i===6);
-  return { open:'10:00', close: weekend?'24:00':'23:00', sales: weekend?5200:3800, budget:0, hourly:{} };
+  return { open:'06:30', close:'24:00', sales: weekend?6400:4900, budget:0, hourly:{} };
 }
 function mondayOfThisWeek(){
   const d=new Date(); const off=(d.getDay()+6)%7; d.setDate(d.getDate()-off);
@@ -556,7 +559,7 @@ function newEmp(name){
     id:uid(), name:name||'New crew member',
     pos:'carhop', pos2:'', rating:3, wage:12.00, wage2:0, type:'part',
     minH:0, targetH:20, maxH:30, note:'', events:[],
-    avail:[0,1,2,3,4,5,6].map(()=>({off:false, from:'10:00', to:'23:00'}))
+    avail:[0,1,2,3,4,5,6].map(()=>({off:false, from:'06:30', to:'24:00'}))
   };
 }
 let S = load() || newState();
@@ -589,27 +592,34 @@ function sampleCrew(){
     return e;
   };
   S.employees=[
-    mk('Alvarez, Dana','manager','cook',5,21.50,'full',36,40,45,[3],['09:00','23:30']),
+    mk('Alvarez, Dana','manager','cook',5,21.50,'full',36,40,45,[3],['06:00','20:00']),
     mk('Brooks, Trey','manager','carhop',4,18.75,'full',32,38,42,[0],['12:00','24:00']),
-    mk('Chen, Mira','manager','cook',4,18.00,'part',20,28,34,[5,6],['09:00','18:00']),
-    mk('Vance, Erin','manager','carhop',4,17.50,'full',24,32,38,[1],['14:00','24:00']),
-    mk('Delgado, Rico','cook','',5,15.25,'full',30,38,42,[2],['10:00','22:00']),
+    mk('Chen, Mira','manager','cook',4,18.00,'part',20,28,34,[5,6],['06:00','16:00']),
+    mk('Vance, Erin','manager','carhop',4,17.50,'full',24,32,38,[1],['13:00','24:00']),
+    mk('Delgado, Rico','cook','',5,15.25,'full',30,38,42,[2],['06:00','18:00']),
     mk('Ellis, Sam','cook','carhop',3,13.50,'part',12,22,30,[],['11:00','23:00'],12.5),
     mk('Foster, Kayla','cook','',2,12.75,'part',8,16,24,[1,2],['16:00','24:00']),
-    mk('Grant, Noah','cook','carhop',4,14.00,'part',16,26,34,[6],['10:00','20:00'],12.75),
-    mk('Hughes, Priya','carhop','',5,12.50,'full',28,36,40,[],['10:00','22:00']),
+    mk('Grant, Noah','cook','carhop',4,14.00,'part',16,26,34,[6],['06:30','18:00'],12.75),
+    mk('Hughes, Priya','carhop','',5,12.50,'full',28,36,40,[],['07:00','19:00']),
     mk('Ibarra, Luis','carhop','cook',3,12.00,'part',10,20,28,[4],['15:00','24:00'],13.0),
-    mk('Jensen, Abby','carhop','',4,12.25,'part',14,24,30,[0,1],['11:00','21:00']),
+    mk('Jensen, Abby','carhop','',4,12.25,'part',14,24,30,[0,1],['10:00','20:00']),
     mk('Kowalski, Ben','carhop','',2,11.50,'minor',6,12,18,[],['16:00','22:00']),
-    mk('Lopez, Sofia','carhop','',3,12.00,'part',10,18,26,[3],['10:00','17:00']),
+    mk('Lopez, Sofia','carhop','',3,12.00,'part',10,18,26,[3],['06:30','15:00']),
     mk('Moore, Jaylen','carhop','cook',4,12.75,'full',24,32,38,[],['12:00','24:00'],13.75),
     mk('Nguyen, Tia','carhop','',1,11.25,'minor',4,10,16,[1,3],['16:00','21:30']),
-    mk('Okafor, Chris','carhop','',3,12.00,'part',10,18,26,[5],['10:00','19:00']),
-    mk('Patel, Anish','cook','carhop',3,13.00,'part',14,22,30,[],['11:00','22:00'],12.25),
-    mk('Quinn, Maya','carhop','',4,12.25,'part',16,26,32,[2],['10:00','20:00']),
+    mk('Okafor, Chris','carhop','',3,12.00,'part',10,18,26,[5],['09:00','19:00']),
+    mk('Patel, Anish','cook','carhop',3,13.00,'part',14,22,30,[],['10:00','22:00'],12.25),
+    mk('Quinn, Maya','carhop','',4,12.25,'part',16,26,32,[2],['07:00','17:00']),
     mk('Reyes, Dominic','carhop','cook',2,11.75,'minor',6,12,18,[],['15:00','22:00'],12.5),
-    mk('Silva, Emma','carhop','',3,12.00,'part',12,20,28,[6],['10:00','18:00']),
-    mk('Turner, Jamal','cook','',4,14.25,'full',22,32,38,[0],['12:00','24:00'])
+    mk('Silva, Emma','carhop','',3,12.00,'part',12,20,28,[6],['06:30','16:00']),
+    mk('Turner, Jamal','cook','',4,14.25,'full',22,32,38,[0],['12:00','24:00']),
+    mk('Weaver, Sam','manager','cook',4,17.75,'full',30,36,40,[2],['06:00','18:00']),
+    mk('Foley, Ruth','cook','',4,14.50,'full',24,32,38,[6],['06:00','16:00']),
+    mk('Ahmed, Zara','cook','carhop',3,13.25,'part',12,20,28,[4],['06:30','15:00'],12.50),
+    mk('Boyd, Cara','carhop','',3,12.00,'part',10,18,26,[5],['06:30','14:00']),
+    mk('Diaz, Marco','carhop','cook',4,12.50,'part',16,24,32,[],['14:00','24:00'],13.25),
+    mk('Gibbs, Alex','carhop','',3,12.25,'part',12,20,28,[1],['09:00','18:00']),
+    mk('Ramos, Nina','carhop','',2,11.75,'minor',6,12,18,[],['16:00','21:30'])
   ];
   // things people have asked to be free for
   const ev=(name,d,from,to,label,kind)=>{
@@ -997,50 +1007,80 @@ function buildPlan(strat){
   }
 
   /* --- pass 0: manager spine ------------------------------------------
-     Nobody else is scheduled until every day has a manager from open to
-     close. Days with the fewest available managers are laid down first,
-     and each day is walked left to right filling the earliest hole — a
-     value-ranked greedy takes a fat midday shift and strands both edges. */
+     Nobody else is scheduled until every day has a manager from open to close.
+     The week's closes are locked in first, then its opens, then the middles —
+     on a long trading day only a couple of managers can legally still be there
+     at midnight, and filling day by day burns them on afternoons before the
+     last day's close is even considered. Within a day the walk runs left to
+     right, because a value-ranked greedy takes a fat midday shift and strands
+     both edges. */
   const posPrio=Object.fromEntries(POSITIONS.map(p=>[p.k,p.prio]));
-
   const mgrPool=emps.filter(e=>e.pos==='manager'||e.pos2==='manager');
-  const mgrOrder=[0,1,2,3,4,5,6].sort((a,b)=>{
-    const av=d=>mgrPool.filter(e=>!e.avail[d].off).length;
-    return av(a)!==av(b) ? av(a)-av(b) : daySalesActual(b)-daySalesActual(a);
-  });
+  const availTo=(e,d)=>e.avail[d].to==='24:00'?1440:parseT(e.avail[d].to);
+
+  function mgrScore(e,d,c,reach){
+    const paid=paidHoursFor((c.end-c.start)/60);
+    const cost=shiftCost(e,'manager',paid,stat[e.id].paid);
+    if(cost<=0) return null;
+    let eff=reach/cost*1000;
+    eff *= (0.88+0.06*clamp(Math.round(+e.rating||3),1,5));
+    eff *= targetFactor(e,paid) * pairFactors(e,d,c.start,c.end).score * staticFactor(e,d,c);
+    if(e.pos!=='manager') eff*=0.70;
+    if(stat[e.id].paid+paid > st.otAfter) eff*=0.45;
+    return Math.min(eff,999);
+  }
+  /* Pick one manager shift on day d that satisfies `want`, ranked on how much
+     of the hole it closes first and value second. */
+  function placeManager(d, want){
+    let best=null;
+    for(const e of mgrPool){
+      if(dayBlocked(e,d)) continue;
+      for(const c of candidates(e,d)){
+        const reach=want(e,c);
+        if(!reach) continue;
+        if(blocked(e,d,c)) continue;
+        const eff=mgrScore(e,d,c,reach);
+        if(eff===null) continue;
+        const score=reach*1000+eff;
+        if(!best||score>best.score) best={score,e,c};
+      }
+    }
+    if(best){ apply(best.e,d,'manager',best.c); return true; }
+    return false;
+  }
+
+  const holeOn=(d,i)=>demand[d].need[i].manager>0.25 && heads[d][i]<1;
+  const canCloseCount=d=>mgrPool.filter(e=>!e.avail[d].off && availTo(e,d)>=dayMeta(d).close-60).length;
+  const canOpenCount =d=>mgrPool.filter(e=>!e.avail[d].off && parseT(e.avail[d].from)<=dayMeta(d).open+60).length;
+  const byScarcity=count=>[0,1,2,3,4,5,6].slice().sort((a,b)=>
+    count(a)!==count(b) ? count(a)-count(b) : daySalesActual(b)-daySalesActual(a));
+
+  // 1. every close in the week, days with the fewest possible closers first
+  for(const d of byScarcity(canCloseCount)){
+    const n=demand[d].slots;
+    if(n>0 && holeOn(d,n-1)) placeManager(d,(e,c)=>c.s+c.L===n ? c.L : 0);
+  }
+  // 2. every open
+  for(const d of byScarcity(canOpenCount)){
+    if(demand[d].slots>0 && holeOn(d,0)) placeManager(d,(e,c)=>c.s===0 ? c.L : 0);
+  }
+  // 3. whatever is still uncovered in the middle of each day
+  const mgrOrder=byScarcity(d=>mgrPool.filter(e=>!e.avail[d].off).length);
   for(const d of mgrOrder){
     const n=demand[d].slots;
-    const holeAt=i=>demand[d].need[i].manager>0.25 && heads[d][i]<1;
     let cursor=0, guard=0;
     while(guard++<40){
       let gap=-1;
-      for(let i=cursor;i<n;i++) if(holeAt(i)){ gap=i; break; }
+      for(let i=cursor;i<n;i++) if(holeOn(d,i)){ gap=i; break; }
       if(gap<0) break;
-      let gapEnd=gap; while(gapEnd<n && holeAt(gapEnd)) gapEnd++;
-      let best=null;
-      for(const e of mgrPool){
-        if(dayBlocked(e,d)) continue;
-        for(const c of candidates(e,d)){
-          if(c.s>gap || c.s+c.L<=gap) continue;
-          if(blocked(e,d,c)) continue;
-          const paid=paidHoursFor((c.end-c.start)/60);
-          const cost=shiftCost(e,'manager',paid,stat[e.id].paid);
-          if(cost<=0) continue;
-          const reach=Math.min(c.s+c.L,gapEnd)-gap;
-          let eff=reach/cost*1000;
-          eff *= (0.88+0.06*clamp(Math.round(+e.rating||3),1,5));
-          eff *= targetFactor(e,paid);
-          eff *= pairFactors(e,d,c.start,c.end).score;
-          eff *= staticFactor(e,d,c);
-          if(e.pos!=='manager') eff*=0.70;
-          const score=reach*1000+Math.min(eff,999);
-          if(!best||score>best.score) best={score,e,c};
-        }
-      }
-      if(!best){ cursor=gap+1; continue; }
-      apply(best.e,d,'manager',best.c);
+      let gapEnd=gap; while(gapEnd<n && holeOn(d,gapEnd)) gapEnd++;
+      const filled=placeManager(d,(e,c)=>
+        (c.s>gap || c.s+c.L<=gap) ? 0 : Math.min(c.s+c.L,gapEnd)-gap);
+      if(!filled) cursor=gap+1;               // nobody can open this hole; move on
     }
-    // second manager at peak — nice to have, allowed to come up short
+  }
+  // 4. the extra manager the peak calls for — nice to have, may come up short
+  for(const d of mgrOrder){
     let g2=0;
     while(g2++<12){
       if(remaining[d].manager.reduce((a,b)=>a+b,0)<0.5) break;
@@ -1055,8 +1095,7 @@ function buildPlan(strat){
           const cost=shiftCost(e,'manager',paid,stat[e.id].paid); if(cost<=0) continue;
           let sc=g/Math.pow(cost,strat.costExp)*100;
           sc *= Math.pow(0.88+0.06*clamp(Math.round(+e.rating||3),1,5), strat.capExp);
-          sc *= targetFactor(e,paid) * pairFactors(e,d,c.start,c.end).score;
-          sc *= staticFactor(e,d,c);
+          sc *= targetFactor(e,paid) * pairFactors(e,d,c.start,c.end).score * staticFactor(e,d,c);
           if(e.pos!=='manager') sc*=0.70;
           if(!best||sc>best.score) best={score:sc,e,c};
         }
@@ -1931,6 +1970,7 @@ function bindSetup(){
     inp.oninput=()=>{
       st[map[id]] = inp.type==='number' ? (+inp.value||0) : inp.value;
       save();
+      renderHumaneWarning();                       // limits changed — re-check them
       if(id==='s_start'){ renderHours(); renderTeam(); renderLiveControls(); }
       if(['s_splh','s_mincrew','s_cook','s_pct'].includes(id)){ renderForecast(); renderHours(); }
     };
@@ -1939,7 +1979,7 @@ function bindSetup(){
              s_noot:'noOT', s_stable:'stability', s_noclopen:'noClopen'};
   for(const id in cbs){
     const c=$(id); c.checked=!!st[cbs[id]];
-    c.onchange=()=>{ st[cbs[id]]=c.checked; save(); };
+    c.onchange=()=>{ st[cbs[id]]=c.checked; save(); renderHumaneWarning(); };
   }
   const bm=$('s_bmode'); bm.value=st.budgetMode;
   bm.onchange=()=>{ st.budgetMode=bm.value; save(); renderHours(); };
@@ -2333,7 +2373,8 @@ function renderPrintout(){
         '<div>PRINTED: '+longDate(todayISO())+'</div>'+
       '</div>'+
     '</div>'+
-    '<table><thead>'+head+'</thead><tbody>'+body+totRow+costRow+budRow+varRow+'</tbody></table>'+
+    '<div class="xw-scroll"><table><thead>'+head+'</thead><tbody>'+body+totRow+costRow+budRow+varRow+
+      '</tbody></table></div>'+
     '<div class="xw-foot">'+
       '<div>TOTAL SCHEDULED HOURS: <span>'+hrs(grandH)+'</span></div>'+
       '<div>TOTAL LABOR COST: <span>'+money(grandC)+'</span></div>'+
@@ -2714,7 +2755,7 @@ $('btnClearEmp').onclick=()=>{
 };
 $('btnSample').onclick=()=>{
   const go=()=>{ sampleCrew(); rebuildAll(); save(); renderTeam(); renderForecast(); renderHours();
-                 renderLiveControls(); toast('Sample crew loaded — 21 people, 5 pairing rules.','good'); };
+                 renderLiveControls(); toast('Sample crew loaded — 28 people, 5 pairing rules.','good'); };
   if(S.employees.length)
     confirmBox('Replace the current crew?','The sample crew will replace all '+S.employees.length+' people currently on the roster.', go, 'Replace');
   else go();
