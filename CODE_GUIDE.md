@@ -713,6 +713,60 @@ weather, veterancy, tech, war-map logistics — with none of the noise.
   with no separate unlock-list to desync, and neither gates any mode, unit,
   or doctrine, so the full roster stays playable from rank 1.
 
+## ◈ The Gauntlet (v1.18.0) — the adaptive opponent
+
+One opponent ("The Adjutant") that learns your habits between fights. The whole
+design rests on one invariant, and it is the thing to preserve above all else if
+you touch this code:
+
+> **It adapts BETWEEN fights and never DURING one.**
+
+That is enforced structurally by two objects that must never be confused:
+
+- **`G.gaunt`** — the FROZEN profile the current battle fights with. Built once
+  by `gauntletSnapshot()` at `newGame()` time and never recomputed. Everything
+  the AI reads (counter weights, hardening percentages, lane bias, which strikes
+  are armed) comes from here.
+- **`G.gauntRec`** — a write-only ledger of what the player did this fight.
+  Nothing in the running battle is allowed to read it. It is folded into the
+  persistent dossier by `gauntletCommit()` from `endGame()`, and only there.
+
+If you ever need the opponent to react to something new, add it to the snapshot,
+not to a live lookup. An enemy that re-learns mid-fight makes a run unwinnable by
+effort, which is exactly the failure mode this structure exists to prevent.
+
+Other things worth knowing:
+
+- **Persistence** lives in `SAVE.gauntlet` and is normalised on *every* read by
+  `gauntletState()`. `sanitizeSave()` only validates top-level fields and copies
+  nested objects through wholesale, so a hand-edited or partial save can put
+  anything in here — every field is rebuilt with a checked default. `mem.fights`
+  is a **fractional decaying weight**, not a battle count; do not floor it (that
+  bug pinned it at 1 forever and silently broke the tempo read).
+- **Tiers**: `tier === clears`. `GAUNTLET_TIERS` is the ladder (each rung arms
+  exactly one system, so a returning player can name what's new); past the end of
+  the table it keeps scaling via `qualMul`/`cpMul` in `gauntletTierInfo()`.
+- **Adaptive hardening** hooks `damage()` and keys off `src.key`, so it only
+  applies to real unit damage. Commander strikes pass literal `{side,dmgType}`
+  objects with no `key` and are deliberately never blunted — the player always
+  keeps one un-hardened answer available.
+- **Enemy fire support** (`gauntStrikeTick` / `gauntStrikeFire` / `drawGauntFx`)
+  is the only enemy-side strike system in the game. Every strike is telegraphed
+  for `GAUNT_TELE_TIME` seconds first; keep that. It is all `dt`-driven, not
+  `setTimeout`, so it obeys pause, the prep freeze and the speed control.
+- **Purge** (`gauntletPurge()`) clears `mem` and `clears` but must never touch
+  `lifetime` or `deepest`.
+
+## Screens: use `hideAllScreens()`
+
+Every screen opener hides the others through `hideAllScreens(exceptId)`. It used
+to be a hand-written list of sibling screens inside each opener, which meant a new
+screen had to be added to a dozen lists and any single miss left two screens
+stacked on top of each other (this was patched by hand twice before being fixed
+properly). `#hud` is **not** a `.screen` — it's the battle itself — so openers
+that need it hidden still say so explicitly. The regression suite checks every
+opener pair leaves exactly one screen visible.
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass

@@ -224,7 +224,26 @@ need a live battle running.</p>
   <tr><td><code>launchSecret()</code></td><td>Jump straight into the Glitch Front</td></tr>
   <tr><td><code>generateDaily(todayKey())</code></td><td>Inspect today's composed challenge</td></tr>
   <tr><td><code>spawn('R','tank',1)</code></td><td>Spawn an enemy tank in the middle lane</td></tr>
+  <tr><td><code>launchGauntlet()</code></td><td>Jump straight into a Gauntlet fight at the current tier</td></tr>
+  <tr><td><code>gauntletState()</code></td><td>Read the Adjutant's dossier (clears, lifetime, learned unit/lane weights)</td></tr>
+  <tr><td><code>gauntletSnapshot()</code></td><td>Preview exactly what the next fight will arm — counters, hardening %, strikes</td></tr>
+  <tr><td><code>gauntletPurge()</code></td><td>Wipe its memory + current run (keeps lifetime &amp; deepest tier)</td></tr>
+  <tr><td><code>G.gaunt</code></td><td>The FROZEN profile the current fight is using (never mutates mid-battle)</td></tr>
+  <tr><td><code>G.gauntRec</code></td><td>The write-only ledger of what you did this fight; folded in at endGame()</td></tr>
+  <tr><td><code>hideAllScreens('title')</code></td><td>Hide every .screen except one — what every opener now uses</td></tr>
 </table>
+
+<h3 style="margin-top:18px">Jumping the Gauntlet to any tier</h3>
+<p class="muted">Tier === clears, so you can drop the Adjutant straight onto any rung. This one seeds a
+tier-5 (full-proficiency, Legendary) opponent that already has you filed as a tank-spamming
+top-lane player — the fastest way to see every system armed at once:</p>
+<pre><code>SAVE.gauntlet={clears:5,losses:0,lifetime:9,deepest:5,
+  mem:{fights:6,units:{tank:40,atgm:12,rifle:8},strikes:{barrage:5},
+       lanes:[30,4,3],spawners:3,rush:5}};
+persist(); launchGauntlet();</code></pre>
+<p class="muted">Set <code>clears</code> to 6+ for the ASCENDANT tiers (compounding quality/income, no ceiling).
+<code>G.gauntStrikeT=0</code> forces its next off-map strike immediately instead of waiting ~30s —
+useful for capturing the telegraph.</p>
 
 <h2><span class="n">07</span>Testing</h2>
 <ol>
@@ -238,10 +257,11 @@ need a live battle running.</p>
   <li><span class="tag planned">planned</span> Global leaderboard admin / score invalidation (needs the backend)</li>
   <li><span class="tag planned">planned</span> Deterministic seed override for reproducible capture runs</li>
   <li><span class="tag planned">planned</span> One-key "cinematic camera" for trailer B-roll</li>
+  <li><span class="tag planned">planned</span> Gauntlet dossier editor — hand-author a profile to demo a specific adaptation on camera</li>
 </ul>
 
 <footer>
-  Frontline Commander — internal reference. Last updated for <strong>v1.17.1</strong>.<br>
+  Frontline Commander — internal reference. Last updated for <strong>v1.18.0</strong>.<br>
   Keep this current: a stale tools file is worse than none, because you'll trust it.
 </footer>
 

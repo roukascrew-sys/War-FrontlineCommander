@@ -80,11 +80,28 @@
     el.style.pointerEvents = "none";
   }
 
-  function anyScreenVisible() {
+  /* "Is the game actually up?" — the question the watchdog needs answered before it is
+     entitled to cover the page with a failure notice.
+
+     This used to ask only "is a .screen visible", which is wrong in the single state the
+     player spends most of their time in: DURING A BATTLE every .screen is hidden by design
+     and the game lives in #hud instead. So a battle in progress read as a dead page, and
+     the 8s watchdog below (which fires unconditionally, error or no error) would paint
+     "Trouble loading — Reload" straight over a running, perfectly healthy match. Anyone who
+     tapped into a campaign or the daily between roughly 4.5s and 8.7s after load hit it;
+     tapping earlier or later missed it, which is exactly why it presented as intermittent.
+
+     A visible HUD, or a live game object, is at least as strong a proof of life as a
+     visible menu — so all three count. */
+  function gameIsUp() {
     var screens = document.getElementsByClassName("screen");
     for (var i = 0; i < screens.length; i++) {
       if (String(screens[i].className).indexOf("hidden") === -1) return true;
     }
+    var hud = document.getElementById("hud");
+    if (hud && String(hud.className).indexOf("hidden") === -1) return true; // a battle is running
+    if (window.__FC_ALIVE) return true;                                     // main script reached a playable state
+    if (window.G) return true;                                              // a game object exists
     return false;
   }
 
@@ -122,12 +139,30 @@
   }
 
   function watchdog() {
+    // Once the game has proved it is up, this guard's job is finished for the rest of the
+    // session. It exists to rescue a BOOT failure; a fault hours into play is the in-game
+    // error handling's problem, and answering it with a full-screen "Reload" over a live
+    // battle destroys the player's match to fix nothing.
+    if (gameIsUp()) { disarm(); return; }
     hideLoader();
     // give the main script (if it's still alive) a brief moment to reach showTitle() on its
     // own before deciding the page is genuinely blank and offering the reload fallback
     setTimeout(function () {
-      if (!anyScreenVisible()) showFallback();
+      if (!gameIsUp()) showFallback();
     }, 700);
+  }
+
+  // Stand the guard down permanently — no listeners, no pending timer, nothing left that
+  // could fire a false alarm later in the session.
+  var disarmed = false;
+  function disarm() {
+    if (disarmed) return;
+    disarmed = true;
+    try {
+      window.removeEventListener("error", onWindowError, true);
+      window.removeEventListener("unhandledrejection", watchdog);
+      if (lastResort) clearTimeout(lastResort);
+    } catch (e) {}
   }
 
   /* A RESOURCE error is not a boot failure — ignore it.
@@ -152,8 +187,15 @@
   }
   window.addEventListener("error", onWindowError, true);
   window.addEventListener("unhandledrejection", watchdog);
-  // last resort: no matter what happened above, never sit on the loading screen past ~8s
-  setTimeout(watchdog, 8000);
+  // last resort: no matter what happened above, never sit on the loading screen past ~8s.
+  // watchdog() now checks gameIsUp() first, so reaching this timer mid-battle is a no-op.
+  var lastResort = setTimeout(watchdog, 8000);
+  // Belt and braces: stand down as soon as the game is demonstrably up, so nothing later in
+  // the session can even reach the watchdog.
+  var alivePoll = setInterval(function () {
+    if (gameIsUp()) { disarm(); clearInterval(alivePoll); }
+  }, 500);
+  setTimeout(function () { clearInterval(alivePoll); }, 30000);
 })();
 
 </script>
@@ -890,6 +932,7 @@
   .t-btn.roadmap{border-color:var(--cyan);} .t-btn.roadmap b{color:var(--cyan);} .t-btn.roadmap:hover{box-shadow:0 0 18px #5ff0e044;}
   .t-btn.cosmetics{border-color:var(--purple);} .t-btn.cosmetics b{color:var(--purple);} .t-btn.cosmetics:hover{box-shadow:0 0 18px #c9a0ff44;}
   .t-btn.rivals{border-color:var(--red);} .t-btn.rivals b{color:var(--red);} .t-btn.rivals:hover{box-shadow:0 0 18px #ff5a4a44;}
+  .t-btn.gauntlet{border-color:var(--cyan);} .t-btn.gauntlet b{color:var(--cyan);} .t-btn.gauntlet:hover{box-shadow:0 0 18px #5ff0e044;}
   .t-btn.patchnotes{border-color:var(--good);} .t-btn.patchnotes b{color:var(--good);} .t-btn.patchnotes:hover{box-shadow:0 0 18px #3fd07a44;}
   .t-btn.chaos{border-color:#ff5ad6;} .t-btn.chaos b{color:#ff5ad6;} .t-btn.chaos:hover{box-shadow:0 0 18px #ff5ad644;}
   .t-btn.indoc{border-color:var(--gold);} .t-btn.indoc b{color:var(--gold);} .t-btn.indoc:hover{box-shadow:0 0 18px #ffce5a44;}
@@ -919,6 +962,42 @@
   .rival-rec{font-family:var(--mono);font-size:11px;color:var(--dim);margin-bottom:4px;}
   .rival-bias{font-size:10.5px;color:var(--faint);margin-bottom:2px;}
   .rival-fight{width:100%;}
+
+  /* ── THE GAUNTLET ── the Adjutant's file on you. Cyan throughout, to read as a machine
+     readout rather than another commander's banner. */
+  .ga-hero{background:linear-gradient(160deg,#0d1a1e,#0a1116);border:1.5px solid #1f4a4a;
+    border-radius:12px;padding:15px 16px;margin-bottom:12px;position:relative;overflow:hidden;}
+  .ga-hero::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(95,240,224,.045) 0 1px,transparent 1px 3px);}
+  .ga-glyph{font-size:30px;line-height:1;color:var(--cyan);}
+  .ga-nm{font-size:19px;font-weight:800;letter-spacing:2px;margin-top:5px;}
+  .ga-tier{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:3px;letter-spacing:.5px;}
+  .ga-blurb{font-size:12px;color:var(--ink);margin-top:9px;line-height:1.5;opacity:.92;}
+  .ga-stats{display:flex;gap:9px;margin:12px 0;flex-wrap:wrap;}
+  .ga-stat{flex:1 1 90px;background:var(--panel);border:1px solid var(--line);border-radius:9px;
+    padding:9px 10px;text-align:center;}
+  .ga-stat b{display:block;font-family:var(--mono);font-size:19px;color:var(--cyan);line-height:1.2;}
+  .ga-stat.perm b{color:var(--gold);}
+  /* four tiles wrap 3+1 on a phone, which reads as one orphaned stat; force a clean 2×2 */
+  @media (max-width:560px){ .ga-stat{flex:1 1 calc(50% - 5px);} }
+  .ga-stat small{display:block;font-size:9.5px;color:var(--faint);letter-spacing:.6px;margin-top:2px;text-transform:uppercase;}
+  .ga-h{font-size:12px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin:14px 2px 7px;}
+  .ga-dos{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--cyan);
+    border-radius:8px;padding:9px 12px;margin-bottom:6px;font-size:12px;line-height:1.5;
+    display:flex;gap:9px;align-items:flex-start;text-align:left;}
+  .ga-dos .gi{flex:0 0 auto;font-size:14px;}
+  .ga-ladder{display:flex;flex-direction:column;gap:5px;}
+  .ga-rung{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);
+    border-radius:8px;padding:8px 11px;font-size:11.5px;text-align:left;opacity:.45;}
+  .ga-rung.on{opacity:1;border-color:#2c5f5f;}
+  .ga-rung.now{opacity:1;border-color:var(--cyan);box-shadow:0 0 12px #5ff0e022;}
+  .ga-rung .gr-n{font-family:var(--mono);font-weight:800;flex:0 0 92px;letter-spacing:.5px;}
+  .ga-rung .gr-d{color:var(--dim);flex:1;}
+  .ga-rung .gr-s{flex:0 0 auto;font-size:13px;}
+  .ga-acts{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap;}
+  .ga-acts .sbtn{flex:1 1 150px;}
+  .ga-purge{border-color:var(--red)!important;color:var(--red)!important;}
+  .ga-note{font-size:10.5px;color:var(--faint);margin-top:9px;line-height:1.5;text-align:left;}
 
   /* ── COSMETICS ── */
   .cos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:16px;}
@@ -1592,7 +1671,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.17.3</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.18.0</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -1797,6 +1876,7 @@
           <button class="t-btn war" id="t-war"><b>🗺 War Mode</b><small>conquer the map</small></button>
           <button class="t-btn chaos" id="t-chaos"><b>🤪 Chaos Mode</b><small>flip it on in Settings</small></button>
           <button class="t-btn rivals" id="t-rivals"><b>⚔ Rivals</b><small>a roster that learns you</small></button>
+          <button class="t-btn gauntlet" id="t-gauntlet"><b>◈ The Gauntlet</b><small id="t-gauntlet-sub">one foe that studies you</small></button>
           <button class="t-btn tut" id="t-tut"><b>🎓 Tutorial</b><small>learn the ropes</small></button>
         </div>
       </div>
@@ -1925,6 +2005,16 @@
     <h1>⚔ <b>RIVALS</b></h1>
     <div class="tag" style="margin-bottom:6px">Five named commanders. Beat one and they'll come back adapted to whatever you threw at them — sometimes they escape a loss and live to fight again. Defeat every rival for real and the roster pays out.</div>
     <div class="man-wrap"><div class="man-body" id="rivals-body"></div></div>
+  </div>
+
+  <!-- THE GAUNTLET — the adaptive opponent. The dossier is the point of this screen:
+       showing the player exactly what the Adjutant learned is what turns "the game is
+       cheating" into "I need to change my approach". -->
+  <div class="screen hidden" id="gauntlet">
+    <button class="back-btn" id="gaunt-back">◀ Title</button>
+    <h1>◈ <b>THE GAUNTLET</b></h1>
+    <div class="tag" style="margin-bottom:6px">One opponent. It keeps a file on you, and it reads it before every fight. It only ever learns <b>between</b> battles — whatever it brings to the field is locked in from the first second, so any single fight can be beaten by reading it and committing.</div>
+    <div class="man-wrap"><div class="man-body" id="gaunt-body"></div></div>
   </div>
 
   <!-- PATCH NOTES -->
@@ -2268,6 +2358,9 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   secretUnlocked:false,   // true once every campaign time trial has been beaten
   secretDone:false,       // true once the secret level is cleared (unlocks the Drone Swarm + Rods from God)
   secretBadgeEarned:false,
+  // ── THE GAUNTLET — the adaptive opponent. Normalised on every read by gauntletState(),
+  //    because this is a NESTED structure and sanitizeSave() only validates top-level fields.
+  gauntlet:{},
   // ── daily challenge streaks ──
   dailyStreak:0,          // consecutive days the daily has been beaten
   dailyBestStreak:0,
@@ -2489,6 +2582,10 @@ function commendationAt(lvl){
 }
 /* ── MODE GATES — whole modes unlock at these ranks (Domination/Chaos/War). ── */
 const MODE_GATES={domination:{lvl:6,name:'Domination Mode'},chaos:{lvl:10,name:'Chaos / Meme Mode'},war:{lvl:15,name:'War Mode'}};
+/* Battle kinds that Chaos Mode must never apply to. See the G.chaos assignment in start()
+   for why each one is here. Kept as a named list so the rule is stated once and any new
+   structured mode has an obvious place to opt in. */
+const CHAOS_EXCLUDED_KINDS=['tutorial','campaign','war','rival','gauntlet','indoc'];
 function rankGateOk(lvl){ return !!SAVE.debugUnlockAll || SAVE.lvl>=lvl; }
 function commanderTitle(lvl){ let t=COMMANDER_TITLES[0]; for(const e of COMMANDER_TITLES)if(lvl>=e.lvl)t=e; return t.title; }
 function currentBadge(lvl){ let b=HQ_BADGES[0]; for(const e of HQ_BADGES)if(lvl>=e.lvl)b=e; return b; }
@@ -3027,13 +3124,25 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.17.3';
+const GAME_VERSION='1.18.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.18.0',notes:[
+    'NEW MODE — \u25c8 THE GAUNTLET. One opponent, the ADJUTANT, fought over and over, that keeps a file on how you play and reads it before every fight. It counters the units you lean on, masses in the lane you favour, and HARDENS against your most-used weapon so it does measurably less damage the next time you bring it. Crucially it only ever learns BETWEEN battles \u2014 everything it fights with is locked in from the first second, so any single fight is a fixed, fair puzzle you can beat by reading it and committing. Several clears in a row are absolutely possible; what changes is the next puzzle.',
+    'The Gauntlet escalates through a named capability ladder, and each rung arms exactly one new system so you can always tell what is new: TIER 0 CALIBRATING (it just watches) \u2192 1 PROFILING (counter-doctrine) \u2192 2 ADAPTING (adaptive hardening) \u2192 3 PREDICTING (off-map precision strikes, aimed at your favourite lane) \u2192 4 RELENTLESS (gunship runs, plus an opening ambush shaped to your tempo) \u2192 5 ASCENDANT (rolling barrages and full proficiency). Five clears takes it to Legendary; past that every further clear buys it more unit quality and income, and it does not stop.',
+    'The Adjutant is the only enemy in the game that uses commander strikes of its own \u2014 and every one of them is telegraphed with a marked lane and a closing reticle 2.6 seconds before it lands. Off-map damage you cannot see coming is just a tax on having units alive; a warning turns the same damage into a decision.',
+    'The Gauntlet screen shows you ITS FILE ON YOU in plain language before you commit \u2014 what it noticed, the exact hardening percentages, which abilities are armed. An opponent that adapts invisibly just feels like the game cheating; told exactly what it learned, the same difficulty reads as a puzzle with a stated solution.',
+    'PURGE ITS MEMORY wipes the file it has built on you and resets the current run to tier 0. Your lifetime beats and deepest tier are permanent and are never erased by it \u2014 purging is for starting a fresh climb, not for undoing your record. Losing does not cost you a tier either; the file just gets thicker.',
+    'FIXED \u2014 the reload screen that kept appearing over a perfectly healthy game, most often on mobile a few seconds into a Campaign mission or the Daily Challenge. The boot guard decided the page was dead if no menu was on screen, but DURING A BATTLE every menu is hidden by design \u2014 so a running fight looked identical to a crash, and an unconditional 8-second check painted "Trouble loading \u2014 Reload" straight over it. Tapping in between roughly 4.5 and 8.7 seconds after load hit it; tapping earlier or later missed, which is exactly why it seemed random. A live battle now counts as proof of life, and the guard stands down for good once the game is up. It still rescues every genuine boot failure \u2014 verified against a dead parse, an early throw, and a silent blank page.',
+    'FIXED \u2014 the CP bank capped at 280 while the Motor Pool cost 300, so that structure could never be afforded at any point in any battle. The cap is now 350, which leaves real headroom above the dearest structure while still making it a genuine save-up.',
+    'Chaos Mode no longer applies to Campaign, War, Rivals, the Gauntlet or the doctrine lessons. Those modes bank permanent progress or adapt to how you play, and a mission "won" under free spawns and triple income made the record meaningless \u2014 they now always run under their real rules however the toggle is set. Skirmish, Blitz, Survival, Domination and Evolution keep it; those are the throwaway fights it was built for.',
+    'The Daily Challenge can no longer fail to start. Generating the day was the only thing between the tap and a battle, so any hiccup meant the button appeared to do nothing at all \u2014 it now falls back to a plain, fully scoring, streak-eligible fight rather than silently refusing.',
+    'Internal: every screen now hides through one shared helper instead of a dozen hand-written lists of the other screens. Those lists were the reason menus could end up stacked on top of each other, and had already been patched twice by hand; all 169 screen-to-screen transitions are now verified to leave exactly one screen visible.',
+  ]},
   {v:'1.17.3',notes:[
     'FIXED — a kill credited to a fire (a Flame Trooper\'s burn finishing someone off after the flame itself had already died) could show up in the kill feed as "undefined undefined." The credit is now captured the moment the fire is lit, not looked up later from a unit that may no longer exist — and the kill feed itself can no longer render that literal text under any circumstances.',
     'Added a Settings button to the in-battle top bar — there was previously no way to reach the full Settings screen (colourblind palette, reduce motion, Chaos Mode, etc.) once a match had started. Opening it pauses the fight exactly like the Pause button and returns you to the same battle, in the same state, when you go back — it does not abandon your match.',
@@ -4132,7 +4241,12 @@ function newGame(){
     laneTerrain:kind==='tutorial'?['open','open','open']:[pick(TERRAIN_KEYS),pick(TERRAIN_KEYS),pick(TERRAIN_KEYS)],
     units:[], projs:[], parts:[], floats:[], rings:[], drops:[],
     revT:rnd(24,42), revCount:0, // random-events clock
-    cp:60+((L&&L.startCp)||0), cpRate:9*(perk.cpMul||1)*(diff.playerCp||1), cpMax:280,
+    /* cpMax must stay ABOVE the most expensive thing you can buy, or that thing is not
+       "expensive", it is unreachable. The Motor Pool costs 300 against an old cap of 280,
+       so it could never be afforded at any point in any battle — a purchase advertised in
+       the build menu that the economy made impossible. 350 leaves real headroom above the
+       dearest structure while still forcing a genuine save-up. */
+    cp:60+((L&&L.startCp)||0), cpRate:9*(perk.cpMul||1)*(diff.playerCp||1), cpMax:350,
     ecp:70, ecpRate:11*diff.cpMul*ecpMul,
     hq:{B:hqHP,R:mode==='survival'?1:hqHP}, hqMax:{B:hqHP,R:mode==='survival'?1:hqHP},
     hqFloor:1, // lowest HQ fraction seen (campaign star tracking)
@@ -4182,9 +4296,36 @@ function newGame(){
   G.dropMeter=0; G.dropVoters={}; G.chaosMeter=0; G.chaosVoters={}; // Phase 2 chat command meters
   G.chatPowers={}; // Phase 2 big-vote chat powers (nuke / storm / fortify / blitz)
   G.info={grayT:0,tunnelT:0,gaslightT:0,fogT:0,fog:null,ping:null,jumbleT:0}; // 🧠 information-warfare effects
-  // 🤪 BETA CHAOS / MEME MODE — crank everything for maximum clippable mayhem
-  G.chaos = !!SAVE.chaosMode && kind!=='tutorial' && !G.attract;
+  /* 🤪 BETA CHAOS / MEME MODE — crank everything for maximum clippable mayhem.
+     Chaos is a SANDBOX toy, and it only belongs where the fight is disposable. These modes
+     are excluded because each one makes a promise chaos would quietly break:
+       campaign / war  — persistent progression. A node or mission "won" under free spawns
+                         and triple income is banked forever; the record stops meaning anything.
+       rivals          — the roster adapts to how you beat it. Feeding it a chaos fight
+                         teaches it from a game that was never really played.
+       gauntlet        — same, and more so: its whole premise is a fair, readable escalation.
+       indoc           — a doctrine LESSON with a hand-picked roster on both sides; random
+                         chaos spawns wreck the very comparison the lesson is built to teach.
+     Skirmish, blitz, survival, domination and evolution keep it — those are the throwaway
+     fights it was built for. A player who left the toggle on months ago should not silently
+     be posting invalid campaign clears because of it. */
+  G.chaos = !!SAVE.chaosMode && !CHAOS_EXCLUDED_KINDS.includes(kind) && !G.attract;
   if(G.chaos){ G.cpRate*=3.2; G.ecpRate*=3.0; G.cpMax=750; G.cp=340; G.revT=rnd(2.5,5); G.prep=Math.min(G.prep,3); }
+  /* ── THE GAUNTLET ────────────────────────────────────────────────────────────
+     G.gaunt is the FROZEN profile the Adjutant fights with — computed once, here, and
+     never recomputed for the life of the battle. G.gauntRec is the write-only ledger of
+     what the player does, which nothing in the running fight is allowed to read. Keeping
+     those two objects strictly separate is what guarantees the "adapts between fights,
+     never during one" promise holds even as this file grows. */
+  G.gaunt=(L&&L.type==='gauntlet'&&L.gauntlet)?L.gauntlet:null;
+  G.gauntRec=G.gaunt?{units:{},lanes:[0,0,0],strikes:{},spawners:0,first:null}:null;
+  if(G.gaunt){
+    G.ecpRate*=1.0;                                   // economy scaling already folded into ecpMul
+    G.gauntStrikeT=30;                                // first off-map window, if any are authorised
+    G.gauntTele=null;                                 // the telegraph currently on screen
+    G.general=GAUNTLET_GENERAL;
+    G.enemyBias=null;                                 // its composition comes from the dossier, not a flavour bias
+  }
   G.hype=0; G.hypeTrains=0; // Phase 2 hype meter — chat energy that pays out CP on a full train
   // daily mutators
   if(L&&L.type==='daily'&&L.mut&&L.mut.apply){try{L.mut.apply(G);}catch(e){}}
@@ -4290,6 +4431,7 @@ function tryDeploy(key,lane){
   if(!inPrep && G.cds[key]>0){ return false; }
   G.cp-=cost; G.spent+=cost; G.deploys++;
   if(!G.built)G.built={}; G.built[key]=(G.built[key]||0)+1; // per-unit career tally
+  gauntRecordDeploy(key,lane); // ◈ Gauntlet dossier — written now, never read until the fight ends
   if(!inPrep) G.cds[key]=unitCD(key)*(G.cdMul||1);
   spawn('B',key,lane);
   // Drone Swarm — one deploy releases a whole cloud; the cost above already covered the swarm
@@ -4448,7 +4590,7 @@ function tryStrike(type,lane,x){
   else if(type==='barrage')ok=tryBarrage();
   else if(type==='rods')ok=tryRods(); // hits all three lanes — the clicked lane is irrelevant
   else ok=tryPrecision(lane,x);
-  if(ok)G.strikeUsedCount=(G.strikeUsedCount||0)+1;
+  if(ok){ G.strikeUsedCount=(G.strikeUsedCount||0)+1; gauntRecordStrike(type); } // ◈ Gauntlet dossier
   return ok;
 }
 /* ── COMMANDER POWERS: Recon Flare (free intel) & EMP Pulse (rank 3, jams a lane) ── */
@@ -4844,6 +4986,7 @@ function tryBuildSpawner(type,lane){
   G.spawners.push({side:'B',type,lane,x:W*0.135,y:G.laneY[lane]*H,t:sp.interval*0.5,pulse:0,
     isSpawner:true,alive:true,hp:sp.hp,maxHp:sp.hp,r:14,armorClass:'struct',hitFlash:0});
   announce(sp.name.toUpperCase()+' BUILT','now producing','#3fd07a'); SND.deploy();
+  gauntRecordSpawner(); // ◈ Gauntlet dossier — do you build economy, or come out swinging?
   return true;
 }
 function spawnerTick(dt){
@@ -4892,6 +5035,19 @@ function damage(u,dmg,src){
   }
   // rapid-fire weapons hose cheap drones out of the sky
   if(u.key==='drone' && src && src.rof && src.rof<=0.75) dmg*=2.4;
+  /* ── GAUNTLET ADAPTIVE HARDENING ──────────────────────────────────────────────
+     The Adjutant's signature: the weapon you leaned on last time bites less deeply now.
+     Read STRICTLY from the frozen snapshot, so the reduction is a fixed property of this
+     battle — it cannot creep upward as you play, which is what keeps the fight solvable.
+     Capped at GAUNT_HARDEN_CAP (35%) and limited to your top two habits, so your favourite
+     unit becomes insufficient on its own, never worthless. The float text is not optional
+     decoration: an invisible damage reduction is indistinguishable from the game cheating,
+     and the player has to be able to SEE why their usual answer stopped closing the deal. */
+  if(G.gaunt && u.side==='R' && src && src.key && G.gaunt.harden[src.key]){
+    const red=G.gaunt.harden[src.key];
+    dmg*=(1-red);
+    if(Math.random()<0.05)floatText(u.x,u.y-unitVisualR(u)-10,'HARDENED −'+Math.round(red*100)+'%','#5ff0e0');
+  }
   u.hp-=dmg; u.hitFlash=1;
   u.sup=Math.min(1,(u.sup||0)+0.10); // taking fire suppresses
   if(src&&src.side==='B'){G.dmgDealt+=dmg;}
@@ -5049,6 +5205,11 @@ function aiStep(dt){
     ['interceptor',airThreat>1?4:0.3],['gunship',(G.aiSmart&&budget>240)?1.4:0.15]];
   // campaign / daily enemy bias — lean the enemy toward a theme
   if(G.enemyBias){ for(const c of choices){ if(c[0]===G.enemyBias)c[1]*=3.2; } }
+  /* THE GAUNTLET — the dossier's counter-weights, read from the FROZEN snapshot only.
+     This is additive on top of the normal reactive weights rather than replacing them, so
+     the Adjutant still answers what is actually on the field right now; the memory tilts
+     what it reaches for first, it does not blind it to the present. */
+  if(G.gaunt&&G.gaunt.counterW){ for(const c of choices){ const w=G.gaunt.counterW[c[0]]; if(w)c[1]+=w; } }
   // banned units (daily mutators) never appear
   if(G.banned&&G.banned.length)choices=choices.filter(c=>G.banned.indexOf(c[0])<0);
   // Indoctrination: the enemy is restricted to the roster this lesson wants them to lose with
@@ -5067,7 +5228,12 @@ function aiStep(dt){
   // smart lane choice: pile onto the player's WEAKEST lane (punch through) more often the higher
   // the aggression, otherwise contest their strongest. Dumb AI just scatters at random.
   const weakLane=laneStr.indexOf(Math.min(...laneStr)), strongLane=laneStr.indexOf(Math.max(...laneStr));
-  const pickLane=()=> surging ? weakLane : (G.aiSmart ? (Math.random()<(0.5+0.3*aggr)?weakLane:strongLane) : ((Math.random()*3)|0));
+  /* Gauntlet lane read: it masses on the lane you historically favour — but only ~55% of
+     the time. A perfectly predictable counter-lane is its own exploit (just play the other
+     two), so the read has to bias its choices, not replace them. */
+  const gLane=(G.gaunt&&G.gaunt.lane>=0)?G.gaunt.lane:-1;
+  const pickLane=()=> (gLane>=0&&Math.random()<0.55) ? gLane
+    : surging ? weakLane : (G.aiSmart ? (Math.random()<(0.5+0.3*aggr)?weakLane:strongLane) : ((Math.random()*3)|0));
   let guard=0, built=[]; const maxUnits=G.aiSmart?Math.round(7+aggr*5+(surging?4:0)):6;
   if(surging&&!G.tutorial&&!G.attract)announce('⚠ ENEMY SURGE','they\'re throwing everything at '+['top','mid','bottom'][weakLane]+' — brace','#ff5a4a');
   while(spend>14&&guard++<maxUnits){
@@ -5129,6 +5295,9 @@ function step(dt){
   for(const t in G.strikeCds)if(G.strikeCds[t]>0)G.strikeCds[t]=Math.max(0,G.strikeCds[t]-dt);
   if(G.barrage)barrageTick(dt);   // rolling barrage creeps up the field
   if(G.gunrun)gunrunTick(dt);     // gunship strafing run marches down a lane
+  if(G.gaunt){ gauntStrikeTick(dt);                 // ◈ the Adjutant's own off-map fire support
+    if(G.gauntGun)gauntGunTick(dt);
+    if(G.gauntBarrage)gauntBarrageTick(dt); }
   if(G.reconCd>0)G.reconCd=Math.max(0,G.reconCd-dt);
   if(G.empCd>0)G.empCd=Math.max(0,G.empCd-dt);
   if(G.flareT>0)G.flareT=Math.max(0,G.flareT-dt);
@@ -5475,6 +5644,7 @@ function draw(){
     drawParts();
     drawDrops();
     drawGunrun();
+    drawGauntFx();      // ◈ Gauntlet: strike telegraphs + the Adjutant's gunship
     drawShadowEntity(); // 🕵 mythic event — a rare cameo, purely cosmetic
     drawRiftStreaks();  // 🕵 mythic event — void rift tear before the boss lands
     drawInfoFog();     // 🌫 schrödinger fog (world space)
@@ -6058,6 +6228,13 @@ function syncHUD(){
     ob=`<div class="big" style="color:#5ff0e0">${secured}/3 ZONES SECURED</div>${lost?lost+' held by them · ':''}lock all 3 to win outright`;}
   else if(G.kind==='campaign'&&G.mission){ob=`<div class="big">${G.mission.name}</div>★ ${G.mission.star}`;}
   else if(G.kind==='daily'){ob=`<div class="big">DAILY</div>${G.daily?G.daily.mut.name:''}`;}
+  else if(G.kind==='gauntlet'&&G.gaunt){
+    // The hardening figure is kept on screen for the whole fight on purpose: it is the one
+    // number that explains why a familiar unit is under-performing, and hiding it after the
+    // briefing would just make the fight feel unfair rather than adapted.
+    const hp=Object.keys(G.gaunt.harden);
+    ob=`<div class="big" style="color:${G.gaunt.col}">◈ ${G.gaunt.name}</div>tier ${G.gaunt.tier} · ${DIFFS[G.diff].name}`+
+      (hp.length?`<div style="margin-top:3px;color:var(--cyan)">🛡 hardened: ${hp.map(k=>`${unitName(k,G.country)} −${Math.round(G.gaunt.harden[k]*100)}%`).join(' · ')}</div>`:'');}
   else if(G.kind==='indoc'&&G.indoc){const dc=(DOCTRINES[G.indoc.doctrine]||{});
     ob=`<div class="big" style="color:${dc.col||'var(--gold)'}">🎓 ${G.indoc.name.toUpperCase()}</div>${dc.name||''} school`;}
   else if(G.kind==='tutorial'){ob=`<div class="big">TRAINING</div>learn the ropes`;}
@@ -6948,6 +7125,21 @@ function endGame(winner,reason){
       addXP(40+Math.min(200,SAVE.dailyStreak*20)); // streaks pay a growing (capped) bonus
     }
   }
+  /* ── THE GAUNTLET — the ONLY point at which the Adjutant is allowed to learn anything.
+     Everything recorded during the fight has been sitting in G.gauntRec untouched; it
+     becomes part of the dossier here, once the outcome is already decided. ── */
+  G.gauntResult=null;
+  if(G.kind==='gauntlet'){
+    try{
+      G.gauntResult=gauntletCommit(won);
+      if(won&&typeof gcEvent==='function'){
+        gcEvent('gauntlet-clear');
+        const c=G.gauntResult&&G.gauntResult.clears;
+        if(c===1||c===5||c===10)gcEvent('gauntlet-clear-'+c);
+      }
+      if(won)addXP(160+Math.min(900,(G.gauntResult?G.gauntResult.tierBefore:0)*120)); // deeper tiers pay more
+    }catch(e){ _logErr('gauntlet',e&&e.message,'commit'); }
+  }
   // war-mode conquest resolution
   if(G.kind==='war'){ try{warResolve(won);}catch(e){} }
   // unlock doctrines by level
@@ -7037,6 +7229,7 @@ function kindLabel(){
   if(G.kind==='evolution')return 'EVOLUTION · '+AGES[G.age].name;
   if(G.kind==='rival')return 'RIVALS · '+(G.general?G.general.name:'');
   if(G.kind==='secret')return '☢ THE GLITCH FRONT';
+  if(G.kind==='gauntlet')return '◈ GAUNTLET · '+(G.gaunt?G.gaunt.name:'THE ADJUTANT');
   if(G.kind==='campaign'&&G.timeTrial)return '⏱ TIME TRIAL · '+(G.mission?G.mission.name:'');
   return MODES[G.mode].name;
 }
@@ -7058,6 +7251,26 @@ function showResults(won,reason,score,xpGain,leveled){
     if(ro.justDefeated)rivalExtra=`<div class="res-xp" style="color:var(--gold)">🏆 ${ro.name} — DEFEATED. They won't trouble you again.</div>`;
     else if(ro.escaped)rivalExtra=`<div class="res-xp" style="color:var(--warn)">💨 ${ro.name} broke off and escaped — they'll be back, adapted to what you just threw at them.</div>`;
     if(ro.rosterCleared)rivalExtra+=`<div class="res-xp" style="color:var(--cyan);font-weight:800">👑 ALL RIVALS DEFEATED — +${ro.bonusXp} XP and the 🏆 Rivals Champion badge are yours. Equip it from Cosmetics.</div>`;
+  }
+  /* ◈ Gauntlet outcome. A win has to name the NEW capability the next Adjutant will bring,
+     and a loss has to name what it just learned — the escalation is the reward loop, and a
+     player who cannot see it coming just experiences an opponent that mysteriously got
+     harder. Both outcomes push the player back toward the dossier screen to read the file. */
+  if(G.gauntResult){ const gr=G.gauntResult, nx=gr.next;
+    if(gr.won){
+      rivalExtra+=`<div class="res-xp" style="color:var(--cyan);font-weight:800">◈ ADJUTANT DOWN — clear #${gr.clears} on this run · ${gr.lifetime} lifetime</div>`;
+      if(gr.promoted){
+        const armed=GAUNTLET_TIERS[Math.min(gr.tierAfter,GAUNT_MAX_TIER)];
+        rivalExtra+=`<div class="res-xp" style="color:${nx.col}">▲ IT ESCALATES — next fight it returns as <b>TIER ${gr.tierAfter} · ${nx.name}</b> at ${DIFFS[nx.diff].name}. ${escapeHTML(gr.tierAfter<=GAUNT_MAX_TIER?armed.blurb:'Ascendant scaling — more quality, more income, no ceiling.')}</div>`;
+      }
+      rivalExtra+=`<div class="res-xp" style="color:var(--dim)">It recorded this fight. Whatever you leaned on will bite less deeply next time — check its file before you go again.</div>`;
+    } else {
+      /* A loss costs no tier. Losing is already the punishment; taking the climb away as
+         well would make the deep tiers a thing you dare not attempt, and the mode is meant
+         to be re-fought until it falls. The file still thickens, so the next attempt is a
+         different fight — that is the cost of failing, not lost progress. */
+      rivalExtra+=`<div class="res-xp" style="color:var(--warn)">◈ The Adjutant holds. You keep your tier — but it recorded everything, so go again knowing it read this fight. <b>${gr.lifetime}</b> lifetime beats stand.</div>`;
+    }
   }
   // ⏱ time trial + ☢ secret level outcomes
   let secretExtra='';
@@ -7267,11 +7480,15 @@ const MODE_BRIEFS={
   chaos:{glyph:'🤪',name:'Chaos / Meme Mode',col:'#ff5a4a',
     what:'Every restraint removed. Free spawns, constant explosions, events firing back to back.',
     diff:'It is not balanced and is not meant to be — it exists to produce clips.',
-    watch:'Turn it on in Settings FIRST, then start any battle. It is a modifier, not a menu entry.'},
+    watch:'Turn it on in Settings FIRST, then start any battle. It is a modifier, not a menu entry — and it stays out of Campaign, War, Rivals and Gauntlet, which always run under their real rules.'},
   rivals:{glyph:'⚔',name:'Rivals',col:'#c9a0ff',
     what:'Named enemy commanders with their own personalities, taunts and grudges.',
     diff:'Each remembers your last fight and adapts to what beat them. Beat one and they stay beaten; let one escape and they come back smarter.',
     watch:'Defeating the whole roster earns a large XP bonus and the Rivals Champion badge.'},
+  gauntlet:{glyph:'◈',name:'The Gauntlet',col:'#5ff0e0',
+    what:'One opponent — the Adjutant — fought over and over, that keeps a file on how you play.',
+    diff:'It only learns BETWEEN fights. Whatever it brings is locked in from the first second, so any single battle is a fair puzzle you can solve by reading it and committing.',
+    watch:'Your most-used unit gets HARDENED against you — it does measurably less damage next time. Vary what you bring, or watch your best weapon stop closing the deal.'},
   war:{glyph:'🗺',name:'War',col:'#ffce5a',
     what:'A conquest map of linked territories rather than a single battle.',
     diff:'Winning a node pushes your front into its neighbours; losing lets the enemy do the same. Progress persists between sessions.',
@@ -7339,6 +7556,410 @@ function renderUnlockNote(){
   return `<div class="hint" style="color:var(--gold)">🔓 New doctrine unlocked: ${justUnlocked.map(k=>DOCTRINES[k].name).join(', ')}</div>`;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════════
+   THE GAUNTLET — "THE ADJUTANT"
+   ═══════════════════════════════════════════════════════════════════════════════
+   One opponent, fought over and over, that studies you between fights.
+
+   THE DESIGN RULE THAT SHAPES EVERYTHING BELOW: it adapts BETWEEN fights and never
+   DURING one. Every number the Adjutant fights with is frozen into G.gaunt at the
+   moment the battle starts, and everything the player does is recorded into a
+   separate buffer (G.gauntRec) that is only folded into the save at endGame().
+
+   That is not an implementation detail, it is the whole reason the mode is fair.
+   An enemy that re-learns mid-fight punishes you for the thing you are currently
+   doing, which reads as cheating and makes a run unwinnable by effort — you cannot
+   out-play something that rewrites itself faster than you can commit to a plan.
+   Freezing it means every individual battle is a fixed, solvable puzzle: hard, but
+   beatable by a player who reads it and commits. Several clears in a row is
+   absolutely possible. What changes is the NEXT puzzle.
+
+   WHAT IT ACTUALLY LEARNS (see gauntletCommit):
+     · which units you lean on      → it fields their counters, and hardens against them
+     · which lane you favour        → it masses there
+     · which strikes you rely on    → it values the units that punish that habit
+     · whether you rush or build    → it sets its opening tempo against yours
+
+   THE SIGNATURE MECHANIC is ADAPTIVE HARDENING: your most-used unit does measurably
+   less damage to it next time. That is the literal "the same attack won't work twice"
+   requirement, and it is deliberately capped well short of immunity (35%) — the goal
+   is to make your favourite tool insufficient, never useless, so the answer is always
+   "bring something else too", never "you cannot win with what you like".
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* The escalation ladder. tier === lifetime clears on the CURRENT run of the streak, so a
+   player reaches the first full-Legendary Adjutant on their 5th clear and every clear after
+   that keeps stacking. Each tier arms exactly ONE new capability, so a returning player can
+   always name the thing that is new — an opponent that gets "generally harder" teaches
+   nothing, one that visibly unlocks a named system teaches you what to prepare for. */
+const GAUNTLET_TIERS=[
+  {n:'CALIBRATING', diff:'veteran',   col:'#8fa3bf', arms:null,
+   blurb:'It has no file on you yet. It fights straight and it watches.'},
+  {n:'PROFILING',   diff:'veteran',   col:'#5ff0e0', arms:'counters',
+   blurb:'The dossier is open. It now fields the counters to whatever you leaned on.'},
+  {n:'ADAPTING',    diff:'elite',     col:'#3fd07a', arms:'hardening',
+   blurb:'Adaptive hardening online — your most-used weapon bites less deeply than it did.'},
+  {n:'PREDICTING',  diff:'elite',     col:'#ffce5a', arms:'strikes',
+   blurb:'It has learned your ground. Off-map fire support, aimed at the lane you love.'},
+  {n:'RELENTLESS',  diff:'legendary', col:'#ff9f40', arms:'gunruns',
+   blurb:'Gunship runs authorised, and it opens with an ambush shaped to your tempo.'},
+  {n:'ASCENDANT',   diff:'legendary', col:'#ff5a4a', arms:'barrage',
+   blurb:'Full proficiency. Rolling barrages, every counter, every system it has. This is the wall.'},
+];
+const GAUNT_MAX_TIER=GAUNTLET_TIERS.length-1;   // 5 — beyond this it keeps scaling as ASCENDANT n
+const GAUNT_HARDEN_CAP=0.35;                    // never more than a 35% bite out of your best weapon
+const GAUNT_MEM_FIGHTS=6;                       // the dossier weights roughly your last ~6 fights
+
+/* What the Adjutant reaches for when it sees you leaning on something. Read as
+   "if the player keeps bringing KEY, field these against it". Deliberately several
+   options per entry so the counter-pick still has variety and does not collapse into
+   one hard-scripted answer the player can pre-solve once and forever. */
+const GAUNTLET_COUNTERS={
+  rifle:['ifv','mlrs','flame','arty'], atgm:['sniper','arty','ifv'],
+  tank:['atgm','heli','drone'],        ifv:['atgm','tank','heli'],
+  arty:['heli','drone','interceptor'], mlrs:['heli','drone','interceptor'],
+  aa:['arty','mlrs','sniper','tank'],  heli:['aa','interceptor'],
+  drone:['jammer','ifv','aa'],         sniper:['arty','mlrs','tank'],
+  medic:['sniper','mlrs','arty'],      jammer:['arty','sniper','tank'],
+  interceptor:['aa','arty'],           gunship:['interceptor','aa'],
+  flame:['sniper','atgm','arty'],
+};
+
+/* The opponent itself. Written as a machine reading a file rather than a soldier
+   trash-talking, because the thing that should unsettle you is not that it is angry —
+   it is that it is taking notes, and it is polite about it. */
+const GAUNTLET_GENERAL={name:'THE ADJUTANT',glyph:'◈',col:'#5ff0e0',
+  intro:"Adjutant online. Your file is open, Commander. Let us continue where we left off.",
+  taunts:["That opening is in the file. Twice now.","You favour that lane. I have accounted for it.",
+    "Predicted. Adjusting.","I have seen this shape before.","Noted. Filed. Answered.",
+    "You are repeating yourself, Commander."],
+  lose:["Defeat logged. The file grows.","You changed something. Good. I will learn it.",
+    "Recording this. It will not work twice.","Acknowledged. Recalibrating."]};
+
+/* Read the persistent state, normalising ANY shape into a valid one. sanitizeSave()
+   copies nested objects through wholesale, so a partial, hand-edited or older save can
+   put literally anything in here — every field is rebuilt with a checked default rather
+   than trusted, so a corrupt dossier degrades to "no memory" instead of throwing on the
+   title screen. */
+function gauntletState(){
+  const raw=(SAVE.gauntlet&&typeof SAVE.gauntlet==='object')?SAVE.gauntlet:{};
+  const num=(v,d)=>(typeof v==='number'&&isFinite(v)&&v>=0)?v:d;
+  const m=(raw.mem&&typeof raw.mem==='object')?raw.mem:{};
+  const lanes=Array.isArray(m.lanes)&&m.lanes.length===3?m.lanes.map(v=>num(v,0)):[0,0,0];
+  const cleanMap=o=>{ const out={}; if(o&&typeof o==='object')for(const k in o){ const v=num(o[k],0); if(v>0)out[k]=v; } return out; };
+  return {
+    clears:  Math.floor(num(raw.clears,0)),    // resettable — the current run
+    losses:  Math.floor(num(raw.losses,0)),
+    lifetime:Math.floor(num(raw.lifetime,0)),  // PERMANENT — the purge never touches this
+    deepest: Math.floor(num(raw.deepest,0)),   // PERMANENT — deepest tier ever reached
+    /* NB: fights is a FRACTIONAL decaying weight (it converges toward GAUNT_MEM_FIGHTS), not
+       a count of battles — flooring it here would clamp it at 1 forever, since 1×decay+1
+       floors straight back to 1. It is the denominator for the tempo and economy reads, so
+       that would have silently pinned both of those to "always true". */
+    mem:{ fights:Math.min(GAUNT_MEM_FIGHTS,num(m.fights,0)), units:cleanMap(m.units), strikes:cleanMap(m.strikes),
+          lanes, spawners:num(m.spawners,0), rush:num(m.rush,0) },
+  };
+}
+function gauntletSave(g){ SAVE.gauntlet=g; persist(); }
+function gauntletTier(clears){ return Math.max(0,Math.floor(clears||0)); }
+// Everything at or below the current tier is armed. Past the top of the table the final
+// tier's kit stays on and the escalation continues through raw stat scaling instead.
+function gauntArmed(tier,what){
+  const idx=GAUNTLET_TIERS.findIndex(t=>t.arms===what);
+  return idx>=0 && tier>=idx;
+}
+function gauntletTierInfo(clears){
+  const t=gauntletTier(clears);
+  const base=GAUNTLET_TIERS[Math.min(t,GAUNT_MAX_TIER)];
+  const over=Math.max(0,t-GAUNT_MAX_TIER);   // how far past the top of the ladder
+  return { tier:t, over, diff:base.diff, col:base.col, blurb:base.blurb,
+           name: over>0 ? ('ASCENDANT '+(over+1)) : base.n,
+           // past the ladder, every further clear buys a little more raw quality and economy.
+           // Compounding gently (7%/clear) rather than linearly so it stays climbable for a
+           // long time instead of turning into a brick wall two clears past the top.
+           qualMul: 1+over*0.07, cpMul: 1+over*0.06 };
+}
+
+/* Turn the raw dossier into the numbers the battle actually reads. This is the ONLY
+   place the memory is interpreted, and it is called exactly once, at battle start. */
+function gauntletSnapshot(){
+  const g=gauntletState();
+  const info=gauntletTierInfo(g.clears);
+  const mem=g.mem;
+  const snap={ tier:info.tier, over:info.over, name:info.name, col:info.col, diff:info.diff,
+    qualMul:info.qualMul, cpMul:info.cpMul,
+    counterW:{},    // unit key -> extra AI selection weight
+    harden:{},      // YOUR unit key -> damage reduction it now has against you (0..0.35)
+    lane:-1,        // the lane you favour, which it will contest
+    strikes:[],     // which off-map abilities are authorised this fight
+    rush:false, dossier:[] };
+
+  const totalU=Object.values(mem.units).reduce((a,b)=>a+b,0);
+  const top=Object.keys(mem.units).sort((a,b)=>mem.units[b]-mem.units[a]);
+
+  if(totalU>0&&mem.fights>0){
+    // ── COUNTER-WEIGHTING (tier 1+) — field what beats your habits ──
+    if(gauntArmed(info.tier,'counters')){
+      for(const key of top.slice(0,4)){
+        const share=mem.units[key]/totalU;
+        for(const c of (GAUNTLET_COUNTERS[key]||[])) snap.counterW[c]=(snap.counterW[c]||0)+share*3.4;
+      }
+    }
+    // ── ADAPTIVE HARDENING (tier 2+) — the signature. Only your top two weapons, so the
+    //    answer is "diversify", not "everything you own is blunted". Scaled by how hard you
+    //    lean AND by tier, so an early Adjutant only shrugs slightly. ──
+    if(gauntArmed(info.tier,'hardening')){
+      for(const key of top.slice(0,2)){
+        const share=mem.units[key]/totalU;
+        if(share<0.12)continue;                       // an incidental pick is not a habit
+        const scale=Math.min(1,(info.tier-1)/3)*(1+info.over*0.25);
+        snap.harden[key]=Math.min(GAUNT_HARDEN_CAP,share*1.15*scale);
+      }
+    }
+    // ── LANE READ (tier 3+) ──
+    const lt=mem.lanes.reduce((a,b)=>a+b,0);
+    if(lt>0&&gauntArmed(info.tier,'strikes')){
+      const fav=mem.lanes.indexOf(Math.max(...mem.lanes));
+      if(mem.lanes[fav]/lt>0.40)snap.lane=fav;        // only if it is a real preference
+    }
+    // ── TEMPO (tier 4+) — do you come out swinging, or build first? ──
+    if(gauntArmed(info.tier,'gunruns'))snap.rush=(mem.rush/Math.max(1,mem.fights))>0.5;
+  }
+  // ── OFF-MAP FIRE SUPPORT — the Adjutant is the only enemy in the game that uses
+  //    commander strikes of its own. Each is telegraphed before it lands (see gauntStrikeTick). ──
+  if(gauntArmed(info.tier,'strikes'))snap.strikes.push('precision');
+  if(gauntArmed(info.tier,'gunruns'))snap.strikes.push('gunrun');
+  if(gauntArmed(info.tier,'barrage'))snap.strikes.push('barrage');
+
+  snap.dossier=gauntletDossier(g,snap);
+  return snap;
+}
+
+/* The dossier, in plain language. This is the part that makes the mode land: an
+   opponent that adapts invisibly just feels unfair, and the player concludes the game
+   is cheating. Told exactly what it noticed and what it did about it, the same
+   difficulty reads as a puzzle with a stated solution — and it turns every clear into
+   a deliberate choice about what to show it next. */
+function gauntletDossier(g,snap){
+  const mem=g.mem, out=[];
+  if(!mem.fights){ out.push({ic:'🗒',t:'No file opened yet. Fight it once and it starts taking notes.'}); return out; }
+  const totalU=Object.values(mem.units).reduce((a,b)=>a+b,0);
+  const top=Object.keys(mem.units).sort((a,b)=>mem.units[b]-mem.units[a]);
+  if(totalU>0&&top.length){
+    const k=top[0], pct=Math.round(mem.units[k]/totalU*100);
+    out.push({ic:'🎯',t:`You lean on <b>${unitName(k,sel.country)}</b> — ${pct}% of everything you commit.`});
+    const cs=(GAUNTLET_COUNTERS[k]||[]).slice(0,3).map(c=>unitName(c,'generic'));
+    if(cs.length&&Object.keys(snap.counterW).length)
+      out.push({ic:'⚔',t:`Counter-doctrine standing by: <b>${cs.join(', ')}</b>.`});
+  }
+  for(const k in snap.harden)
+    out.push({ic:'🛡',t:`Hardened against <b>${unitName(k,sel.country)}</b> — <b style="color:var(--red)">−${Math.round(snap.harden[k]*100)}%</b> damage from it this fight.`});
+  if(snap.lane>=0)
+    out.push({ic:'🧭',t:`You favour the <b>${['top','middle','bottom'][snap.lane]}</b> lane. It will be waiting there.`});
+  if(snap.strikes.length)
+    out.push({ic:'💥',t:`Off-map fire support authorised: <b>${snap.strikes.map(s=>STRIKES[s].name).join(', ')}</b>.`});
+  if(snap.rush)out.push({ic:'⏱',t:'It has you marked as an early aggressor. It will meet your opening.'});
+  else if(mem.spawners/Math.max(1,mem.fights)>0.5)out.push({ic:'🏭',t:'It knows you build economy first, and intends to punish the delay.'});
+  if(snap.over>0)out.push({ic:'☠',t:`Ascendant scaling: <b>+${Math.round((snap.qualMul-1)*100)}%</b> unit quality, <b>+${Math.round((snap.cpMul-1)*100)}%</b> income.`});
+  return out;
+}
+
+/* ── RECORDING — every read of the player happens here, into a buffer that the live
+   battle NEVER consults. Committed to the dossier only when the fight is over. ── */
+function gauntRecordDeploy(key,lane){
+  if(!G||!G.gauntRec)return;
+  const r=G.gauntRec;
+  r.units[key]=(r.units[key]||0)+1;
+  if(lane>=0&&lane<3)r.lanes[lane]=(r.lanes[lane]||0)+1;
+  if(r.first==null)r.first=G.t;                       // when you first committed anything
+}
+function gauntRecordStrike(type){ if(G&&G.gauntRec)G.gauntRec.strikes[type]=(G.gauntRec.strikes[type]||0)+1; }
+function gauntRecordSpawner(){ if(G&&G.gauntRec)G.gauntRec.spawners++; }
+
+/* Fold this battle into the dossier, then move the tier. Called once, from endGame().
+   The memory is a DECAYING average (GAUNT_MEM_FIGHTS): old habits fade, so a player who
+   genuinely changes their game is met by an Adjutant that changes with them rather than
+   one still fighting the player they were twenty matches ago. */
+function gauntletCommit(won){
+  const g=gauntletState(), rec=G.gauntRec; if(!rec)return null;
+  const mem=g.mem, decay=Math.max(0,1-1/GAUNT_MEM_FIGHTS);
+  const blend=(map,add)=>{ for(const k in map)map[k]*=decay;
+    for(const k in add)map[k]=(map[k]||0)+add[k];
+    for(const k in map)if(map[k]<0.01)delete map[k]; };
+  blend(mem.units,rec.units); blend(mem.strikes,rec.strikes);
+  for(let i=0;i<3;i++)mem.lanes[i]=mem.lanes[i]*decay+(rec.lanes[i]||0);
+  mem.spawners=mem.spawners*decay+(rec.spawners>0?1:0);
+  mem.rush=mem.rush*decay+((rec.first!=null&&rec.first<25)?1:0);
+  mem.fights=Math.min(GAUNT_MEM_FIGHTS,mem.fights*decay+1);
+
+  const before=gauntletTier(g.clears);
+  if(won){ g.clears++; g.lifetime++; if(g.clears>g.deepest)g.deepest=g.clears; }
+  else g.losses++;
+  gauntletSave(g);
+  const after=gauntletTier(g.clears);
+  return { won, clears:g.clears, lifetime:g.lifetime, tierBefore:before, tierAfter:after,
+           promoted:after>before, next:gauntletTierInfo(g.clears) };
+}
+
+/* ═══ THE ADJUTANT'S OFF-MAP FIRE SUPPORT ═══════════════════════════════════════
+   No other enemy in the game uses commander strikes; this is the Gauntlet's alone, and
+   it is the clearest signal that you are fighting something with a commander's toolkit
+   rather than a spawn table.
+
+   EVERY strike is TELEGRAPHED before it lands, and that is a hard rule, not a nicety.
+   Damage arriving from off-map with no warning cannot be played around — it is just a
+   tax on having units alive, and it would make the mode feel arbitrary at exactly the
+   tiers meant to feel most skilful. A marked lane and a countdown turn the same damage
+   into a decision: pull back, spend elsewhere, or eat it and push through.
+
+   All of it is step-driven off dt rather than setTimeout, so it obeys pause, the prep
+   freeze and the game-speed control like every other battlefield system. */
+const GAUNT_TELE_TIME=2.6;   // seconds of warning before a strike lands — real reaction time
+
+function gauntStrikeTick(dt){
+  if(!G.gaunt||!G.gaunt.strikes.length||G.over||G.frozen)return;
+  // a telegraph already on the board: run it down, then fire
+  if(G.gauntTele){
+    G.gauntTele.t-=dt;
+    if(G.gauntTele.t<=0){ const te=G.gauntTele; G.gauntTele=null; gauntStrikeFire(te); }
+    return;
+  }
+  G.gauntStrikeT-=dt;
+  if(G.gauntStrikeT>0)return;
+  // cadence tightens as the ladder climbs, with a floor so it never becomes a drum roll
+  const tier=G.gaunt.tier;
+  G.gauntStrikeT=Math.max(17,36-tier*3)+rnd(-3,7);
+  const type=pick(G.gaunt.strikes);
+  // aim: the lane it has you filed under, otherwise wherever your strength actually is
+  let lane;
+  if(G.gaunt.lane>=0&&Math.random()<0.6)lane=G.gaunt.lane;
+  else{ const s=[0,0,0];
+    for(const u of G.units)if(u.side==='B'&&u.alive)s[u.lane]+=u.maxHp*0.02+u.dmg*0.1;
+    lane=(s[0]||s[1]||s[2])?s.indexOf(Math.max(...s)):((Math.random()*3)|0); }
+  /* Aim at where your force ACTUALLY is, not at a fixed band of the map. Aiming blind was
+     worse than useless: units massed back near your own HQ — i.e. anyone playing defensively —
+     sat outside the strike band entirely and took nothing, so the "maximum proficiency"
+     opponent was reliably missing the exact players it was supposed to pressure. Taking the
+     MEDIAN x of your units in the lane puts the reticle on the bulk of the formation rather
+     than chasing whichever single unit has run furthest ahead. */
+  let tx;
+  const inLane=G.units.filter(u=>u.side==='B'&&u.alive&&u.lane===lane);
+  if(inLane.length){ const xs=inLane.map(u=>u.x).sort((a,b)=>a-b); tx=xs[Math.floor(xs.length/2)]; }
+  else tx=rnd(W*0.12,W*0.42);
+  tx=clamp(tx,W*0.05,W*0.58);
+  G.gauntTele={type,lane,t:GAUNT_TELE_TIME,max:GAUNT_TELE_TIME,x:tx};
+  const nm={precision:'INCOMING — PRECISION',gunrun:'INCOMING — GUNSHIP',barrage:'INCOMING — BARRAGE'}[type];
+  const sub=type==='barrage'?'all lanes — take cover':('marked: '+['top','middle','bottom'][lane]+' lane');
+  announce('◈ '+nm,sub,'#5ff0e0');
+  try{SND.blip&&SND.blip();}catch(e){}
+}
+function gauntStrikeFire(te){
+  if(!G||G.over)return;
+  const tier=G.gaunt?G.gaunt.tier:0, pw=1+Math.max(0,tier-3)*0.12;   // ascendant tiers hit harder
+  if(te.type==='precision'){
+    const rad=42, dmg=44*pw, ty=G.laneY[te.lane]*H;
+    for(let i=0;i<4;i++){
+      const ix=te.x+rnd(-40,40), iy=ty+rnd(-26,26);
+      explode(ix,iy,rad,'R',40);
+      for(const u of G.units)if(u.side==='B'&&u.alive&&dist(u.x,u.y,ix,iy)<rad)damage(u,dmg,{side:'R',dmgType:'he'});
+      if(G.spawners)for(const s of G.spawners)if(s.side==='B'&&s.alive&&dist(s.x,s.y,ix,iy)<rad)damage(s,dmg,{side:'R',dmgType:'he'});
+    }
+    G.shake=Math.max(G.shake,SAVE.reduceMotion?4:11); try{SND.boom(true);}catch(e){}
+  } else if(te.type==='gunrun'){
+    /* Mirrored: the enemy gunship enters from THEIR side and strafes back toward yours.
+       endX runs to W*0.05, not W*0.10 — your units spawn around x≈58, so stopping at 0.10
+       left the pass ending just short of anything parked on your own line, which is exactly
+       where a defensive formation sits. It mirrors your own gunship run, which sweeps the
+       full width of the enemy half. */
+    G.gauntGun={lane:te.lane,x:W-40,startX:W-40,endX:W*0.05,t:0,dur:2.8,dmg:26*pw,tick:0};
+  } else {
+    G.gauntBarrage={t:0,dur:34,x:W*0.62,endX:W*0.08,tick:0,dmg:30*pw};
+  }
+}
+function gauntGunTick(dt){
+  const g=G.gauntGun; if(!g)return;
+  g.t+=dt; const frac=clamp(g.t/g.dur,0,1);
+  g.x=g.startX+(g.endX-g.startX)*frac; g.y=G.laneY[g.lane]*H;
+  g.tick-=dt;
+  if(g.tick<=0){ g.tick=0.08;
+    explode(g.x+rnd(-10,10),g.y+rnd(-12,12),20,'R',6);
+    for(const u of G.units)if(u.side==='B'&&u.alive&&u.lane===g.lane&&Math.abs(u.x-g.x)<44)damage(u,g.dmg,{side:'R',dmgType:'ap'});
+    G.shake=Math.max(G.shake,SAVE.reduceMotion?3:6);
+  }
+  if(g.t>=g.dur)G.gauntGun=null;
+}
+function gauntBarrageTick(dt){
+  const b=G.gauntBarrage; if(!b)return;
+  b.t+=dt; const frac=clamp(b.t/b.dur,0,1);
+  b.x=W*0.62+(b.endX-W*0.62)*frac;
+  b.tick-=dt;
+  if(b.tick<=0){ b.tick=0.6;
+    for(let ln=0;ln<3;ln++){
+      const iy=G.laneY[ln]*H+rnd(-20,20), ix=b.x+rnd(-26,26);
+      explode(ix,iy,32,'R',20);
+      for(const u of G.units)if(u.side==='B'&&u.alive&&dist(u.x,u.y,ix,iy)<32)damage(u,b.dmg,{side:'R',dmgType:'he'});
+    }
+    try{SND.boom(true);}catch(e){}
+    G.shake=Math.max(G.shake,SAVE.reduceMotion?3:8);
+  }
+  if(b.t>=b.dur)G.gauntBarrage=null;
+}
+/* The visible half of the promise above. Drawn in world space with the rest of the field. */
+function drawGauntFx(){
+  if(!G||!G.gaunt)return;
+  const te=G.gauntTele;
+  if(te){
+    const frac=1-te.t/te.max;                  // 0 → 1 as the strike closes
+    const pulse=0.45+0.55*Math.abs(Math.sin(te.t*7));
+    cx.save();
+    if(te.type==='barrage'){
+      // whole-field warning: mark every lane
+      for(let ln=0;ln<3;ln++){
+        const y=G.laneY[ln]*H;
+        cx.fillStyle=`rgba(95,240,224,${0.10*pulse})`; cx.fillRect(0,y-26,W,52);
+        cx.strokeStyle=`rgba(95,240,224,${0.55*pulse})`; cx.lineWidth=1.5;
+        cx.strokeRect(0.5,y-26.5,W-1,52);
+      }
+    } else {
+      const y=G.laneY[te.lane]*H;
+      cx.fillStyle=`rgba(95,240,224,${0.12*pulse})`; cx.fillRect(0,y-28,W,56);
+      cx.strokeStyle=`rgba(95,240,224,${0.6*pulse})`; cx.lineWidth=1.5;
+      cx.beginPath(); cx.moveTo(0,y-28.5); cx.lineTo(W,y-28.5);
+      cx.moveTo(0,y+28.5); cx.lineTo(W,y+28.5); cx.stroke();
+      if(te.type==='precision'){
+        // a closing reticle over the exact impact point — the thing you can actually dodge
+        const r=54-34*frac;
+        cx.strokeStyle=`rgba(95,240,224,${0.85*pulse})`; cx.lineWidth=2;
+        cx.beginPath(); cx.arc(te.x,y,r,0,Math.PI*2); cx.stroke();
+        cx.beginPath(); cx.moveTo(te.x-r-8,y); cx.lineTo(te.x-r+6,y);
+        cx.moveTo(te.x+r-6,y); cx.lineTo(te.x+r+8,y);
+        cx.moveTo(te.x,y-r-8); cx.lineTo(te.x,y-r+6);
+        cx.moveTo(te.x,y+r-6); cx.lineTo(te.x,y+r+8); cx.stroke();
+      }
+    }
+    cx.restore();
+  }
+  const g=G.gauntGun;
+  if(g){
+    const ax=g.x, ay=g.y-84;
+    cx.save();
+    cx.strokeStyle='rgba(95,240,224,0.5)'; cx.lineWidth=2;
+    cx.beginPath(); cx.moveTo(ax,ay+6); cx.lineTo(g.x,g.y); cx.stroke();
+    cx.fillStyle='#5ff0e0'; cx.font='22px var(--font)'; cx.textAlign='center'; cx.textBaseline='middle';
+    cx.fillText('🚁',ax,ay); cx.textBaseline='alphabetic';
+    cx.restore();
+  }
+}
+
+/* PURGE — the reset button. Wipes the learned profile and the current streak, and is
+   explicit that the lifetime record is untouchable: a player should be able to clear
+   the slate to experiment without feeling they are deleting their own history. */
+function gauntletPurge(){
+  const g=gauntletState();
+  gauntletSave({ clears:0, losses:0, lifetime:g.lifetime, deepest:g.deepest,
+                 mem:{fights:0,units:{},strikes:{},lanes:[0,0,0],spawners:0,rush:0} });
+}
+
 /* ═══ LAUNCHERS (campaign / daily / tutorial) ═══ */
 function launchCampaign(id){
   const m=CAMPAIGN[id];
@@ -7375,10 +7996,43 @@ function launchSecret(){
   LAUNCH={type:'secret',diff:'legendary',weather:'storm',ecpMul:1.15,secret:true};
   start();
 }
+/* The daily is generated fresh at the moment you press the button, from a composer with a
+   lot of moving parts (rotation picks, counter-locks, harshness budgeting). Generating it
+   is the ONLY thing standing between the tap and a battle, so if it ever throws, the tap
+   does nothing at all and the mode reads as "broken" — you press it and stay on the title.
+   A daily that falls back to a plain fight is a bad daily; a daily that silently refuses to
+   start is a bug report. Take the former. */
 function launchDaily(){
-  const d=generateDaily(todayKey()); const mut=d.mut;
-  LAUNCH={type:'daily',weather:d.weather,diff:d.diff,daily:{mut,gen:d},mut,
-    banned:mut.ban||[],enemyBias:mut.bias||null,cdMul:mut.cdMul||1,ecpMul:1};
+  let d=null;
+  try{ d=generateDaily(todayKey()); }catch(e){ _logErr('daily',e&&e.message,'generateDaily'); }
+  if(d&&d.mut&&d.diff&&DIFFS[d.diff]){
+    const mut=d.mut;
+    LAUNCH={type:'daily',weather:d.weather,diff:d.diff,daily:{mut,gen:d},mut,
+      banned:mut.ban||[],enemyBias:mut.bias||null,cdMul:mut.cdMul||1,ecpMul:1};
+  } else {
+    // Degraded daily: no twist, but a real, scoring, streak-eligible battle still happens.
+    const mut={id:'fallback',name:'Field Orders',desc:'A straight fight, no modifiers.',ban:[],bias:null,cdMul:1,apply:null};
+    LAUNCH={type:'daily',weather:'clear',diff:'veteran',daily:{mut,gen:null},mut,
+      banned:[],enemyBias:null,cdMul:1,ecpMul:1};
+  }
+  sel.mode='skirmish'; // the daily is always a straight fight, never an inherited Blitz/Survival clock
+  start();
+}
+function launchGauntlet(){
+  const snap=gauntletSnapshot();
+  LAUNCH={type:'gauntlet',diff:snap.diff,weather:pick(WEATHER_KEYS),
+    ecpMul:1.05*snap.cpMul, gauntlet:snap,
+    /* Tier 4+ opens with an ambush sized to the tempo it read off you — a builder gets the
+       heavier punish, because that is the tempo they habitually give away.
+       These numbers are deliberately modest because they STACK on top of the difficulty
+       tier's own opening wave, and tier 4+ is Legendary, which already opens with 8. At
+       4/6 the field started with 14 enemies against your 60 CP and the fight was decided
+       before you could answer it — "hardest fight in the game" has to mean hardest to beat,
+       not impossible to survive the first ten seconds of. 3/4 keeps it the largest opening
+       in the game (11–12) without deciding the battle before it starts. */
+    openEnemy: snap.tier>=4 ? (snap.rush?3:4) : 0};
+  sel.mode='skirmish';
+  if(typeof gcEvent==='function')gcEvent('gauntlet-start');
   start();
 }
 function launchTutorial(){
@@ -7543,19 +8197,28 @@ function hideTut(){ const el=document.getElementById('tutbox'); if(el)el.classLi
   tutSpot(null); }   // the ring must never outlive the tutorial box (skip / menu exit route through here)
 
 /* ═══ MENU ═══ */
+/* Hide every .screen except one.
+
+   Each opener used to carry its own hand-written list of the OTHER screens to hide. That
+   meant a new screen had to be added to a dozen separate lists, and any single miss left
+   two screens stacked on top of each other. This file has already been patched twice for
+   exactly that (both guards are still visible in openMenu's history) — which is the tell
+   that the list, not the openers, was the bug. One helper, nothing to forget.
+
+   #hud is deliberately NOT covered here: it is not a .screen, it is the battle itself, and
+   which openers hide it differs (Settings can be opened mid-battle and must leave the fight
+   intact underneath). Callers that need it hidden still say so explicitly. */
+function hideAllScreens(except){
+  document.querySelectorAll('.screen').forEach(s=>{ if(s.id!==except)s.classList.add('hidden'); });
+}
 function openMenu(){
   ambientStop();
+  hideAllScreens('menu');
   document.getElementById('menu').classList.remove('hidden');
-  document.getElementById('title').classList.add('hidden');
-  document.getElementById('warmap').classList.add('hidden');
   document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
-  document.getElementById('results').classList.add('hidden');
   document.getElementById('tut-skip').classList.add('hidden');
-  document.getElementById('pauseScreen').classList.add('hidden'); // guard: leaving via the topbar Menu button while paused must not strand the pause overlay on top of the menu
-  // guard: Settings is now reachable mid-battle (see openSettings()) — abandoning via Menu while
-  // it's open must not strand it visible on top of the menu screen underneath.
-  document.getElementById('settings').classList.add('hidden'); _settingsFromBattle=false;
+  _settingsFromBattle=false; // Settings is reachable mid-battle; abandoning via Menu clears that state
   narrStop(); hideTut();
   document.getElementById('rivalbox').classList.remove('show');
   G=null; window.G=null; LAUNCH=null;
@@ -7680,16 +8343,13 @@ function announceLocked(d){document.getElementById('doc-desc').innerHTML=`<b sty
 
 /* ═══ START / LOOP ═══ */
 function start(){
+  window.__FC_ALIVE=true; // a battle starting is proof of life too — see the boot guard
   stopWarFx();
   hideDiffAmbient();
-  document.getElementById('menu').classList.add('hidden');
-  document.getElementById('title').classList.add('hidden');
-  document.getElementById('warmap').classList.add('hidden');
-  document.getElementById('results').classList.add('hidden');
-  // secondary screens (record/manual/settings/roadmap/cosmetics/rivals) normally route through
-  // showTitle() before a battle starts, but Rivals' "Fight" button launches straight from its own
-  // screen — hide them all here too so the HUD/canvas is never left buried under a leftover overlay
-  ['record','manual','settings','roadmap','cosmetics','rivals'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
+  /* A battle owns the whole viewport, so every screen goes — including ones a launcher can
+     fire from directly (Rivals and the Gauntlet both start a fight from their own screen
+     rather than routing back through the title), and including a stranded pause overlay. */
+  hideAllScreens();
   document.getElementById('hud').classList.remove('hidden');
   document.getElementById('btn-pause').classList.remove('hidden');
   document.getElementById('tut-skip').classList.add('hidden');
@@ -8094,7 +8754,7 @@ document.getElementById('fr-no').onclick=()=>{document.getElementById('firstrun'
 const DMGTYPE_LABEL={sa:'Small Arms',ap:'Armour-Piercing',he:'High Explosive',aa:'Anti-Air'};
 const ARMORCLASS_LABEL={inf:'Infantry',light:'Light',heavy:'Heavy',air:'Air',struct:'Structure'};
 function openManual(tab){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','record','roadmap','cosmetics','rivals','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
+  hideAllScreens('manual'); document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('manual').classList.remove('hidden');
   hideDiffAmbient();
@@ -8217,13 +8877,14 @@ function renderManualBody(tab){
       <li><b>🧬 Evolution</b> — Age of War. Evolve through five ages, gate your roster by age, race the enemy up the tech tree.</li>
       <li><b>🚩 Domination</b> (Rank 6) — forget the HQ. Hold the capture zone at mid-field on all three lanes at once and lock them down to win outright; lose control of one and it slips back into contest. HQ kills still count too.</li>
       <li><b>🗺 War Mode</b> (Rank 15) — a conquest map. Every node is a battle; take one and you cut supply to its neighbours, lose and the enemy pushes back. Win by taking the enemy capital.</li>
+      <li><b>◈ The Gauntlet</b> — one opponent, the <b>Adjutant</b>, fought again and again. It keeps a file on how you play and reads it before every fight: it counters the units you lean on, masses in the lane you favour, and <b>hardens</b> against your most-used weapon so it does measurably less damage next time. It only ever learns <b>between</b> battles — whatever it brings is fixed from the first second, so any single fight is a fair puzzle. Five clears take it to Legendary; past that it keeps climbing. Its file can be purged at any time, but your lifetime record cannot.</li>
       <li><b>🎓 Tutorial</b> — a short narrated walkthrough of the core loop.</li>
     </ul>
     <h2>Countries</h2>
     <p>Choosing a country renames the roster to that nation's real equipment — a US tank becomes the <b>M1 Abrams</b>, a Russian one the <b>T-90M</b>. It's flavour only; no stats change. Real equipment names are used for flavour only — Frontline Commander is a fictional, independent game, not affiliated with, endorsed by, or sponsored by any government, military or manufacturer.</p>
     <h2>Streaming</h2>
     <p>Connect <b>📡 Live Chat</b> to a Twitch channel and viewers can vote on lanes, summon bosses, call <b>supply drops</b>, roll <b>chaos</b> events, and drive the on-screen <b>hype meter</b> (a full "hype train" pays out bonus CP and a crate). Big chants take many unique chatters: <b>fortify</b> (16) heals your army, <b>storm</b> (22) shells every lane, <b>blitz</b> (26) drops a free wave, and <b>nuke</b> (50) glasses the whole field. Great for streamers who want the audience in the fight.</p>
-    <p><b>🤪 Chaos / Meme Mode (beta)</b> — flip it on in ⚙ Settings, then start any battle for nonstop explosions, free spawns, rapid events and mayhem. Built purely for clips.</p>
+    <p><b>🤪 Chaos / Meme Mode (beta)</b> — flip it on in ⚙ Settings, then start any battle for nonstop explosions, free spawns, rapid events and mayhem. Built purely for clips. It deliberately does <b>not</b> apply to Campaign, War, Rivals, Gauntlet or the tutorials — those modes bank permanent progress or adapt to how you play, so they always run under their real rules no matter how the toggle is set.</p>
     <h2>🧠 Information Warfare (chat gaslighting)</h2>
     <p>When live chat is connected, enough unique chatters chanting one of these can mess with the <b>streamer's own screen</b> — pure clip-bait:</p>
     <ul>
@@ -8271,7 +8932,7 @@ function openSettings(){
     G.paused=true;                                              // stop the sim while the menu is up
     document.getElementById('pauseScreen').classList.add('hidden'); // Settings replaces it, not stacks on it
   }
-  ['title','menu','warmap','results','hud','pauseScreen','manual','record','roadmap','cosmetics','rivals','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
+  hideAllScreens('settings'); document.getElementById('hud').classList.add('hidden');
   // Only hide the topbar's own Pause button when we're NOT returning to a battle — it's already
   // visible during one, and hiding it here would just mean re-showing it again on the way back.
   if(!_settingsFromBattle)document.getElementById('btn-pause').classList.add('hidden');
@@ -8343,7 +9004,7 @@ function renderSettings(){
     settingRow('Golden Drone','A rare CP piñata crosses the field — shoot it down',`<button id="set-gag-gold" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.gagGolden)}</button>`)+
     settingRow('Victory Flyover','Confetti & a jet flypast on the win screen',`<button id="set-gag-vic" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.gagVictory)}</button>`)+
     `<div style="font-size:13px;font-weight:800;color:var(--red);letter-spacing:.5px;margin:6px 2px -2px">🤪 CHAOS MODE <span style="color:var(--faint);font-size:9px">BETA</span></div>`+
-    settingRow('Chaos / Meme Mode','Nonstop explosions, free spawns, rapid events & mayhem — built for clips. Turn on, then start any battle.',
+    settingRow('Chaos / Meme Mode','Nonstop explosions, free spawns, rapid events &amp; mayhem — built for clips. Turn on, then start any battle. Skipped in Campaign, War, Rivals, Gauntlet and the tutorials, which keep their real rules.',
       chaosOk?`<button id="set-chaos" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.chaosMode)}</button>`
         :`<span style="font-size:11px;font-weight:800;color:var(--faint);white-space:nowrap">🔒 Rank ${MODE_GATES.chaos.lvl}</span>`)+
     `<div style="font-size:13px;font-weight:800;color:var(--faint);letter-spacing:.5px;margin:10px 2px -2px">⚠ PROGRESS</div>`+
@@ -8384,7 +9045,7 @@ function renderSettings(){
 }
 /* ═══ SERVICE RECORD — the career backend surfaced ═══ */
 function openRecord(){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','roadmap','cosmetics','rivals','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
+  hideAllScreens('record'); document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('record').classList.remove('hidden');
   hideDiffAmbient();
@@ -8438,7 +9099,7 @@ function renderRecord(){
   el.innerHTML=h; el.scrollTop=0;
 }
 function openRoadmap(){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','cosmetics','rivals','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
+  hideAllScreens('roadmap'); document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('roadmap').classList.remove('hidden');
   hideDiffAmbient();
@@ -8494,7 +9155,7 @@ function renderRoadPath(){
   },0);
 }
 function openCosmetics(){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','rivals','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
+  hideAllScreens('cosmetics'); document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('cosmetics').classList.remove('hidden');
   hideDiffAmbient();
@@ -8566,7 +9227,7 @@ function renderCosmetics(){
 }
 /* ═══ INDOCTRINATION SCREEN ═══ */
 function openIndoc(){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','cosmetics','rivals','patchnotes','leaderboard'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
+  hideAllScreens('indoc'); document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('indoc').classList.remove('hidden');
   hideDiffAmbient();
@@ -8604,7 +9265,7 @@ function renderIndoc(){
 const LB_TABS=[['runs','🏆 Best Runs'],['streaks','🔥 Streaks'],['today','✔ Beaten Today']];
 let lbTab='runs';
 function openLeaderboard(){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','cosmetics','rivals','patchnotes','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
+  hideAllScreens('leaderboard'); document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('leaderboard').classList.remove('hidden');
   hideDiffAmbient();
@@ -8748,7 +9409,7 @@ function doChestOpen(){
   if(SAVE.reduceMotion)reveal(); else setTimeout(reveal,900);
 }
 function openRivals(){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','cosmetics','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
+  hideAllScreens('rivals'); document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('rivals').classList.remove('hidden');
   hideDiffAmbient();
@@ -8781,8 +9442,65 @@ function renderRivals(){
     btn.onclick=()=>{ const idx=+btn.closest('.rival-card').dataset.idx; leaveTitle(); launchRival(GENERALS[idx].name); };
   });
 }
+function openGauntlet(){
+  hideAllScreens('gauntlet'); document.getElementById('hud').classList.add('hidden');
+  document.getElementById('btn-pause').classList.add('hidden');
+  document.getElementById('gauntlet').classList.remove('hidden');
+  hideDiffAmbient();
+  renderGauntlet();
+}
+/* The pre-fight briefing. Everything the Adjutant is about to do is stated here BEFORE
+   the player commits — the dossier, the hardening percentages, the armed abilities. The
+   mode's difficulty is meant to come from the opponent being genuinely good, not from
+   the player being surprised, and a hard fight you were fully briefed on is the kind
+   people replay. */
+function renderGauntlet(){
+  const el=document.getElementById('gaunt-body'); if(!el)return;
+  const g=gauntletState(), info=gauntletTierInfo(g.clears), snap=gauntletSnapshot();
+  let h='';
+  h+=`<div class="ga-hero">
+    <div class="ga-glyph">◈</div>
+    <div class="ga-nm" style="color:${info.col}">THE ADJUTANT</div>
+    <div class="ga-tier">TIER ${info.tier} · ${info.name} · fights at ${DIFFS[info.diff].name.toUpperCase()}</div>
+    <div class="ga-blurb">${escapeHTML(info.blurb)}</div></div>`;
+
+  h+=`<div class="ga-stats">
+    <div class="ga-stat"><b>${g.clears}</b><small>current run</small></div>
+    <div class="ga-stat"><b>${g.losses}</b><small>losses</small></div>
+    <div class="ga-stat perm"><b>${g.lifetime}</b><small>lifetime beats</small></div>
+    <div class="ga-stat perm"><b>${g.deepest}</b><small>deepest tier</small></div></div>`;
+
+  h+=`<div class="ga-h">🗒 ITS FILE ON YOU</div>`;
+  for(const d of snap.dossier)h+=`<div class="ga-dos"><span class="gi">${d.ic}</span><span>${d.t}</span></div>`;
+
+  h+=`<div class="ga-h">⚙ CAPABILITY LADDER</div><div class="ga-ladder">`;
+  GAUNTLET_TIERS.forEach((t,i)=>{
+    const on=info.tier>=i, now=info.tier===i;
+    h+=`<div class="ga-rung${now?' now':on?' on':''}">
+      <span class="gr-s">${on?'●':'○'}</span>
+      <span class="gr-n" style="color:${on?t.col:'var(--faint)'}">${i}· ${t.n}</span>
+      <span class="gr-d">${escapeHTML(t.blurb)}</span></div>`;
+  });
+  if(info.over>0)h+=`<div class="ga-rung now"><span class="gr-s">●</span><span class="gr-n" style="color:var(--red)">${info.over+1}× ASCENDANT</span><span class="gr-d">Beyond the ladder every further clear buys it more unit quality and income. It does not stop.</span></div>`;
+  h+=`</div>`;
+
+  h+=`<div class="ga-acts">
+    <button class="sbtn prim" id="gaunt-fight" style="border-color:${info.col};color:${info.col}">◈ Fight the Adjutant</button>
+    <button class="sbtn ga-purge" id="gaunt-purge">⌫ Purge its memory</button></div>`;
+  h+=`<div class="ga-note"><b>Purge</b> wipes the file it has built on you and resets the current run to tier 0. Your <b style="color:var(--gold)">lifetime beats</b> and <b style="color:var(--gold)">deepest tier</b> are permanent and are never erased by it — purging is for starting a fresh climb, not for undoing your record.</div>`;
+
+  el.innerHTML=h; el.scrollTop=0;
+  const fb=document.getElementById('gaunt-fight');
+  if(fb)fb.onclick=()=>{ leaveTitle(); launchGauntlet(); };
+  const pb=document.getElementById('gaunt-purge');
+  if(pb)pb.onclick=()=>{
+    // Two-step, because this is destructive and one stray tap should not cost a climb.
+    if(pb.dataset.armed==='1'){ gauntletPurge(); renderGauntlet(); announce('◈ FILE PURGED','the Adjutant has forgotten you','#5ff0e0'); }
+    else{ pb.dataset.armed='1'; pb.textContent='⌫ Confirm — erase the file?'; setTimeout(()=>{ if(pb&&pb.dataset.armed==='1'){pb.dataset.armed='';pb.textContent='⌫ Purge its memory';} },4000); }
+  };
+}
 function openPatchNotes(){
-  ['title','menu','warmap','results','hud','pauseScreen','settings','manual','record','roadmap','cosmetics','rivals'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  hideAllScreens('patchnotes'); document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('patchnotes').classList.remove('hidden');
   hideDiffAmbient();
@@ -8822,6 +9540,8 @@ document.getElementById('t-cosmetics').onclick=()=>openCosmetics();
 document.getElementById('cos-back').onclick=()=>showTitle();
 document.getElementById('t-rivals').onclick=()=>openRivals();
 document.getElementById('rivals-back').onclick=()=>showTitle();
+document.getElementById('t-gauntlet').onclick=()=>openGauntlet();
+document.getElementById('gaunt-back').onclick=()=>showTitle();
 document.getElementById('t-indoc').onclick=()=>openIndoc();
 document.getElementById('indoc-back').onclick=()=>showTitle();
 document.getElementById('t-leaderboard').onclick=()=>openLeaderboard();
@@ -9035,12 +9755,17 @@ function attractTick(dt){
 /* ── TITLE SCREEN ── */
 let _comebackShown=false;
 function showTitle(){
+  /* Tell the boot guard the game reached a playable state. Reaching the title is the
+     strongest possible proof of a successful boot, and it lets the guard stand its
+     listeners down for good rather than leaving an 8-second timer armed over a session
+     that may run for hours. See the guard at the top of this file. */
+  window.__FC_ALIVE=true;
   // If storage was already dead at boot (embedded iframe / private browsing), say so
   // once we're on a real screen — warning over the loading bar would go unread.
   if(!STORAGE_OK)storageWarn();
   if(!_comebackShown){ _comebackShown=true; showComeback(); }
   ambientStop(); infoClear();
-  ['menu','warmap','results','hud','pauseScreen','manual','settings','record','roadmap','cosmetics','rivals','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
+  hideAllScreens('title'); document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('title').classList.remove('hidden');
   document.getElementById('t-rank').textContent=equippedBadge().glyph+' Rank '+SAVE.lvl+' '+equippedTitleStr();
@@ -9052,6 +9777,12 @@ function showTitle(){
   refreshRedeploy();
   refreshTitleDaily();
   refreshTitleChest();
+  // Gauntlet card: surface the live tier on the title so the escalation is visible from the
+  // home screen rather than only after opening the mode.
+  try{ const gs=document.getElementById('t-gauntlet-sub');
+    if(gs){ const gst=gauntletState(), gi=gauntletTierInfo(gst.clears);
+      gs.textContent = gst.mem.fights ? `tier ${gi.tier} · ${gi.name} · ${gst.lifetime} beaten`
+                                      : 'one foe that studies you'; } }catch(e){}
   try{ const ind=document.getElementById('t-indoc-sub');
     if(ind){ const d=indocClearedCount();
       ind.textContent = d===0?'try every doctrine':(d>=INDOC.length?'all 9 lessons cleared':`${d}/${INDOC.length} lessons cleared`); } }catch(e){}
@@ -9215,7 +9946,7 @@ function warDiffFor(str){ return str>=80?'legendary':str>=62?'elite':str>=44?'ve
 let warSel=null;
 function showWarMap(){
   ambientStop();
-  ['title','menu','results','hud','pauseScreen','roadmap','cosmetics','rivals','patchnotes','leaderboard','indoc'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.add('hidden');});
+  hideAllScreens('warmap'); document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('warmap').classList.remove('hidden');
   hideDiffAmbient();

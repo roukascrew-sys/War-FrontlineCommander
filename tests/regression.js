@@ -371,22 +371,39 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
   ok(!imgRes.fallback, '[blocked image] a failed <img> does NOT trigger a false "Reload" screen');
   await imgc.close();
 
-  // 9c. GUARD THE GUARD — a genuine script failure must still surface the fallback.
-  // Without this, "ignore resource errors" could silently degrade into "ignore everything".
-  const realc = await browser.newContext();
-  const rp = await realc.newPage();
-  await rp.addInitScript(() => {
-    window.addEventListener('load', () => setTimeout(() => {
-      document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-      const s = document.createElement('script'); s.textContent = 'null.x.y';
-      document.body.appendChild(s);
-    }, 2500));
-  });
-  await rp.goto(BASE_URL);
-  await rp.waitForTimeout(6000);
-  const realRes = await seesFallback(rp);
-  ok(realRes.fallback, '[real script error] genuine boot failure DOES still show the reload fallback');
-  await realc.close();
+  /* 9c. GUARD THE GUARD — a genuine BOOT failure must still surface a rescue notice.
+     Without this, "ignore resource errors" could silently degrade into "ignore everything".
+
+     These break the game BEFORE it ever comes up, which is what a boot failure actually is.
+     The earlier version of this check instead let the game boot normally, then hid every
+     screen and threw — but that is a POST-boot fault on a game that already reached the
+     title, and as of v1.18.0 that case is deliberately not a boot failure: covering a live
+     match with a "Reload" notice was the mobile Campaign/Daily bug (see section 21). So the
+     scenario is now the real one, and it is checked against all three ways a boot can die. */
+  const bootFailures = {
+    'main script never parses': html => html.replace('window.__FC_BOOTED = true;', 'window.__FC_BOOTED = true; )))syntax((( ;'),
+    'throws before any screen': html => html.replace('window.__FC_BOOTED = true;', 'window.__FC_BOOTED = true; throw new Error("dead on arrival");'),
+    'boots but shows nothing': html => html.replace(/function showTitle\(\)\{/, 'function showTitle(){ return; '),
+  };
+  const rawHtml = await (await fetch(BASE_URL)).text();
+  for (const [label, mangle] of Object.entries(bootFailures)) {
+    const realc = await browser.newContext();
+    const rp = await realc.newPage();
+    const broken = mangle(rawHtml);
+    await rp.route('**/wargame.html', r => r.fulfill({ status: 200, contentType: 'text/html', body: broken }));
+    await rp.goto(BASE_URL).catch(() => {});
+    await rp.waitForTimeout(11000);          // past the 8s watchdog + its 700ms confirm
+    const res = await rp.evaluate(() => ({
+      reload: !!document.body.innerText.match(/Trouble loading/i),
+      oldBrowser: !!document.body.innerText.match(/too old to run/i),
+      cssNotice: !!document.body.innerText.match(/build 1\.\d+/i),
+      stuckOnLoader: (() => { const l = document.getElementById('loader'); return !!(l && l.className.indexOf('gone') < 0); })(),
+    }));
+    ok(res.reload || res.oldBrowser || res.cssNotice,
+      `[boot guard] a genuine boot failure (${label}) still reaches the player with a rescue notice instead of a dead page`);
+    ok(!res.stuckOnLoader, `[boot guard] a genuine boot failure (${label}) never leaves the player sitting on the loading screen`);
+    await realc.close();
+  }
 
   // ══ 10. BACKGROUND TAB QUIESCING ══
   // People leave itch.io tabs open for hours. A hidden tab must not keep generating a
@@ -481,17 +498,21 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
   await op.waitForTimeout(9000);
 
   const briefs = await op.evaluate(() => Object.keys(MODE_BRIEFS));
-  ok(['evolution', 'chaos', 'rivals', 'war'].every(k => briefs.includes(k)),
-    `[mode briefs] all four gated modes have a briefing (${briefs.join(',')})`);
+  ok(['evolution', 'chaos', 'rivals', 'war', 'gauntlet'].every(k => briefs.includes(k)),
+    `[mode briefs] every mode that needs explaining has a briefing (${briefs.join(',')})`);
 
   const queue = await op.evaluate(async () => {
     SAVE.lvl = 20; SAVE.modeBriefsSeen = {};
+    // count what is actually pending rather than hardcoding a number, so adding a mode
+    // briefing does not fail this check for the wrong reason — the invariant under test is
+    // "each pending brief is shown exactly once and none stack", not "there are four".
+    const expected = modeBriefPending().length;
     let opened = 0;
     const iv = setInterval(() => { const b = document.querySelector('#modebrief.show .mb-ok'); if (b) { opened++; b.click(); } }, 100);
-    return await new Promise(res => runModeBriefQueue(() => { clearInterval(iv); res({ opened, seen: Object.keys(SAVE.modeBriefsSeen).length }); }));
+    return await new Promise(res => runModeBriefQueue(() => { clearInterval(iv); res({ opened, seen: Object.keys(SAVE.modeBriefsSeen).length, expected }); }));
   });
-  ok(queue.seen === 4 && queue.opened === 4,
-    `[mode briefs] queue shows each exactly once without stacking (opened ${queue.opened}, seen ${queue.seen})`);
+  ok(queue.expected > 0 && queue.seen === queue.expected && queue.opened === queue.expected,
+    `[mode briefs] queue shows each pending brief exactly once without stacking (expected ${queue.expected}, opened ${queue.opened}, seen ${queue.seen})`);
 
   // The capture card must stay silent while no community URL is configured — shipping a
   // prominent CTA that leads nowhere burns the one moment a player was willing to act.
@@ -1520,6 +1541,261 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
 
     ok(xerr.length === 0, `[v1.17.3] zero page errors ${xerr.length ? ':: ' + xerr.join(' | ') : ''}`);
     await xctx.close();
+  }
+
+  /* ───────────────────────────────────────────────────────────────────────────
+     21. v1.18.0 — CP cap, the boot-guard false positive, chaos scoping, the
+         screen-hiding helper, and THE GAUNTLET.
+     ─────────────────────────────────────────────────────────────────────────── */
+  {
+    const gctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const gp = await gctx.newPage();
+    const gerr = [];
+    gp.on('pageerror', e => gerr.push(e.message));
+    await gp.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+    await gp.waitForTimeout(2600);
+    await gp.evaluate(() => { const fr = document.getElementById('firstrun'); if (fr) fr.classList.remove('show'); SAVE.seenTut = true; SAVE.lvl = 40; persist(); });
+
+    // 21a. CP cap must clear the most expensive purchasable structure. This is the exact
+    //      class of bug that made the Motor Pool (300 CP) unaffordable against a 280 cap.
+    const econ = await gp.evaluate(() => {
+      LAUNCH = null; sel.mode = 'skirmish'; start();
+      return { cpMax: G.cpMax, dearest: Math.max(...Object.values(SPAWNERS).map(s => s.cost)),
+               dearestName: Object.values(SPAWNERS).sort((a, b) => b.cost - a.cost)[0].name };
+    });
+    ok(econ.cpMax > econ.dearest,
+      `[economy] the CP bank (${econ.cpMax}) clears the dearest buildable structure — ${econ.dearestName} at ${econ.dearest} CP — so it can actually be saved for`);
+
+    // 21b. THE BOOT GUARD. A live battle must never be mistaken for a dead page. This is the
+    //      regression that mattered most: it fired on healthy games with no error at all.
+    const guard = await gp.evaluate(() => {
+      LAUNCH = null; sel.mode = 'skirmish'; start();
+      const anyScreen = [...document.getElementsByClassName('screen')].some(s => String(s.className).indexOf('hidden') === -1);
+      return { inBattle: !!(window.G && !G.over), hudUp: !document.getElementById('hud').classList.contains('hidden'),
+               anyScreen, alive: !!window.__FC_ALIVE };
+    });
+    ok(guard.inBattle && guard.hudUp && !guard.anyScreen,
+      '[bootguard] precondition — during a battle NO .screen is visible, which is exactly why the old check misread a running game as a dead page');
+    ok(guard.alive, '[bootguard] the game flags itself alive once playable, so the guard can stand down instead of leaving a timer armed all session');
+
+    // fire a real window error mid-battle: the guard must not paint a reload screen over it
+    await gp.evaluate(() => { setTimeout(() => { throw new Error('benign mid-battle blip'); }, 10); });
+    await gp.waitForTimeout(1400);
+    const afterErr = await gp.evaluate(() => ({
+      running: !!(window.G && !G.over),
+      reloadScreen: !!document.body.innerText.match(/Trouble loading/i) }));
+    ok(afterErr.running && !afterErr.reloadScreen,
+      '[bootguard] a mid-battle JS error no longer covers a running match with the "Trouble loading — Reload" notice');
+
+    // and the 8s unconditional watchdog must be a no-op once a battle is up
+    await gp.waitForTimeout(8200);
+    const late = await gp.evaluate(() => ({
+      running: !!(window.G && !G.over),
+      reloadScreen: !!document.body.innerText.match(/Trouble loading/i) }));
+    ok(late.running && !late.reloadScreen,
+      '[bootguard] the unconditional 8-second watchdog passes harmlessly while a battle is in progress (the mobile Campaign/Daily reload-screen bug)');
+
+    // 21c. CHAOS SCOPING — structured modes always run under their real rules
+    const chaos = await gp.evaluate(() => {
+      SAVE.chaosMode = true; SAVE.campaignDone = 4; persist();
+      const seen = {};
+      const grab = (label, fn) => { try { fn(); seen[label] = { kind: G.kind, chaos: !!G.chaos }; } catch (e) { seen[label] = { err: e.message }; } };
+      grab('campaign', () => launchCampaign(0));
+      grab('war', () => { LAUNCH = { type: 'war', warName: 'T', diff: 'veteran', weather: 'clear' }; start(); });
+      grab('rival', () => launchRival(GENERALS[0].name));
+      grab('gauntlet', () => launchGauntlet());
+      grab('indoc', () => launchIndoc('blitzkrieg'));
+      grab('skirmish', () => { LAUNCH = null; sel.mode = 'skirmish'; start(); });
+      grab('survival', () => { LAUNCH = null; sel.mode = 'survival'; start(); });
+      SAVE.chaosMode = false; persist();
+      return seen;
+    });
+    const mustBeOff = ['campaign', 'war', 'rival', 'gauntlet', 'indoc'];
+    const leaked = mustBeOff.filter(k => chaos[k] && chaos[k].chaos);
+    ok(leaked.length === 0,
+      `[chaos] stays out of the modes that bank permanent progress or adapt to you (campaign/war/rivals/gauntlet/lessons) ${leaked.length ? ':: LEAKED INTO ' + leaked.join(', ') : ''}`);
+    ok(chaos.skirmish.chaos && chaos.survival.chaos,
+      '[chaos] still applies to the throwaway modes it was built for (skirmish, survival)');
+
+    // 21d. SCREEN HIDING — one helper replaced a dozen hand-written lists. Verify every
+    //      opener pair leaves exactly one screen up, which those lists kept getting wrong.
+    const screens = await gp.evaluate(() => {
+      const openers = { showTitle, openMenu, openGauntlet, openRivals, openManual, openRecord,
+        openRoadmap, openCosmetics, openPatchNotes, openLeaderboard, openIndoc, openSettings };
+      const bad = []; let pairs = 0;
+      for (const a in openers) for (const c in openers) {
+        pairs++;
+        try {
+          openers[a](); openers[c]();
+          const vis = [...document.querySelectorAll('.screen')].filter(s => !s.classList.contains('hidden')).map(s => s.id);
+          if (vis.length !== 1) bad.push(`${a}->${c}:[${vis}]`);
+        } catch (e) { bad.push(`${a}->${c}:THREW ${e.message}`); }
+      }
+      return { bad, pairs };
+    });
+    ok(screens.bad.length === 0,
+      `[screens] all ${screens.pairs} screen-to-screen transitions leave exactly ONE screen visible — no menu can strand on top of another ${screens.bad.length ? ':: ' + screens.bad.slice(0, 6).join(' ') : ''}`);
+
+    // 21e. THE GAUNTLET — escalation ladder reaches Legendary in five clears and keeps going
+    const ladder = await gp.evaluate(() => {
+      SAVE.gauntlet = {}; persist();
+      const rows = [];
+      for (let i = 0; i < 8; i++) {
+        launchGauntlet();
+        const g = G.gaunt;
+        rows.push({ tier: g.tier, diff: G.diff, name: g.name,
+                    counters: Object.keys(g.counterW).length, harden: { ...g.harden },
+                    strikes: g.strikes.slice(), qual: g.qualMul });
+        for (let k = 0; k < 10; k++) gauntRecordDeploy('tank', 0);   // a player who always spams tanks
+        for (let k = 0; k < 3; k++) gauntRecordDeploy('rifle', 0);
+        G.gauntRec.first = 12;
+        G.over = false; endGame('B', 'hq');
+      }
+      return rows;
+    });
+    ok(ladder[0].diff === 'veteran' && ladder[0].counters === 0 && !ladder[0].strikes.length,
+      '[gauntlet] tier 0 has no file on you yet — no counters, no hardening, no strikes');
+    ok(ladder[1].counters > 0, '[gauntlet] tier 1 arms counter-doctrine against what you leaned on');
+    ok(Object.keys(ladder[2].harden).length > 0, '[gauntlet] tier 2 arms adaptive hardening');
+    ok(ladder[3].strikes.includes('precision'), '[gauntlet] tier 3 arms off-map precision strikes');
+    ok(ladder[4].strikes.includes('gunrun') && ladder[4].diff === 'legendary',
+      '[gauntlet] tier 4 arms gunship runs and reaches Legendary');
+    ok(ladder[5].strikes.includes('barrage'),
+      '[gauntlet] five clears reaches full proficiency (rolling barrages + every system)');
+    ok(ladder[7].qual > ladder[5].qual,
+      `[gauntlet] past the ladder it keeps escalating through raw scaling (qual ${ladder[5].qual.toFixed(2)} → ${ladder[7].qual.toFixed(2)})`);
+    const hardestSeen = Math.max(...ladder.map(r => Math.max(0, ...Object.values(r.harden))));
+    ok(hardestSeen <= 0.35 + 1e-9,
+      `[gauntlet] hardening is capped well short of immunity so your favourite unit becomes insufficient, never useless (peak ${(hardestSeen * 100).toFixed(0)}%)`);
+
+    // 21f. THE CORE FAIRNESS GUARANTEE — it adapts BETWEEN fights, never during one
+    const frozen = await gp.evaluate(() => {
+      launchGauntlet();
+      const before = JSON.stringify(G.gaunt);
+      for (let i = 0; i < 80; i++) gauntRecordDeploy('drone', 2);   // change behaviour completely, mid-fight
+      for (let i = 0; i < 60; i++) step(0.05);
+      return { unchanged: JSON.stringify(G.gaunt) === before };
+    });
+    ok(frozen.unchanged,
+      '[gauntlet] the profile is FROZEN for the whole battle — it cannot re-learn mid-fight, which is what keeps any single run winnable by determination');
+
+    // 21g. hardening actually reduces damage by the amount it advertises
+    const bite = await gp.evaluate(() => {
+      SAVE.gauntlet = { clears: 5, losses: 0, lifetime: 5, deepest: 5,
+        mem: { fights: 6, units: { tank: 40 }, strikes: {}, lanes: [30, 4, 3], spawners: 0, rush: 0 } };
+      persist(); launchGauntlet();
+      const declared = G.gaunt.harden['tank'] || 0;
+      spawn('R', 'rifle', 1, 600);
+      const v = G.units.find(u => u.side === 'R' && u.alive);
+      const probe = key => { v.hp = 1e6; v.maxHp = 1e6; v.alive = true;
+        const b0 = v.hp; damage(v, 100, { side: 'B', key, dmgType: null }); return b0 - v.hp; };
+      return { declared, hardened: probe('tank'), normal: probe('medic') };
+    });
+    ok(bite.declared > 0 && Math.abs(bite.hardened - 100 * (1 - bite.declared)) < 0.5 && bite.normal === 100,
+      `[gauntlet] adaptive hardening bites exactly as advertised — your spammed unit dealt ${bite.hardened.toFixed(0)} where an un-profiled one dealt ${bite.normal.toFixed(0)} (declared −${Math.round(bite.declared * 100)}%)`);
+
+    // 21h. every off-map strike is telegraphed before it lands — no unavoidable damage
+    const tele = await gp.evaluate(() => {
+      const res = {};
+      for (const type of ['precision', 'gunrun', 'barrage']) {
+        SAVE.gauntlet = { clears: 5, losses: 0, lifetime: 5, deepest: 5,
+          mem: { fights: 6, units: { tank: 40 }, strikes: {}, lanes: [30, 4, 3], spawners: 0, rush: 0 } };
+        persist(); launchGauntlet(); G.prep = 0; G.frozen = false; G.aiHold = true;
+        G.units.length = 0;
+        for (let i = 0; i < 9; i++) spawn('B', 'rifle', i % 3, 300 + i * 10);
+        for (const u of G.units) { u.hp = u.maxHp = 1e5; u.spd = 0; }
+        const hp0 = G.units.reduce((a, u) => a + u.hp, 0);
+        G.gaunt.strikes = [type]; G.gauntStrikeT = 0;
+        let warned = 0, dmgBeforeWarning = 0, fired = false;
+        for (let i = 0; i < 1500; i++) {
+          const hpPre = G.units.reduce((a, u) => a + u.hp, 0);
+          step(0.05);
+          const hpPost = G.units.reduce((a, u) => a + u.hp, 0);
+          if (G.gauntTele) warned++;
+          else if (hpPre - hpPost > 0 && warned === 0) dmgBeforeWarning += hpPre - hpPost;
+          if (!G.gauntTele && (G.gauntGun || G.gauntBarrage || hpPre - hpPost > 0)) fired = true;
+          G.gauntStrikeT = Math.max(G.gauntStrikeT, 5);
+          // the barrage creeps across the whole field over ~34s, so the probe has to outlast
+          // it — cutting off at 10s ended the run before the wall of fire ever arrived
+          if (fired && warned > 0 && i > 900 && !G.gauntGun && !G.gauntBarrage) break;
+        }
+        res[type] = { warnSeconds: warned * 0.05, dealt: hp0 - G.units.reduce((a, u) => a + u.hp, 0), dmgBeforeWarning };
+      }
+      return res;
+    });
+    for (const t of ['precision', 'gunrun', 'barrage']) {
+      ok(tele[t].warnSeconds >= 2 && tele[t].dmgBeforeWarning === 0,
+        `[gauntlet] the ${t} strike telegraphs for ${tele[t].warnSeconds.toFixed(1)}s and deals nothing before the warning appears`);
+      ok(tele[t].dealt > 0,
+        `[gauntlet] the ${t} strike actually reaches your formation — it aims at where your units are, not a fixed band of the map (dealt ${Math.round(tele[t].dealt)})`);
+    }
+
+    // 21i. PURGE — wipes the file and the run, never the permanent record
+    const purge = await gp.evaluate(() => {
+      SAVE.gauntlet = { clears: 6, losses: 3, lifetime: 11, deepest: 7,
+        mem: { fights: 6, units: { tank: 40, rifle: 9 }, strikes: { barrage: 2 }, lanes: [20, 3, 1], spawners: 2, rush: 3 } };
+      persist();
+      const before = gauntletState();
+      gauntletPurge();
+      const after = gauntletState();
+      return { before, after };
+    });
+    ok(purge.after.clears === 0 && Object.keys(purge.after.mem.units).length === 0 && purge.after.mem.fights === 0,
+      '[gauntlet] Purge erases the learned file and resets the current run to tier 0');
+    ok(purge.after.lifetime === purge.before.lifetime && purge.after.deepest === purge.before.deepest,
+      `[gauntlet] Purge never touches the permanent record (lifetime ${purge.after.lifetime}, deepest tier ${purge.after.deepest} both survive)`);
+
+    // 21j. a loss must not cost a tier — losing is already the punishment
+    const onLoss = await gp.evaluate(() => {
+      SAVE.gauntlet = { clears: 4, losses: 0, lifetime: 4, deepest: 4,
+        mem: { fights: 3, units: { tank: 10 }, strikes: {}, lanes: [5, 1, 1], spawners: 0, rush: 0 } };
+      persist(); launchGauntlet();
+      for (let i = 0; i < 5; i++) gauntRecordDeploy('atgm', 1);
+      G.over = false; endGame('R', 'overrun');
+      const s = gauntletState();
+      return { clears: s.clears, losses: s.losses, lifetime: s.lifetime, learnedAtgm: !!s.mem.units.atgm };
+    });
+    ok(onLoss.clears === 4 && onLoss.losses === 1 && onLoss.lifetime === 4,
+      '[gauntlet] losing costs no tier and no lifetime beats — the climb is kept so deep tiers stay worth attempting');
+    ok(onLoss.learnedAtgm,
+      '[gauntlet] it still learns from a fight it WON against you — the cost of losing is a thicker file, not lost progress');
+
+    // 21k. a corrupt / hand-edited save degrades to "no memory" instead of throwing
+    const corrupt = await gp.evaluate(() => {
+      const shapes = [null, 'nonsense', 42, [], { clears: -5, lifetime: 'x', mem: 'no' },
+        { mem: { units: { tank: NaN, rifle: -3 }, lanes: [1], fights: Infinity } }];
+      const results = [];
+      for (const sh of shapes) {
+        try { SAVE.gauntlet = sh; const s = gauntletState(); gauntletSnapshot();
+          results.push({ ok: true, clears: s.clears, fights: s.fights }); }
+        catch (e) { results.push({ ok: false, err: e.message }); }
+      }
+      SAVE.gauntlet = {}; persist();
+      return results;
+    });
+    ok(corrupt.every(r => r.ok),
+      `[gauntlet] a corrupt or hand-edited dossier degrades safely instead of throwing on the title screen ${corrupt.filter(r => !r.ok).map(r => r.err).join(' | ')}`);
+
+    // 21l. the screen renders, and the dossier tells the player what it learned
+    const screen = await gp.evaluate(() => {
+      SAVE.gauntlet = { clears: 3, losses: 1, lifetime: 3, deepest: 3,
+        mem: { fights: 4, units: { tank: 30, rifle: 6 }, strikes: {}, lanes: [22, 2, 1], spawners: 1, rush: 0 } };
+      persist(); openGauntlet();
+      const body = document.getElementById('gaunt-body').innerText;
+      return { visible: !document.getElementById('gauntlet').classList.contains('hidden'),
+               mentionsHardening: /hardened/i.test(body), mentionsLane: /lane/i.test(body),
+               showsLifetime: /lifetime/i.test(body), hasFight: !!document.getElementById('gaunt-fight'),
+               hasPurge: !!document.getElementById('gaunt-purge') };
+    });
+    ok(screen.visible && screen.hasFight && screen.hasPurge, '[gauntlet] the Gauntlet screen renders with both a Fight and a Purge action');
+    ok(screen.mentionsHardening && screen.mentionsLane && screen.showsLifetime,
+      '[gauntlet] the dossier states in plain language what it learned — hardening, your favoured lane, and the permanent record');
+
+    // the boot-guard check above throws ONE error on purpose to prove a mid-battle fault no
+    // longer covers a live match; everything else must still be clean
+    const unexpected = gerr.filter(m => !/benign mid-battle blip/.test(m));
+    ok(unexpected.length === 0, `[v1.18.0] zero unexpected page errors ${unexpected.length ? ':: ' + unexpected.join(' | ') : ''}`);
+    await gctx.close();
   }
 
   console.log('\n══════════ FRONTLINE COMMANDER — REGRESSION SUITE ══════════');
