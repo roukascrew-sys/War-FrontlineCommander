@@ -1640,7 +1640,9 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
     const ladder = await gp.evaluate(() => {
       SAVE.gauntlet = {}; persist();
       const rows = [];
-      for (let i = 0; i < 8; i++) {
+      // must outrun the ladder itself (GAUNT_MAX_TIER) plus the ascendant rungs the checks
+      // below sample, or re-pacing the ladder indexes off the end of this array
+      for (let i = 0; i <= GAUNT_MAX_TIER + 3; i++) {
         launchGauntlet();
         const g = G.gaunt;
         rows.push({ tier: g.tier, diff: G.diff, name: g.name,
@@ -1653,20 +1655,74 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
       }
       return rows;
     });
+    // rung indices are read from the table rather than hardcoded, so re-pacing the ladder
+    // re-points these checks instead of failing them for the wrong reason
+    const rung = await gp.evaluate(() => {
+      const idx = a => GAUNTLET_TIERS.findIndex(t => t.arms === a);
+      return { counters: idx('counters'), hardening: idx('hardening'), strikes: idx('strikes'),
+               gunruns: idx('gunruns'), ambush: idx('ambush'), barrage: idx('barrage'),
+               top: GAUNT_MAX_TIER };
+    });
     ok(ladder[0].diff === 'veteran' && ladder[0].counters === 0 && !ladder[0].strikes.length,
       '[gauntlet] tier 0 has no file on you yet — no counters, no hardening, no strikes');
-    ok(ladder[1].counters > 0, '[gauntlet] tier 1 arms counter-doctrine against what you leaned on');
-    ok(Object.keys(ladder[2].harden).length > 0, '[gauntlet] tier 2 arms adaptive hardening');
-    ok(ladder[3].strikes.includes('precision'), '[gauntlet] tier 3 arms off-map precision strikes');
-    ok(ladder[4].strikes.includes('gunrun') && ladder[4].diff === 'legendary',
-      '[gauntlet] tier 4 arms gunship runs and reaches Legendary');
-    ok(ladder[5].strikes.includes('barrage'),
-      '[gauntlet] five clears reaches full proficiency (rolling barrages + every system)');
-    ok(ladder[7].qual > ladder[5].qual,
-      `[gauntlet] past the ladder it keeps escalating through raw scaling (qual ${ladder[5].qual.toFixed(2)} → ${ladder[7].qual.toFixed(2)})`);
+    ok(ladder[rung.counters].counters > 0,
+      `[gauntlet] counter-doctrine arms at tier ${rung.counters} against what you leaned on`);
+    ok(Object.keys(ladder[rung.hardening].harden).length > 0,
+      `[gauntlet] adaptive hardening arms at tier ${rung.hardening}`);
+    ok(ladder[rung.strikes].strikes.includes('precision'),
+      `[gauntlet] off-map precision strikes arm at tier ${rung.strikes}`);
+    ok(ladder[rung.gunruns].strikes.includes('gunrun'),
+      `[gauntlet] gunship runs arm at tier ${rung.gunruns}`);
+    ok(ladder[rung.barrage].strikes.includes('barrage') && ladder[rung.barrage].diff === 'legendary',
+      `[gauntlet] the top rung (tier ${rung.barrage}) reaches full proficiency at Legendary`);
+    ok(rung.top >= 7,
+      `[gauntlet] the ladder is paced over at least 8 rungs before it tops out (top rung ${rung.top}) — the first cut reached its wall in four clears`);
+    ok(ladder[rung.top + 2] && ladder[rung.top + 2].qual > ladder[rung.top].qual,
+      `[gauntlet] past the ladder it keeps escalating through raw scaling (qual ${ladder[rung.top].qual.toFixed(2)} → ${ladder[rung.top + 2].qual.toFixed(2)})`);
     const hardestSeen = Math.max(...ladder.map(r => Math.max(0, ...Object.values(r.harden))));
     ok(hardestSeen <= 0.35 + 1e-9,
       `[gauntlet] hardening is capped well short of immunity so your favourite unit becomes insufficient, never useless (peak ${(hardestSeen * 100).toFixed(0)}%)`);
+
+    /* THE PACING CHECK. The original ladder inherited the four coarse DIFFS steps and
+       produced a cliff — simulated win margin fell from +52% to −100% in a single rung.
+       Effective power must climb monotonically and in modest increments instead. */
+    const curve = await gp.evaluate(() => {
+      const rows = [];
+      for (let t = 0; t <= GAUNT_MAX_TIER + 4; t++) {
+        const ti = gauntletTierInfo(t), d = DIFFS[ti.diff];
+        rows.push({ t, q: d.qualMul * ti.qualMul, e: d.cpMul * ti.cpMul, o: ti.open });
+      }
+      const dips = [], steps = [];
+      for (let i = 1; i < rows.length; i++) {
+        if (rows[i].q < rows[i - 1].q - 1e-9) dips.push(`quality ${rows[i - 1].t}→${rows[i].t}`);
+        if (rows[i].e < rows[i - 1].e - 1e-9) dips.push(`economy ${rows[i - 1].t}→${rows[i].t}`);
+        if (rows[i].o < rows[i - 1].o) dips.push(`opening ${rows[i - 1].t}→${rows[i].t}`);
+        steps.push({ t: rows[i].t, q: rows[i].q / rows[i - 1].q - 1, e: rows[i].e / rows[i - 1].e - 1 });
+      }
+      return { dips, worstQ: Math.max(...steps.map(s => s.q)), worstE: Math.max(...steps.map(s => s.e)),
+               maxOpen: Math.max(...rows.map(r => r.o)) };
+    });
+    ok(curve.dips.length === 0,
+      `[gauntlet] effective power never goes BACKWARDS between rungs ${curve.dips.length ? ':: ' + curve.dips.join(', ') : ''}`);
+    ok(curve.worstQ <= 0.20 && curve.worstE <= 0.20,
+      `[gauntlet] no single rung raises quality or economy by more than 20% — the cliff is gone (worst step: quality +${(curve.worstQ * 100).toFixed(0)}%, economy +${(curve.worstE * 100).toFixed(0)}%)`);
+    ok(curve.maxOpen <= 14,
+      `[gauntlet] the opening wave stays bounded (peak ${curve.maxOpen}) rather than deciding the fight before the player can act`);
+
+    // qualMul must actually reach the units — it was previously advertised but never applied
+    const applied = await gp.evaluate(() => {
+      const hpAt = tier => {
+        SAVE.gauntlet = { clears: tier, losses: 0, lifetime: tier, deepest: tier,
+          mem: { fights: 6, units: { tank: 20 }, strikes: {}, lanes: [9, 3, 3], spawners: 0, rush: 0 } };
+        persist(); launchGauntlet();
+        G.units.length = 0; spawn('R', 'rifle', 1, 700);
+        const u = G.units.find(x => x.side === 'R');
+        return { hp: u.maxHp, dmg: u.dmg, declared: G.gaunt.qualMul };
+      };
+      return { low: hpAt(GAUNT_MAX_TIER), high: hpAt(GAUNT_MAX_TIER + 4) };
+    });
+    ok(applied.high.hp > applied.low.hp && applied.high.dmg > applied.low.dmg,
+      `[gauntlet] the Ascendant tiers' advertised quality scaling is REAL — enemy rifle ${applied.low.hp.toFixed(0)}hp/${applied.low.dmg.toFixed(1)}dmg at the top rung vs ${applied.high.hp.toFixed(0)}hp/${applied.high.dmg.toFixed(1)}dmg four clears past it`);
 
     // 21f. THE CORE FAIRNESS GUARANTEE — it adapts BETWEEN fights, never during one
     const frozen = await gp.evaluate(() => {
@@ -1694,40 +1750,54 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
     ok(bite.declared > 0 && Math.abs(bite.hardened - 100 * (1 - bite.declared)) < 0.5 && bite.normal === 100,
       `[gauntlet] adaptive hardening bites exactly as advertised — your spammed unit dealt ${bite.hardened.toFixed(0)} where an un-profiled one dealt ${bite.normal.toFixed(0)} (declared −${Math.round(bite.declared * 100)}%)`);
 
-    // 21h. every off-map strike is telegraphed before it lands — no unavoidable damage
+    /* 21h. Every off-map strike is telegraphed before it lands, and every one actually
+       reaches the formation it was aimed at.
+
+       Units are left with their NORMAL stats here. An earlier version of this check made
+       them immortal by writing hp/maxHp directly, which silently corrupted the measurement:
+       veterancy recomputes maxHp from baseHp, so a probe unit's health could be restored
+       mid-run and a landed strike would read as zero damage. "Did this unit lose health or
+       die" is both robust to that and closer to the thing actually being asserted. */
     const tele = await gp.evaluate(() => {
       const res = {};
       for (const type of ['precision', 'gunrun', 'barrage']) {
-        SAVE.gauntlet = { clears: 5, losses: 0, lifetime: 5, deepest: 5,
-          mem: { fights: 6, units: { tank: 40 }, strikes: {}, lanes: [30, 4, 3], spawners: 0, rush: 0 } };
-        persist(); launchGauntlet(); G.prep = 0; G.frozen = false; G.aiHold = true;
-        G.units.length = 0;
-        for (let i = 0; i < 9; i++) spawn('B', 'rifle', i % 3, 300 + i * 10);
-        for (const u of G.units) { u.hp = u.maxHp = 1e5; u.spd = 0; }
-        const hp0 = G.units.reduce((a, u) => a + u.hp, 0);
-        G.gaunt.strikes = [type]; G.gauntStrikeT = 0;
-        let warned = 0, dmgBeforeWarning = 0, fired = false;
-        for (let i = 0; i < 1500; i++) {
-          const hpPre = G.units.reduce((a, u) => a + u.hp, 0);
-          step(0.05);
-          const hpPost = G.units.reduce((a, u) => a + u.hp, 0);
-          if (G.gauntTele) warned++;
-          else if (hpPre - hpPost > 0 && warned === 0) dmgBeforeWarning += hpPre - hpPost;
-          if (!G.gauntTele && (G.gauntGun || G.gauntBarrage || hpPre - hpPost > 0)) fired = true;
-          G.gauntStrikeT = Math.max(G.gauntStrikeT, 5);
-          // the barrage creeps across the whole field over ~34s, so the probe has to outlast
-          // it — cutting off at 10s ended the run before the wall of fire ever arrived
-          if (fired && warned > 0 && i > 900 && !G.gauntGun && !G.gauntBarrage) break;
+        let touchedRuns = 0, warnMin = Infinity, dmgBeforeWarning = 0;
+        const RUNS = 6;
+        for (let run = 0; run < RUNS; run++) {
+          SAVE.gauntlet = { clears: 8, losses: 0, lifetime: 8, deepest: 8,
+            mem: { fights: 6, units: { tank: 40 }, strikes: {}, lanes: [30, 4, 3], spawners: 0, rush: 0 } };
+          persist(); launchGauntlet(); G.prep = 0; G.frozen = false; G.aiHold = true;
+          G.units.length = 0;
+          for (let i = 0; i < 9; i++) spawn('B', 'rifle', i % 3, 300 + i * 10);
+          const start = new Map(G.units.map(u => [u.id, u.hp]));
+          G.gaunt.strikes = [type]; G.gauntStrikeT = 0;
+          let warned = 0;
+          for (let i = 0; i < 1200; i++) {
+            const pre = G.units.reduce((a, u) => a + u.hp, 0);
+            step(0.05);
+            const post = G.units.reduce((a, u) => a + u.hp, 0);
+            if (G.gauntTele) warned++;
+            else if (warned === 0 && pre - post > 0) dmgBeforeWarning += pre - post;
+            G.gauntStrikeT = Math.max(G.gauntStrikeT, 5);
+            if (!G.gauntTele && !G.gauntGun && !G.gauntBarrage && i > 200) break;
+          }
+          let touched = 0;
+          for (const [id, hp0] of start) { const u = G.units.find(x => x.id === id); if (!u || !u.alive || u.hp < hp0) touched++; }
+          if (touched > 0) touchedRuns++;
+          warnMin = Math.min(warnMin, warned * 0.05);
         }
-        res[type] = { warnSeconds: warned * 0.05, dealt: hp0 - G.units.reduce((a, u) => a + u.hp, 0), dmgBeforeWarning };
+        res[type] = { touchedRuns, runs: RUNS, warnSeconds: warnMin, dmgBeforeWarning };
       }
       return res;
     });
     for (const t of ['precision', 'gunrun', 'barrage']) {
       ok(tele[t].warnSeconds >= 2 && tele[t].dmgBeforeWarning === 0,
         `[gauntlet] the ${t} strike telegraphs for ${tele[t].warnSeconds.toFixed(1)}s and deals nothing before the warning appears`);
-      ok(tele[t].dealt > 0,
-        `[gauntlet] the ${t} strike actually reaches your formation — it aims at where your units are, not a fixed band of the map (dealt ${Math.round(tele[t].dealt)})`);
+      // all three must land every time. Precision used to miss ~30% of runs because it
+      // aimed where the formation WAS and the units walked out of the telegraph before the
+      // round arrived; it now leads the target, so a clean miss is a regression.
+      ok(tele[t].touchedRuns === tele[t].runs,
+        `[gauntlet] the ${t} strike reaches the formation it aimed at — it targets where your units actually are, not a fixed band of the map (${tele[t].touchedRuns}/${tele[t].runs} runs)`);
     }
 
     // 21i. PURGE — wipes the file and the run, never the permanent record
@@ -1790,6 +1860,64 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
     ok(screen.visible && screen.hasFight && screen.hasPurge, '[gauntlet] the Gauntlet screen renders with both a Fight and a Purge action');
     ok(screen.mentionsHardening && screen.mentionsLane && screen.showsLifetime,
       '[gauntlet] the dossier states in plain language what it learned — hardening, your favoured lane, and the permanent record');
+
+    // 21m. THE ADJUTANT FILE — the dev analytics view. It must explain decisions NOT taken
+    //      as well as ones taken, since "a threshold was not met" is the usual reason a
+    //      system like this looks broken.
+    const why = await gp.evaluate(() => {
+      // a profile with a CLEAR unit habit but a DELIBERATELY split lane usage, so the lane
+      // read should decline to act and say why
+      SAVE.gauntlet = { clears: 5, losses: 1, lifetime: 6, deepest: 5,
+        mem: { fights: 5, units: { tank: 30, atgm: 10, rifle: 8 }, strikes: { precision: 3 },
+               lanes: [11, 10, 9], spawners: 1, rush: 0 } };
+      persist();
+      const r = gauntletReasoning();
+      const lane = r.reasoning.find(x => /lane/i.test(x.head));
+      return { count: r.reasoning.length,
+               allHaveWhy: r.reasoning.every(x => x.obs && x.infer && x.act),
+               laneDeclined: !!lane && lane.state === 'off',
+               laneExplains: !!lane && /40%/.test(lane.infer + lane.act),
+               laneNotMassing: r.snap.lane < 0,
+               headings: r.reasoning.map(x => x.head) };
+    });
+    ok(why.count >= 5 && why.allHaveWhy,
+      `[adjutant file] every reasoning entry carries an observation, an inference AND an action (${why.count} entries: ${why.headings.join(', ')})`);
+    ok(why.laneDeclined && why.laneNotMassing && why.laneExplains,
+      '[adjutant file] a decision it DECLINED to make is reported with the threshold that stopped it (split lanes → not massing, 40% cited)');
+
+    // a dormant file must explain that it is dormant rather than rendering blank
+    const empty = await gp.evaluate(() => {
+      SAVE.gauntlet = {}; persist();
+      const r = gauntletReasoning();
+      return { entries: r.reasoning.length, state: r.reasoning[0] && r.reasoning[0].state,
+               text: (r.reasoning[0] || {}).obs || '' };
+    });
+    ok(empty.entries > 0 && empty.state === 'idle' && /empty|no completed/i.test(empty.text),
+      '[adjutant file] an empty dossier explains that it is dormant instead of rendering a blank page');
+
+    // all four tabs render, with real bar geometry rather than empty tracks
+    const tabs = await gp.evaluate(() => {
+      SAVE.gauntlet = { clears: 5, losses: 1, lifetime: 6, deepest: 5,
+        mem: { fights: 5, units: { tank: 30, atgm: 10 }, strikes: { precision: 3 },
+               lanes: [22, 4, 3], spawners: 1, rush: 3 } };
+      persist(); openGauntFile('title');
+      const out = {};
+      for (const [id] of GF_TABS) {
+        renderGauntFile(id);
+        const body = document.getElementById('gf-body');
+        const fills = [...body.querySelectorAll('.gf-bar .bf')];
+        out[id] = { len: body.innerHTML.length,
+                    bars: fills.length,
+                    barsWithWidth: fills.filter(f => parseFloat(f.style.width) > 0).length,
+                    svg: body.querySelectorAll('svg').length };
+      }
+      return out;
+    });
+    ok(Object.values(tabs).every(t => t.len > 200),
+      `[adjutant file] all four tabs render content (${Object.entries(tabs).map(([id, t]) => id + ':' + t.len).join(', ')})`);
+    ok(tabs.data.bars > 0 && tabs.data.barsWithWidth === tabs.data.bars,
+      `[adjutant file] every analytics bar actually renders a fill — inline spans ignore width, which silently drew empty tracks (${tabs.data.barsWithWidth}/${tabs.data.bars})`);
+    ok(tabs.ladder.svg > 0, '[adjutant file] the power-curve chart renders as inline SVG');
 
     // the boot-guard check above throws ONE error on purpose to prove a mid-battle fault no
     // longer covers a live match; everything else must still be clean

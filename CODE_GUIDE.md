@@ -743,9 +743,25 @@ Other things worth knowing:
   anything in here — every field is rebuilt with a checked default. `mem.fights`
   is a **fractional decaying weight**, not a battle count; do not floor it (that
   bug pinned it at 1 forever and silently broke the tempo read).
-- **Tiers**: `tier === clears`. `GAUNTLET_TIERS` is the ladder (each rung arms
-  exactly one system, so a returning player can name what's new); past the end of
-  the table it keeps scaling via `qualMul`/`cpMul` in `gauntletTierInfo()`.
+- **Tiers**: `tier === clears`. `GAUNTLET_TIERS` is the ladder — nine rungs, each
+  arming exactly one system so a returning player can name what's new.
+
+  **Do not escalate by stepping through the `DIFFS` tiers.** That was the first
+  cut and it produced a cliff: those four tiers are enormous steps apart
+  (elite→legendary is +73% economy, +49% quality, double the opening, twice the
+  thinking speed) because they are *choices a player picks between*, not a
+  progression. Simulated win margin ran 97/93/66/52% and then fell straight to
+  −100% in one rung. Each rung now carries its own `qual`/`econ`/`open`
+  multipliers on top of a base tier that changes rarely, and multipliers **below
+  1.0** deliberately pull a new base tier back down on the rung where it first
+  appears. Target shape: ~3–7% effective power per rung, no step above 20%, and
+  never decreasing — the regression suite asserts all three.
+- **`open` REPLACES `diff.open`** (see `newGame`) rather than adding to it;
+  stacking an ambush on legendary's built-in 8 put 14 enemies on the field
+  before the player could act.
+- **`qualMul` must actually be applied** — it is read in `spawn()`. It was once
+  computed and printed in the dossier but never used, so every Ascendant tier
+  advertised quality scaling that did not exist and played identically.
 - **Adaptive hardening** hooks `damage()` and keys off `src.key`, so it only
   applies to real unit damage. Commander strikes pass literal `{side,dmgType}`
   objects with no `key` and are deliberately never blunted — the player always
@@ -755,7 +771,14 @@ Other things worth knowing:
   for `GAUNT_TELE_TIME` seconds first; keep that. It is all `dt`-driven, not
   `setTimeout`, so it obeys pause, the prep freeze and the speed control.
 - **Purge** (`gauntletPurge()`) clears `mem` and `clears` but must never touch
-  `lifetime` or `deepest`.
+  `lifetime` or `deepest`. A loss costs no tier either.
+- **`gauntletReasoning()`** backs the dev-facing Adjutant File screen
+  (`openGauntFile()`, Debug panel → The Gauntlet). It explains decisions NOT
+  taken as well as taken ones, with the threshold that stopped them — when this
+  system looks broken it is nearly always an unmet threshold rather than bad
+  maths, and a readout that only lists what fired cannot tell you which. Every
+  threshold it quotes is read from the same constants the live snapshot uses, so
+  it cannot drift into describing behaviour the game no longer has.
 
 ## Screens: use `hideAllScreens()`
 

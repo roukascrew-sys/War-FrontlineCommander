@@ -227,6 +227,9 @@ need a live battle running.</p>
   <tr><td><code>launchGauntlet()</code></td><td>Jump straight into a Gauntlet fight at the current tier</td></tr>
   <tr><td><code>gauntletState()</code></td><td>Read the Adjutant's dossier (clears, lifetime, learned unit/lane weights)</td></tr>
   <tr><td><code>gauntletSnapshot()</code></td><td>Preview exactly what the next fight will arm — counters, hardening %, strikes</td></tr>
+  <tr><td><code>gauntletReasoning()</code></td><td>The full decision chain: observation → inference → action, including decisions it DECLINED and why</td></tr>
+  <tr><td><code>openGauntFile()</code></td><td>Open the Adjutant File analytics screen (Reasoning / Analytics / Curve / Raw)</td></tr>
+  <tr><td><code>gauntletTierInfo(n)</code></td><td>What rung <em>n</em> arms, and its quality/economy/opening multipliers</td></tr>
   <tr><td><code>gauntletPurge()</code></td><td>Wipe its memory + current run (keeps lifetime &amp; deepest tier)</td></tr>
   <tr><td><code>G.gaunt</code></td><td>The FROZEN profile the current fight is using (never mutates mid-battle)</td></tr>
   <tr><td><code>G.gauntRec</code></td><td>The write-only ledger of what you did this fight; folded in at endGame()</td></tr>
@@ -241,9 +244,27 @@ top-lane player — the fastest way to see every system armed at once:</p>
   mem:{fights:6,units:{tank:40,atgm:12,rifle:8},strikes:{barrage:5},
        lanes:[30,4,3],spawners:3,rush:5}};
 persist(); launchGauntlet();</code></pre>
-<p class="muted">Set <code>clears</code> to 6+ for the ASCENDANT tiers (compounding quality/income, no ceiling).
+<p class="muted">Set <code>clears</code> to 9+ for the ASCENDANT tiers (compounding quality/income, no ceiling).
 <code>G.gauntStrikeT=0</code> forces its next off-map strike immediately instead of waiting ~30s —
 useful for capturing the telegraph.</p>
+
+<h3 style="margin-top:18px">The Adjutant File (analytics)</h3>
+<p class="muted">Debug panel → <strong>◈ The Gauntlet</strong> → <strong>🧠 Open Adjutant File</strong>. Four tabs:</p>
+<ul>
+  <li><strong>Reasoning</strong> — every adjustment as <em>observed → reasoning → action</em>, in plain English.
+      Crucially it also lists decisions it <em>declined</em> to make together with the threshold that stopped
+      them ("no lane crossed 40%, so it is not massing anywhere"), which is almost always the answer when
+      the system looks broken.</li>
+  <li><strong>Analytics</strong> — bar charts of what you commit, lane distribution, hardening against the
+      cap, counter-doctrine weighting, and your strike habits.</li>
+  <li><strong>Curve</strong> — the effective power climb across every rung as an SVG plot, plus the full
+      rung table (base tier, quality/economy multipliers, opening size, what each arms).</li>
+  <li><strong>Raw</strong> — <code>SAVE.gauntlet</code>, the frozen <code>G.gaunt</code> profile, and the
+      live <code>G.gauntRec</code> ledger during a fight.</li>
+</ul>
+<p class="muted">The same panel has one-tap <strong>+1 / −1 tier</strong>, <strong>seed a tank-spam profile</strong>,
+<strong>fight at current tier</strong> and <strong>purge</strong> — enough to demo any adaptation on camera
+without playing nine matches first.</p>
 
 <h2><span class="n">07</span>Testing</h2>
 <ol>
@@ -257,11 +278,11 @@ useful for capturing the telegraph.</p>
   <li><span class="tag planned">planned</span> Global leaderboard admin / score invalidation (needs the backend)</li>
   <li><span class="tag planned">planned</span> Deterministic seed override for reproducible capture runs</li>
   <li><span class="tag planned">planned</span> One-key "cinematic camera" for trailer B-roll</li>
-  <li><span class="tag planned">planned</span> Gauntlet dossier editor — hand-author a profile to demo a specific adaptation on camera</li>
+  <li><span class="tag planned">planned</span> Gauntlet dossier editor — free-form field editing (the seed/±tier actions cover the common cases)</li>
 </ul>
 
 <footer>
-  Frontline Commander — internal reference. Last updated for <strong>v1.18.0</strong>.<br>
+  Frontline Commander — internal reference. Last updated for <strong>v1.18.1</strong>.<br>
   Keep this current: a stale tools file is worse than none, because you'll trust it.
 </footer>
 

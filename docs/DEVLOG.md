@@ -8,6 +8,64 @@ engineering detail lives in the patch notes inside the game and in the commit hi
 
 ---
 
+## v1.18.1 — Pacing the Adjutant
+
+The Gauntlet shipped climbing far too steeply. Player feedback said it "grew incredibly
+fast", and simulating it confirmed exactly that: win margin ran 97% → 93% → 66% → 52% and
+then fell straight off to −100%, with fights collapsing from 212 seconds to 30 in a single
+rung.
+
+### Why it happened
+
+The ladder was escalating by stepping through the game's four difficulty tiers. That sounds
+reasonable and is completely wrong, because those tiers are enormously far apart — Elite to
+Legendary is +73% enemy economy, +49% unit quality, double the opening wave and twice the
+thinking speed, arriving all at once. They were designed as four experiences you *choose
+between*, not as a staircase you walk up one step at a time.
+
+### What changed
+
+**Nine rungs instead of six**, and each one now carries its own scaling on top of a base
+tier rather than jumping between them:
+
+> CALIBRATING → PROFILING → ANALYSING → ADAPTING → PREDICTING → ANTICIPATING → RELENTLESS
+> → IMPLACABLE → ASCENDANT
+
+Effective power now climbs roughly 3–7% per rung, never steps more than 20%, and never goes
+backwards. The wall lands around tiers 7–8 instead of 4.
+
+**Abilities ramp in rather than switching on at full strength.** Counter-doctrine opens at
+half weight before reaching full. Adaptive hardening now opens at 35% of its eventual bite
+and grows over the following rungs — so you feel each system arrive and get a chance to
+answer it, instead of meeting it fully formed.
+
+**The opening wave is bounded.** It used to stack on top of the difficulty tier's own
+opener, which combined with Legendary's built-in eight to put fourteen enemies on the field
+before you could act.
+
+### And one thing that was quietly fake
+
+The Ascendant tiers advertised "+N% unit quality" that was never actually applied to
+anything. The number was computed, printed in the dossier, and then never reached a single
+enemy unit — so every tier past the top of the ladder played identically to the one before
+it. Those tiers are now genuinely stronger, which is also what makes the endless climb past
+rung 8 mean something.
+
+### The Adjutant File
+
+New in the Debug/Dev panel: a full analytics view of what the Adjutant has learned.
+
+- **Reasoning** — every adjustment explained as *observed → reasoning → action*, in plain
+  English. It also reports the decisions it **declined** to make and the threshold that
+  stopped them ("no lane crossed 40%, so it is not massing anywhere"), which is nearly
+  always the answer when an adaptive system looks broken.
+- **Analytics** — charts of what you commit, your lane distribution, hardening measured
+  against its hard cap, and counter-doctrine weighting.
+- **Curve** — the effective power climb across every rung, plus the full rung table.
+- **Raw** — the live state objects.
+
+---
+
 ## v1.18.0 — The Gauntlet
 
 **An opponent that keeps a file on you.**
@@ -58,6 +116,9 @@ Each rung arms exactly one new system, so you can always name the thing that's n
 
 Five clears takes it to Legendary. Past that, every further clear buys it more unit quality
 and income, and it does not stop.
+
+> **Superseded in v1.18.1** — this ladder climbed too steeply and was re-paced to nine rungs
+> reaching Legendary around tier 7. See the v1.18.1 entry above for the current shape.
 
 ### The only enemy in the game with a commander's toolkit
 
