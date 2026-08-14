@@ -42,6 +42,7 @@ function resolveExecutablePath() {
 
 const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT || 8080}/wargame.html`;
 
+const GROUP_KEYS_LEN_CHECK = o => o && Object.keys(o).length === 3;
 (async () => {
   const launchOpts = { args: ['--no-sandbox'] };
   const exe = resolveExecutablePath();
@@ -2244,6 +2245,215 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
       `[deck layout] every malformed layout falls back to the built-in tabs rather than rendering a broken deck ${notSafe.length ? ':: ' + notSafe.join(', ') : ''}`);
     ok(deck.recovered !== 'ground' && deck.cards > 0,
       `[deck layout] a stale active-tab id from the built-in set is recovered instead of leaving an empty deck (now "${deck.recovered}", ${deck.cards} cards)`);
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       24. v1.20.0 — bombardment floor, counter-battery, smoke, enemy orders.
+       ───────────────────────────────────────────────────────────────────────── */
+
+    /* 24a. EVERY order, run with ENEMIES ACTUALLY ON THE FIELD.
+       This exists because of a real shipped bug: `dir()` was a local inside updateUnits but
+       was referenced from nearestEnemy's order branches, so Assault + any enemy in range
+       threw a ReferenceError. The v1.19.0 probes all ran with an empty enemy side, so the
+       loop containing the reference never executed a single iteration and nothing caught it.
+       Any order test without live opposition is not testing the order. */
+    const withEnemies = await gp.evaluate(() => {
+      SAVE.lvl = 60; SAVE.debugUnlockAll = true; persist();
+      const modes = { arty: ['marching', 'battery', 'bombard'], armor: ['assault', 'support', 'breaker'],
+        drone: ['straight', 'hvt', 'bomber'] };
+      const failures = [];
+      for (const gk in modes) for (const md of modes[gk]) {
+        try {
+          LAUNCH = null; sel.mode = 'skirmish'; sel.diff = 'veteran'; start();
+          G.prep = 0; G.frozen = false; G.groupCd = 0;
+          for (const k in G.unlocked) G.unlocked[k] = true;
+          G.groups.arty = 'off'; G.groups.armor = 'off'; G.groups.drone = 'off';
+          G.groups[gk] = md;
+          G.units.length = 0;
+          // a real, mixed engagement on BOTH sides in every lane
+          for (let i = 0; i < 3; i++) {
+            spawn('B', 'rifle', i, 200); spawn('B', 'tank', i, 240); spawn('B', 'arty', i, 150);
+            spawn('B', 'drone', i, 260); spawn('B', 'ifv', i, 220);
+            spawn('R', 'rifle', i, 900); spawn('R', 'tank', i, 860); spawn('R', 'jammer', i, 960);
+            spawn('R', 'heli', i, 880);
+          }
+          for (let t = 0; t < 900; t++) step(0.05);
+        } catch (e) { failures.push(`${gk}/${md}: ${e.message}`); }
+      }
+      return failures;
+    });
+    ok(withEnemies.length === 0,
+      `[orders] all nine orders run a full engagement against live opposition without throwing ${withEnemies.length ? ':: ' + withEnemies.join(' | ') : ''}`);
+
+    // 24b. bombardment can flatten an HQ but never finish it
+    const floor = await gp.evaluate(() => {
+      SAVE.lvl = 60; persist();
+      LAUNCH = null; sel.mode = 'skirmish'; start();
+      G.prep = 0; G.frozen = false; G.aiHold = true; G.groupCd = 0;
+      for (const k in G.unlocked) G.unlocked[k] = true;
+      G.groups.arty = 'bombard'; G.units.length = 0;
+      for (let i = 0; i < 3; i++) spawn('B', 'arty', i, 60);
+      for (let t = 0; t < 9000 && !G.over; t++) step(0.05);
+      const hqAfter = G.hq.R, over = G.over, res = G.result;
+      // ...and a single unit walking in DOES finish it
+      G.aiHold = true; spawn('B', 'rifle', 1, W - 120);
+      for (let t = 0; t < 900 && !G.over; t++) step(0.05);
+      return { hqAfter, over, res, floor: BOMBARD_HQ_FLOOR, finishedAfterUnit: G.over, finalRes: G.result };
+    });
+    ok(floor.hqAfter <= floor.floor + 0.01 && !floor.over,
+      `[bombardment] shelling grinds an HQ to exactly ${floor.floor} and stops — it can flatten a base but never take it (HQ ${floor.hqAfter.toFixed(2)}, battle over=${floor.over})`);
+    ok(floor.finishedAfterUnit && floor.finalRes === 'B',
+      '[bombardment] a unit walking in DOES finish the flattened HQ — somebody still has to take the ground');
+
+    // 24c. counter-battery: guns only, out-ranges them, suppresses at range
+    const cb = await gp.evaluate(() => {
+      SAVE.lvl = 60; persist();
+      LAUNCH = null; sel.mode = 'skirmish'; start();
+      G.prep = 0; G.frozen = false; G.aiHold = true;
+      for (const k in G.unlocked) G.unlocked[k] = true;
+      G.units.length = 0;
+      spawn('B', 'cbat', 1, 300);
+      spawn('R', 'rifle', 1, 360);          // much nearer, but not a gun
+      spawn('R', 'tank', 1, 400);           // nearer still, not a gun
+      spawn('R', 'arty', 1, 560);           // the only valid target
+      const cbu = G.units.find(u => u.key === 'cbat');
+      const pick = nearestEnemy(cbu);
+      const gun = G.units.find(u => u.side === 'R' && u.key === 'arty');
+      const sup0 = gun.sup || 0;
+      for (let t = 0; t < 60; t++) step(0.05);
+      return { picked: pick.tgt ? pick.tgt.key : null, rng: UNITS.cbat.rng, artyRng: UNITS.arty.rng,
+               mlrsRng: UNITS.mlrs.rng, supRose: (gun.sup || 0) > sup0,
+               rankGate: UNIT_RANK_GATE.cbat, artyOrderRank: GROUP_DOCTRINES.arty.lvl };
+    });
+    ok(cb.picked === 'arty',
+      `[counter-battery] engages ONLY artillery — walked past a rifle and a tank both nearer to reach the gun (picked ${cb.picked})`);
+    ok(cb.rng > cb.artyRng && cb.rng > cb.mlrsRng,
+      `[counter-battery] out-ranges every gun in the game (${cb.rng} vs artillery ${cb.artyRng} / rockets ${cb.mlrsRng})`);
+    ok(cb.supRose, '[counter-battery] suppresses enemy guns at range — a battery is silenced before it is destroyed');
+    ok(cb.rankGate === cb.artyOrderRank,
+      `[counter-battery] unlocks at the same rank as the first artillery order (${cb.rankGate}) — arriving earlier would be answering nothing`);
+
+    /* 24c-2. THE SPAWN WHITELIST. spawn() copies an explicit list of flags from the UNITS
+       table, so a flag added to a unit definition does nothing until it is also copied — and
+       it fails SILENTLY, the unit just behaves as though the flag were absent. That has now
+       caused a bug twice, so assert the whole surface rather than the one flag that bit. */
+    const flags = await gp.evaluate(() => {
+      LAUNCH = null; sel.mode = 'skirmish'; start();
+      G.units.length = 0;
+      const missing = [];
+      const ignore = new Set(['name', 'glyph', 'cat', 'cost', 'cd', 'hp', 'dmg', 'rof', 'rng', 'spd',
+        'col', 'desc', 'splash', 'r', 'heal', 'healR', 'jam', 'jamR', 'salvo', 'ambush', 'burnDps',
+        'burnDur', 'vsArmor', 'vsAir', 'precise', 'support', 'arc', 'aa', 'onlyAir']);
+      for (const key in UNITS) {
+        if (key === 'voidwarden') continue;             // never player-spawned
+        spawn('B', key, 1, 400);
+        const u = G.units[G.units.length - 1];
+        for (const f in UNITS[key]) {
+          if (ignore.has(f)) continue;
+          if (typeof UNITS[key][f] !== 'boolean') continue;
+          if (UNITS[key][f] && !u[f]) missing.push(`${key}.${f}`);
+        }
+      }
+      return missing;
+    });
+    ok(flags.length === 0,
+      `[spawn] every behavioural flag declared in the UNITS table survives a spawn — the copy list is a whitelist and omissions fail silently ${flags.length ? ':: NOT COPIED: ' + flags.join(', ') : ''}`);
+
+    // 24d. smoke: symmetrical LOS block, drone wall, and the jammer pin
+    const smoke = await gp.evaluate(() => {
+      SAVE.lvl = 60; persist();
+      const fresh = () => {
+        LAUNCH = null; sel.mode = 'skirmish'; start();
+        G.prep = 0; G.frozen = false; G.aiHold = true; G.units.length = 0; G.smokes = [];
+        for (const k in G.unlocked) G.unlocked[k] = true;
+      };
+      // rank gate
+      SAVE.lvl = 5; SAVE.debugUnlockAll = false; persist(); fresh();
+      const lockedAt5 = trySmoke(1, 600) === false;
+      SAVE.lvl = 60; persist();
+
+      /* LOS is cut BOTH ways. Both units must sit OUTSIDE the bank with it between them —
+         SMOKE_R is 118, so anything closer than that to the centre is inside it, and two
+         units inside the SAME bank can see each other by design. */
+      fresh();
+      spawn('B', 'sniper', 1, 300); spawn('R', 'sniper', 1, 660);
+      trySmoke(1, 480);
+      const a = G.units.find(u => u.side === 'B'), b = G.units.find(u => u.side === 'R');
+      const bothOutside = !smokeAt(a.x, a.y) && !smokeAt(b.x, b.y);
+      const aSees = !!nearestEnemy(a).tgt, bSees = !!nearestEnemy(b).tgt;
+      // ...but two units inside the SAME bank can still see each other
+      fresh(); spawn('B', 'sniper', 1, 470); spawn('R', 'sniper', 1, 500); trySmoke(1, 485);
+      const insideSees = !!nearestEnemy(G.units.find(u => u.side === 'B')).tgt;
+
+      // drone wall — measured WHILE the bank is still up (it lasts SMOKE_DUR seconds)
+      fresh();
+      spawn('B', 'drone', 1, 300); spawn('R', 'rifle', 1, 1000);
+      trySmoke(1, 620);
+      const dr = G.units.find(u => u.key === 'drone');
+      const wallX = 620 - SMOKE_R;
+      for (let t = 0; t < 140 && dr.alive; t++) step(0.05);   // 7s, well inside the bank's life
+      const droneStopped = dr.alive && dr.x < wallX + 12 && G.smokes.length > 0;
+      const droneX = dr.x;
+
+      // the combo: smoke + an enemy jammer in reach = pinned
+      fresh();
+      spawn('R', 'rifle', 1, 600); spawn('B', 'jammer', 1, 640);
+      trySmoke(1, 600);
+      const victim = G.units.find(u => u.side === 'R');
+      const x0 = victim.x;
+      for (let t = 0; t < 40; t++) step(0.05);
+      const pinned = (victim.smokePin || 0) > 0 && Math.abs(victim.x - x0) < 1;
+      // ...and it releases once the smoke is gone
+      G.smokes = [];
+      for (let t = 0; t < 40; t++) step(0.05);
+      const released = !(victim.smokePin > 0) && Math.abs(victim.x - x0) > 0.5;
+      return { lockedAt5, aSees, bSees, bothOutside, insideSees, droneStopped, droneX, wallX, pinned, released };
+    });
+    ok(smoke.lockedAt5, `[smoke] is rank-gated and refuses to fire below its rank`);
+    ok(smoke.bothOutside, '[smoke] precondition — both probes are outside the bank, with it between them');
+    ok(!smoke.aSees && !smoke.bSees,
+      '[smoke] cuts line of sight SYMMETRICALLY — neither side can acquire through the bank, so it is a real commitment rather than free value');
+    ok(smoke.insideSees,
+      '[smoke] two units inside the same bank can still see each other, so smoke never becomes a total combat freeze');
+    ok(smoke.droneStopped,
+      `[smoke] walls out flying kamikazes — they stall at the edge instead of crossing (stopped at x=${smoke.droneX.toFixed(0)}, wall at ${smoke.wallX})`);
+    ok(smoke.pinned, '[smoke] anything caught in smoke inside an EW jammer\'s reach is pinned: immobile and unable to fire');
+    ok(smoke.released, '[smoke] the pin releases as soon as the smoke is gone — it is a condition, not a kill');
+
+    // 24e. the Adjutant fights in its own posture and gives its own orders
+    const adj = await gp.evaluate(() => {
+      const at = tier => {
+        SAVE.gauntlet = { clears: tier, losses: 0, lifetime: tier, deepest: tier,
+          mem: { fights: 6, units: { tank: 40, ifv: 12, rifle: 8 }, strikes: {}, lanes: [30, 4, 3], spawners: 0, rush: 5 } };
+        persist(); launchGauntlet();
+        return { stance: G.enemyStance, orders: G.enemyGroups ? { ...G.enemyGroups } : null };
+      };
+      const early = at(1), mid = at(GAUNTLET_TIERS.findIndex(t => t.arms === 'stance')),
+            late = at(GAUNTLET_TIERS.findIndex(t => t.arms === 'orders'));
+      // the enemy's orders must actually drive enemy units, not just sit in state
+      let moved = false, threw = null;
+      try {
+        G.prep = 0; G.frozen = false; G.units.length = 0;
+        for (let i = 0; i < 3; i++) { spawn('R', 'arty', i, 1100); spawn('R', 'tank', i, 1000); spawn('B', 'rifle', i, 200); }
+        const gun = G.units.find(u => u.side === 'R' && u.key === 'arty');
+        const gx = gun.x;
+        for (let t = 0; t < 600; t++) step(0.05);
+        moved = Math.abs(gun.x - gx) > 1;
+      } catch (e) { threw = e.message; }
+      // and a normal battle must have neither
+      LAUNCH = null; sel.mode = 'skirmish'; start();
+      const plain = { stance: G.enemyStance, orders: G.enemyGroups };
+      return { early, mid, late, moved, threw, plain };
+    });
+    ok(!adj.early.stance && !adj.early.orders,
+      '[adjutant] an early-tier Adjutant has no posture or orders of its own — it fights in the default like every other enemy');
+    ok(!!adj.mid.stance,
+      `[adjutant] it adopts a stance of its own at the rung that arms one (${adj.mid.stance})`);
+    ok(!!adj.late.orders && GROUP_KEYS_LEN_CHECK(adj.late.orders),
+      `[adjutant] it issues standing orders to its own arms further up the ladder (${JSON.stringify(adj.late.orders)})`);
+    ok(!adj.threw && adj.moved,
+      `[adjutant] its orders actually drive enemy units — hold lines are honoured for the red side too, which they were not before ${adj.threw ? ':: ' + adj.threw : ''}`);
+    ok(!adj.plain.stance && !adj.plain.orders,
+      '[adjutant] no other battle kind gives the enemy a posture or orders — the toolkit stays exclusive to the Gauntlet');
 
     // the boot-guard check above throws ONE error on purpose to prove a mid-battle fault no
     // longer covers a live match; everything else must still be clean

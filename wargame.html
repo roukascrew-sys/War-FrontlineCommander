@@ -1782,7 +1782,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.19.0</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.20.0</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -1946,7 +1946,7 @@
     </div>
     <button class="play-btn" id="btn-play">▶ DEPLOY</button>
     <div class="medal-row" id="medal-row"></div>
-    <div class="hint">Deploy: click a card (or press 1–9) then a lane · 0 = missile strike · R = recon flare · F = EMP (Rank 3) · Q/W/E = quick-deploy to top/mid/bottom · Z/X/C = Assault/Defend/Skirmish stance · SPEED ½×–2× &amp; STANCE controls sit on the battlefield · In Skirmish/Blitz/Survival you buy your way up the tech tree mid-fight · 📡 Live Chat lets Twitch viewers command the enemy · SPACE = pause.</div>
+    <div class="hint">Deploy: click a card (or press 1–9) then a lane · 0 = missile strike · R = recon flare · F = EMP (Rank 3) · S = smoke screen (Rank 20) · Q/W/E = quick-deploy to top/mid/bottom · Z/X/C = Assault/Defend/Skirmish stance · SPEED ½×–2× &amp; STANCE controls sit on the battlefield · In Skirmish/Blitz/Survival you buy your way up the tech tree mid-fight · 📡 Live Chat lets Twitch viewers command the enemy · SPACE = pause.</div>
   </div>
 
   <!-- TITLE / ATTRACT SCREEN -->
@@ -2821,12 +2821,12 @@ const DOCTRINES={
 const UNITS={
   rifle:{name:'Rifleman',glyph:'🪖',cat:'inf',cost:20,cd:0.6,hp:34,dmg:5,rof:0.55,rng:70,spd:34,col:'#8fd0ff',
     aa:false,splash:0,r:7,vsAir:2.4,desc:'cheap line infantry'},
-  atgm:{name:'AT Team',glyph:'🚀',cat:'inf',cost:38,cd:1.4,hp:26,dmg:22,rof:1.7,rng:120,spd:26,col:'#b0e0ff',
+  atgm:{name:'AT Team',glyph:'🚀',cat:'inf',cost:38,cd:1.4,hp:32,dmg:24,rof:1.7,rng:130,spd:26,col:'#b0e0ff',
     aa:false,splash:0,r:7,vsArmor:3.0,desc:'kills armour, weak vs infantry'},
   tank:{name:'Tank',glyph:'🛡',cat:'veh',cost:70,cd:2.2,hp:180,dmg:26,rof:1.3,rng:100,spd:24,col:'#ffb347',
     aa:false,splash:14,r:12,armor:true,desc:'armoured breakthrough'},
-  ifv:{name:'IFV',glyph:'🚙',cat:'veh',cost:48,cd:1.5,hp:96,dmg:16,rof:0.7,rng:90,spd:30,col:'#ffc766',
-    aa:false,splash:6,r:10,armor:true,desc:'fast, shreds infantry'},
+  ifv:{name:'IFV',glyph:'🚙',cat:'veh',cost:48,cd:1.5,hp:108,dmg:18,rof:0.7,rng:96,spd:30,col:'#ffc766',
+    aa:false,splash:8,r:10,armor:true,desc:'fast, shreds infantry'},
   arty:{name:'Artillery',glyph:'🎆',cat:'arty',cost:60,cd:2.6,hp:60,dmg:34,rof:2.4,rng:230,spd:12,col:'#ff9f7f',
     aa:false,splash:26,r:11,arc:true,desc:'long-range area fire'},
   aa:{name:'AA Vehicle',glyph:'🚨',cat:'veh',cost:44,cd:1.8,hp:80,dmg:30,rof:0.9,rng:150,spd:26,col:'#7fffaa',
@@ -2842,8 +2842,19 @@ const UNITS={
     aa:false,splash:0,r:8,heal:9,healR:66,support:true,desc:'heals & patches nearby troops — no weapon'},
   mlrs:{name:'Rocket Arty',glyph:'🧨',cat:'arty',cost:82,cd:3.6,hp:52,dmg:20,rof:3.0,rng:270,spd:9,col:'#ff8f6f',
     aa:false,splash:30,r:11,arc:true,salvo:4,desc:'devastating rocket salvo, very fragile'},
-  jammer:{name:'EW Jammer',glyph:'📵',cat:'veh',cost:52,cd:2.8,hp:74,dmg:0,rof:99,rng:0,spd:20,col:'#b0a0ff',
-    aa:false,splash:0,r:10,jam:0.55,jamR:135,antiDrone:true,support:true,desc:'suppresses enemy fire in a radius & fries drones — no weapon'},
+  /* COUNTER-BATTERY RADAR — the realistic answer to guns. Real counter-battery works by
+     tracking incoming shells back to the tube that fired them, so this unit only ever
+     engages ARTILLERY: it out-ranges every gun in the game, hits them very hard, and
+     suppresses them at range so a battery stops shooting before it stops existing.
+     Against literally anything else it is a 300 CP paperweight with no weapon that matters
+     — which is the whole point. It answers the artillery orders (a Stationary Battery is a
+     fixed, known coordinate, and a Bombardment gun parks at the edge of ITS range, well
+     inside this one's) without becoming another general-purpose gun line. */
+  cbat:{name:'Counter-Battery',glyph:'🛰',cat:'veh',cost:78,cd:3.2,hp:70,dmg:46,rof:2.8,rng:300,spd:16,col:'#9fe0ff',
+    aa:false,splash:14,r:11,arc:true,counterBattery:true,
+    desc:'ONLY engages enemy artillery — out-ranges every gun and suppresses it at range. Useless against anything else.'},
+  jammer:{name:'EW Jammer',glyph:'📵',cat:'veh',cost:52,cd:2.8,hp:84,dmg:0,rof:99,rng:0,spd:20,col:'#b0a0ff',
+    aa:false,splash:0,r:10,jam:0.62,jamR:152,antiDrone:true,support:true,desc:'suppresses enemy fire in a radius & fries drones — no weapon. Pins anything caught in smoke.'},
   // ── air-power tier: a strafing gunship and the fighter that hard-counters it ──
   interceptor:{name:'Interceptor',glyph:'🛩',cat:'air',cost:70,cd:1.0,hp:150,dmg:26,rof:0.55,rng:150,spd:66,col:'#7fd0ff',
     aa:false,flies:true,orbit:true,splash:0,r:9,vsAir:3,desc:'flies a wide combat air patrol over the middle, downing any aircraft it passes — a lasting air shield'},
@@ -2863,17 +2874,23 @@ const UNITS={
 };
 // appended at the end rather than grouped with the other infantry so every existing
 // number-hotkey (1-9) and tutorial "press N" instruction keeps pointing at the same unit
-const HOTBAR=['rifle','atgm','sniper','tank','ifv','arty','mlrs','aa','heli','drone','medic','jammer','interceptor','gunship','flame','swarm'];
+const HOTBAR=['rifle','atgm','sniper','tank','ifv','arty','mlrs','aa','heli','drone','medic','jammer','cbat','interceptor','gunship','flame','swarm'];
 /* Secret unlocks stay INVISIBLE until earned — not greyed-out-with-a-lock, genuinely absent, so
    discovering the Glitch Front is a real surprise. Anything that lists the roster (Field Manual,
    attract battles, chaos spawns, AI picks) filters through here. */
 const SECRET_UNITS=['swarm'];
-function unitRevealed(key){ return SECRET_UNITS.indexOf(key)<0 || !!SAVE.secretDone; }
+function unitRevealed(key){ return (SECRET_UNITS.indexOf(key)<0 || !!SAVE.secretDone) && unitRankOk(key); }
 function visibleRoster(){ return HOTBAR.filter(unitRevealed); }
 
 /* ── IN-BATTLE TECH TIERS — in normal modes you buy your way up the tree mid-fight ── */
-const UNIT_TIER={rifle:1,atgm:1,ifv:1,swarm:1, sniper:2,tank:2,aa:2,arty:2,drone:2,medic:2,flame:2, heli:3,mlrs:3,jammer:3,interceptor:3,gunship:3};
+const UNIT_TIER={rifle:1,atgm:1,ifv:1,swarm:1, sniper:2,tank:2,aa:2,arty:2,drone:2,medic:2,flame:2, heli:3,mlrs:3,jammer:3,cbat:3,interceptor:3,gunship:3};
 const TIER_UNLOCK={1:0,2:60,3:130}; // CP paid once per battle to open a tier's units
+/* Rank gates on individual units. Separate from the in-battle tech tiers on purpose: a tier
+   is something you buy DURING a fight, a rank gate is something you earn ACROSS fights.
+   Counter-Battery lands at the same rank as the first artillery standing order, because it
+   exists to answer those orders and arriving before them would be answering nothing. */
+const UNIT_RANK_GATE={cbat:30};
+function unitRankOk(key){ const r=UNIT_RANK_GATE[key]; return !r||rankGateOk(r); }
 function unitTier(key){return UNIT_TIER[key]||1;}
 function tierUnlockCost(key){return TIER_UNLOCK[unitTier(key)]||0;}
 
@@ -2888,8 +2905,8 @@ const DMG_MATRIX={           //  vs: inf   light  heavy  air    struct
   he:{inf:1.30,light:1.15,heavy:0.72,air:0.30,struct:1.45}, // high explosive
   aa:{inf:0.35,light:0.50,heavy:0.30,air:2.40,struct:0.20}, // anti-air
 };
-const UNIT_DMGTYPE={rifle:'sa',atgm:'ap',sniper:'sa',tank:'ap',ifv:'sa',arty:'he',mlrs:'he',aa:'aa',heli:'ap',drone:'ap',swarm:'ap',medic:null,jammer:null,interceptor:'aa',gunship:'he',flame:'sa',voidwarden:'he'};
-const UNIT_ARMORCLASS={rifle:'inf',atgm:'inf',sniper:'inf',medic:'inf',tank:'heavy',ifv:'light',arty:'light',mlrs:'light',aa:'light',jammer:'light',heli:'air',drone:'air',swarm:'air',interceptor:'air',gunship:'air',flame:'inf',voidwarden:'heavy'};
+const UNIT_DMGTYPE={rifle:'sa',atgm:'ap',sniper:'sa',tank:'ap',ifv:'sa',arty:'he',mlrs:'he',aa:'aa',heli:'ap',drone:'ap',swarm:'ap',medic:null,jammer:null,cbat:'he',interceptor:'aa',gunship:'he',flame:'sa',voidwarden:'he'};
+const UNIT_ARMORCLASS={rifle:'inf',atgm:'inf',sniper:'inf',medic:'inf',tank:'heavy',ifv:'light',arty:'light',mlrs:'light',aa:'light',jammer:'light',cbat:'light',heli:'air',drone:'air',swarm:'air',interceptor:'air',gunship:'air',flame:'inf',voidwarden:'heavy'};
 const UNIT_CRIT={sniper:0.24}; // precision units land the occasional double-damage hit
 function dmgMul(dt,ac){ return (dt&&DMG_MATRIX[dt]&&DMG_MATRIX[dt][ac||'inf'])||1; }
 
@@ -2902,7 +2919,7 @@ const AGES=[
   {name:'Future',     glyph:'⬢', hqMul:3.20, unit:1.95, sup:3.0, evo:960, slots:4, col:'#c9a0ff'},
 ];
 // which age each unit becomes available in (Evolution mode gates the roster by age)
-const UNIT_MINAGE={rifle:0,ifv:0,medic:0, atgm:1,tank:1,aa:1, sniper:2,arty:2,jammer:2,flame:2, mlrs:3,heli:3,interceptor:3, drone:4,gunship:4};
+const UNIT_MINAGE={rifle:0,ifv:0,medic:0, atgm:1,tank:1,aa:1, sniper:2,arty:2,jammer:2,flame:2, mlrs:3,heli:3,interceptor:3,cbat:3, drone:4,gunship:4};
 
 /* ── PRODUCTION SPAWNERS — expensive structures built just ahead of your HQ that
    pump out a unit on a timer. A long-term economy investment. Capped per side. ── */
@@ -2938,6 +2955,14 @@ const COUNTRY_FLAG_COLORS={
   japan:['#bc002d','#f2f2f2'],     // crimson / white
 };
 
+/* Which way a side advances: +1 for blue (left to right), -1 for red. This lives at module
+   scope because targeting, positioning and the order system all need it. It used to be a
+   local inside updateUnits(), which made every use of it from another function — nearestEnemy's
+   order branches, friendlyFrontX — a ReferenceError waiting for the first enemy to walk into
+   range. Nothing caught it because the probes that exercised those orders had no enemies on
+   the field, so the loop that reaches the reference never ran a single iteration. */
+function dir(s){ return s==='B'?1:-1; }
+
 /* ── STANCES — on-the-fly posture. Changes BEHAVIOUR only, never stats. ── */
 const STANCES={
   assault:{name:'Assault',glyph:'⚔',key:'Z',col:'#ff9f40',
@@ -2968,6 +2993,7 @@ const SPEEDS=[0.5,1,2];
 const GROUP_STEP_PX=27;        // one "step" for positioning orders
 const GROUP_SWAP_CD=30;        // seconds between ANY two doctrine changes
 const GROUP_EVADE_PENALTY=2.6; // evasive units read this much further away to enemy targeting
+const BOMBARD_HQ_FLOOR=1;      // shelling can reduce an HQ to this, never below — see the arc-shell handler
 const GROUP_BOMBARD_MUL=0.25;  /* HQ damage per bombardment shell vs a normal round. Tuned down
                                   from 0.42 after measuring: a single gun killed a 1000hp HQ in
                                   ~24s of uncontested fire, which made a four-gun battery a
@@ -3028,28 +3054,36 @@ function groupUnlocked(gk){ const g=GROUP_DOCTRINES[gk]; return !!g&&rankGateOk(
 /* The active order for a unit, or null. Player side only — these are a player control, and
    handing the same toolkit to the AI would change every difficulty tier's tuning at once. */
 function unitGroup(u){
-  if(!G||!G.groups||u.side!=='B'||u.support)return null;
+  if(!G||u.support)return null;
+  /* Orders are per-SIDE. The player's live in G.groups; the Adjutant's live in G.enemyGroups
+     and are set from its dossier at battle start (see gauntletSnapshot). Nothing else in the
+     game gives the enemy standing orders — handing the same toolkit to every difficulty tier
+     would silently re-tune all of them at once. */
+  const src=u.side==='B'?G.groups:G.enemyGroups;
+  if(!src)return null;
   for(const gk of GROUP_KEYS){
-    const mode=G.groups[gk];
+    const mode=src[gk];
     if(mode&&mode!=='off'&&GROUP_DOCTRINES[gk].match(u))return {gk,mode,gd:GROUP_DOCTRINES[gk]};
   }
   return null;
 }
 // frontmost friendly x in a lane, optionally restricted to a category (for the "pace to the
 // infantry" and "trail the front" orders). Returns null when the lane is empty.
-function friendlyFrontX(lane,cat,exclude){
+function friendlyFrontX(lane,cat,exclude,side){
+  const sd=side||'B', fwd=dir(sd);
   let f=null;
   for(const o of G.units){
-    if(!o.alive||o.side!=='B'||o.lane!==lane||o===exclude)continue;
+    if(!o.alive||o.side!==sd||o.lane!==lane||o===exclude)continue;
     if(cat&&o.cat!==cat)continue;
-    if(f==null||o.x>f)f=o.x;
+    // "front" is whichever unit is deepest toward the ENEMY, which flips with the side
+    if(f==null||(o.x-f)*fwd>0)f=o.x;
   }
   return f;
 }
 // is an enemy EW jammer close enough to disrupt a dug-in battery? (the counter to gun stacking)
 function batteryJammed(u){
   for(const o of G.units){
-    if(!o.alive||o.side==='B'||!o.jam)continue;
+    if(!o.alive||o.side===u.side||!o.jam)continue;
     if(dist(o.x,o.y,u.x,u.y)<(o.jamR||135)*GROUP_JAM_MULT)return true;
   }
   return false;
@@ -3377,13 +3411,24 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.19.0';
+const GAME_VERSION='1.20.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.20.0',notes:[
+    'BOMBARDMENT CAN NO LONGER WIN A BATTLE. Shelling now grinds an enemy HQ down to 1 and stops there \u2014 it can flatten a base but it cannot take it. Somebody still has to walk in and finish the job, exactly like holding ground needs troops standing on it. Without that floor a gun line was a win condition that never had to touch the enemy army, and a match could end on a timer with no interaction at all.',
+    'NEW UNIT \u2014 \ud83d\udef0 COUNTER-BATTERY (Rank 30, Tier 3, 78 CP). The realistic answer to guns: it tracks incoming shells back to the tube that fired them, so it engages ARTILLERY and nothing else. It out-ranges every gun in the game (300 vs artillery\'s 230) and suppresses them at range, so a dug-in battery goes quiet before it dies. Against anything that is not a gun it is a very expensive paperweight \u2014 which is the point. It unlocks at the same rank as the first artillery standing order, because it exists to answer those orders.',
+    'NEW POWER \u2014 \ud83c\udf2b SMOKE SCREEN (Rank 20, S). Lays a smoke bank across a lane. It blocks line of sight for BOTH sides \u2014 that symmetry is what makes placing it a real decision rather than free value \u2014 it walls out flying kamikazes so they stall at the edge instead of crossing, and anything caught inside a smoke bank while also inside an EW jammer\'s reach is PINNED: immobile and unable to shoot. That combo needs two separate investments and is the reason both pieces exist. Two units inside the same bank can still see each other, so smoke never becomes a total combat freeze.',
+    'REBALANCE \u2014 the AT Team and IFV both get real buffs to answer the pacing help armour received from the Support order. AT Team: 26\u219232 HP, 22\u219224 damage, 120\u2192130 range. IFV: 96\u2192108 HP, 16\u219218 damage, 90\u219296 range, 6\u21928 splash.',
+    'REBALANCE \u2014 the EW Jammer now counters artillery stacking, drones AND enables the smoke pin, so it earns more body: 74\u219284 HP, 0.55\u21920.62 jam strength, 135\u2192152 radius.',
+    'THE ADJUTANT NOW USES YOUR TOOLKIT. From the ANTICIPATING rung it fights in a stance of its own chosen against your tempo, and from RELENTLESS it issues standing orders to its own guns, armour and drones \u2014 drawn from the same dossier as everything else it does. Bring armour and it runs Armour Breaker; play a gun line and it answers with Bombardment; rush it and its guns dig in. It is the clearest signal yet that you are fighting a commander rather than a spawn table.',
+    'FIXED \u2014 a genuine crash shipped in 1.19.0. The helper that decides which way a side advances was declared inside one function but referenced from the targeting code, so the Assault order threw a ReferenceError the moment an enemy came into range. It survived testing because every probe for those orders ran with an empty enemy side, meaning the loop containing the reference never executed once. All nine orders are now tested against a live, mixed engagement on both sides.',
+    'FIXED \u2014 a drone that had already committed to its dive flew straight through a smoke bank. A committed dive takes its own movement path and skips the rest of the movement code, so the smoke wall never saw it \u2014 which is precisely the case the wall exists for. A drone that runs into smoke mid-dive now breaks off instead.',
+    'FIXED \u2014 hold lines were only ever honoured for the blue side, so any position-holding order given to the enemy was silently ignored. Harmless while stances were player-only; wrong the moment the Adjutant got orders of its own.',
+  ]},
   {v:'1.19.0',notes:[
     'NEW \u2014 STANDING ORDERS. A new ORDERS row sits above STANCE with one chip per arm: artillery, armour and drones. Each arm gets its own standing order, they run independently of one another, and for the units they cover they OVERRIDE the stance entirely \u2014 a gun battery told to dig in does not care that the army is in Assault. All three start off, unlock at Rank 30 / 38 / 46, and share a single 30-second change cooldown, because committing to an order is meant to be the decision.',
     'ARTILLERY \u2014 Marching Fire sets up behind your front line and walks its fire ahead of the advance, using your troops\' eyes rather than its own (but will not defend the guns). Stationary Batteries dig in five steps from the HQ and never move, working at full range \u2014 and enemy EW jammers reach far further against a dug-in battery and scatter its shots, which is the deliberate counter to stacking guns in one place. Bombardment ignores troops completely, walks to the edge of its range and shells the enemy HQ for reduced damage.',
@@ -4532,7 +4577,7 @@ function newGame(){
     dmgDealt:0, dmgTaken:0, kills:0, deploys:0, spent:0,
     combo:0, comboT:0, bestCombo:0, firstBlood:false,
     cds:{},
-    strikeCds:{gunrun:0,barrage:0,precision:0}, barrage:null, gunrun:null,
+    strikeCds:{gunrun:0,barrage:0,precision:0,smoke:0}, barrage:null, gunrun:null, smokes:[],
     reconCd:0, reconMax:20, flareLane:-1, flareT:0,
     empCd:0, empMax:32, empLane:-1, empT:0,
     shake:0, flash:0, slowmo:0,
@@ -4566,6 +4611,7 @@ function newGame(){
     G.groups[gk]=(want!=='off'&&groupUnlocked(gk)&&groupOpt(gk,want))?want:'off';
   }
   G.groupCd=0;
+  G.enemyStance=null; G.enemyGroups=null;  // only the Gauntlet's Adjutant ever gets these
   G.speed=SAVE.speed||1;
   // country flavour — player's chosen nation, enemy gets a different one
   G.country=sel.country||'generic';
@@ -4614,6 +4660,8 @@ function newGame(){
     G.gauntTele=null;                                 // the telegraph currently on screen
     G.general=GAUNTLET_GENERAL;
     G.enemyBias=null;                                 // its composition comes from the dossier, not a flavour bias
+    G.enemyStance=G.gaunt.stance||null;               // the Adjutant fights in a posture of its own
+    G.enemyGroups=G.gaunt.orders||null;               // ...and gives its arms standing orders
   }
   G.hype=0; G.hypeTrains=0; // Phase 2 hype meter — chat energy that pays out CP on a full train
   // daily mutators
@@ -4692,7 +4740,12 @@ function spawn(side,key,lane,xOverride){
     baseHp:hp,baseDmg:dmg,vetRank:0,vetKills:0,
     r:u.r,col:u.col,glyph:u.glyph,flies:!!u.flies,arc:!!u.arc,aa:!!u.aa,onlyAir:!!u.onlyAir,
     splash:u.splash,kamikaze:!!u.kamikaze,armor:!!u.armor,
+    /* NB: this is an explicit WHITELIST — a flag added to the UNITS table does nothing at all
+       until it is copied here. That has now bitten twice, and it fails silently both times
+       (the unit simply behaves as if the flag were absent), so there is a regression check
+       asserting every behavioural flag in UNITS survives a spawn. */
     lowAir:!!u.lowAir,gunship:!!u.gunship,hunter:!!u.hunter,antiDrone:!!u.antiDrone,orbit:!!u.orbit,
+    counterBattery:!!u.counterBattery,
     vsArmor:u.vsArmor||1,vsAir:u.vsAir||1,cat:u.cat,
     name:unitName(key, side==='B'?G.country:G.enemyCountry),
     dmgType:UNIT_DMGTYPE[key]||'sa', armorClass:UNIT_ARMORCLASS[key]||'inf', crit:UNIT_CRIT[key]||0, cover:false,
@@ -4760,6 +4813,8 @@ const STRIKES={
     desc:'A creeping barrage walks up all three lanes over a full minute — devastating but slow.'},
   precision:{name:'Precision Munitions',glyph:'🎯', key:'0', col:'#5ff0e0', cd:11,
     desc:'A fast, pinpoint strike on one spot. Less punch than a barrage, but reloads quickly.'},
+  smoke:{name:'Smoke Screen', glyph:'🌫', key:'S', col:'#c8d4e2', cd:26, rank:20,
+    desc:'RANK 20 — lays a smoke bank across a lane. Blocks line of sight BOTH ways, walls out drones, and anything caught inside an EW jammer\'s reach is pinned in place and cannot shoot.'},
   // SECRET UNLOCK — earned by clearing the Glitch Front. Gated in buildQuickbar until then.
   // ONCE PER BATTLE: it hits the whole map, so it's a single decisive card to play, not a rotation
   // piece — that's what keeps it distinct from the (repeatable, single-lane) gunship run.
@@ -4767,7 +4822,9 @@ const STRIKES={
     desc:'SECRET UNLOCK · ONCE PER BATTLE — an orbital kinetic bombardment. Tungsten rods rain down ALL THREE lanes at hypervelocity, obliterating everything caught in the open. No explosives, just physics.'},
 };
 const STRIKE_KEYS=Object.keys(STRIKES);
-const AI_STRIKE_KEYS=STRIKE_KEYS.filter(k=>k!=='rods'); // the AI & attract battles never use the player-only Rods from God
+// the AI & attract battles never use the player-only powers: Rods is a secret unlock and Smoke
+// is rank-gated, so neither belongs in a random pick made on the player's behalf
+const AI_STRIKE_KEYS=STRIKE_KEYS.filter(k=>k!=='rods'&&k!=='smoke');
 function strikeCdMax(type){ const base=STRIKES[type].cd; return base*(G&&G.perk&&G.perk.strikeCdMul||1); }
 function strikeReady(type){ return G && (G.strikeCds[type]||0)<=0 && !G.over && !G.paused && !G.frozen; }
 // PRECISION — a fast pinpoint munition (the classic strike, tuned down + quick CD)
@@ -4886,10 +4943,90 @@ function barrageTick(dt){
   }
   if(b.t>=b.dur)G.barrage=null;
 }
+/* ═══ SMOKE SCREEN ═══════════════════════════════════════════════════════════════
+   A denial tool rather than a damage tool, and the first thing in the game that is
+   symmetrical: it blocks line of sight for BOTH sides. That is what makes it interesting
+   to place — a screen that only inconvenienced the enemy would just be free value.
+
+   Three effects, in order of how much they change a fight:
+     1. LINE OF SIGHT — nothing can acquire a target through a smoke bank. Guns firing into
+        or out of it lose their solution.
+     2. DRONE WALL — a flying kamikaze cannot cross it. Drones stall at the edge rather than
+        passing through, which is what makes it an answer to a drone rush.
+     3. DISRUPTION — jamming bites harder inside smoke, and anything caught in smoke while
+        inside an enemy EW jammer's reach is PINNED: it cannot move and cannot shoot.
+   That last one is the combo the whole thing is built around. It needs two separate
+   investments (a jammer on the field, a strike off cooldown) and rewards putting them
+   together, which is exactly the kind of thing a commander power should ask of a player. */
+const SMOKE_R=118, SMOKE_DUR=13;
+function trySmoke(lane,x){
+  if(iwGaslightBlock())return false;
+  if(!rankGateOk(STRIKES.smoke.rank))return false;
+  if(!strikeReady('smoke'))return false;
+  G.strikeCds.smoke=strikeCdMax('smoke');
+  if(!G.smokes)G.smokes=[];
+  const cx0=clamp(x,60,W-60), cy=G.laneY[lane]*H;
+  G.smokes.push({x:cx0,y:cy,lane,r:SMOKE_R,t:SMOKE_DUR,max:SMOKE_DUR,age:0,
+    puffs:Array.from({length:9},()=>({dx:rnd(-1,1),dy:rnd(-1,1),s:rnd(0.55,1),ph:rnd(0,6.28)}))});
+  announce('🌫 SMOKE SCREEN','line of sight cut — both ways','#c8d4e2');
+  if(SAVE.evVoice||SAVE.narrator)say(pick(["Smoke out. Nobody sees anything now — including us.","Screen's up. Move under it.","Pop smoke. Blind the whole sector."]),'grim',1);
+  return true;
+}
+function smokeTick(dt){
+  if(!G.smokes||!G.smokes.length)return;
+  for(const sm of G.smokes){ sm.t-=dt; sm.age+=dt; }
+  G.smokes=G.smokes.filter(sm=>sm.t>0);
+}
+// is a point inside any smoke bank? (the bank thins as it expires, so its effective radius shrinks)
+function smokeAt(x,y){
+  if(!G.smokes)return null;
+  for(const sm of G.smokes){
+    const fade=Math.min(1,sm.t/2.5);                 // last 2.5s it is too thin to hide anything
+    if(dist(x,y,sm.x,sm.y)<sm.r*fade)return sm;
+  }
+  return null;
+}
+/* Line of sight between two points. Blocked when a smoke bank sits between them and at least
+   one end is outside it — two units standing in the same bank can still see each other,
+   which is what stops smoke becoming a total combat freeze. */
+function smokeBlocksLOS(ax,ay,bx,by){
+  if(!G.smokes||!G.smokes.length)return false;
+  for(const sm of G.smokes){
+    const fade=Math.min(1,sm.t/2.5), r=sm.r*fade;
+    const aIn=dist(ax,ay,sm.x,sm.y)<r, bIn=dist(bx,by,sm.x,sm.y)<r;
+    if(aIn&&bIn)continue;                            // both inside the same bank — they can see
+    if(aIn||bIn)return true;                         // one in, one out — blocked
+    // neither inside: does the segment pass through the bank?
+    const vx=bx-ax, vy=by-ay, L2=vx*vx+vy*vy;
+    if(L2<1)continue;
+    let t=((sm.x-ax)*vx+(sm.y-ay)*vy)/L2; t=clamp(t,0,1);
+    if(dist(ax+vx*t,ay+vy*t,sm.x,sm.y)<r)return true;
+  }
+  return false;
+}
+function drawSmoke(){
+  if(!G.smokes||!G.smokes.length)return;
+  for(const sm of G.smokes){
+    const fade=Math.min(1,sm.t/2.5)*Math.min(1,sm.age/0.6);
+    cx.save();
+    for(const p of sm.puffs){
+      const drift=sm.age*7;
+      const px=sm.x+p.dx*sm.r*0.62+Math.sin(p.ph+sm.age*0.5)*6+drift*p.dx*0.15;
+      const py=sm.y+p.dy*sm.r*0.34+Math.cos(p.ph+sm.age*0.4)*4;
+      const rr2=sm.r*0.56*p.s*fade;
+      const g=cx.createRadialGradient(px,py,0,px,py,rr2);
+      g.addColorStop(0,'rgba(206,216,228,'+(0.30*fade)+')');
+      g.addColorStop(1,'rgba(186,198,212,0)');
+      cx.fillStyle=g; cx.beginPath(); cx.arc(px,py,rr2,0,6.28); cx.fill();
+    }
+    cx.restore();
+  }
+}
 // dispatch used by the lane-click / quick-deploy handlers
 function tryStrike(type,lane,x){
   let ok;
-  if(type==='gunrun')ok=tryGunshipRun(lane);
+  if(type==='smoke')ok=trySmoke(lane,x);
+  else if(type==='gunrun')ok=tryGunshipRun(lane);
   else if(type==='barrage')ok=tryBarrage();
   else if(type==='rods')ok=tryRods(); // hits all three lanes — the clicked lane is irrelevant
   else ok=tryPrecision(lane,x);
@@ -5611,6 +5748,7 @@ function step(dt){
   for(const t in G.strikeCds)if(G.strikeCds[t]>0)G.strikeCds[t]=Math.max(0,G.strikeCds[t]-dt);
   if(G.barrage)barrageTick(dt);   // rolling barrage creeps up the field
   if(G.gunrun)gunrunTick(dt);     // gunship strafing run marches down a lane
+  smokeTick(dt);                                      // 🌫 smoke banks thin out and expire
   if(G.groupCd>0)G.groupCd=Math.max(0,G.groupCd-dt);  // group-doctrine change cooldown
   if(G.gaunt){ gauntStrikeTick(dt);                 // ◈ the Adjutant's own off-map fire support
     if(G.gauntGun)gauntGunTick(dt);
@@ -5664,11 +5802,13 @@ function nearestEnemy(u){
   if(gm==='bomber')return {tgt:null,d:1e9};                 // base bomber never engages troops
   if(gm==='bombard')return {tgt:null,d:1e9};                // bombardment ignores troops entirely
   for(const o of G.units){ if(!o.alive||o.side===u.side)continue;
+    if(u.counterBattery&&o.cat!=='arty')continue;  // counter-battery tracks tubes, nothing else
     if(u.onlyAir&&!o.flies)continue;           // AA only shoots air
     if(o.flies&&!u.aa&&!u.flies&&!u.kamikaze&&u.cat!=='arty'){
       // ground non-AA can't hit fliers — EXCEPT rapid-fire units vs a low-flying drone
       if(!(o.lowAir&&rapid))continue;
     }
+    if(G.smokes&&G.smokes.length&&smokeBlocksLOS(u.x,u.y,o.x,o.y))continue; // 🌫 no solution through smoke
     const d=dist(u.x,u.y,o.x,o.y);
     /* dEff is the RANKING distance, deliberately separate from the real one (d) so an order
        can change preference without lying about range — the caller still gates firing on the
@@ -5749,6 +5889,24 @@ function computeSpotting(){
   }
 }
 /* medics heal & steady, jammers suppress — the simulator's support & EW layer */
+/* COUNTER-BATTERY SUPPRESSION. Real counter-battery does not need to destroy a gun to
+   silence it — landing rounds near the tube is enough to make the crew displace. Applied at
+   range to any enemy artillery, so a dug-in battery goes quiet before it dies and the player
+   can see why.
+
+   Two things this got wrong first time round, both worth remembering:
+     · it lived inside supportTick(), which only runs for units flagged `support` — and the
+       Counter-Battery deliberately is not one, because it carries a real weapon. It never
+       executed at all.
+     · the rate was 0.30/s against a natural suppression decay of 0.34/s, so even once it DID
+       run it was applying less than the target shed each frame. Anything that adds to `sup`
+       has to out-pace that decay or it is a no-op with extra steps. */
+function counterBatteryTick(u,dt){
+  for(const o of G.units){
+    if(!o.alive||o.side===u.side||o.cat!=='arty')continue;
+    if(dist(o.x,o.y,u.x,u.y)<u.rng)o.sup=Math.min(1,(o.sup||0)+0.75*dt);
+  }
+}
 function supportTick(u,dt){
   if(u.heal>0){
     for(const o of G.units){ if(o.alive&&o.side===u.side&&o!==u&&o.hp<o.maxHp&&dist(o.x,o.y,u.x,u.y)<u.healR){
@@ -5759,6 +5917,11 @@ function supportTick(u,dt){
   }
   if(u.jam>0){
     for(const o of G.units){ if(o.alive&&o.side!==u.side&&dist(o.x,o.y,u.x,u.y)<u.jamR){
+      /* 🌫 SMOKE + EW = PINNED. Jamming works far better against something that also cannot
+         see: caught inside a smoke bank AND inside a jammer's reach, a unit is held in place
+         and cannot shoot at all. Two separate investments, so it is a combo the player has
+         to actually set up rather than a single button. */
+      if(smokeAt(o.x,o.y)){ o.smokePin=0.35; o.sup=1; }
       o.sup=Math.min(1,(o.sup||0)+u.jam*dt);
       // EW hard-counters drones — it fries their electronics: they lose their dive and burn down fast
       if(u.antiDrone&&o.key==='drone'){ o.diving=null; o.jammed=true; o.sup=1;
@@ -5815,7 +5978,6 @@ function interceptorTick(u,dt){
   }
 }
 function updateUnits(dt){
-  const dir=s=>s==='B'?1:-1;
   computeSpotting();
   for(const u of G.units){
     if(!u.alive)continue;
@@ -5831,9 +5993,20 @@ function updateUnits(dt){
     if(u.gunship){ gunshipTick(u,dt); continue; } // floating gunship has its own flight logic
     if(u.orbit){ interceptorTick(u,dt); continue; } // interceptor flies a wide CAP over the middle
     if(u.support)supportTick(u,dt);
+    if(u.counterBattery)counterBatteryTick(u,dt);   // runs for a WEAPON unit, so not in supportTick
     // kamikaze diving
     if(u.diving){ const t=u.diving; if(!t.alive){u.diving=null;}
-      else{ const a=Math.atan2(t.y-u.y,t.x-u.x); u.heading=a; u.x+=Math.cos(a)*u.spd*2.4*dt; u.y+=Math.sin(a)*u.spd*2.4*dt;
+      else{ const a=Math.atan2(t.y-u.y,t.x-u.x); u.heading=a;
+        const dx0=u.x, dy0=u.y;
+        u.x+=Math.cos(a)*u.spd*2.4*dt; u.y+=Math.sin(a)*u.spd*2.4*dt;
+        /* 🌫 The smoke wall has to be enforced HERE as well. A committed dive takes this
+           branch and `continue`s, so the wall check further down never sees a diving drone —
+           which meant a drone already locked on flew straight through a bank that is
+           supposed to stop it, i.e. exactly the case the wall exists for. */
+        if(G.smokes&&G.smokes.length&&smokeAt(u.x,u.y)&&!smokeAt(dx0,dy0)){
+          u.x=dx0; u.y=dy0; u.blockedBySmoke=0.4; u.diving=null;   // lost the run — break off
+          continue;
+        }
         if(dist(u.x,u.y,t.x,t.y)<t.r+u.r){ explode(u.x,u.y,u.splash+8,u.side,20);
           for(const o of G.units)if(o.alive&&o.side!==u.side&&dist(o.x,o.y,u.x,u.y)<u.splash+8)damage(o,u.dmg,u);
           u.alive=false; SND.boom(); G.shake=Math.max(G.shake,6); }
@@ -5842,6 +6015,13 @@ function updateUnits(dt){
     const lt=G.laneTerrain&&TERRAINS[G.laneTerrain[u.lane]];
     const spdMul=(G.wxSpd||1)*(lt?lt.spdMul:1)*(1-supp*0.45); // weather + terrain + suppression pace the advance
     const rngEff=u.rng*(G.wxRng||1)*(lt?lt.rngMul:1);          // weather + terrain shape engagement range
+    // 🌫 smoke-pinned: jammed AND blinded — held in place, cannot fire. Decays on its own
+    // the moment either condition stops being true.
+    if(u.smokePin>0){
+      u.smokePin-=dt;
+      if(u.cd>0)u.cd-=dt;
+      continue;
+    }
     // rout — a pinned unit recoils toward home instead of pressing forward
     if(supp>=0.9 && !u.support){
       u.x-=dir(u.side)*u.spd*spdMul*0.6*dt;
@@ -5850,9 +6030,15 @@ function updateUnits(dt){
     const {tgt,d}=nearestEnemy(u);
     // player stance — posture is BEHAVIOUR only (pace + positioning), never stats
     let stMul=1, holdLine=null, kite=false; u.shield=false;
-    if(u.side==='B'&&!u.support){
-      if(G.stance==='defend'){ stMul=0.5; holdLine=W*0.5; u.shield=true; } // hold the CENTRE line (sits right on the Domination capture zone)
-      else if(G.stance==='skirmish'){ stMul=0.75; kite=true; }
+    /* Posture is now per-SIDE. The player's stance is G.stance; the Adjutant's is
+       G.enemyStance and is only ever set in a Gauntlet fight. Everything below is written
+       against `fwd` (which way this unit advances) and `homeX`/`foeX` rather than assuming
+       the blue side, so an order behaves identically whoever is given it. */
+    const fwd=dir(u.side), homeX=u.side==='B'?24:W-24, foeX=u.side==='B'?W-24:24;
+    const myStance=u.side==='B'?G.stance:G.enemyStance;
+    if(myStance&&!u.support){
+      if(myStance==='defend'){ stMul=0.5; holdLine=W*0.5; u.shield=true; } // hold the CENTRE line (sits right on the Domination capture zone)
+      else if(myStance==='skirmish'){ stMul=0.75; kite=true; }
     }
     /* GROUP DOCTRINE — positioning. Applied AFTER the stance block and overwriting it,
        because for the units an order covers the order IS the posture; a battery told to dig
@@ -5865,12 +6051,13 @@ function updateUnits(dt){
       const md=grp.mode;
       if(md==='battery'){
         // dug in a fixed distance from your own HQ, and it never advances again
-        holdLine=24+GROUP_STEP_PX*5;
+        holdLine=homeX+fwd*GROUP_STEP_PX*5;
       } else if(md==='marching'){
         // set up behind your own front line and creep forward with it
-        const front=friendlyFrontX(u.lane,null,u);
-        if(front!=null)holdLine=Math.max(50,front-GROUP_MARCH_TRAIL);
-        else holdLine=24+GROUP_STEP_PX*5;      // no line yet — hold near the guns' start
+        const front=friendlyFrontX(u.lane,null,u,u.side);
+        if(front!=null)holdLine=front-fwd*GROUP_MARCH_TRAIL;
+        else holdLine=homeX+fwd*GROUP_STEP_PX*5;   // no line yet — hold near the guns' start
+        holdLine=clamp(holdLine,50,W-50);
         stMul=0.6;
       } else if(md==='bombard'){
         /* Walk to the edge of range on the enemy HQ, then stop and shell it. The stopping
@@ -5878,17 +6065,17 @@ function updateUnits(dt){
            shorten it), not the raw stat: computed from the raw 230 the gun parks 218px out,
            and in rain — where effective range is 216 — it sits permanently 2px outside its
            own reach and never fires a shot. The 0.92 leaves margin for the same reason. */
-        holdLine=(W-24)-rngEff*0.92;
+        holdLine=foeX-fwd*rngEff*0.92;
       } else if(md==='support'){
         /* Keep station just ahead of the infantry line. Infantry are FASTER than armour in
            this roster (rifles 34 vs a tank's 24), so a pure speed CAP would never bind and
            the order would do nothing at all. What it actually does is let armour hurry to
            reach the line and then hold there: the trade is that armour arrives with the
            infantry instead of alone, and gives up leading a breakthrough by itself. */
-        const inf=friendlyFrontX(u.lane,'inf',u);
+        const inf=friendlyFrontX(u.lane,'inf',u,u.side);
         if(inf!=null){
-          holdLine=inf+GROUP_SUPPORT_LEAD;
-          if(u.x<holdLine-8)stMul=GROUP_SUPPORT_HURRY;   // catching up to the line
+          holdLine=inf+fwd*GROUP_SUPPORT_LEAD;
+          if((holdLine-u.x)*fwd>8)stMul=GROUP_SUPPORT_HURRY;   // catching up to the line
         }
       } else if(md==='hvt'||md==='bomber'){
         u.evasive=true;                        // read as further away by enemy targeting
@@ -5908,10 +6095,21 @@ function updateUnits(dt){
     } else {
       const x0=u.x,y0=u.y;
       const step=dir(u.side)*u.spd*spdMul*stMul*dt;
-      if(holdLine!=null && dir(u.side)>0){
-        if(u.x>holdLine) u.x=Math.max(holdLine,u.x-u.spd*spdMul*dt); // dug in ahead of the line? fall back to it
-        else u.x=Math.min(u.x+step,holdLine);                        // advance only up to the line
+      /* A hold line is "advance no further than this", expressed in whichever direction this
+         unit advances. The old form only handled dir>0, so every hold line was silently
+         ignored for the red side — fine while stances were player-only, wrong the moment the
+         Adjutant got orders of its own. */
+      if(holdLine!=null){
+        if((u.x-holdLine)*fwd>0) u.x=u.x-fwd*u.spd*spdMul*dt;        // dug in past the line? fall back to it
+        else { const nx=u.x+step; u.x=(nx-holdLine)*fwd>0?holdLine:nx; } // advance only up to the line
       } else u.x+=step;
+      /* 🌫 DRONE WALL. A flying kamikaze cannot pass through a smoke bank — it stalls at the
+         edge instead of crossing. This is what makes smoke a real answer to a drone rush,
+         and it is checked AFTER the move so the drone visibly runs into the wall rather
+         than stopping short of somewhere it was never going. */
+      if(u.flies&&u.kamikaze&&G.smokes&&G.smokes.length&&smokeAt(u.x,u.y)&&!smokeAt(x0,y0)){
+        u.x=x0; u.y=y0; u.blockedBySmoke=0.4;
+      } else if(u.blockedBySmoke>0)u.blockedBySmoke-=dt;
       if(u.flies){
         /* Straightforward drones hold their lane no matter what — that is the whole order,
            and it is the reason they are worse at catching an off-line target and better at
@@ -5931,8 +6129,7 @@ function updateUnits(dt){
     /* BOMBARDMENT — the only firing path that does not need a unit target. Range is measured
        to the enemy HQ, and the shell that lands there does reduced structural damage. */
     if(grp&&grp.mode==='bombard'&&!u.support){
-      const hqX=u.side==='B'?W-24:24;
-      if(Math.abs(hqX-u.x)<=rngEff && u.cd<=0 && supp<0.85){ groupBombardShot(u); u.cd=u.rof; }
+      if(Math.abs(foeX-u.x)<=rngEff && u.cd<=0 && supp<0.85){ groupBombardShot(u); u.cd=u.rof; }
     }
     /* BATTERY vs EW — a dug-in gun line is a fixed, known coordinate, which is exactly what
        jamming is good against. Being jammed does not stop a battery firing; it scatters the
@@ -5978,12 +6175,23 @@ function updateProjs(dt){
         p.dead=true;
         explode(p.ix,p.iy,p.splash,p.side,18); scorch(p.ix,p.iy,p.splash);
         // a bombardment round: the payload is structural damage to the HQ it was aimed at
+        /* Bombardment grinds an HQ down to 1 and NO FURTHER. Shelling can flatten a base
+           but it cannot take it — somebody still has to walk in and finish the job, exactly
+           like holding ground needs troops standing on it. Without this floor, a gun line
+           was a win condition that never had to touch the enemy army, and a match could end
+           on a timer with no interaction at all: the least interesting way to lose.
+           Note it never calls checkWin() — by construction it cannot produce a win. */
         if(p.hqShell&&G.hq[p.hqShell]!=null&&!(G.mode==='survival'&&p.hqShell==='R')){
-          G.hq[p.hqShell]=Math.max(0,G.hq[p.hqShell]-p.hqDmg);
-          if(p.side==='B')G.dmgDealt+=p.hqDmg; else G.dmgTaken+=p.hqDmg;
-          G.shake=Math.max(G.shake,SAVE.reduceMotion?3:7);
-          try{SND.hqhit();}catch(e){}
-          checkWin();
+          const before=G.hq[p.hqShell];
+          G.hq[p.hqShell]=Math.max(BOMBARD_HQ_FLOOR,before-p.hqDmg);
+          const dealt=before-G.hq[p.hqShell];
+          if(p.side==='B')G.dmgDealt+=dealt; else G.dmgTaken+=dealt;
+          if(dealt>0){ G.shake=Math.max(G.shake,SAVE.reduceMotion?3:7); try{SND.hqhit();}catch(e){} }
+          else if(!G.bombardFloorNoted&&p.side==='B'){
+            // say it once, or "my shells stopped working" reads as a bug rather than a rule
+            G.bombardFloorNoted=true;
+            announce('☄ HQ FLATTENED','shelling cannot finish it — send someone in','#ff9f7f');
+          }
         }
         G.shake=Math.max(G.shake,SAVE.reduceMotion?4:9); if(p.side==='R')SND.boom(); else SND.boom();
         for(const o of G.units){ if(o.alive&&o.side!==p.side){ const dd=dist(o.x,o.y,p.ix,p.iy);
@@ -6088,6 +6296,7 @@ function draw(){
     drawParts();
     drawDrops();
     drawGunrun();
+    drawSmoke();        // 🌫 smoke banks, over the units they are hiding
     drawGauntFx();      // ◈ Gauntlet: strike telegraphs + the Adjutant's gunship
     drawShadowEntity(); // 🕵 mythic event — a rare cameo, purely cosmetic
     drawRiftStreaks();  // 🕵 mythic event — void rift tear before the boss lands
@@ -6784,7 +6993,7 @@ function syncHUD(){
 const DTDOT_COL={sa:'#8fd0ff',ap:'#ffb347',he:'#ff9f7f',aa:'#7fffaa'};
 // hotbar groups: after the last key in each group we drop a thin separator so the
 // bar reads in tactical chunks (infantry · armour · fires · air/AD · support)
-const HB_GROUP_END={sniper:1,ifv:1,mlrs:1,drone:1,jammer:1};
+const HB_GROUP_END={sniper:1,ifv:1,mlrs:1,drone:1,cbat:1};
 // category tabs — splits ~22 cards across 5 short rows so the bar stays one row
 // tall and never grows up over the third (bottom) lane like the old flat list did.
 // Number-key hotkeys (1-9) still map by HOTBAR index regardless of the active tab.
@@ -6793,7 +7002,7 @@ const HB_GROUP_END={sniper:1,ifv:1,mlrs:1,drone:1,jammer:1};
 const HB_TABS=[
   {id:'ground',label:'⚔ Ground',col:'#ffb347',units:new Set(['rifle','atgm','sniper','tank','ifv','arty','mlrs','flame'])},
   {id:'air',label:'✈ Air & AD',col:'#c9a0ff',units:new Set(['aa','heli','drone','interceptor','gunship','swarm'])},
-  {id:'support',label:'🛠 Support',col:'#3fd07a',units:new Set(['medic','jammer'])},
+  {id:'support',label:'🛠 Support',col:'#3fd07a',units:new Set(['medic','jammer','cbat'])},
   {id:'production',label:'🏭 Production',col:'#5ff0e0',spawners:true},
 ];
 const HB_MAX_TABS=5, HB_MAX_PER_TAB=9;
@@ -6831,13 +7040,14 @@ function buildQuickbar(){
   const qb=document.getElementById('quickbar'); if(!qb)return; qb.innerHTML='';
   for(const type of STRIKE_KEYS){ const s=STRIKES[type];
     if(type==='rods'&&!SAVE.secretDone)continue; // hidden until the secret level is cleared
+    const locked=s.rank&&!rankGateOk(s.rank);
     const el=document.createElement('div');
-    el.className='card'; el.id='card-'+type; el.style.borderColor=s.col;
-    el.innerHTML=`<span class="key">${s.key}</span><div class="glyph" style="color:${s.col}">${s.glyph}</div>
-      <div class="nm">${s.name}</div><div class="cost" style="color:${s.col}">${s.once?'1× ONLY':'FREE'}</div>
+    el.className='card'+(locked?' cant':''); el.id='card-'+type; el.style.borderColor=s.col;
+    el.innerHTML=`<span class="key">${s.key}</span><div class="glyph" style="color:${s.col}">${locked?'🔒':s.glyph}</div>
+      <div class="nm">${s.name}</div><div class="cost" style="color:${s.col}">${locked?('Rank '+s.rank):(s.once?'1× ONLY':'FREE')}</div>
       <div class="cd" style="display:none"></div>`;
-    el.title=s.desc;
-    el.onclick=()=>{G.selCard=type;showLaneHint();};
+    el.title=locked?('Unlocks at Rank '+s.rank+'. '+s.desc):s.desc;
+    el.onclick=()=>{ if(locked)return; G.selCard=type;showLaneHint();};
     qb.appendChild(el);
   }
   // recon flare — free, exposes a whole lane through the fog for a few seconds
@@ -6887,6 +7097,7 @@ function buildHotbar(){
   HOTBAR.forEach((key,i)=>{
     if(!oneDeck && (!tab.units||!tab.units.has(key)))return;
     if(key==='swarm'&&!SAVE.secretDone)return; // hidden until the secret level is cleared
+    if(!unitRankOk(key))return;                // rank-gated units are absent, not teased
     if(oneDeck && G.allowed.indexOf(key)<0)return;
     if(oneDeck)i=deckIdx.indexOf(key);
     const u=UNITS[key];
@@ -8120,12 +8331,12 @@ const GAUNTLET_TIERS=[
    blurb:'Adaptive hardening comes online — your most-used weapon starts biting less deeply.'},
   {n:'PREDICTING',   diff:'elite',     col:'#9fe07a', arms:'strikes',   qual:1.00, econ:1.00, open:5,
    blurb:'It has learned your ground. Off-map precision fire, aimed at the lane you love.'},
-  {n:'ANTICIPATING', diff:'elite',     col:'#ffce5a', arms:'hardfull',  qual:1.03, econ:1.05, open:5,
-   blurb:'Hardening at full strength. Your favourite unit is no longer enough on its own.'},
-  {n:'RELENTLESS',   diff:'elite',     col:'#ffab40', arms:'gunruns',   qual:1.08, econ:1.14, open:6,
-   blurb:'Gunship runs authorised, and it opens against the tempo it has you filed under.'},
-  {n:'IMPLACABLE',   diff:'legendary', col:'#ff9f40', arms:'ambush',    qual:0.80, econ:0.68, open:7,
-   blurb:'It stops holding back. Everything it has learned, delivered at full speed.'},
+  {n:'ANTICIPATING', diff:'elite',     col:'#ffce5a', arms:'stance',    qual:1.03, econ:1.05, open:5,
+   blurb:'It adopts a posture of its own now — reading your tempo and setting its stance against it.'},
+  {n:'RELENTLESS',   diff:'elite',     col:'#ffab40', arms:'orders',    qual:1.08, econ:1.14, open:6,
+   blurb:'Standing orders of its own: it gives its guns, armour and drones doctrines picked to answer yours.'},
+  {n:'IMPLACABLE',   diff:'legendary', col:'#ff9f40', arms:'gunruns',   qual:0.80, econ:0.68, open:7,
+   blurb:'It stops holding back — gunship runs, an opening shaped to your tempo, everything at full speed.'},
   {n:'ASCENDANT',    diff:'legendary', col:'#ff5a4a', arms:'barrage',   qual:0.92, econ:0.78, open:8,
    blurb:'Full proficiency. Rolling barrages, every counter, every system it has. This is the wall.'},
 ];
@@ -8220,7 +8431,7 @@ function gauntletSnapshot(){
     harden:{},      // YOUR unit key -> damage reduction it now has against you (0..0.35)
     lane:-1,        // the lane you favour, which it will contest
     strikes:[],     // which off-map abilities are authorised this fight
-    rush:false, ambush:false, dossier:[] };
+    rush:false, ambush:false, stance:null, orders:null, dossier:[] };
   snap.ambush=gauntArmed(info.tier,'ambush');
 
   const totalU=Object.values(mem.units).reduce((a,b)=>a+b,0);
@@ -8262,6 +8473,33 @@ function gauntletSnapshot(){
     // ── TEMPO — do you come out swinging, or build first? ──
     if(gauntArmed(info.tier,'gunruns'))snap.rush=(mem.rush/Math.max(1,mem.fights))>0.5;
   }
+  /* ── POSTURE AND STANDING ORDERS ────────────────────────────────────────────────
+     From ANTICIPATING onward the Adjutant stops fighting in the game's default posture and
+     picks one against you, then later gives its own arms standing orders drawn from the same
+     dossier the rest of this function reads. It is the clearest signal that you are fighting
+     a commander rather than a spawn table: it is using the exact toolkit you are.
+     Everything here is chosen from what it has ALREADY seen, and frozen like the rest. */
+  if(gauntArmed(info.tier,'stance')&&mem.fights>0){
+    // an early aggressor gets met at the centre; a slow starter gets rushed before they set up
+    snap.stance=snap.rush?'defend':'assault';
+    if(!snap.rush&&mem.spawners/Math.max(1,mem.fights)>0.5)snap.stance='assault';
+    if(snap.rush&&info.tier>=GAUNT_MAX_TIER)snap.stance='skirmish'; // top of the ladder: bleed a rusher
+  }
+  if(gauntArmed(info.tier,'orders')&&totalU>0){
+    const share=k=>(mem.units[k]||0)/totalU;
+    const armourShare=share('tank')+share('ifv');
+    const airShare=share('heli')+share('drone')+share('gunship')+share('interceptor');
+    const gunShare=share('arty')+share('mlrs');
+    snap.orders={arty:'off',armor:'off',drone:'off'};
+    // guns: dig in against a rusher, walk fire forward against a builder
+    snap.orders.arty=snap.rush?'battery':'marching';
+    // armour: break yours if you bring armour, otherwise escort its own infantry in
+    snap.orders.armor=armourShare>0.30?'breaker':'support';
+    // drones: hunt your best unit if you field heavy things, otherwise go for the base
+    snap.orders.drone=(armourShare+airShare)>0.35?'hvt':'bomber';
+    // if you are a gun player, it answers with counter-fire posture instead of massing armour
+    if(gunShare>0.25)snap.orders.arty='bombard';
+  }
   // ── OFF-MAP FIRE SUPPORT — the Adjutant is the only enemy in the game that uses
   //    commander strikes of its own. Each is telegraphed before it lands (see gauntStrikeTick). ──
   if(gauntArmed(info.tier,'strikes'))snap.strikes.push('precision');
@@ -8295,6 +8533,12 @@ function gauntletDossier(g,snap){
     out.push({ic:'🧭',t:`You favour the <b>${['top','middle','bottom'][snap.lane]}</b> lane. It will be waiting there.`});
   if(snap.strikes.length)
     out.push({ic:'💥',t:`Off-map fire support authorised: <b>${snap.strikes.map(s=>STRIKES[s].name).join(', ')}</b>.`});
+  if(snap.stance)out.push({ic:'🧭',t:`Fighting in a <b>${STANCES[snap.stance].name}</b> posture of its own, chosen against your tempo.`});
+  if(snap.orders){
+    const named=GROUP_KEYS.filter(k=>snap.orders[k]&&snap.orders[k]!=='off')
+      .map(k=>`${GROUP_DOCTRINES[k].name} — <b>${(groupOpt(k,snap.orders[k])||{}).name}</b>`);
+    if(named.length)out.push({ic:'📋',t:`Its own standing orders: ${named.join(' · ')}.`});
+  }
   if(snap.rush)out.push({ic:'⏱',t:'It has you marked as an early aggressor. It will meet your opening.'});
   else if(mem.spawners/Math.max(1,mem.fights)>0.5)out.push({ic:'🏭',t:'It knows you build economy first, and intends to punish the delay.'});
   if(snap.over>0)out.push({ic:'☠',t:`Ascendant scaling: <b>+${Math.round((snap.qualMul-1)*100)}%</b> unit quality, <b>+${Math.round((snap.cpMul-1)*100)}%</b> income.`});
@@ -9151,6 +9395,8 @@ window.addEventListener('keydown',e=>{
   // R / F select the commander powers
   if(k==='r'){G.selCard='recon';showLaneHint();return;}
   if(k==='f'){ if(SAVE.lvl>=3){G.selCard='emp';showLaneHint();} return; }
+  // S selects the smoke screen (rank 20)
+  if(k==='s'){ if(rankGateOk(STRIKES.smoke.rank)){G.selCard='smoke';showLaneHint();} return; }
   // G / B select the gunship run & rolling barrage air-support strikes
   if(k==='g'){G.selCard='gunrun';showLaneHint();return;}
   if(k==='b'){G.selCard='barrage';showLaneHint();return;}

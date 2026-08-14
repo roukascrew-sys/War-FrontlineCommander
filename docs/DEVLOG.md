@@ -8,6 +8,80 @@ engineering detail lives in the patch notes inside the game and in the commit hi
 
 ---
 
+## v1.20.0 — Shelling can't take a base
+
+**Bombardment can no longer win a battle.** Shelling now grinds an enemy HQ down to 1 and
+stops there. It can flatten a base; it cannot take one. Somebody still has to walk in and
+finish the job — exactly like holding ground needs troops standing on it.
+
+Without that floor, a gun line was a win condition that never had to touch the enemy army,
+and a match could end on a timer with no interaction at all. That was the single worst
+outcome available in the game and it's now impossible by construction.
+
+### 🛰 New unit — Counter-Battery (Rank 30, 78 CP)
+
+The realistic answer to guns. Real counter-battery works by tracking incoming shells back to
+the tube that fired them, so this unit engages **artillery and nothing else**. It out-ranges
+every gun in the game (300 vs artillery's 230) and suppresses them at range, so a dug-in
+battery goes quiet before it dies.
+
+Against anything that isn't a gun it's a very expensive paperweight. That's the point — it
+answers the artillery orders without becoming another general-purpose gun line. It unlocks at
+the same rank as the first artillery standing order, because arriving earlier would be
+answering nothing.
+
+### 🌫 New power — Smoke Screen (Rank 20, `S`)
+
+Lays a smoke bank across a lane. Three effects:
+
+1. **Blocks line of sight both ways.** That symmetry is what makes placing it a decision
+   rather than free value — you're blinding yourself too.
+2. **Walls out kamikaze drones.** They stall at the edge instead of crossing. This is what
+   makes smoke a genuine answer to a drone rush.
+3. **Pins anything caught inside an EW jammer's reach** — immobile, unable to shoot.
+
+That third one is the combo the whole thing is built around. It needs two separate
+investments and it's the strongest crowd control in the game. Two units inside the same bank
+can still see each other, so smoke never becomes a total combat freeze.
+
+### Rebalance
+
+- **AT Team** — 26→32 HP, 22→24 damage, 120→130 range
+- **IFV** — 96→108 HP, 16→18 damage, 90→96 range, 6→8 splash
+- **EW Jammer** — 74→84 HP, 0.55→0.62 jam strength, 135→152 radius
+
+The first two answer the pacing help armour got from the Support order. The jammer now
+counters artillery stacking, drones *and* enables the smoke pin — three jobs on one chassis
+earns more body.
+
+### The Adjutant now uses your toolkit
+
+From the **ANTICIPATING** rung it fights in a stance of its own, chosen against your tempo.
+From **RELENTLESS** it issues standing orders to its own guns, armour and drones — drawn from
+the same dossier as everything else it does.
+
+Bring armour and it runs Armour Breaker. Play a gun line and it answers with Bombardment.
+Rush it and its guns dig in. It's the clearest signal yet that you're fighting a commander
+rather than a spawn table.
+
+---
+
+### Also in this build
+
+**A crash shipped in 1.19.0, and it's worth explaining how.** The helper that decides which
+way a side advances was declared inside one function but referenced from the targeting code,
+so the Assault order threw the moment an enemy came into range.
+
+It survived testing because every probe for those orders ran with an *empty enemy side* — the
+loop containing the reference never executed a single iteration. All nine orders are now
+tested against a live, mixed engagement on both sides, which is what should have been there
+the first time.
+
+**Two more of the same family:** hold lines were only ever honoured for the blue side (fine
+while stances were player-only, wrong the moment the Adjutant got orders), and a drone that
+had already committed to its dive flew straight through smoke because a committed dive skips
+the rest of the movement code.
+
 ## v1.19.0 — Standing Orders
 
 **Your artillery, armour and drones can now be given their own orders.**
