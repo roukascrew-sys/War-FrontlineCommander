@@ -238,6 +238,12 @@ need a live battle running.</p>
   <tr><td><code>parseSaveCode(code)</code></td><td>Validate WITHOUT applying — returns {ok, err, data, summary, notes}</td></tr>
   <tr><td><code>applySaveCode(parsed)</code></td><td>Write a parsed code into SAVE (manifest fields only)</td></tr>
   <tr><td><code>SAVE_TRANSFER_FIELDS</code></td><td>The manifest — what travels, and its type/cap</td></tr>
+  <tr><td><code>G.groups</code></td><td>Live standing orders, e.g. <code>{arty:'battery',armor:'off',drone:'hvt'}</code></td></tr>
+  <tr><td><code>setGroupDoctrine('arty','bombard')</code></td><td>Apply an order (respects the 30s cooldown — set <code>G.groupCd=0</code> first)</td></tr>
+  <tr><td><code>GROUP_DOCTRINES</code></td><td>The order table: rank gates, options, and each one's stated cost</td></tr>
+  <tr><td><code>unitGroup(u)</code></td><td>Which order a given unit is acting on, or null</td></tr>
+  <tr><td><code>activeTabs()</code></td><td>The live deck layout (custom if valid, built-in otherwise)</td></tr>
+  <tr><td><code>SAVE.hbTabs=null</code></td><td>Drop a custom deck layout back to the built-in tabs</td></tr>
 </table>
 
 <h3 style="margin-top:18px">Jumping the Gauntlet to any tier</h3>
@@ -271,6 +277,12 @@ useful for capturing the telegraph.</p>
 without playing nine matches first.</p>
 
 <h2><span class="n">07</span>Save transfer (cross-device)</h2>
+<p class="muted"><strong>Locked as of v1.19.0.</strong> Enter <span class="code-chip">deltavault88</span>
+in the access-code box to reveal <strong>💾 Transfer Progress</strong> in the panel. It is gated because
+import/export can hand an account any rank and every unlock in one paste, and a global leaderboard is
+coming — a board seeded with self-granted maxed accounts is worth nothing. The gate is on the screen
+itself as well as the button, so a console call to <code>openSaveTransfer()</code> returns false while
+locked. Revisit once the backend can validate progress server-side (see <code>docs/SUPABASE_GUIDE.md</code>).</p>
 <p>Debug/Dev &rarr; <strong>💾 Transfer Progress</strong>. Exports real progress as one
 <code>FC1-…</code> code and imports it on another device. Useful facts when changing save code:</p>
 <ul>
@@ -307,7 +319,7 @@ applySaveCode(p);</code></pre>
 </ul>
 
 <footer>
-  Frontline Commander — internal reference. Last updated for <strong>v1.18.2</strong>.<br>
+  Frontline Commander — internal reference. Last updated for <strong>v1.19.0</strong>.<br>
   Keep this current: a stale tools file is worse than none, because you'll trust it.
 </footer>
 

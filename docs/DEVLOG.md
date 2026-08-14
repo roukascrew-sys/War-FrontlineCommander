@@ -8,6 +8,84 @@ engineering detail lives in the patch notes inside the game and in the commit hi
 
 ---
 
+## v1.19.0 — Standing Orders
+
+**Your artillery, armour and drones can now be given their own orders.**
+
+A new **ORDERS** row sits above STANCE with one chip per arm. Each arm gets a standing
+order, they run independently of each other, and for the units they cover they **override
+the stance entirely** — a gun battery told to dig in doesn't care that the army is in
+Assault.
+
+All three start off, unlock at Rank 30 / 38 / 46, and share a single 30-second change
+cooldown. That last part is deliberate: without it, orders become another micro-management
+channel — swap to Breaker when armour shows up, swap back after — which is the opposite of
+a *standing* order. The cooldown is what makes committing to a doctrine a real decision.
+
+### 🎆 Artillery
+
+- **Marching Fire** — sets up behind your front line and walks its fire ahead of the
+  advance, using your troops' eyes rather than its own. *Won't defend the guns themselves.*
+- **Stationary Batteries** — digs in five steps from the HQ and never moves, working at
+  full range. *Enemy EW jammers reach far further against a dug-in battery and scatter its
+  shots — massing guns in one spot is exactly what a jammer is for.*
+- **Bombardment** — ignores troops completely, walks to the edge of its range and shells
+  the enemy HQ. *Reduced damage, and no defensive value at all. It's a clock, not a line.*
+
+### 🛡 Armour
+
+- **Assault** — drives for the enemy HQ and only engages what's physically in the way.
+  *Artillery and support walk free behind your tanks.*
+- **Support** — hurries to your infantry line and paces to it so the line arrives together.
+  *Gives up leading a breakthrough alone.*
+- **Armour Breaker** — hunts armoured targets as an absolute priority. *Will cross a lane
+  full of infantry to reach a tank, and ignore them while it does.*
+
+### 💣 Drones
+
+- **Straightforward** — flies its lane and never deviates. *Will fly straight past a target
+  slightly off its line.*
+- **HVT Hunter** — evades what it can and dives only the single toughest enemy on the field.
+  *A swarm of infantry is invisible to it.*
+- **Base Bomber** — evades what it can and flies for the enemy HQ. *No defensive value
+  whatsoever.*
+
+### Every order names its own downside
+
+That's a rule, not decoration. A strictly-better option isn't a choice — it's a hidden
+default players find once and then stop thinking about. Each order's cost is printed right
+under it in the picker.
+
+Units acting on an order carry a **dashed ring in their arm's colour** with its glyph, so
+an ordered unit is never mistaken for a bugged one. A jammed battery says **JAMMED** on
+itself rather than just quietly missing.
+
+---
+
+## 🗂 Deck Layout
+
+**Settings → Advanced → Deck Layout.** Build your own hotbar tabs instead of the built-in
+categories: up to 5 tabs of up to 9 units each, named however you like.
+
+Production stays pinned on the end. Factories aren't units, so they can't live in a custom
+tab — and a layout that simply replaced all four built-in tabs would have silently deleted
+the only route to the Barracks, Motor Pool and Drone Bay for the rest of the game.
+
+---
+
+### Also in this build
+
+**A Bombardment gun could permanently fail to fire.** It worked out where to stop using its
+*raw* range but checked whether it could shoot using its *effective* range — and weather and
+terrain both shorten range. In rain, the gun parked exactly two pixels outside its own reach
+and sat there for the whole match. Fixed, and now verified across every weather.
+
+**Transfer Progress is behind a developer code for now.** Import/export can hand an account
+any rank and every unlock in one paste, which is exactly what it's for while the game is
+offline and single-player — but a global leaderboard is coming, and a board seeded with
+self-granted maxed accounts is worth nothing to the people who earned their place on it.
+It'll be revisited once there's a backend that can check progress server-side.
+
 ## v1.18.2 — Take your progress with you
 
 **Your save now moves between devices.**

@@ -1969,7 +1969,8 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
     const manifest = await gp.evaluate(() => {
       const local = ['sound', 'music', 'musicVol', 'narrator', 'reduceMotion', 'cbPalette', 'bigUnits',
         'chaosMode', 'debugUnlockAll', 'aiDebug', 'streamOn', 'twitchChannel', 'noLuck',
-        'randomEvents', 'evCutscene', 'evSupply', 'evBarrage', 'evDefector', 'speed', 'chatPos', 'lastSel'];
+        'randomEvents', 'evCutscene', 'evSupply', 'evBarrage', 'evDefector', 'speed', 'chatPos', 'lastSel',
+        'saveTransferUnlocked', 'hbTabs', 'groups'];
       return { leaked: local.filter(k => SAVE_TRANSFER_FIELDS.some(f => f[0] === k)),
                bogus: SAVE_TRANSFER_FIELDS.map(f => f[0]).filter(k => !(k in DEFAULT_SAVE)) };
     });
@@ -2075,6 +2076,174 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
     });
     ok(!cuts.whenOff && cuts.whenOn,
       '[cutscenes] the master switch is honoured inside playCutscene(), so the cinematic a legendary streak earns respects it too — not just the random-event path');
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       23. v1.19.0 — standing orders, custom deck layouts, transfer lock.
+       ───────────────────────────────────────────────────────────────────────── */
+
+    // 23a. the transfer tool must be genuinely gated, not merely un-rendered
+    const lock = await gp.evaluate(() => {
+      SAVE.saveTransferUnlocked = false; persist();
+      const groupsBefore = DEBUG_GROUPS().some(g => /transfer/i.test(g.name));
+      const opened = openSaveTransfer('title');
+      const shown = !document.getElementById('savetransfer').classList.contains('hidden');
+      DEV_CODES.deltavault88.run();
+      const groupsAfter = DEBUG_GROUPS().some(g => /transfer/i.test(g.name));
+      SAVE.saveTransferUnlocked = false; persist();
+      return { groupsBefore, opened, shown, groupsAfter };
+    });
+    ok(!lock.groupsBefore && lock.groupsAfter,
+      '[transfer lock] the Transfer Progress tool only appears in the Debug panel once its access code has been entered');
+    ok(lock.opened === false && !lock.shown,
+      '[transfer lock] the transfer SCREEN itself refuses to open while locked — the gate is not just a hidden button a console call walks past');
+
+    // 23b. standing orders — rank gates, defaults, and the shared change cooldown
+    const orders = await gp.evaluate(() => {
+      SAVE.debugUnlockAll = false; SAVE.lvl = 5;
+      SAVE.groups = { arty: 'off', armor: 'off', drone: 'off' }; persist();
+      const lockedAt5 = GROUP_KEYS.map(k => groupUnlocked(k));
+      SAVE.lvl = 60; persist();
+      const openAt60 = GROUP_KEYS.map(k => groupUnlocked(k));
+      LAUNCH = null; sel.mode = 'skirmish'; start();
+      const defaults = GROUP_KEYS.map(k => G.groups[k]);
+      G.groupCd = 0;
+      const first = setGroupDoctrine('arty', 'battery');
+      const second = setGroupDoctrine('armor', 'assault');   // instantly after — must be refused
+      const cd = G.groupCd;
+      // a save edited to arm an order the account has not earned must not survive into battle
+      SAVE.lvl = 5; SAVE.groups = { arty: 'bombard', armor: 'assault', drone: 'hvt' }; persist();
+      LAUNCH = null; start();
+      const smuggled = GROUP_KEYS.map(k => G.groups[k]);
+      SAVE.lvl = 60; SAVE.groups = { arty: 'off', armor: 'off', drone: 'off' }; persist();
+      return { lockedAt5, openAt60, defaults, first, second, cd, smuggled,
+               gates: GROUP_KEYS.map(k => GROUP_DOCTRINES[k].lvl), swapCd: GROUP_SWAP_CD };
+    });
+    ok(orders.lockedAt5.every(v => !v) && orders.openAt60.every(v => v),
+      `[orders] all three arms are rank-gated (${orders.gates.join(' / ')}) and closed at low rank`);
+    ok(orders.defaults.every(v => v === 'off'),
+      '[orders] every arm defaults to no standing order — none is armed until the player chooses it');
+    ok(orders.first === true && orders.second === false && orders.cd > 0,
+      `[orders] a change starts a shared ${orders.swapCd}s cooldown and a second change is refused while it runs`);
+    ok(orders.smuggled.every(v => v === 'off'),
+      '[orders] an order armed in a hand-edited save is dropped to off if the account has not earned it');
+
+    // 23c. each order actually changes behaviour, measured
+    const behave = await gp.evaluate(() => {
+      SAVE.lvl = 60; persist();
+      const setup = (gk, mode) => {
+        LAUNCH = null; sel.mode = 'skirmish'; sel.diff = 'veteran'; start();
+        G.prep = 0; G.frozen = false; G.aiHold = true; G.groupCd = 0;
+        for (const k in G.unlocked) G.unlocked[k] = true;
+        G.groups.arty = 'off'; G.groups.armor = 'off'; G.groups.drone = 'off';
+        G.groups[gk] = mode; G.units.length = 0;
+      };
+      const out = {};
+      // battery digs in a fixed distance from the HQ
+      setup('arty', 'battery'); spawn('B', 'arty', 1, 60);
+      for (let i = 0; i < 600; i++) step(0.05);
+      out.batteryX = G.units[0] ? G.units[0].x : -1;
+      out.batteryTarget = 24 + GROUP_STEP_PX * 5;
+      // bombardment reaches the HQ in EVERY weather (the raw-vs-effective-range bug)
+      out.bombard = {};
+      for (const wx of WEATHER_KEYS) {
+        setup('arty', 'bombard');
+        G.wxKey = wx; G.wx = WEATHERS[wx]; G.wxRng = WEATHERS[wx].rngMul; G.laneTerrain = ['open', 'open', 'open'];
+        spawn('B', 'arty', 1, 60);
+        const hq0 = G.hq.R;
+        for (let i = 0; i < 2000; i++) step(0.05);
+        out.bombard[wx] = hq0 - G.hq.R;
+      }
+      // marching fire sets up BEHIND the friendly front
+      setup('arty', 'marching');
+      spawn('B', 'rifle', 1, 600); spawn('B', 'arty', 1, 300);
+      G.units.find(u => u.key === 'rifle').spd = 0;
+      for (let i = 0; i < 400; i++) step(0.05);
+      const gun = G.units.find(u => u.key === 'arty'), inf = G.units.find(u => u.key === 'rifle');
+      out.marchTrail = inf.x - gun.x;
+      out.supportLeadCap = GROUP_SUPPORT_LEAD;
+      // supporting armour never outruns the infantry line
+      setup('armor', 'support');
+      spawn('B', 'rifle', 1, 300); spawn('B', 'tank', 1, 100);
+      const tk = G.units.find(u => u.key === 'tank'), rf = G.units.find(u => u.key === 'rifle');
+      let lead = -1e9;
+      for (let i = 0; i < 800; i++) { step(0.05); lead = Math.max(lead, tk.x - rf.x); }
+      out.supportLead = lead;
+      // breaker prefers a distant tank over a near rifle
+      setup('armor', 'breaker');
+      spawn('B', 'tank', 1, 400); spawn('R', 'rifle', 1, 470); spawn('R', 'tank', 1, 700);
+      out.breakerPick = (nearestEnemy(G.units.find(u => u.side === 'B')).tgt || {}).key;
+      // HVT hunter dives the toughest, not the nearest; bomber engages nothing
+      setup('drone', 'hvt');
+      spawn('B', 'drone', 1, 300); spawn('R', 'rifle', 1, 340); spawn('R', 'tank', 1, 800);
+      step(0.05);
+      const dr = G.units.find(u => u.side === 'B');
+      out.hvtPick = (nearestEnemy(dr).tgt || {}).key; out.hvtEvasive = !!dr.evasive;
+      setup('drone', 'bomber');
+      spawn('B', 'drone', 1, 300); spawn('R', 'rifle', 1, 340);
+      step(0.05);
+      out.bomberPick = nearestEnemy(G.units.find(u => u.side === 'B')).tgt;
+      // straightforward drones never leave their lane
+      setup('drone', 'straight');
+      spawn('B', 'drone', 0, 300); spawn('R', 'rifle', 2, 600);
+      const sd = G.units.find(u => u.side === 'B');
+      let drift = 0;
+      for (let i = 0; i < 200 && sd.alive; i++) { step(0.05); drift = Math.max(drift, Math.abs(sd.y - G.laneY[0] * H)); }
+      out.straightDrift = drift;
+      // a jammer disrupts a dug-in battery
+      setup('arty', 'battery');
+      spawn('B', 'arty', 1, 150); spawn('R', 'jammer', 1, 200);
+      for (let i = 0; i < 40; i++) step(0.05);
+      out.jammed = !!G.units.find(u => u.key === 'arty').batteryJammed;
+      return out;
+    });
+    ok(Math.abs(behave.batteryX - behave.batteryTarget) < 8,
+      `[orders] Stationary Batteries dig in exactly five steps from the HQ (settled at x=${behave.batteryX.toFixed(0)}, target ${behave.batteryTarget})`);
+    const bombMissed = Object.keys(behave.bombard).filter(w => behave.bombard[w] <= 0);
+    ok(bombMissed.length === 0,
+      `[orders] Bombardment reaches the enemy HQ in EVERY weather — the stopping point is derived from effective range, not the raw stat ${bombMissed.length ? ':: NO DAMAGE IN ' + bombMissed.join(', ') : ''}`);
+    ok(behave.marchTrail > 60 && behave.marchTrail < 140,
+      `[orders] Marching Fire sets up behind the friendly front rather than at it (trailing ${behave.marchTrail.toFixed(0)}px)`);
+    ok(behave.supportLead <= behave.supportLeadCap + 4,
+      `[orders] supporting armour never gets further than its lead allowance ahead of the infantry (peak ${behave.supportLead.toFixed(0)}px, cap ${behave.supportLeadCap})`);
+    ok(behave.breakerPick === 'tank',
+      `[orders] Armour Breaker crosses a nearer soft target to reach an armoured one (picked ${behave.breakerPick}) — a distance multiplier was not enough, this needs an absolute priority`);
+    ok(behave.hvtPick === 'tank' && behave.hvtEvasive,
+      `[orders] HVT Hunter dives the toughest enemy rather than the nearest (picked ${behave.hvtPick}) and flies evasive`);
+    ok(!behave.bomberPick, '[orders] Base Bomber engages no troops at all');
+    ok(behave.straightDrift < 2,
+      `[orders] Straightforward drones hold their lane (drift ${behave.straightDrift.toFixed(1)}px)`);
+    ok(behave.jammed,
+      '[orders] an enemy EW jammer disrupts a dug-in battery — the intended counter to stacking guns in one spot');
+
+    // 23d. custom deck layouts, and the ways a bad one must fail safe
+    const deck = await gp.evaluate(() => {
+      SAVE.hbTabs = null; persist();
+      const def = activeTabs().map(t => t.id);
+      SAVE.hbTabs = [{ n: 'Line', c: '#ffb347', u: ['rifle', 'atgm', 'tank'] }, { n: 'Fires', c: '#ff9f7f', u: ['arty', 'mlrs'] }];
+      persist();
+      const custom = activeTabs();
+      const bad = { 'null': null, 'empty': [], 'string': 'nope', 'unknown unit': [{ n: 'x', u: ['nosuchunit'] }],
+        'too many tabs': new Array(HB_MAX_TABS + 4).fill({ n: 't', u: ['rifle'] }),
+        'too many units': [{ n: 't', u: HOTBAR.slice(0, HB_MAX_PER_TAB + 1) }],
+        'all empty': [{ n: 'a', u: [] }] };
+      const fellBack = {};
+      for (const k in bad) { SAVE.hbTabs = bad[k]; fellBack[k] = activeTabs() === HB_TABS; }
+      // a stale active tab id from the built-in set must not orphan the deck
+      SAVE.hbTabs = [{ n: 'Line', c: '#ffb347', u: ['rifle', 'tank'] }]; persist();
+      LAUNCH = null; sel.mode = 'skirmish'; start();
+      hbTab = 'ground'; buildHotbar();
+      const recovered = hbTab, cards = document.querySelectorAll('#hotbar .card').length;
+      SAVE.hbTabs = null; persist(); buildHotbar();
+      return { def, customLabels: custom.map(t => t.label), hasProd: custom.some(t => t.spawners),
+               fellBack, recovered, cards };
+    });
+    ok(deck.hasProd,
+      `[deck layout] Production stays pinned to a custom layout — factories are not units, so a layout that replaced all four built-in tabs would silently delete the only route to them (${deck.customLabels.join(' | ')})`);
+    const notSafe = Object.keys(deck.fellBack).filter(k => !deck.fellBack[k]);
+    ok(notSafe.length === 0,
+      `[deck layout] every malformed layout falls back to the built-in tabs rather than rendering a broken deck ${notSafe.length ? ':: ' + notSafe.join(', ') : ''}`);
+    ok(deck.recovered !== 'ground' && deck.cards > 0,
+      `[deck layout] a stale active-tab id from the built-in set is recovered instead of leaving an empty deck (now "${deck.recovered}", ${deck.cards} cards)`);
 
     // the boot-guard check above throws ONE error on purpose to prove a mid-battle fault no
     // longer covers a live match; everything else must still be clean

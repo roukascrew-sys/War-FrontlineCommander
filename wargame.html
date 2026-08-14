@@ -368,6 +368,31 @@
   #stance-assault.on{background:#ff9f40;border-color:#ff9f40;} #stance-assault:hover{border-color:#ff9f40;color:#ff9f40;}
   #stance-defend.on{background:#3fd07a;border-color:#3fd07a;} #stance-defend:hover{border-color:#3fd07a;color:#3fd07a;}
   #stance-skirmish.on{background:#5ff0e0;border-color:#5ff0e0;} #stance-skirmish:hover{border-color:#5ff0e0;color:#5ff0e0;}
+  /* group-doctrine chips + their popover */
+  #groupbar{position:relative;}
+  #groupbar .ctrl-b{min-width:30px;position:relative;}
+  #groupbar .ctrl-b.armed{background:var(--gc,var(--gold));border-color:var(--gc,var(--gold));color:#0a0e14;}
+  #groupbar .ctrl-b.locked{opacity:.42;}
+  #groupbar .ctrl-b .gdot{position:absolute;top:-3px;right:-3px;width:7px;height:7px;border-radius:50%;
+    background:var(--gc,var(--gold));border:1px solid #0b0f18;display:none;}
+  #groupbar .ctrl-b.armed .gdot{display:block;}
+  #grouppop{position:absolute;bottom:calc(100% + 7px);left:0;min-width:236px;max-width:min(320px,86vw);
+    background:#0b0f18f2;border:1px solid var(--line);border-radius:10px;padding:8px;z-index:30;display:none;
+    box-shadow:0 8px 26px #000a;}
+  #grouppop.show{display:block;}
+  #grouppop{min-width:260px;}
+  #grouppop .gp-h{font-size:10px;font-weight:800;letter-spacing:1px;margin-bottom:5px;display:flex;
+    align-items:baseline;justify-content:space-between;gap:10px;white-space:nowrap;}
+  #grouppop .gp-h span{letter-spacing:.3px;font-size:9px;flex:0 0 auto;}
+  #grouppop .gp-o{display:block;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);
+    border-radius:7px;padding:6px 8px;margin-bottom:4px;cursor:pointer;transition:.1s;}
+  #grouppop .gp-o:hover{border-color:var(--gc,var(--gold));}
+  #grouppop .gp-o.on{border-color:var(--gc,var(--gold));background:#18202e;}
+  #grouppop .gp-n{font-size:11.5px;font-weight:800;color:var(--ink);}
+  #grouppop .gp-d{font-size:10px;color:var(--dim);line-height:1.4;margin-top:2px;}
+  #grouppop .gp-c{font-size:9.5px;color:var(--warn);line-height:1.4;margin-top:3px;}
+  #grouppop .gp-cd{font-size:9.5px;color:var(--red);margin-top:4px;font-family:var(--mono);}
+  #grouppop .gp-lock{font-size:10px;color:var(--faint);padding:4px 2px;}
   /* chat vote bar (streamer) */
   #votebar{position:absolute;bottom:112px;right:14px;width:180px;background:#0b0f18d8;border:1px solid var(--purple);
     border-radius:8px;padding:6px 9px;display:none;pointer-events:none;z-index:11;}
@@ -999,6 +1024,33 @@
   .ga-purge{border-color:var(--red)!important;color:var(--red)!important;}
   .ga-note{font-size:10.5px;color:var(--faint);margin-top:9px;line-height:1.5;text-align:left;}
 
+  /* ── DECK LAYOUT EDITOR ── */
+  .dl-tab{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:9px;}
+  .dl-th{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+  .dl-name{flex:1 1 150px;min-width:120px;background:#0b1017;border:1px solid var(--line);border-radius:7px;
+    color:var(--ink);font-size:12.5px;font-weight:700;padding:6px 9px;font-family:inherit;}
+  .dl-name:focus{outline:none;border-color:var(--cyan);}
+  .dl-count{font-family:var(--mono);font-size:10.5px;color:var(--faint);white-space:nowrap;}
+  .dl-count.full{color:var(--warn);}
+  .dl-x{border:1px solid var(--line);border-radius:7px;background:var(--panel2);color:var(--red);
+    font-size:11px;font-weight:800;padding:5px 9px;cursor:pointer;}
+  .dl-x:hover{border-color:var(--red);}
+  .dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:5px;}
+  .dl-u{display:flex;align-items:center;gap:6px;background:#0d131d;border:1px solid var(--line);
+    border-radius:7px;padding:5px 7px;font-size:11px;cursor:pointer;transition:.1s;text-align:left;}
+  .dl-u:hover{border-color:var(--cyan);}
+  .dl-u.on{border-color:var(--good);background:#12241b;}
+  .dl-u.dim{opacity:.35;}
+  .dl-u .g{font-size:13px;}
+  .dl-u .n{flex:1;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .dl-u.on .n{color:var(--ink);font-weight:700;}
+  .dl-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px;}
+  .dl-row .sbtn{flex:1 1 150px;}
+  .dl-warn{font-size:11px;color:var(--warn);margin-top:8px;line-height:1.5;}
+  .dl-note{font-size:10.5px;color:var(--faint);line-height:1.55;margin-top:10px;}
+  .dl-prev{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;}
+  .dl-prev span{font-size:10.5px;font-weight:800;letter-spacing:.5px;padding:4px 9px;border-radius:7px;
+    border:1px solid var(--line);background:var(--panel2);color:var(--dim);}
   /* ── SAVE TRANSFER ── */
   .st-box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px;margin-bottom:11px;}
   .st-h{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:4px;display:flex;align-items:center;gap:7px;}
@@ -1730,7 +1782,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.18.2</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.19.0</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -1784,6 +1836,11 @@
     <div id="lanehint">▲ click a lane to deploy</div>
     <!-- stance + speed controls -->
     <div id="ctrlbar">
+      <!-- per-arm standing orders. Above STANCE because they override it for the units they
+           cover, so the reading order matches the precedence order. -->
+      <div class="ctrl-grp" id="groupbar">
+        <span class="ctrl-lbl">ORDERS</span>
+      </div>
       <div class="ctrl-grp" id="stancebar">
         <span class="ctrl-lbl">STANCE</span>
         <button class="ctrl-b on" id="stance-assault" title="Assault (Z) — push for the enemy HQ">⚔</button>
@@ -2085,6 +2142,14 @@
     <div class="tag" style="margin-bottom:6px">Developer view of the Gauntlet dossier — what it has collected, what it decided, and why. Decisions it declined to make are shown too, with the threshold that stopped them.</div>
     <div class="man-tabs" id="gf-tabs"></div>
     <div class="man-wrap"><div class="man-body" id="gf-body"></div></div>
+  </div>
+
+  <!-- DECK LAYOUT EDITOR — custom hotbar tabs -->
+  <div class="screen hidden" id="decklayout">
+    <button class="back-btn" id="dl-back">◀ Back</button>
+    <h1>🗂 <b>DECK LAYOUT</b></h1>
+    <div class="tag" style="margin-bottom:6px">Build your own hotbar tabs instead of the built-in categories. Up to 5 tabs, up to 9 units each. Production stays pinned on the end — factories are not units, so they cannot live in a custom tab.</div>
+    <div class="man-wrap"><div class="man-body" id="dl-body"></div></div>
   </div>
 
   <!-- SAVE TRANSFER — move progress between devices -->
@@ -2411,6 +2476,9 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   lastPlayedDay:null,  // 'YYYY-MM-DD' of the previous session, drives the welcome-back line
   ambient:true,randomEvents:true,evSupply:true,evVoice:true,evCutscene:true,evBarrage:true,evDefector:true,
   noLuck:false,          // 🎯 NO LUCK — one master override that silences every chance-driven event
+  saveTransferUnlocked:false, // 💾 gates the cross-device transfer tool — see DEV_CODES.deltavault88
+  groups:{arty:'off',armor:'off',drone:'off'}, // per-arm standing orders; all OFF until chosen
+  hbTabs:null,           // custom deck layout: null = the built-in category tabs. See activeTabs().
   chaosMode:false,
   gagChatter:true,gagGolden:true,gagVictory:true,
   history:[],career:{battles:0,wins:0,losses:0,kills:0,deploys:0,cpSpent:0,strikes:0,units:{},dmgDealt:0,timePlayed:0},
@@ -2881,6 +2949,112 @@ const STANCES={
 };
 const SPEEDS=[0.5,1,2];
 
+/* ═══════════════════════════════════════════════════════════════════════════════
+   GROUP DOCTRINES — per-arm standing orders
+   ═══════════════════════════════════════════════════════════════════════════════
+   Stances are army-wide posture. These are the opposite: each ARM (guns, armour, drones)
+   gets its own standing order, they run independently of each other, and for the units
+   they cover they OVERRIDE the stance entirely. A gun battery told to dig in does not
+   care that the army is in Assault.
+
+   Every one is a genuine trade, never a straight upgrade — that is the design rule these
+   have to hold to, because the player picks them freely and a strictly-better option is
+   just a hidden default. Each entry below names its own downside in `cost`, and those are
+   real, implemented behaviours rather than flavour text.
+
+   All three default to OFF, are rank-gated (30/38/46), and share a single 30-second
+   change cooldown so a fight cannot be micro-managed by cycling doctrines every time the
+   situation shifts — committing to an order is the decision. */
+const GROUP_STEP_PX=27;        // one "step" for positioning orders
+const GROUP_SWAP_CD=30;        // seconds between ANY two doctrine changes
+const GROUP_EVADE_PENALTY=2.6; // evasive units read this much further away to enemy targeting
+const GROUP_BOMBARD_MUL=0.25;  /* HQ damage per bombardment shell vs a normal round. Tuned down
+                                  from 0.42 after measuring: a single gun killed a 1000hp HQ in
+                                  ~24s of uncontested fire, which made a four-gun battery a
+                                  faster win condition than any actual attack. */
+const GROUP_MARCH_TRAIL=95;    // how far behind the friendly front marching fire sets up
+const GROUP_MARCH_CREEP=70;    // how far AHEAD of the front the barrage walks
+const GROUP_SUPPORT_LEAD=34;   // how far ahead of the infantry line supporting armour sits
+const GROUP_SUPPORT_HURRY=1.5; // how much faster supporting armour may move to CATCH UP to that line
+const GROUP_JAM_MULT=2.2;      // an enemy jammer reaches this much further against a dug-in battery
+
+const GROUP_DOCTRINES={
+  arty:{
+    name:'Artillery', glyph:'🎆', col:'#ff9f7f', lvl:30, key:'arty',
+    match:u=>u.cat==='arty',
+    opts:[
+      {id:'marching', name:'Marching Fire', glyph:'⇢',
+       desc:'Sets up behind your own front line and walks its fire ahead of the advance, using your troops\' eyes rather than its own.',
+       cost:'Fires ahead of the line, so it will not defend the guns themselves — anything that gets past your infantry is unopposed.'},
+      {id:'battery', name:'Stationary Batteries', glyph:'⌂',
+       desc:'Digs in five steps from the HQ and never moves again, working at its own full range.',
+       cost:'Rooted. Enemy EW jammers reach far further against a dug-in battery and scatter its shots — massing guns in one spot is exactly what a jammer is for.'},
+      {id:'bombard', name:'Bombardment', glyph:'☄',
+       desc:'Ignores troops entirely, walks to the edge of its range and shells the enemy HQ.',
+       cost:'Reduced damage against structures, and it will not fire on troops at all — it is a clock, not a defence.'},
+    ]},
+  armor:{
+    name:'Armour', glyph:'🛡', col:'#ffb347', lvl:38, key:'armor',
+    match:u=>!!u.armor,
+    opts:[
+      {id:'assault', name:'Assault', glyph:'⚔',
+       desc:'Drives for the enemy HQ and only engages what is physically in the way.',
+       cost:'Ignores anything not blocking it — support units, artillery and AA walk free behind your tanks.'},
+      {id:'support', name:'Support', glyph:'⛨',
+       desc:'Advances just ahead of your infantry and paces itself to them, so the line arrives together.',
+       cost:'Gives up all its speed advantage. Armour is never further forward than the infantry can follow.'},
+      {id:'breaker', name:'Armour Breaker', glyph:'✹',
+       desc:'Hunts armoured targets — the ones small arms barely scratch.',
+       cost:'Will cross a lane full of infantry to reach a tank, and ignores the infantry while it does.'},
+    ]},
+  drone:{
+    name:'Drones', glyph:'💣', col:'#ffdf7f', lvl:46, key:'drone',
+    match:u=>u.cat==='dro',
+    opts:[
+      {id:'straight', name:'Straightforward', glyph:'↦',
+       desc:'Flies its lane and never deviates from it.',
+       cost:'No steering at all — it will fly straight past a target sitting slightly off its line.'},
+      {id:'hvt', name:'HVT Hunter', glyph:'◎',
+       desc:'Evades what it can and dives only the single toughest enemy on the field, passing over everything else.',
+       cost:'Ignores every cheap unit. A swarm of infantry is invisible to it.'},
+      {id:'bomber', name:'Base Bomber', glyph:'☄',
+       desc:'Evades what it can and flies for the enemy HQ, ignoring troops completely.',
+       cost:'No defensive value whatsoever — every drone spent this way is one not defending your line.'},
+    ]},
+};
+const GROUP_KEYS=Object.keys(GROUP_DOCTRINES);
+function groupOpt(gk,id){ const g=GROUP_DOCTRINES[gk]; return g&&g.opts.find(o=>o.id===id)||null; }
+function groupUnlocked(gk){ const g=GROUP_DOCTRINES[gk]; return !!g&&rankGateOk(g.lvl); }
+/* The active order for a unit, or null. Player side only — these are a player control, and
+   handing the same toolkit to the AI would change every difficulty tier's tuning at once. */
+function unitGroup(u){
+  if(!G||!G.groups||u.side!=='B'||u.support)return null;
+  for(const gk of GROUP_KEYS){
+    const mode=G.groups[gk];
+    if(mode&&mode!=='off'&&GROUP_DOCTRINES[gk].match(u))return {gk,mode,gd:GROUP_DOCTRINES[gk]};
+  }
+  return null;
+}
+// frontmost friendly x in a lane, optionally restricted to a category (for the "pace to the
+// infantry" and "trail the front" orders). Returns null when the lane is empty.
+function friendlyFrontX(lane,cat,exclude){
+  let f=null;
+  for(const o of G.units){
+    if(!o.alive||o.side!=='B'||o.lane!==lane||o===exclude)continue;
+    if(cat&&o.cat!==cat)continue;
+    if(f==null||o.x>f)f=o.x;
+  }
+  return f;
+}
+// is an enemy EW jammer close enough to disrupt a dug-in battery? (the counter to gun stacking)
+function batteryJammed(u){
+  for(const o of G.units){
+    if(!o.alive||o.side==='B'||!o.jam)continue;
+    if(dist(o.x,o.y,u.x,u.y)<(o.jamR||135)*GROUP_JAM_MULT)return true;
+  }
+  return false;
+}
+
 /* ── VETERANCY — units that rack up kills mid-battle grow stronger, on both sides ── */
 const VET_RANKS=[
   {kills:0,  name:'',         chev:0, hpMul:1,    dmgMul:1   },
@@ -3203,13 +3377,23 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.18.2';
+const GAME_VERSION='1.19.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.19.0',notes:[
+    'NEW \u2014 STANDING ORDERS. A new ORDERS row sits above STANCE with one chip per arm: artillery, armour and drones. Each arm gets its own standing order, they run independently of one another, and for the units they cover they OVERRIDE the stance entirely \u2014 a gun battery told to dig in does not care that the army is in Assault. All three start off, unlock at Rank 30 / 38 / 46, and share a single 30-second change cooldown, because committing to an order is meant to be the decision.',
+    'ARTILLERY \u2014 Marching Fire sets up behind your front line and walks its fire ahead of the advance, using your troops\' eyes rather than its own (but will not defend the guns). Stationary Batteries dig in five steps from the HQ and never move, working at full range \u2014 and enemy EW jammers reach far further against a dug-in battery and scatter its shots, which is the deliberate counter to stacking guns in one place. Bombardment ignores troops completely, walks to the edge of its range and shells the enemy HQ for reduced damage.',
+    'ARMOUR \u2014 Assault drives for the enemy HQ and only engages what is physically blocking it. Support hurries to your infantry line and paces to it so the line arrives together, giving up any solo breakthrough. Armour Breaker hunts armoured targets as an absolute priority \u2014 the ones small arms barely scratch \u2014 and ignores infantry while it does.',
+    'DRONES \u2014 Straightforward never leaves its lane. HVT Hunter evades what it can and dives only the single toughest enemy on the field. Base Bomber evades what it can and flies for the enemy HQ, ignoring troops entirely. Both evasive orders make a drone read as further away to enemy targeting, so it is picked last.',
+    'Every order names its own downside in the picker, because a strictly-better option is just a hidden default. Units acting on an order carry a dashed ring in their arm\'s colour and its glyph, so an ordered unit is never mistaken for a bugged one \u2014 and a jammed battery says JAMMED on itself rather than just quietly missing.',
+    'NEW \u2014 DECK LAYOUT (Settings \u2192 Advanced). Build your own hotbar tabs instead of the built-in categories: up to 5 tabs of up to 9 units each, named and reorderable. Production stays pinned on the end, because factories are not units and a layout that simply replaced all four built-in tabs would silently delete the only route to the Barracks, Motor Pool and Drone Bay. A layout naming a unit that no longer exists, or one edited past its limits, falls back to the built-in tabs rather than rendering a broken deck mid-battle.',
+    'FIXED \u2014 a Bombardment gun computed where to stop from its RAW range but checked whether it could fire using its EFFECTIVE range. Weather and terrain both shorten range, so in rain the gun parked permanently two pixels outside its own reach and never fired a shot. It now derives the stopping point from effective range, with margin.',
+    'The cross-device Transfer Progress tool is now behind a developer access code rather than sitting open in the Debug panel. Import/export can hand an account any rank and every unlock in one paste \u2014 which is exactly what it is for while the game is offline and single-player, but a global leaderboard is coming and a board seeded with self-granted maxed accounts is worth nothing to the people who earned their place on it. It will be revisited once the backend can validate progress server-side.',
+  ]},
   {v:'1.18.2',notes:[
     'NEW \u2014 TRANSFER PROGRESS. Your save lives in the browser on one device, so a phone and a laptop have always been two unrelated careers with no way to reconcile them. Debug/Dev \u2192 Transfer Progress now exports everything you have earned as a single copy-pasteable code, and imports it on another device. It carries rank and XP, every doctrine, medals, campaign clears and stars, time trials, the secret level, rivals, doctrine lessons, your whole crate collection, daily streaks, the Gauntlet dossier and lifetime record, career stats and the leaderboard.',
     'The transfer format is deliberately NOT a dump of the save file. It carries an explicit list of progress fields, each validated on the way in, which is what makes it survive updates: a later version adding a field will not invalidate codes you already have (the new field just uses its default), and a code carrying something a build does not recognise imports everything else and ignores the rest. A code that has been truncated or edited fails its integrity check and is refused outright rather than half-applied \u2014 arriving with half a career is worse than being told to re-copy it.',
@@ -4372,6 +4556,16 @@ function newGame(){
   G.rivalTauntT=rnd(20,28);
   // troop stance (behaviour only) + game speed
   G.stance='assault';
+  /* GROUP DOCTRINES carry over from the player's saved preference rather than resetting each
+     battle — unlike stance, an order is a loadout decision, not an in-fight reaction. Any
+     order whose rank gate is not met is dropped back to off on the way in, so a save edited
+     at rank 50 cannot arm them at rank 5. */
+  G.groups={};
+  for(const gk of GROUP_KEYS){
+    const want=(SAVE.groups&&SAVE.groups[gk])||'off';
+    G.groups[gk]=(want!=='off'&&groupUnlocked(gk)&&groupOpt(gk,want))?want:'off';
+  }
+  G.groupCd=0;
   G.speed=SAVE.speed||1;
   // country flavour — player's chosen nation, enemy gets a different one
   G.country=sel.country||'generic';
@@ -4425,6 +4619,7 @@ function newGame(){
   // daily mutators
   if(L&&L.type==='daily'&&L.mut&&L.mut.apply){try{L.mut.apply(G);}catch(e){}}
   for(const u of HOTBAR)G.cds[u]=0;
+  try{ closeGroupPop(); buildGroupBar(); }catch(e){}
   window.G=G; // expose for console/debug
   // opening skirmishers so lanes are alive from the first second (count scales with difficulty)
   /* Opening wave. The Gauntlet REPLACES diff.open with its own per-rung count rather than
@@ -5284,7 +5479,8 @@ function fire(u,tgt){
     // ARTILLERY — a real lobbed shell that reliably lands where it's aimed, then splashes.
     const shots=u.salvo>0?u.salvo:1;
     for(let s=0;s<shots;s++){
-      const spread=u.salvo>0?34:12;
+      // a jammed battery cannot hold a firing solution — the rounds go wide rather than stopping
+      const spread=(u.salvo>0?34:12)*(u.batteryJammed?3.4:1);
       const ix=clamp(tgt.x+rnd(-spread,spread),18,W-18), iy=tgt.y+rnd(-spread*0.7,spread*0.7);
       const d=dist(u.x,u.y,ix,iy);
       const dur=0.65+d/1000;
@@ -5415,6 +5611,7 @@ function step(dt){
   for(const t in G.strikeCds)if(G.strikeCds[t]>0)G.strikeCds[t]=Math.max(0,G.strikeCds[t]-dt);
   if(G.barrage)barrageTick(dt);   // rolling barrage creeps up the field
   if(G.gunrun)gunrunTick(dt);     // gunship strafing run marches down a lane
+  if(G.groupCd>0)G.groupCd=Math.max(0,G.groupCd-dt);  // group-doctrine change cooldown
   if(G.gaunt){ gauntStrikeTick(dt);                 // ◈ the Adjutant's own off-map fire support
     if(G.gauntGun)gauntGunTick(dt);
     if(G.gauntBarrage)gauntBarrageTick(dt); }
@@ -5460,6 +5657,12 @@ function step(dt){
 function nearestEnemy(u){
   let best=null,bd=1e9, bestAir=null,bad=1e9;
   const rapid=(u.rof<=0.75 && !u.support && u.dmg>0); // rifles/IFVs/interceptors can swat low-flying drones
+  /* GROUP DOCTRINES change WHAT a unit looks for, not how well it shoots. Each branch below
+     narrows or re-ranks the candidate list; none of them touch damage, range or accuracy. */
+  const g=unitGroup(u);
+  const gm=g?g.mode:null;
+  if(gm==='bomber')return {tgt:null,d:1e9};                 // base bomber never engages troops
+  if(gm==='bombard')return {tgt:null,d:1e9};                // bombardment ignores troops entirely
   for(const o of G.units){ if(!o.alive||o.side===u.side)continue;
     if(u.onlyAir&&!o.flies)continue;           // AA only shoots air
     if(o.flies&&!u.aa&&!u.flies&&!u.kamikaze&&u.cat!=='arty'){
@@ -5467,9 +5670,43 @@ function nearestEnemy(u){
       if(!(o.lowAir&&rapid))continue;
     }
     const d=dist(u.x,u.y,o.x,o.y);
-    if(d<bd){bd=d;best=o;}
-    if(o.flies&&d<bad){bad=d;bestAir=o;}
+    /* dEff is the RANKING distance, deliberately separate from the real one (d) so an order
+       can change preference without lying about range — the caller still gates firing on the
+       true distance, so nothing here lets a unit shoot further than it should. */
+    let dEff=d;
+    if(gm==='assault'){
+      // only what is physically in the way: same lane, ahead, and close enough to be blocking
+      const ahead=(o.x-u.x)*dir(u.side)>0;
+      if(!(o.lane===u.lane&&ahead&&Math.abs(o.x-u.x)<u.rng*0.8))continue;
+    } else if(gm==='breaker'){
+      /* Armoured targets are an ABSOLUTE priority, ranked by distance among themselves, with
+         soft targets pushed behind all of them by a flat offset. A multiplier does not work
+         here: ×4 on a rifle 70px away still beats a tank 300px away, so the order silently
+         did nothing in the exact situation it exists for. */
+      const hard=(o.armorClass==='heavy'||o.armorClass==='light');
+      if(!hard)dEff=d+1e5;
+    } else if(gm==='hvt'){
+      // the single toughest thing on the field — rank by durability, not proximity
+      if(o.support)continue;
+      dEff=1e6-(o.maxHp||0)*1000+d*0.001;
+    } else if(gm==='marching'){
+      // walk the fire AHEAD of your own line rather than at whatever is nearest the guns
+      const front=friendlyFrontX(u.lane,null,u);
+      if(front==null)continue;
+      const aim=front+dir(u.side)*GROUP_MARCH_CREEP;
+      if((o.x-front)*dir(u.side)<0)continue;      // never shell behind your own troops
+      dEff=Math.abs(o.x-aim);
+    }
+    // an evading drone is picked last by everything that could shoot it
+    if(o.evasive)dEff*=GROUP_EVADE_PENALTY;
+    if(dEff<bd){bd=dEff;best=o;}
+    if(o.flies&&dEff<bad){bad=dEff;bestAir=o;}
   }
+  /* Ranking distance is not firing distance. Re-measure the winner honestly before handing
+     it back, or a re-ranked pick (breaker, HVT, marching fire) would report a fake range and
+     let the unit open fire from outside its actual reach. */
+  if(best&&gm)bd=dist(u.x,u.y,best.x,best.y);
+  if(bestAir&&gm)bad=dist(u.x,u.y,bestAir.x,bestAir.y);
   // enemy ground units can grind down a factory if it's the closest thing around — flying
   // units bypass it and go straight for the HQ, same as they always have
   if(u.side==='R' && !u.flies && G.spawners){
@@ -5482,6 +5719,23 @@ function nearestEnemy(u){
   if(u.hunter&&bestAir)return {tgt:bestAir,d:bad};
   return {tgt:best,d:bd};
 }
+/* A bombardment round: a real lobbed shell aimed at the enemy HQ. It flies and lands like
+   any other artillery round (so it reads correctly on screen), but carries `hqShell` and
+   applies REDUCED structural damage on impact — the trade for a gun that ignores the war
+   in front of it and just runs a clock on the enemy base. */
+function groupBombardShot(u){
+  const foe=u.side==='B'?'R':'B';
+  const hqX=u.side==='B'?W-26:26;
+  const iy=G.laneY[u.lane]*H+rnd(-18,18);
+  const d=dist(u.x,u.y,hqX,iy);
+  const col=u.side==='B'?TEAM.B.pale:TEAM.R.pale;
+  const hit=(u.dmg*3+12)*(0.6+dmgMul(u.dmgType,'struct'))*GROUP_BOMBARD_MUL;
+  G.projs.push({arc:true,sx:u.x,sy:u.y,ix:hqX,iy,x:u.x,y:u.y,arcT:0,arcDur:0.7+d/1000,
+    arcH:80+d*0.12,side:u.side,dmg:u.dmg*0.5,splash:u.splash||20,src:u,col,
+    life:2.2,age:0,hqShell:foe,hqDmg:hit});
+  if(Math.random()<0.5)SND.fireFor(u);
+}
+
 /* fog of war (cosmetic): which enemy units the player can actually see */
 function computeSpotting(){
   const sr=G.spotBase*(G.wxSpot||1);
@@ -5600,6 +5854,46 @@ function updateUnits(dt){
       if(G.stance==='defend'){ stMul=0.5; holdLine=W*0.5; u.shield=true; } // hold the CENTRE line (sits right on the Domination capture zone)
       else if(G.stance==='skirmish'){ stMul=0.75; kite=true; }
     }
+    /* GROUP DOCTRINE — positioning. Applied AFTER the stance block and overwriting it,
+       because for the units an order covers the order IS the posture; a battery told to dig
+       in must not also be trying to hold the centre line because the army is in Defend. */
+    const grp=unitGroup(u);
+    u.grpMark=grp?grp.gd:null;                 // drives the on-unit marker (see drawUnit)
+    u.evasive=false;
+    if(grp){
+      stMul=1; kite=false; u.shield=false; holdLine=null;
+      const md=grp.mode;
+      if(md==='battery'){
+        // dug in a fixed distance from your own HQ, and it never advances again
+        holdLine=24+GROUP_STEP_PX*5;
+      } else if(md==='marching'){
+        // set up behind your own front line and creep forward with it
+        const front=friendlyFrontX(u.lane,null,u);
+        if(front!=null)holdLine=Math.max(50,front-GROUP_MARCH_TRAIL);
+        else holdLine=24+GROUP_STEP_PX*5;      // no line yet — hold near the guns' start
+        stMul=0.6;
+      } else if(md==='bombard'){
+        /* Walk to the edge of range on the enemy HQ, then stop and shell it. The stopping
+           point MUST be derived from the EFFECTIVE range (weather and lane terrain both
+           shorten it), not the raw stat: computed from the raw 230 the gun parks 218px out,
+           and in rain — where effective range is 216 — it sits permanently 2px outside its
+           own reach and never fires a shot. The 0.92 leaves margin for the same reason. */
+        holdLine=(W-24)-rngEff*0.92;
+      } else if(md==='support'){
+        /* Keep station just ahead of the infantry line. Infantry are FASTER than armour in
+           this roster (rifles 34 vs a tank's 24), so a pure speed CAP would never bind and
+           the order would do nothing at all. What it actually does is let armour hurry to
+           reach the line and then hold there: the trade is that armour arrives with the
+           infantry instead of alone, and gives up leading a breakthrough by itself. */
+        const inf=friendlyFrontX(u.lane,'inf',u);
+        if(inf!=null){
+          holdLine=inf+GROUP_SUPPORT_LEAD;
+          if(u.x<holdLine-8)stMul=GROUP_SUPPORT_HURRY;   // catching up to the line
+        }
+      } else if(md==='hvt'||md==='bomber'){
+        u.evasive=true;                        // read as further away by enemy targeting
+      }
+    }
     // acquire & fire (support units never shoot)
     if(tgt&&d<=rngEff && !u.support){
       u.vx=0;
@@ -5619,13 +5913,35 @@ function updateUnits(dt){
         else u.x=Math.min(u.x+step,holdLine);                        // advance only up to the line
       } else u.x+=step;
       if(u.flies){
-        if(u.kamikaze&&tgt){ // steer toward the target's lane while closing so it can't fly straight past an off-center enemy
+        /* Straightforward drones hold their lane no matter what — that is the whole order,
+           and it is the reason they are worse at catching an off-line target and better at
+           being predictable. */
+        const lockLane=grp&&grp.mode==='straight';
+        if(u.kamikaze&&tgt&&!lockLane){ // steer toward the target's lane while closing so it can't fly straight past an off-center enemy
           const maxDy=u.spd*spdMul*dt*1.4;
           u.y+=clamp(tgt.y-u.y,-maxDy,maxDy);
+        } else if(lockLane){
+          // ease back onto the lane centre rather than snapping, so it still reads as flying
+          const laneY=G.laneY[u.lane]*H, maxDy=u.spd*spdMul*dt;
+          u.y+=clamp(laneY-u.y,-maxDy,maxDy);
         } else u.y+=Math.sin(u.bob)*0.3;
         if(u.kamikaze&&(u.x!==x0||u.y!==y0))u.heading=Math.atan2(u.y-y0,u.x-x0);
       }
     }
+    /* BOMBARDMENT — the only firing path that does not need a unit target. Range is measured
+       to the enemy HQ, and the shell that lands there does reduced structural damage. */
+    if(grp&&grp.mode==='bombard'&&!u.support){
+      const hqX=u.side==='B'?W-24:24;
+      if(Math.abs(hqX-u.x)<=rngEff && u.cd<=0 && supp<0.85){ groupBombardShot(u); u.cd=u.rof; }
+    }
+    /* BATTERY vs EW — a dug-in gun line is a fixed, known coordinate, which is exactly what
+       jamming is good against. Being jammed does not stop a battery firing; it scatters the
+       rounds and slows the reload, so stacking guns in one place stops scaling. */
+    if(grp&&grp.mode==='battery'){
+      const jammed=batteryJammed(u);
+      u.batteryJammed=jammed;
+      if(jammed)u.sup=Math.min(1,(u.sup||0)+0.18*dt);
+    } else u.batteryJammed=false;
     if(u.cd>0)u.cd-=dt;
     // reached enemy HQ?
     const hqX=u.side==='B'?W-24:24;
@@ -5661,6 +5977,14 @@ function updateProjs(dt){
       if(t>=1){
         p.dead=true;
         explode(p.ix,p.iy,p.splash,p.side,18); scorch(p.ix,p.iy,p.splash);
+        // a bombardment round: the payload is structural damage to the HQ it was aimed at
+        if(p.hqShell&&G.hq[p.hqShell]!=null&&!(G.mode==='survival'&&p.hqShell==='R')){
+          G.hq[p.hqShell]=Math.max(0,G.hq[p.hqShell]-p.hqDmg);
+          if(p.side==='B')G.dmgDealt+=p.hqDmg; else G.dmgTaken+=p.hqDmg;
+          G.shake=Math.max(G.shake,SAVE.reduceMotion?3:7);
+          try{SND.hqhit();}catch(e){}
+          checkWin();
+        }
         G.shake=Math.max(G.shake,SAVE.reduceMotion?4:9); if(p.side==='R')SND.boom(); else SND.boom();
         for(const o of G.units){ if(o.alive&&o.side!==p.side){ const dd=dist(o.x,o.y,p.ix,p.iy);
           if(dd<p.splash)damage(o,p.dmg*(dd<p.splash*0.5?1:0.6),p.src); } }
@@ -6241,6 +6565,27 @@ function drawUnit(u){
   if(u.age>0&&AGES[u.age]){cx.beginPath();cx.arc(x,y,vr+4,0,6.28);cx.strokeStyle=AGES[u.age].col;cx.lineWidth=1.3;cx.globalAlpha=0.65;cx.stroke();cx.globalAlpha=1;}
   // the representational little model
   drawUnitSprite(u,x,y);
+  /* GROUP-DOCTRINE MARKER. A unit acting on a standing order is behaving differently from
+     an identical unit next to it, and without a visible mark that reads as the game being
+     buggy rather than the order working. A dashed ring in the arm's colour plus its glyph. */
+  if(u.grpMark){
+    cx.save();
+    cx.strokeStyle=u.grpMark.col; cx.globalAlpha=0.75; cx.lineWidth=1.4;
+    cx.setLineDash([3,3]);
+    cx.beginPath(); cx.arc(x,y,vr+6,0,6.28); cx.stroke();
+    cx.setLineDash([]);
+    cx.globalAlpha=1; cx.fillStyle=u.grpMark.col;
+    cx.font='bold 9px var(--font)'; cx.textAlign='center'; cx.textBaseline='middle';
+    cx.fillText(u.grpMark.glyph,x+vr+7,y-vr-2);
+    cx.textBaseline='alphabetic';
+    cx.restore();
+    // a jammed battery says so — otherwise "my guns stopped hitting" reads as a bug
+    if(u.batteryJammed){
+      cx.save(); cx.globalAlpha=0.85; cx.fillStyle='#b0a0ff';
+      cx.font='bold 9px var(--mono)'; cx.textAlign='center';
+      cx.fillText('JAMMED',x,y-vr-13); cx.restore();
+    }
+  }
   // ☠ chat-boss marker (sprites replaced glyphs, so the boss gets a crown of doom)
   if(u.boss){ cx.font='bold '+(vr+2)+'px var(--font)';cx.textAlign='center';cx.textBaseline='middle';
     cx.fillStyle='#c9a0ff';cx.fillText('☠',x,y-vr-10);cx.textBaseline='alphabetic';
@@ -6379,6 +6724,7 @@ function syncHUD(){
   }
   syncAgeUI();
   syncAIDebug();
+  syncGroupUI();
   // chat vote bar (streamer)
   const vb=document.getElementById('votebar');
   if(vb){
@@ -6450,6 +6796,34 @@ const HB_TABS=[
   {id:'support',label:'🛠 Support',col:'#3fd07a',units:new Set(['medic','jammer'])},
   {id:'production',label:'🏭 Production',col:'#5ff0e0',spawners:true},
 ];
+const HB_MAX_TABS=5, HB_MAX_PER_TAB=9;
+/* CUSTOM DECK LAYOUTS. A saved layout REPLACES the built-in category tabs entirely.
+   Validated on every read rather than trusted, for the same reason the save is: a layout
+   naming a unit that no longer exists, or one that has grown past its limits through a
+   hand-edited save, must degrade to the built-in tabs instead of rendering a broken deck
+   mid-battle. Returning the built-ins is always a safe answer. */
+function customTabsValid(t){
+  if(!Array.isArray(t)||!t.length||t.length>HB_MAX_TABS)return false;
+  for(const tab of t){
+    if(!tab||typeof tab!=='object')return false;
+    if(!Array.isArray(tab.u)||tab.u.length>HB_MAX_PER_TAB)return false;
+    if(tab.u.some(k=>!UNITS[k]))return false;
+  }
+  return t.some(tab=>tab.u.length>0);   // a layout of empty tabs is not a layout
+}
+function activeTabs(){
+  const t=SAVE.hbTabs;
+  if(!customTabsValid(t))return HB_TABS;
+  const out=t.map((tab,i)=>({id:'c'+i,label:tab.n||('TAB '+(i+1)),col:tab.c||'#5ff0e0',
+    units:new Set(tab.u),custom:true}));
+  /* PRODUCTION IS ALWAYS APPENDED. Factories are not units — they cannot be placed into a
+     custom tab because the layout editor works from the unit roster — so a custom layout
+     that simply replaced all four built-in tabs would silently delete the only route to
+     the Barracks, Motor Pool and Drone Bay for the rest of the game. Keeping it pinned
+     costs one tab slot and removes an entire class of "my factories vanished" bug. */
+  out.push(HB_TABS.find(x=>x.spawners));
+  return out;
+}
 let hbTab='ground';
 // strikes + recon + EMP live in their own always-visible row (never behind a tab click) — they're
 // the "break glass" commander powers, so burying them a click away defeats the point
@@ -6495,14 +6869,16 @@ function buildHotbar(){
   const oneDeck=!!(G&&G.allowed);
   const tabsEl=document.getElementById('hbtabs'); tabsEl.innerHTML='';
   tabsEl.style.display=oneDeck?'none':'';
-  if(!oneDeck)for(const t of HB_TABS){
+  const TABS=activeTabs();
+  if(!TABS.some(t=>t.id===hbTab))hbTab=TABS[0].id;   // a layout change can orphan the active tab
+  if(!oneDeck)for(const t of TABS){
     const tb=document.createElement('button'); tb.className='hbtab'+(hbTab===t.id?' on':'');
     tb.textContent=t.label;
     if(t.col)tb.style.setProperty('--tc',t.col); // drives border/text/glow via the .hbtab rules
     tb.onclick=()=>{hbTab=t.id;buildHotbar();};
     tabsEl.appendChild(tb);
   }
-  const tab=HB_TABS.find(t=>t.id===hbTab)||HB_TABS[0];
+  const tab=TABS.find(t=>t.id===hbTab)||TABS[0];
   const hb=document.getElementById('hotbar'); hb.innerHTML='';
   /* In one-deck mode the number shown on a card must match what the keyboard handler will
      do — that handler indexes the visible deck, so a card's label is its position in the
@@ -8818,6 +9194,101 @@ function setStance(s){
 function syncStanceUI(){
   for(const s in STANCES){ const b=document.getElementById('stance-'+s); if(b)b.classList.toggle('on',G&&G.stance===s); }
 }
+
+/* ── GROUP-DOCTRINE UI ─────────────────────────────────────────────────────────
+   One chip per arm; tapping opens a small popover with Off + the three orders. */
+let _gpOpen=null;
+function buildGroupBar(){
+  const bar=document.getElementById('groupbar'); if(!bar)return;
+  bar.querySelectorAll('.ctrl-b').forEach(b=>b.remove());
+  const anyUnlocked=GROUP_KEYS.some(groupUnlocked);
+  // hidden entirely until the first arm unlocks — an always-visible row of padlocks on the
+  // battlefield is clutter that teaches nothing at the rank where it would appear
+  bar.style.display=anyUnlocked?'':'none';
+  if(!anyUnlocked)return;
+  for(const gk of GROUP_KEYS){
+    const gd=GROUP_DOCTRINES[gk], unlocked=groupUnlocked(gk);
+    const mode=(G&&G.groups&&G.groups[gk])||'off';
+    const b=document.createElement('button');
+    b.className='ctrl-b'+(mode!=='off'?' armed':'')+(unlocked?'':' locked');
+    b.id='grp-'+gk;
+    b.style.setProperty('--gc',gd.col);
+    const o=groupOpt(gk,mode);
+    b.innerHTML=(unlocked?gd.glyph:'🔒')+'<span class="gdot"></span>';
+    b.title=unlocked
+      ? gd.name+' — '+(o?o.name:'no standing order')
+      : gd.name+' orders unlock at Rank '+gd.lvl;
+    b.onclick=e=>{ e.stopPropagation(); toggleGroupPop(gk); };
+    bar.appendChild(b);
+  }
+}
+function closeGroupPop(){ const p=document.getElementById('grouppop'); if(p)p.remove(); _gpOpen=null; }
+function toggleGroupPop(gk){
+  if(_gpOpen===gk){ closeGroupPop(); return; }
+  closeGroupPop();
+  const bar=document.getElementById('groupbar'); if(!bar)return;
+  const gd=GROUP_DOCTRINES[gk];
+  const pop=document.createElement('div'); pop.id='grouppop'; pop.className='show';
+  pop.style.setProperty('--gc',gd.col);
+  pop.onclick=e=>e.stopPropagation();
+  const render=()=>{
+    const mode=(G&&G.groups&&G.groups[gk])||'off';
+    const cd=G?Math.ceil(G.groupCd||0):0;
+    if(!groupUnlocked(gk)){
+      pop.innerHTML=`<div class="gp-h" style="color:${gd.col}">${gd.glyph} ${gd.name.toUpperCase()} ORDERS</div>`+
+        `<div class="gp-lock">🔒 Unlocks at Rank ${gd.lvl}. These are standing orders for a whole arm — they arrive once you have enough of the roster in play for the choice to mean something.</div>`;
+      return;
+    }
+    let h=`<div class="gp-h" style="color:${gd.col}">${gd.glyph} ${gd.name.toUpperCase()} ORDERS<span style="color:var(--faint);font-weight:600">overrides stance</span></div>`;
+    const row=(id,name,desc,cost)=>
+      `<button class="gp-o${mode===id?' on':''}" data-gid="${id}"><div class="gp-n">${name}</div>`+
+      `<div class="gp-d">${desc}</div>${cost?`<div class="gp-c">⚠ ${cost}</div>`:''}</button>`;
+    h+=row('off','✕ No standing order','This arm follows the army stance like everything else.','');
+    for(const o of gd.opts)h+=row(o.id,o.glyph+' '+o.name,escapeHTML(o.desc),escapeHTML(o.cost));
+    if(cd>0)h+=`<div class="gp-cd">Orders can be changed again in ${cd}s — one change per ${GROUP_SWAP_CD}s.</div>`;
+    pop.innerHTML=h;
+    pop.querySelectorAll('.gp-o').forEach(btn=>{
+      btn.onclick=()=>{ if(setGroupDoctrine(gk,btn.dataset.gid))render(); };
+    });
+  };
+  render();
+  bar.appendChild(pop);
+  _gpOpen=gk;
+  pop._render=render;
+}
+/* Apply an order. Refuses while the shared cooldown is running: committing to a doctrine is
+   the decision the mode is built around, and letting it be cycled every few seconds turns a
+   standing order into just another micro action. */
+function setGroupDoctrine(gk,id){
+  if(!G||G.over||!GROUP_DOCTRINES[gk])return false;
+  if(!groupUnlocked(gk))return false;
+  if(id!=='off'&&!groupOpt(gk,id))return false;
+  const cur=(G.groups&&G.groups[gk])||'off';
+  if(cur===id)return false;
+  if(G.groupCd>0){
+    announce('⏳ ORDERS LOCKED','wait '+Math.ceil(G.groupCd)+'s before changing again','#ff5a4a');
+    return false;
+  }
+  G.groups[gk]=id;
+  G.groupCd=GROUP_SWAP_CD;
+  // remember it for next battle — an order is a loadout choice, not an in-fight reaction
+  if(!SAVE.groups||typeof SAVE.groups!=='object')SAVE.groups={};
+  SAVE.groups[gk]=id; persist();
+  const gd=GROUP_DOCTRINES[gk], o=groupOpt(gk,id);
+  announce(gd.glyph+' '+gd.name.toUpperCase()+(o?' — '+o.name.toUpperCase():' — ORDERS CLEARED'),
+    o?o.desc:'this arm follows the army stance again',gd.col);
+  buildGroupBar();
+  return true;
+}
+function syncGroupUI(){
+  for(const gk of GROUP_KEYS){
+    const b=document.getElementById('grp-'+gk); if(!b)continue;
+    const mode=(G&&G.groups&&G.groups[gk])||'off';
+    b.classList.toggle('armed',mode!=='off');
+  }
+  const pop=document.getElementById('grouppop');
+  if(pop&&pop._render&&G&&G.groupCd>0)pop._render();   // live-count the cooldown while it is open
+}
 function quickDeploy(lane){
   if(STRIKES[G.selCard])tryStrike(G.selCard,lane,W*0.6);
   else if(G.selCard==='recon')tryRecon(lane);
@@ -8929,9 +9400,19 @@ function DEBUG_GROUPS(){ // built lazily so it always sees the latest REVENTS/DI
     ]},
     {name:'Difficulty Change FX (title screen only)',actions:
       Object.keys(DIFFS).map(k=>dbgAction(DIFFS[k].glyph+' '+DIFFS[k].name, ()=>diffFx(k)))},
-    {name:'💾 Save transfer (cross-device)',actions:[
+    /* Deliberately gated behind an access code rather than simply present.
+       Import/export can hand an account any rank, every unlock and a full crate collection
+       in one paste. That is exactly what it is for while the game is offline and single
+       player — but a global leaderboard is coming, and a board seeded with self-granted
+       maxed accounts is worth nothing to the people who actually earned their place on it.
+       Keeping the tool behind a code costs a developer one paste and removes the casual
+       path entirely. It is NOT security (the code is in plain text in this file, same as
+       every other code here) and it is not meant to be — it is a speed bump that stops the
+       tool being a one-click self-max button sitting in a panel any player can open.
+       Revisit this once the backend exists and can validate progress server-side. */
+    ...(SAVE.saveTransferUnlocked?[{name:'💾 Save transfer (cross-device)',actions:[
       dbgAction('💾 Transfer Progress',()=>{ closeDebugModal(); openSaveTransfer('title'); }),
-    ]},
+    ]}]:[]),
     {name:'◈ The Gauntlet',actions:[
       dbgAction('🧠 Open Adjutant File',()=>{ closeDebugModal(); openGauntFile('title'); }),
       dbgAction('◈ Fight at current tier',()=>{ closeDebugModal(); leaveTitle(); launchGauntlet(); }),
@@ -9001,6 +9482,13 @@ const DEV_CODES={
     run(){
       SAVE=JSON.parse(JSON.stringify(DEFAULT_SAVE)); persist();
       return 'Progress wiped back to a brand-new account.';
+    }},
+  deltavault88:{
+    label:'SAVE TRANSFER',
+    desc:'Reveals the cross-device Transfer Progress tool in this panel.',
+    run(){
+      SAVE.saveTransferUnlocked=true; persist();
+      return 'Transfer Progress is now available in this panel on this device.';
     }},
 };
 /* Apply whatever is in the access-code box. Unknown codes fail quietly and specifically —
@@ -9328,6 +9816,11 @@ function renderSettings(){
             <span aria-hidden="true" style="width:11px;height:11px;border-radius:50%;background:${c1};display:inline-block"></span><span aria-hidden="true" style="width:11px;height:11px;border-radius:50%;background:${c2};display:inline-block"></span>${lbl}</button>`).join('')}
       </div></div>`+
     settingRow('Big Units','Every unit renders much larger on the battlefield. Purely visual — hitboxes, range and combat are unaffected, so this is safe to leave on for every match.',`<button id="set-bigunits" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.bigUnits)}</button>`)+
+    `<div style="font-size:13px;font-weight:800;color:var(--purple);letter-spacing:.5px;margin:6px 2px -2px">🧰 ADVANCED</div>`+
+    settingRow('Deck Layout','Build your own hotbar tabs instead of the built-in categories — up to 5 tabs of up to 9 units each. Production stays pinned on the end.',
+      `<button class="sbtn" id="set-deck" style="font-size:11px;padding:6px 11px">🗂 ${customTabsValid(SAVE.hbTabs)?'Edit ('+SAVE.hbTabs.length+' custom)':'Customise'}</button>`)+
+    settingRow('Standing Orders','Per-arm orders for artillery, armour and drones that override your stance for those units. Chosen on the battlefield from the ORDERS row above STANCE — they unlock at Rank '+GROUP_DOCTRINES.arty.lvl+', '+GROUP_DOCTRINES.armor.lvl+' and '+GROUP_DOCTRINES.drone.lvl+'.',
+      `<span style="font-size:11px;font-weight:800;color:${GROUP_KEYS.every(groupUnlocked)?'var(--good)':'var(--faint)'};white-space:nowrap">${GROUP_KEYS.filter(groupUnlocked).length}/${GROUP_KEYS.length} unlocked</span>`)+
     settingRow('Cutscenes','Brief cinematic close-ups of the action. This is the master switch — it also silences the cinematic a legendary kill streak earns, which is not a random event and would otherwise still play.',`<button id="set-cutscenes" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evCutscene)}</button>`)+
     `<div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.5px;margin:6px 2px -2px">🎲 RANDOM EVENTS</div>`+
     /* NO LUCK sits ABOVE the individual switches because it overrides all of them. Presenting
@@ -9365,6 +9858,7 @@ function renderSettings(){
   document.querySelectorAll('.cb-opt').forEach(b=>{ b.onclick=()=>{
     SAVE.cbPalette=b.getAttribute('data-cb-opt'); applyCbPalette(); persist(); renderSettings(); }; });
   bind('set-bigunits',()=>{ SAVE.bigUnits=!SAVE.bigUnits; persist(); });
+  bind('set-deck',()=>openDeckLayout('settings'));
   bind('set-noluck',()=>{ SAVE.noLuck=!SAVE.noLuck; persist(); renderSettings(); }); // re-render: it greys out the group it overrides
   bind('set-cutscenes',()=>{ SAVE.evCutscene=!SAVE.evCutscene; persist(); });
   bind('set-rev',()=>{ SAVE.randomEvents=!SAVE.randomEvents; persist(); });
@@ -9992,8 +10486,98 @@ function applySaveCode(parsed){
   return true;
 }
 
+/* ═══ DECK LAYOUT EDITOR ═════════════════════════════════════════════════════════
+   Edits a WORKING COPY and only commits on Save, so abandoning the screen never leaves a
+   half-built layout as the live deck. */
+let _dlDraft=null, _dlFrom='settings';
+function openDeckLayout(from){
+  _dlFrom=from||'settings';
+  const cur=SAVE.hbTabs;
+  _dlDraft=customTabsValid(cur)?JSON.parse(JSON.stringify(cur))
+    : HB_TABS.filter(t=>!t.spawners).map(t=>({n:t.label.replace(/^\S+\s/,''),c:t.col,u:[...t.units].slice(0,HB_MAX_PER_TAB)}));
+  hideAllScreens('decklayout'); document.getElementById('hud').classList.add('hidden');
+  document.getElementById('btn-pause').classList.add('hidden');
+  document.getElementById('decklayout').classList.remove('hidden');
+  hideDiffAmbient();
+  renderDeckLayout();
+}
+function renderDeckLayout(){
+  const el=document.getElementById('dl-body'); if(!el)return;
+  const roster=HOTBAR.filter(k=>UNITS[k]&&(k!=='swarm'||SAVE.secretDone));
+  const usingCustom=customTabsValid(SAVE.hbTabs);
+  let h='';
+  h+=`<div class="dl-prev"><b style="font-size:10.5px;color:var(--faint);letter-spacing:.5px;align-self:center">PREVIEW</b>`+
+     _dlDraft.map((t,i)=>`<span style="border-color:${t.c||'#5ff0e0'};color:${t.c||'#5ff0e0'}">${escapeHTML(t.n||('TAB '+(i+1)))} · ${t.u.length}</span>`).join('')+
+     `<span style="border-color:#5ff0e0;color:#5ff0e0;opacity:.6">🏭 Production · pinned</span></div>`;
+
+  _dlDraft.forEach((t,i)=>{
+    const full=t.u.length>=HB_MAX_PER_TAB;
+    h+=`<div class="dl-tab" style="border-left:3px solid ${t.c||'#5ff0e0'}">
+      <div class="dl-th">
+        <input class="dl-name" data-i="${i}" maxlength="18" value="${escapeHTML(t.n||'')}" placeholder="Tab ${i+1} name" aria-label="Tab ${i+1} name">
+        <span class="dl-count${full?' full':''}">${t.u.length}/${HB_MAX_PER_TAB}</span>
+        ${_dlDraft.length>1?`<button class="dl-x" data-del="${i}">✕ Remove tab</button>`:''}
+      </div><div class="dl-grid">`;
+    for(const k of roster){
+      const on=t.u.includes(k);
+      const blocked=!on&&full;
+      h+=`<button class="dl-u${on?' on':''}${blocked?' dim':''}" data-t="${i}" data-k="${k}"${blocked?' disabled':''}>
+        <span class="g" style="color:${UNITS[k].col}">${UNITS[k].glyph}</span><span class="n">${escapeHTML(unitName(k,'generic'))}</span></button>`;
+    }
+    h+=`</div></div>`;
+  });
+
+  const orphan=roster.filter(k=>!_dlDraft.some(t=>t.u.includes(k)));
+  if(orphan.length)h+=`<div class="dl-warn">⚠ ${orphan.length} unit${orphan.length===1?'':'s'} not in any tab and therefore unreachable in battle: <b>${orphan.map(k=>escapeHTML(unitName(k,'generic'))).join(', ')}</b>. That is allowed — a deliberately narrow deck is a valid choice — but it is worth being sure you meant it.</div>`;
+
+  h+=`<div class="dl-row">
+    ${_dlDraft.length<HB_MAX_TABS?`<button class="sbtn" id="dl-add">+ Add tab (${_dlDraft.length}/${HB_MAX_TABS})</button>`:`<button class="sbtn" disabled style="opacity:.4">Tab limit reached (${HB_MAX_TABS})</button>`}
+    <button class="sbtn prim" id="dl-save" style="border-color:var(--good);color:var(--good)">✓ Save layout</button>
+    ${usingCustom?`<button class="sbtn" id="dl-reset" style="border-color:var(--warn);color:var(--warn)">↺ Back to default tabs</button>`:''}
+  </div>`;
+  h+=`<div class="dl-note">Number keys 1–9 always deploy the card in that position <b>on the tab you are looking at</b>, so a tab with nine units is fully keyboard-driveable. Doctrine lessons ignore custom layouts and show their own fixed roster, because the whole point of a lesson is the deck it hands you.</div>`;
+
+  el.innerHTML=h;
+  el.querySelectorAll('.dl-name').forEach(inp=>{
+    inp.oninput=()=>{ _dlDraft[+inp.dataset.i].n=inp.value.slice(0,18); };
+  });
+  el.querySelectorAll('.dl-u').forEach(btn=>{
+    btn.onclick=()=>{
+      const t=_dlDraft[+btn.dataset.t], k=btn.dataset.k, at=t.u.indexOf(k);
+      if(at>=0)t.u.splice(at,1);
+      else if(t.u.length<HB_MAX_PER_TAB)t.u.push(k);
+      renderDeckLayout();
+    };
+  });
+  el.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.onclick=()=>{ _dlDraft.splice(+btn.dataset.del,1); renderDeckLayout(); };
+  });
+  const add=document.getElementById('dl-add');
+  if(add)add.onclick=()=>{ _dlDraft.push({n:'Tab '+(_dlDraft.length+1),c:'#5ff0e0',u:[]}); renderDeckLayout(); };
+  document.getElementById('dl-save').onclick=()=>{
+    const clean=_dlDraft.filter(t=>t.u.length>0);
+    if(!clean.length){ announce('🗂 NOTHING TO SAVE','a layout needs at least one unit','#ff5a4a'); return; }
+    SAVE.hbTabs=clean; persist();
+    try{ hbTab='c0'; buildHotbar(); }catch(e){}
+    announce('🗂 DECK LAYOUT SAVED',clean.length+' custom tab'+(clean.length===1?'':'s')+' + Production','#5ff0e0');
+    renderDeckLayout();
+  };
+  const rs=document.getElementById('dl-reset');
+  if(rs)rs.onclick=()=>{
+    SAVE.hbTabs=null; persist();
+    _dlDraft=HB_TABS.filter(t=>!t.spawners).map(t=>({n:t.label.replace(/^\S+\s/,''),c:t.col,u:[...t.units].slice(0,HB_MAX_PER_TAB)}));
+    try{ hbTab='ground'; buildHotbar(); }catch(e){}
+    announce('🗂 DEFAULT TABS RESTORED','','#ffce5a');
+    renderDeckLayout();
+  };
+  el.scrollTop=0;
+}
+
 let _stFrom='title', _stParsed=null;
 function openSaveTransfer(from){
+  // Gate the SCREEN too, not just the button that opens it — otherwise the lock is only as
+  // strong as "did we render a button", which a stale link or a console call walks straight past.
+  if(!SAVE.saveTransferUnlocked)return false;
   _stFrom=from||'title'; _stParsed=null;
   hideAllScreens('savetransfer'); document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
@@ -10271,6 +10855,7 @@ document.getElementById('t-gauntlet').onclick=()=>openGauntlet();
 document.getElementById('gaunt-back').onclick=()=>showTitle();
 document.getElementById('gf-back').onclick=()=>{ if(_gfFrom==='gauntlet')openGauntlet(); else showTitle(); };
 document.getElementById('st-back').onclick=()=>showTitle();
+document.getElementById('dl-back').onclick=()=>{ if(_dlFrom==='settings')openSettings(); else showTitle(); };
 document.getElementById('t-indoc').onclick=()=>openIndoc();
 document.getElementById('indoc-back').onclick=()=>showTitle();
 document.getElementById('t-leaderboard').onclick=()=>openLeaderboard();
@@ -10387,6 +10972,8 @@ document.getElementById('btn-resume').onclick=togglePause;
 document.getElementById('btn-quit').onclick=()=>{if(G)G.paused=false;document.getElementById('pauseScreen').classList.add('hidden');openMenu();};
 
 /* stance + speed controls */
+// clicking anywhere else dismisses the orders popover
+document.addEventListener('pointerdown',e=>{ if(_gpOpen&&!e.target.closest('#groupbar'))closeGroupPop(); },true);
 document.getElementById('stance-assault').onclick=()=>setStance('assault');
 document.getElementById('stance-defend').onclick=()=>setStance('defend');
 document.getElementById('stance-skirmish').onclick=()=>setStance('skirmish');
