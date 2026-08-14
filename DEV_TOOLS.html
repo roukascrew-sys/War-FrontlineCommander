@@ -234,6 +234,10 @@ need a live battle running.</p>
   <tr><td><code>G.gaunt</code></td><td>The FROZEN profile the current fight is using (never mutates mid-battle)</td></tr>
   <tr><td><code>G.gauntRec</code></td><td>The write-only ledger of what you did this fight; folded in at endGame()</td></tr>
   <tr><td><code>hideAllScreens('title')</code></td><td>Hide every .screen except one — what every opener now uses</td></tr>
+  <tr><td><code>exportSaveCode()</code></td><td>Produce a transfer code for the current save</td></tr>
+  <tr><td><code>parseSaveCode(code)</code></td><td>Validate WITHOUT applying — returns {ok, err, data, summary, notes}</td></tr>
+  <tr><td><code>applySaveCode(parsed)</code></td><td>Write a parsed code into SAVE (manifest fields only)</td></tr>
+  <tr><td><code>SAVE_TRANSFER_FIELDS</code></td><td>The manifest — what travels, and its type/cap</td></tr>
 </table>
 
 <h3 style="margin-top:18px">Jumping the Gauntlet to any tier</h3>
@@ -266,14 +270,35 @@ useful for capturing the telegraph.</p>
 <strong>fight at current tier</strong> and <strong>purge</strong> — enough to demo any adaptation on camera
 without playing nine matches first.</p>
 
-<h2><span class="n">07</span>Testing</h2>
+<h2><span class="n">07</span>Save transfer (cross-device)</h2>
+<p>Debug/Dev &rarr; <strong>💾 Transfer Progress</strong>. Exports real progress as one
+<code>FC1-…</code> code and imports it on another device. Useful facts when changing save code:</p>
+<ul>
+  <li>The code carries <strong>only</strong> what is listed in <code>SAVE_TRANSFER_FIELDS</code>. Adding a
+      field to <code>DEFAULT_SAVE</code> does <em>not</em> make it transfer — add a manifest entry too, or
+      it silently stays device-local.</li>
+  <li>Adding/removing manifest entries is <strong>safe</strong> and needs no version bump. Old codes still
+      import (missing fields take current defaults); newer codes still import on older builds (unknown
+      fields are ignored and reported). Only bump <code>SAVE_TRANSFER_VERSION</code> if the <em>envelope</em>
+      shape changes, and keep reading the old one when you do.</li>
+  <li>Never put a device-local setting in the manifest. Audio, accessibility, palette, Chaos Mode and the
+      debug switches must not travel — there is a regression check asserting exactly this.</li>
+  <li>Every value is re-validated and collections are capped on import, so a hand-edited code cannot
+      inject a rank of 9e99 or an array big enough to fill localStorage.</li>
+</ul>
+<p class="muted">Quick round-trip from the console:</p>
+<pre><code>const c=exportSaveCode();
+const p=parseSaveCode(c); console.log(p.ok, p.summary, p.notes);
+applySaveCode(p);</code></pre>
+
+<h2><span class="n">08</span>Testing</h2>
 <ol>
   <li><code>python3 -m http.server 8080</code></li>
   <li><code>node tests/regression.js</code> — exits 0 on pass</li>
 </ol>
 <p class="muted">Override the target with <code>PORT=</code> or <code>BASE_URL=</code>.</p>
 
-<h2><span class="n">08</span>Future tools — add here as they land</h2>
+<h2><span class="n">09</span>Future tools — add here as they land</h2>
 <ul>
   <li><span class="tag planned">planned</span> Global leaderboard admin / score invalidation (needs the backend)</li>
   <li><span class="tag planned">planned</span> Deterministic seed override for reproducible capture runs</li>
@@ -282,7 +307,7 @@ without playing nine matches first.</p>
 </ul>
 
 <footer>
-  Frontline Commander — internal reference. Last updated for <strong>v1.18.1</strong>.<br>
+  Frontline Commander — internal reference. Last updated for <strong>v1.18.2</strong>.<br>
   Keep this current: a stale tools file is worse than none, because you'll trust it.
 </footer>
 

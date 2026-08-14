@@ -1919,6 +1919,163 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
       `[adjutant file] every analytics bar actually renders a fill — inline spans ignore width, which silently drew empty tracks (${tabs.data.barsWithWidth}/${tabs.data.bars})`);
     ok(tabs.ladder.svg > 0, '[adjutant file] the power-curve chart renders as inline SVG');
 
+    /* ─────────────────────────────────────────────────────────────────────────
+       22. v1.18.2 — save transfer, No Luck, and the cutscene master switch.
+       ───────────────────────────────────────────────────────────────────────── */
+
+    // 22a. SAVE TRANSFER round-trip. Every manifest field must survive a trip through a
+    //      code onto a device with a completely different local configuration.
+    const rt = await gp.evaluate(() => {
+      SAVE.lvl = 42; SAVE.xp = 1234; SAVE.wins = 88; SAVE.losses = 31; SAVE.best = 99999;
+      SAVE.unlocked = Object.keys(DOCTRINES).slice(0, 5);
+      SAVE.medals = { first_win: 1, combo10: 1 };
+      SAVE.campaignDone = 4; SAVE.campaignStars = { 0: 1, 1: 1 }; SAVE.timeTrials = { 0: 71.2 };
+      SAVE.secretUnlocked = true; SAVE.secretDone = true; SAVE.secretBadgeEarned = true;
+      SAVE.chestOwned = { a: 1, b: 1 }; SAVE.chestPulls = 17;
+      SAVE.dailyStreak = 6; SAVE.dailyBestStreak = 9; SAVE.dailyLastWin = '2026-08-10';
+      SAVE.gauntlet = { clears: 5, losses: 2, lifetime: 11, deepest: 7, mem: { fights: 5, units: { tank: 30 }, strikes: {}, lanes: [9, 3, 2], spawners: 1, rush: 2 } };
+      SAVE.career = { battles: 119, wins: 88, losses: 31, kills: 4021, deploys: 2500, cpSpent: 90000, strikes: 210, units: { tank: 800 }, dmgDealt: 500000, timePlayed: 40000 };
+      SAVE.winStreak = 5; SAVE.bestWinStreak = 12;
+      // device-local config on the SENDING device
+      SAVE.sound = false; SAVE.reduceMotion = true; SAVE.cbPalette = 'orange'; SAVE.noLuck = true; SAVE.debugUnlockAll = true;
+      persist();
+      const code = exportSaveCode();
+      const before = JSON.parse(JSON.stringify(SAVE));
+
+      // wipe to a "different device" with deliberately opposite local config
+      SAVE = JSON.parse(JSON.stringify(DEFAULT_SAVE));
+      SAVE.sound = true; SAVE.reduceMotion = false; SAVE.cbPalette = 'hico'; SAVE.noLuck = false; SAVE.debugUnlockAll = false;
+      persist();
+      const parsed = parseSaveCode(code);
+      const applied = parsed.ok && applySaveCode(parsed);
+      const mism = [];
+      for (const [k] of SAVE_TRANSFER_FIELDS) {
+        if (k === 'unlocked') continue;   // re-derived from rank on import, so >= is correct
+        if (JSON.stringify(before[k]) !== JSON.stringify(SAVE[k])) mism.push(k);
+      }
+      return { ok: parsed.ok, applied, carried: parsed.carried, mism,
+               localKept: SAVE.sound === true && SAVE.reduceMotion === false && SAVE.cbPalette === 'hico'
+                          && SAVE.noLuck === false && SAVE.debugUnlockAll === false,
+               unlockedOk: SAVE.unlocked.length >= before.unlocked.length,
+               codeLen: code.length };
+    });
+    ok(rt.ok && rt.applied && rt.mism.length === 0,
+      `[save transfer] every one of the ${rt.carried} progress fields survives an export/import round-trip intact ${rt.mism.length ? ':: LOST ' + rt.mism.join(', ') : ''}`);
+    ok(rt.localKept,
+      '[save transfer] device-local settings (audio, reduce-motion, colourblind palette, No Luck, debug) are NOT overwritten by an import — importing progress must never reach into someone\'s accessibility settings');
+    ok(rt.unlockedOk, '[save transfer] doctrine unlocks are re-derived from the imported rank rather than trusted blindly');
+
+    // 22b. the manifest is the contract: nothing device-local in it, no typo'd keys
+    const manifest = await gp.evaluate(() => {
+      const local = ['sound', 'music', 'musicVol', 'narrator', 'reduceMotion', 'cbPalette', 'bigUnits',
+        'chaosMode', 'debugUnlockAll', 'aiDebug', 'streamOn', 'twitchChannel', 'noLuck',
+        'randomEvents', 'evCutscene', 'evSupply', 'evBarrage', 'evDefector', 'speed', 'chatPos', 'lastSel'];
+      return { leaked: local.filter(k => SAVE_TRANSFER_FIELDS.some(f => f[0] === k)),
+               bogus: SAVE_TRANSFER_FIELDS.map(f => f[0]).filter(k => !(k in DEFAULT_SAVE)) };
+    });
+    ok(manifest.leaked.length === 0,
+      `[save transfer] no device-local setting is in the transfer manifest ${manifest.leaked.length ? ':: ' + manifest.leaked.join(', ') : ''}`);
+    ok(manifest.bogus.length === 0,
+      `[save transfer] every manifest key exists in DEFAULT_SAVE — a typo'd key would silently never transfer ${manifest.bogus.length ? ':: ' + manifest.bogus.join(', ') : ''}`);
+
+    // 22c. corrupt, truncated and hostile codes are refused WHOLE, never half-applied
+    const reject = await gp.evaluate(() => {
+      const good = exportSaveCode();
+      const cases = {
+        empty: '', garbage: 'hello world', 'wrong prefix': 'XX9-abcdef',
+        truncated: good.slice(0, Math.floor(good.length * 0.6)),
+        'flipped byte': good.slice(0, 20) + (good[20] === 'A' ? 'B' : 'A') + good.slice(21),
+        'valid base64, not a save': 'FC1-' + btoa('{"hello":1}'),
+      };
+      const out = {};
+      for (const k in cases) { const r = parseSaveCode(cases[k]); out[k] = { ok: r.ok, err: r.err }; }
+      // a future ENVELOPE version must be refused with actionable advice
+      const fut = { v: 99, g: '2.5.0', t: Date.now(), d: { lvl: 9 } };
+      fut.c = hashStr(JSON.stringify(fut.d)).toString(36);
+      const futCode = 'FC1-' + btoa(unescape(encodeURIComponent(JSON.stringify(fut)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      out['future envelope'] = (() => { const r = parseSaveCode(futCode); return { ok: r.ok, err: r.err }; })();
+      return out;
+    });
+    const accepted = Object.keys(reject).filter(k => reject[k].ok);
+    ok(accepted.length === 0,
+      `[save transfer] corrupt, truncated, foreign and future-format codes are all rejected rather than partly applied ${accepted.length ? ':: ACCEPTED ' + accepted.join(', ') : ''}`);
+    ok(/newer version/i.test(reject['future envelope'].err || ''),
+      '[save transfer] a code from a newer format tells the player to update rather than failing cryptically');
+
+    // 22d. hostile VALUES inside an otherwise-valid code are clamped, not trusted
+    const hostile = await gp.evaluate(() => {
+      const d = { lvl: 9e99, xp: -5, unlocked: ['doesnotexist', 'blitzkrieg'], board: new Array(9999).fill({ x: 1 }), daily: {}, medals: {} };
+      for (let i = 0; i < 9999; i++) d.daily['d' + i] = 1;
+      const env = { v: 1, g: '1.0.0', t: Date.now(), d };
+      env.c = hashStr(JSON.stringify(d)).toString(36);
+      const code = 'FC1-' + btoa(unescape(encodeURIComponent(JSON.stringify(env)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      const r = parseSaveCode(code);
+      return { ok: r.ok, lvl: r.ok ? r.data.lvl : null, xp: r.ok ? r.data.xp : 'dropped',
+               unlocked: r.ok ? r.data.unlocked : null,
+               board: r.ok && r.data.board ? r.data.board.length : null,
+               daily: r.ok && r.data.daily ? Object.keys(r.data.daily).length : null };
+    });
+    ok(hostile.ok && hostile.lvl <= 100 && hostile.xp === undefined
+       && hostile.unlocked.length === 1 && hostile.board <= 40 && hostile.daily <= 400,
+      `[save transfer] hostile values inside a valid code are clamped — rank 9e99 became ${hostile.lvl}, a negative XP was dropped, an unknown doctrine filtered out, and 9999-entry collections capped to ${hostile.board}/${hostile.daily}`);
+
+    // 22e. FORWARD + BACKWARD compatibility — the point of having a manifest at all
+    const compat = await gp.evaluate(() => {
+      const mk = d => { const e = { v: 1, g: '1.0.0', t: Date.now(), d }; e.c = hashStr(JSON.stringify(d)).toString(36);
+        return 'FC1-' + btoa(unescape(encodeURIComponent(JSON.stringify(e)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+      // OLD code: predates most fields
+      SAVE = JSON.parse(JSON.stringify(DEFAULT_SAVE)); persist();
+      const rOld = parseSaveCode(mk({ lvl: 20, wins: 15, best: 5000 }));
+      applySaveCode(rOld);
+      const oldOk = SAVE.lvl === 20 && SAVE.wins === 15 && typeof SAVE.chestPulls === 'number' && SAVE.gauntlet !== undefined;
+      // NEW code: carries fields this build has never heard of
+      SAVE = JSON.parse(JSON.stringify(DEFAULT_SAVE)); persist();
+      const rNew = parseSaveCode(mk({ lvl: 55, wins: 200, prestige: 7, seasonPass: { tier: 40 }, notInventedYet: [1, 2, 3] }));
+      applySaveCode(rNew);
+      const newOk = SAVE.lvl === 55 && SAVE.wins === 200 && SAVE.prestige === undefined && SAVE.seasonPass === undefined;
+      return { oldOk, newOk, oldNotes: rOld.notes, newNotes: rNew.notes };
+    });
+    ok(compat.oldOk,
+      '[save transfer] a code predating fields this build has imports cleanly — anything it does not carry falls back to the current defaults');
+    ok(compat.newOk,
+      `[save transfer] a code from a FUTURE build imports the fields this version knows and ignores the rest, without leaking unknown keys into the save (${compat.newNotes.join('; ')})`);
+
+    // 22f. NO LUCK silences every chance-driven system
+    const luck = await gp.evaluate(() => {
+      const run = noLuck => {
+        SAVE.noLuck = noLuck; SAVE.randomEvents = true;
+        for (const k of ['evSupply', 'evVoice', 'evCutscene', 'evBarrage', 'evDefector', 'gagGolden']) SAVE[k] = true;
+        persist();
+        LAUNCH = null; sel.mode = 'skirmish'; sel.diff = 'veteran'; start();
+        G.prep = 0; G.frozen = false; G.aiHold = true;
+        G.hq.B = G.hqMax.B = 1e9; G.hq.R = G.hqMax.R = 1e9;
+        for (let i = 0; i < 8000; i++) step(0.05);
+        return G.revCount || 0;
+      };
+      const off = run(false), on = run(true);
+      return { off, on };
+    });
+    ok(luck.off > 0, `[no luck] precondition — random events do fire normally (${luck.off} over 400s)`);
+    ok(luck.on === 0, `[no luck] with No Luck on, ZERO chance-driven events fire over the same span (${luck.on})`);
+
+    // 22g. the cutscene switch is honoured at the source, so the non-event "director"
+    //      cinematic obeys it too
+    const cuts = await gp.evaluate(() => {
+      LAUNCH = null; sel.mode = 'skirmish'; start(); G.prep = 0; G.frozen = false;
+      const el = document.getElementById('cutscene');
+      SAVE.noLuck = false; SAVE.randomEvents = true;
+      el.classList.remove('show'); SAVE.evCutscene = false; persist();
+      playCutscene();
+      const whenOff = el.classList.contains('show');
+      el.classList.remove('show'); SAVE.evCutscene = true; persist();
+      playCutscene();
+      const whenOn = el.classList.contains('show');
+      SAVE.noLuck = false; persist();
+      return { whenOff, whenOn };
+    });
+    ok(!cuts.whenOff && cuts.whenOn,
+      '[cutscenes] the master switch is honoured inside playCutscene(), so the cinematic a legendary streak earns respects it too — not just the random-event path');
+
     // the boot-guard check above throws ONE error on purpose to prove a mid-battle fault no
     // longer covers a live match; everything else must still be clean
     const unexpected = gerr.filter(m => !/benign mid-battle blip/.test(m));

@@ -999,6 +999,27 @@
   .ga-purge{border-color:var(--red)!important;color:var(--red)!important;}
   .ga-note{font-size:10.5px;color:var(--faint);margin-top:9px;line-height:1.5;text-align:left;}
 
+  /* ── SAVE TRANSFER ── */
+  .st-box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px;margin-bottom:11px;}
+  .st-h{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:4px;display:flex;align-items:center;gap:7px;}
+  .st-sub{font-size:11.5px;color:var(--dim);line-height:1.55;margin-bottom:9px;}
+  .st-code{width:100%;min-height:82px;background:#0b1017;border:1px solid var(--line);border-radius:8px;
+    color:var(--cyan);font-family:var(--mono);font-size:10.5px;padding:9px 11px;line-height:1.45;
+    resize:vertical;word-break:break-all;}
+  .st-code:focus{outline:none;border-color:var(--cyan);}
+  .st-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px;}
+  .st-row .sbtn{flex:1 1 130px;}
+  .st-msg{font-size:11.5px;line-height:1.55;margin-top:9px;padding:9px 12px;border-radius:8px;display:none;}
+  .st-msg.show{display:block;}
+  .st-msg.err{background:#2a1410;border:1px solid var(--red);color:#ffc4bb;}
+  .st-msg.ok{background:#0f2419;border:1px solid var(--good);color:#b9f0d0;}
+  .st-msg.warn{background:#2a2210;border:1px solid var(--warn);color:#ffe2b0;}
+  .st-sum{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:7px;margin:10px 0 2px;}
+  .st-cell{background:#0d131d;border:1px solid var(--line);border-radius:8px;padding:7px 9px;text-align:center;}
+  .st-cell b{display:block;font-family:var(--mono);font-size:15px;color:var(--cyan);}
+  .st-cell small{display:block;font-size:9px;color:var(--faint);letter-spacing:.5px;text-transform:uppercase;margin-top:2px;}
+  .st-note{font-size:10.5px;color:var(--faint);line-height:1.55;margin-top:9px;}
+
   /* ── ADJUTANT FILE (dev analytics) ── */
   .gf-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:9px;}
   .gf-card.on{border-left:3px solid var(--good);}
@@ -1709,7 +1730,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.18.1</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.18.2</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -2066,6 +2087,14 @@
     <div class="man-wrap"><div class="man-body" id="gf-body"></div></div>
   </div>
 
+  <!-- SAVE TRANSFER — move progress between devices -->
+  <div class="screen hidden" id="savetransfer">
+    <button class="back-btn" id="st-back">◀ Back</button>
+    <h1>💾 <b>TRANSFER PROGRESS</b></h1>
+    <div class="tag" style="margin-bottom:6px">Progress is stored per device and per browser, so a phone and a laptop are two separate careers. This moves the parts you earned between them as one code.</div>
+    <div class="man-wrap"><div class="man-body" id="st-body"></div></div>
+  </div>
+
   <!-- PATCH NOTES -->
   <div class="screen hidden" id="patchnotes">
     <button class="back-btn" id="pn-back">◀ Title</button>
@@ -2381,6 +2410,7 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   rallyDone:false,     // player followed or dismissed it for good — never ask again
   lastPlayedDay:null,  // 'YYYY-MM-DD' of the previous session, drives the welcome-back line
   ambient:true,randomEvents:true,evSupply:true,evVoice:true,evCutscene:true,evBarrage:true,evDefector:true,
+  noLuck:false,          // 🎯 NO LUCK — one master override that silences every chance-driven event
   chaosMode:false,
   gagChatter:true,gagGolden:true,gagVictory:true,
   history:[],career:{battles:0,wins:0,losses:0,kills:0,deploys:0,cpSpent:0,strikes:0,units:{},dmgDealt:0,timePlayed:0},
@@ -3173,13 +3203,20 @@ const DIFFS={
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
 };
 const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.18.1';
+const GAME_VERSION='1.18.2';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.18.2',notes:[
+    'NEW \u2014 TRANSFER PROGRESS. Your save lives in the browser on one device, so a phone and a laptop have always been two unrelated careers with no way to reconcile them. Debug/Dev \u2192 Transfer Progress now exports everything you have earned as a single copy-pasteable code, and imports it on another device. It carries rank and XP, every doctrine, medals, campaign clears and stars, time trials, the secret level, rivals, doctrine lessons, your whole crate collection, daily streaks, the Gauntlet dossier and lifetime record, career stats and the leaderboard.',
+    'The transfer format is deliberately NOT a dump of the save file. It carries an explicit list of progress fields, each validated on the way in, which is what makes it survive updates: a later version adding a field will not invalidate codes you already have (the new field just uses its default), and a code carrying something a build does not recognise imports everything else and ignores the rest. A code that has been truncated or edited fails its integrity check and is refused outright rather than half-applied \u2014 arriving with half a career is worse than being told to re-copy it.',
+    'Your device settings deliberately do NOT travel. Audio, reduce motion, the colourblind palette, Chaos Mode and the debug switches all stay as they are on the receiving device \u2014 importing someone\'s progress should never reach into their accessibility settings.',
+    'NEW \u2014 \ud83c\udfaf NO LUCK. One switch in Settings that silences every chance-driven event: supply drops, defectors, surprise barrages, the Golden Drone, crazy voicelines, cutscenes, and the ultra-rare hidden events (which are deliberately independent of the normal Random Events toggle, and so had to be named explicitly). A battle is then decided by what you commit and nothing else. Weather and lane terrain still vary between fights \u2014 those are rolled once before the battle and shown to you rather than sprung on you during it.',
+    'NEW \u2014 a proper CUTSCENES switch, promoted out of the Random Events sub-list and into its own setting. It is now honoured at the source, which means it also silences the cinematic a legendary kill streak earns \u2014 that one is not a random event, so the old sub-toggle never covered it and cutscenes could still appear for a player who had turned them off.',
+  ]},
   {v:'1.18.1',notes:[
     'THE GAUNTLET IS RE-PACED. It climbed far too steeply \u2014 playtesting put simulated win margin at 97% \u2192 93% \u2192 66% \u2192 52% and then straight to \u2212100%, with fights collapsing from 212 seconds to 30 in a single rung. The cause was inheriting the escalation from the four difficulty tiers: those steps are enormous (Elite to Legendary is +73% enemy economy, +49% unit quality, double the opening wave and twice the thinking speed, all at once) and were designed as choices you pick between, not as a progression you walk up.',
     'The ladder is now NINE rungs instead of six, and each one carries its own scaling on top of a base tier rather than jumping between them: CALIBRATING \u2192 PROFILING \u2192 ANALYSING \u2192 ADAPTING \u2192 PREDICTING \u2192 ANTICIPATING \u2192 RELENTLESS \u2192 IMPLACABLE \u2192 ASCENDANT. Effective power now climbs about 3\u20137% per rung with no step above 20%, and never goes backwards. The wall lands around tiers 7\u20138 instead of 4.',
@@ -4779,6 +4816,7 @@ function randomEventTick(dt){
      matchup is exactly what the briefing said it was — a Golden Drone or an enemy resupply
      wandering in mid-lesson is noise at best, and at worst puts a unit on the field that the
      lesson's roster has no answer to. Surprises are for the real game. */
+  if(SAVE.noLuck)return;   // 🎯 NO LUCK — see the master override in Settings
   if(!SAVE.randomEvents||!G||G.over||G.paused||G.tutorial||G.attract||G.kind==='indoc')return;
   G.revT-=dt;
   if(G.revT<=0){ G.revT=rnd(30,55); fireRandomEvent(); }
@@ -4793,6 +4831,12 @@ const CUT_CAPTIONS=[
 ];
 let _cutT=null;
 function playCutscene(){
+  /* Honoured at the source rather than at each call site. Cutscenes fire from two places —
+     the random-event table AND the "director" cinematic a legendary kill streak earns — and
+     the second one is not a random event at all, so a switch that only gated the event table
+     would leave cutscenes appearing for a player who had turned them off. Guarding here means
+     any future caller is covered automatically. */
+  if(!SAVE.evCutscene)return;
   const el=document.getElementById('cutscene'); if(!el)return;
   // pick something dramatic that's actually happening
   const live=G.units.filter(u=>u.alive);
@@ -4958,6 +5002,11 @@ function drawRiftStreaks(){
 // hours of real play, discoverable for real via the Debug panel. Roughly one check a minute, each
 // branch a fraction-of-a-percent chance — the math for "basically never, but it did happen to you."
 function mythicEventTick(dt){
+  /* NO LUCK covers these too. They are deliberately independent of the Random Events toggle
+     (see the note above), which is exactly why the override has to name them explicitly —
+     a player who asked for nothing chance-driven would otherwise still be eligible for the
+     rarest chance-driven thing in the game. */
+  if(SAVE.noLuck)return;
   if(!G||G.attract||G.tutorial||G.over)return;
   if(G.mythicCheckT==null)G.mythicCheckT=rnd(50,70);
   G.mythicCheckT-=dt;
@@ -8880,6 +8929,9 @@ function DEBUG_GROUPS(){ // built lazily so it always sees the latest REVENTS/DI
     ]},
     {name:'Difficulty Change FX (title screen only)',actions:
       Object.keys(DIFFS).map(k=>dbgAction(DIFFS[k].glyph+' '+DIFFS[k].name, ()=>diffFx(k)))},
+    {name:'💾 Save transfer (cross-device)',actions:[
+      dbgAction('💾 Transfer Progress',()=>{ closeDebugModal(); openSaveTransfer('title'); }),
+    ]},
     {name:'◈ The Gauntlet',actions:[
       dbgAction('🧠 Open Adjutant File',()=>{ closeDebugModal(); openGauntFile('title'); }),
       dbgAction('◈ Fight at current tier',()=>{ closeDebugModal(); leaveTitle(); launchGauntlet(); }),
@@ -9276,13 +9328,21 @@ function renderSettings(){
             <span aria-hidden="true" style="width:11px;height:11px;border-radius:50%;background:${c1};display:inline-block"></span><span aria-hidden="true" style="width:11px;height:11px;border-radius:50%;background:${c2};display:inline-block"></span>${lbl}</button>`).join('')}
       </div></div>`+
     settingRow('Big Units','Every unit renders much larger on the battlefield. Purely visual — hitboxes, range and combat are unaffected, so this is safe to leave on for every match.',`<button id="set-bigunits" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.bigUnits)}</button>`)+
+    settingRow('Cutscenes','Brief cinematic close-ups of the action. This is the master switch — it also silences the cinematic a legendary kill streak earns, which is not a random event and would otherwise still play.',`<button id="set-cutscenes" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evCutscene)}</button>`)+
     `<div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.5px;margin:6px 2px -2px">🎲 RANDOM EVENTS</div>`+
+    /* NO LUCK sits ABOVE the individual switches because it overrides all of them. Presenting
+       it as just another toggle in the list would invite the reasonable-but-wrong reading that
+       it is one more event type you can turn off. */
+    settingRow('🎯 No Luck','<b>Overrides everything below.</b> Silences every chance-driven event — supply drops, defectors, surprise barrages, the Golden Drone, crazy voicelines, cutscenes and the ultra-rare hidden events — so a battle is decided by what you commit and nothing else. Weather and lane terrain still vary between battles; those are rolled once before the fight and shown to you, not sprung on you during it.',
+      `<button id="set-noluck" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.noLuck)}</button>`)+
+    (SAVE.noLuck?`<div style="font-size:11px;color:var(--warn);margin:-2px 2px 0;line-height:1.5">⚠ No Luck is ON — the switches below are inactive until you turn it off.</div>`:'')+
+    `<div style="${SAVE.noLuck?'opacity:.42;pointer-events:none;':''}">`+
     settingRow('Random Events','Master switch for battlefield surprises',`<button id="set-rev" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.randomEvents)}</button>`)+
     settingRow('· Supply Drops','Air-dropped crates grant CP or reinforcements',`<button id="set-ev-supply" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evSupply)}</button>`)+
     settingRow('· Crazy Voicelines','Off-the-rails narrator outbursts',`<button id="set-ev-voice" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evVoice)}</button>`)+
-    settingRow('· Combat Cutscenes','Brief cinematic close-ups of the action',`<button id="set-ev-cut" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evCutscene)}</button>`)+
     settingRow('· Artillery Barrage','A surprise shelling rakes a lane',`<button id="set-ev-barr" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evBarrage)}</button>`)+
     settingRow('· Defectors','An enemy unit switches sides mid-battle',`<button id="set-ev-def" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evDefector)}</button>`)+
+    `</div>`+
     `<div style="font-size:13px;font-weight:800;color:var(--cyan);letter-spacing:.5px;margin:6px 2px -2px">😄 FUN &amp; GAGS</div>`+
     settingRow('Unit Chatter','Troops quip when deployed & after kills',`<button id="set-gag-chat" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.gagChatter)}</button>`)+
     settingRow('Golden Drone','A rare CP piñata crosses the field — shoot it down',`<button id="set-gag-gold" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.gagGolden)}</button>`)+
@@ -9305,10 +9365,11 @@ function renderSettings(){
   document.querySelectorAll('.cb-opt').forEach(b=>{ b.onclick=()=>{
     SAVE.cbPalette=b.getAttribute('data-cb-opt'); applyCbPalette(); persist(); renderSettings(); }; });
   bind('set-bigunits',()=>{ SAVE.bigUnits=!SAVE.bigUnits; persist(); });
+  bind('set-noluck',()=>{ SAVE.noLuck=!SAVE.noLuck; persist(); renderSettings(); }); // re-render: it greys out the group it overrides
+  bind('set-cutscenes',()=>{ SAVE.evCutscene=!SAVE.evCutscene; persist(); });
   bind('set-rev',()=>{ SAVE.randomEvents=!SAVE.randomEvents; persist(); });
   bind('set-ev-supply',()=>{ SAVE.evSupply=!SAVE.evSupply; persist(); });
   bind('set-ev-voice',()=>{ SAVE.evVoice=!SAVE.evVoice; persist(); });
-  bind('set-ev-cut',()=>{ SAVE.evCutscene=!SAVE.evCutscene; persist(); });
   bind('set-ev-barr',()=>{ SAVE.evBarrage=!SAVE.evBarrage; persist(); });
   bind('set-ev-def',()=>{ SAVE.evDefector=!SAVE.evDefector; persist(); });
   bind('set-chaos',()=>{ SAVE.chaosMode=!SAVE.chaosMode; persist(); });
@@ -9783,6 +9844,240 @@ function renderGauntlet(){
     else{ pb.dataset.armed='1'; pb.textContent='⌫ Confirm — erase the file?'; setTimeout(()=>{ if(pb&&pb.dataset.armed==='1'){pb.dataset.armed='';pb.textContent='⌫ Purge its memory';} },4000); }
   };
 }
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SAVE TRANSFER — move real progress between devices
+   ═══════════════════════════════════════════════════════════════════════════════
+   Progress lives in localStorage, which is per-device AND per-origin: play on a phone
+   and a laptop and they are two unrelated careers, with no way to reconcile them. This
+   exports the parts that took real time to earn as one copy-pasteable code.
+
+   THE FORMAT IS DELIBERATELY NOT `JSON.stringify(SAVE)`.
+
+   Dumping the live save object would tie the code format to the internal shape of SAVE,
+   so every later change to that shape — a renamed setting, a removed toggle, a new debug
+   flag — would silently change what a code contains and what another build does with it.
+   Instead there is an explicit MANIFEST of the fields that represent progress, each with a
+   declared type. Everything follows from that, and all of it is intentional:
+
+     · ADDING a field in a future version does not invalidate existing codes. An importer
+       fills anything the code does not carry from the current defaults.
+     · REMOVING a field does not break old codes — keys not in the manifest are ignored.
+     · DEVICE-LOCAL SETTINGS NEVER TRAVEL. Audio, accessibility, colourblind palette,
+       Chaos Mode and the debug switches stay exactly as they are on the receiving device.
+       Importing someone's progress must never reach into their accessibility settings.
+     · EVERY VALUE IS RE-VALIDATED on the way in, against the same rules a corrupt
+       localStorage save goes through. A hand-edited code cannot inject a rank of 9e99,
+       a doctrine that does not exist, or an array big enough to fill storage.
+     · A TRUNCATED OR CORRUPT CODE IS REJECTED WHOLE. Half-applying a save is worse than
+       refusing it, because the player cannot tell which half arrived.
+
+   The version number below changes ONLY if the envelope itself changes. Adding or removing
+   MANIFEST entries deliberately does not require a bump — that is the entire point of
+   having a manifest, and bumping for it would break compatibility the design already
+   handles. If the envelope ever does change, keep reading the old version here.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+const SAVE_TRANSFER_VERSION=1;
+const SAVE_TRANSFER_PREFIX='FC1-';
+/* [key, type, cap] — `cap` bounds collections so a malformed code cannot exhaust storage.
+   Types: int · bool · str · docs (doctrine key list) · nmap (id→number) · obj · arr */
+const SAVE_TRANSFER_FIELDS=[
+  ['lvl','int'],['xp','int'],['wins','int'],['losses','int'],
+  ['best','int'],['bestBlitz','int'],['bestSurvival','int'],
+  ['unlocked','docs'],['medals','nmap',40],
+  ['campaignDone','int'],['campaignStars','nmap',40],['timeTrials','nmap',40],
+  ['secretUnlocked','bool'],['secretDone','bool'],['secretBadgeEarned','bool'],
+  ['voidSlayerEarned','bool'],
+  ['rivals','obj',20],['rivalsBadgeEarned','bool'],['rivalry','obj',20],
+  ['indocDone','nmap',20],
+  ['chestOwned','nmap',80],['chestPulls','int'],['chestStreak','int'],
+  ['chestBestStreak','int'],['chestSinceEpic','int'],['chestLastDay','str'],
+  ['dailyStreak','int'],['dailyBestStreak','int'],['dailyLastWin','str'],['daily','nmap',400],
+  ['gauntlet','obj',10],
+  ['career','obj',30],['board','arr',40],['winStreak','int'],['bestWinStreak','int'],
+  ['history','arr',30],
+  ['equippedBadge','str'],['equippedTitle','str'],
+  ['war','obj',60],['warWins','int'],
+];
+// unicode-safe base64 both ways; the escape/unescape pair is deprecated but is the most
+// broadly supported round-trip and this file targets old mobile browsers on purpose
+function _b64enc(str){ return btoa(unescape(encodeURIComponent(str))); }
+function _b64dec(b64){ return decodeURIComponent(escape(atob(b64))); }
+// base64url so a code survives being pasted into a URL, a chat client or a spreadsheet
+function _b64url(b){ return b.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function _unb64url(b){ let t=b.replace(/-/g,'+').replace(/_/g,'/'); while(t.length%4)t+='='; return t; }
+
+function exportSaveCode(){
+  const d={};
+  for(const [k] of SAVE_TRANSFER_FIELDS){ const v=SAVE[k]; if(v!==undefined&&v!==null)d[k]=v; }
+  const body=JSON.stringify(d);
+  const env={v:SAVE_TRANSFER_VERSION,g:GAME_VERSION,t:Date.now(),c:hashStr(body).toString(36),d};
+  return SAVE_TRANSFER_PREFIX+_b64url(_b64enc(JSON.stringify(env)));
+}
+
+/* Parse + validate WITHOUT applying. Returns {ok, err, env, data, summary, notes}. Keeping
+   the check separate from the write is what lets the UI show the player what a code contains
+   and let them decide, rather than overwriting a career on a paste. */
+function parseSaveCode(raw){
+  const fail=e=>({ok:false,err:e});
+  if(typeof raw!=='string')return fail('Nothing to read.');
+  let t=raw.trim().replace(/\s+/g,'');           // tolerate wrapped/pasted-with-newlines codes
+  if(!t)return fail('Nothing to read.');
+  if(t.toUpperCase().indexOf(SAVE_TRANSFER_PREFIX)===0)t=t.slice(SAVE_TRANSFER_PREFIX.length);
+  else return fail('That does not look like a Frontline Commander code — they start with '+SAVE_TRANSFER_PREFIX+'.');
+  let env;
+  try{ env=JSON.parse(_b64dec(_unb64url(t))); }
+  catch(e){ return fail('This code is damaged or incomplete — it could not be decoded. Copy the whole thing, including the '+SAVE_TRANSFER_PREFIX+' at the start.'); }
+  if(!env||typeof env!=='object'||!env.d||typeof env.d!=='object')return fail('This code decoded, but contains no save data.');
+  if(typeof env.v!=='number')return fail('This code is missing its format version.');
+  if(env.v>SAVE_TRANSFER_VERSION)return fail('This code was made by a NEWER version of the game ('+(env.g||'unknown')+') and uses a format this build cannot read. Update the game, then import it.');
+  if(String(hashStr(JSON.stringify(env.d)).toString(36))!==String(env.c))
+    return fail('This code failed its integrity check — some of it was altered or lost in transit. Re-copy it from the original device.');
+
+  // ── coerce every value; anything that fails validation is DROPPED, never guessed at ──
+  const notes=[], data={};
+  const asInt=(v,max)=>{ const n=Math.floor(Number(v)); return (isFinite(n)&&n>=0)?Math.min(n,max===undefined?1e12:max):null; };
+  const cap=(o,n)=>{ const out={},ks=Object.keys(o).slice(0,n); for(const k of ks)out[k]=o[k]; return out; };
+  for(const [k,type,limit] of SAVE_TRANSFER_FIELDS){
+    const v=env.d[k];
+    if(v===undefined||v===null)continue;           // absent is fine — the default stands
+    if(type==='int'){ const n=asInt(v,k==='lvl'?MAX_LVL:1e12); if(n!==null)data[k]=(k==='lvl')?Math.max(1,n):n; }
+    else if(type==='bool')data[k]=!!v;
+    else if(type==='str'){ if(typeof v==='string')data[k]=v.slice(0,64); }
+    else if(type==='docs'){ if(Array.isArray(v)){ const ok=v.filter(x=>typeof x==='string'&&DOCTRINES[x]);
+        if(ok.length!==v.length)notes.push('ignored '+(v.length-ok.length)+' unknown doctrine(s)');
+        data[k]=ok.length?ok:['blitzkrieg']; } }   // never leave a player with zero doctrines
+    else if(type==='nmap'){ if(v&&typeof v==='object'&&!Array.isArray(v)){ const out={};
+        for(const kk of Object.keys(v).slice(0,limit||50)){ const n=Number(v[kk]);
+          if(isFinite(n))out[String(kk).slice(0,40)]=n; }
+        data[k]=out; } }
+    else if(type==='obj'){ if(v&&typeof v==='object'&&!Array.isArray(v))data[k]=cap(v,limit||30); }
+    else if(type==='arr'){ if(Array.isArray(v))data[k]=v.slice(0,limit||30); }
+  }
+  const carried=Object.keys(data).length;
+  if(!carried)return fail('This code decoded and passed its checks, but contained no progress this version recognises.');
+  // anything in the code this build has no manifest entry for — forward compatibility
+  const unknown=Object.keys(env.d).filter(k=>!SAVE_TRANSFER_FIELDS.some(f=>f[0]===k));
+  if(unknown.length)notes.push(unknown.length+' field(s) from a different version were ignored');
+
+  const g=(data.gauntlet&&typeof data.gauntlet==='object')?data.gauntlet:{};
+  const summary={
+    lvl:data.lvl||1, wins:data.wins||0, losses:data.losses||0, best:data.best||0,
+    doctrines:(data.unlocked||[]).length,
+    campaign:(data.campaignDone!=null?data.campaignDone+1:0),
+    stars:Object.keys(data.campaignStars||{}).length,
+    medals:Object.keys(data.medals||{}).length,
+    crate:Object.keys(data.chestOwned||{}).length,
+    gauntlet:Math.floor(Number(g.lifetime)||0),
+    secret:!!data.secretDone,
+    from:env.g||'unknown', when:env.t?new Date(env.t).toISOString().slice(0,10):'unknown',
+  };
+  return {ok:true,env,data,summary,notes,carried};
+}
+
+/* Apply a parsed code. Only manifest fields are written; everything else on this device —
+   audio, accessibility, palette, debug switches — is left exactly as it was. */
+function applySaveCode(parsed){
+  if(!parsed||!parsed.ok)return false;
+  for(const k in parsed.data)SAVE[k]=parsed.data[k];
+  // re-derive anything that must stay consistent with the imported values rather than
+  // trusting the code to have been internally coherent
+  if(!Array.isArray(SAVE.unlocked)||!SAVE.unlocked.length)SAVE.unlocked=['blitzkrieg'];
+  for(const k in DOCTRINES)if(SAVE.lvl>=DOCTRINES[k].unlock&&!SAVE.unlocked.includes(k))SAVE.unlocked.push(k);
+  if(!(SAVE.lvl>=1&&SAVE.lvl<=MAX_LVL))SAVE.lvl=1;
+  if(!(SAVE.xp>=0))SAVE.xp=0;
+  // equippedBadge()/equippedTitleEntry() already fall back to the rank default when the
+  // equipped id is unknown or no longer earned, so an imported cosmetic that this account
+  // has not unlocked degrades on its own — nothing to clear here.
+  persist();
+  return true;
+}
+
+let _stFrom='title', _stParsed=null;
+function openSaveTransfer(from){
+  _stFrom=from||'title'; _stParsed=null;
+  hideAllScreens('savetransfer'); document.getElementById('hud').classList.add('hidden');
+  document.getElementById('btn-pause').classList.add('hidden');
+  document.getElementById('savetransfer').classList.remove('hidden');
+  hideDiffAmbient();
+  renderSaveTransfer();
+}
+function renderSaveTransfer(){
+  const el=document.getElementById('st-body'); if(!el)return;
+  let code='';
+  try{ code=exportSaveCode(); }catch(e){ code=''; }
+  const g=gauntletState();
+  const mine={lvl:SAVE.lvl,wins:SAVE.wins,best:SAVE.best,
+    doctrines:(SAVE.unlocked||[]).length,campaign:(SAVE.campaignDone!=null?SAVE.campaignDone+1:0),
+    medals:Object.keys(SAVE.medals||{}).length,crate:Object.keys(SAVE.chestOwned||{}).length,
+    gauntlet:g.lifetime};
+  const cell=(v,l)=>`<div class="st-cell"><b>${v}</b><small>${l}</small></div>`;
+  el.innerHTML=
+    `<div class="st-box"><div class="st-h">📤 Export from this device</div>
+      <div class="st-sub">This code carries the progress below. Copy it, then paste it into <b>Transfer Progress</b> on the other device. It is plain text — email it, message it, or paste it into a note.</div>
+      <div class="st-sum">${cell(mine.lvl,'rank')}${cell(mine.wins,'wins')}${cell(mine.best.toLocaleString(),'best score')}${cell(mine.doctrines,'doctrines')}${cell(mine.campaign+'/'+CAMPAIGN.length,'campaign')}${cell(mine.medals,'medals')}${cell(mine.crate,'crate items')}${cell(mine.gauntlet,'gauntlet beats')}</div>
+      <textarea class="st-code" id="st-out" readonly spellcheck="false" aria-label="Your save code">${escapeHTML(code)}</textarea>
+      <div class="st-row"><button class="sbtn prim" id="st-copy">📋 Copy code</button></div>
+      <div class="st-msg" id="st-copymsg"></div>
+      <div class="st-note">Your device settings — audio, accessibility, colourblind palette, Chaos Mode and the debug switches — are deliberately <b>not</b> included. Importing this will never change those on the receiving device.</div>
+    </div>`+
+
+    `<div class="st-box"><div class="st-h">📥 Import to this device</div>
+      <div class="st-sub">Paste a code and press Check. Nothing is written until you have seen what it contains and confirmed it.</div>
+      <textarea class="st-code" id="st-in" spellcheck="false" placeholder="Paste a ${SAVE_TRANSFER_PREFIX}… code here" aria-label="Paste a save code"></textarea>
+      <div class="st-row"><button class="sbtn" id="st-check">🔍 Check code</button></div>
+      <div class="st-msg" id="st-inmsg"></div>
+      <div id="st-preview"></div>
+    </div>`+
+
+    `<div class="st-note">Codes are tied to the save format, not the device — a code made on this version will import on this version anywhere. Later updates keep reading older codes: anything a newer build adds is filled in from its own defaults, and anything it no longer uses is ignored. A code that has been truncated or edited is rejected outright rather than partly applied.</div>`;
+
+  const out=document.getElementById('st-out');
+  const copyMsg=document.getElementById('st-copymsg');
+  document.getElementById('st-copy').onclick=()=>{
+    const show=(cls,txt)=>{ copyMsg.className='st-msg show '+cls; copyMsg.textContent=txt; };
+    try{
+      out.focus(); out.select(); out.setSelectionRange(0,out.value.length);
+      /* execCommand first, then the async clipboard API. Backwards from the usual advice on
+         purpose: the game is normally running inside itch.io's sandboxed iframe, where
+         navigator.clipboard is frequently blocked outright while the selection-based copy
+         still works. If both fail the code is already selected, so ⌘/Ctrl+C finishes the job. */
+      const done=document.execCommand&&document.execCommand('copy');
+      if(done)show('ok','Copied. Paste it into Transfer Progress on the other device.');
+      else if(navigator.clipboard&&navigator.clipboard.writeText)
+        navigator.clipboard.writeText(out.value).then(()=>show('ok','Copied.'),()=>show('warn','Copy was blocked here — the code is selected, so press Ctrl+C (or ⌘C) to copy it.'));
+      else show('warn','Copy is unavailable here — the code is selected, so press Ctrl+C (or ⌘C) to copy it.');
+    }catch(e){ show('warn','Copy was blocked here — the code is selected, so press Ctrl+C (or ⌘C) to copy it.'); }
+  };
+
+  const inMsg=document.getElementById('st-inmsg'), prev=document.getElementById('st-preview');
+  document.getElementById('st-check').onclick=()=>{
+    prev.innerHTML=''; _stParsed=null;
+    const p=parseSaveCode(document.getElementById('st-in').value);
+    if(!p.ok){ inMsg.className='st-msg show err'; inMsg.textContent='✕ '+p.err; return; }
+    _stParsed=p;
+    inMsg.className='st-msg show ok';
+    inMsg.textContent='✓ Valid code from version '+p.summary.from+', made '+p.summary.when+'. '+
+      p.carried+' progress field(s) will be applied.'+(p.notes.length?' Note: '+p.notes.join('; ')+'.':'');
+    const s=p.summary;
+    prev.innerHTML=`<div class="st-sum">${cell(s.lvl,'rank')}${cell(s.wins,'wins')}${cell(s.best.toLocaleString(),'best score')}${cell(s.doctrines,'doctrines')}${cell(s.campaign+'/'+CAMPAIGN.length,'campaign')}${cell(s.medals,'medals')}${cell(s.crate,'crate items')}${cell(s.gauntlet,'gauntlet beats')}</div>`+
+      `<div class="st-msg show warn" style="margin-top:10px">⚠ Importing <b>replaces</b> the progress on this device — currently Rank ${SAVE.lvl}, ${SAVE.wins} wins. This cannot be undone, so if the current career is worth keeping, export it first and save that code somewhere.</div>`+
+      `<div class="st-row"><button class="sbtn prim" id="st-apply" style="border-color:var(--good);color:var(--good)">✓ Import and replace my progress</button></div>`;
+    document.getElementById('st-apply').onclick=()=>{
+      const btn=document.getElementById('st-apply');
+      if(btn.dataset.armed!=='1'){ btn.dataset.armed='1'; btn.textContent='✓ Confirm — replace Rank '+SAVE.lvl+' with Rank '+s.lvl+'?';
+        setTimeout(()=>{ if(btn&&btn.dataset.armed==='1'){btn.dataset.armed='';btn.textContent='✓ Import and replace my progress';} },5000); return; }
+      if(applySaveCode(_stParsed)){
+        inMsg.className='st-msg show ok';
+        inMsg.textContent='✓ Imported. You are now Rank '+SAVE.lvl+'.';
+        prev.innerHTML='';
+        document.getElementById('st-in').value='';
+        try{ applyCbPalette(); }catch(e){}
+        renderSaveTransfer();
+      } else { inMsg.className='st-msg show err'; inMsg.textContent='✕ Import failed — nothing was changed.'; }
+    };
+  };
+}
+
 /* ═══ ADJUTANT FILE — developer analytics for the Gauntlet dossier ═══════════════ */
 const GF_TABS=[['why','🧠 Reasoning'],['data','📊 Analytics'],['ladder','📈 Curve'],['raw','🗄 Raw']];
 let _gfTab='why', _gfFrom='title';
@@ -9975,6 +10270,7 @@ document.getElementById('rivals-back').onclick=()=>showTitle();
 document.getElementById('t-gauntlet').onclick=()=>openGauntlet();
 document.getElementById('gaunt-back').onclick=()=>showTitle();
 document.getElementById('gf-back').onclick=()=>{ if(_gfFrom==='gauntlet')openGauntlet(); else showTitle(); };
+document.getElementById('st-back').onclick=()=>showTitle();
 document.getElementById('t-indoc').onclick=()=>openIndoc();
 document.getElementById('indoc-back').onclick=()=>showTitle();
 document.getElementById('t-leaderboard').onclick=()=>openLeaderboard();

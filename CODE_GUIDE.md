@@ -780,6 +780,34 @@ Other things worth knowing:
   threshold it quotes is read from the same constants the live snapshot uses, so
   it cannot drift into describing behaviour the game no longer has.
 
+## Save transfer (`SAVE_TRANSFER_FIELDS`)
+
+Progress moves between devices as an `FC1-…` code. The one rule that matters if you
+touch save code:
+
+> **A code carries only what is in the `SAVE_TRANSFER_FIELDS` manifest.**
+> Adding a field to `DEFAULT_SAVE` does *not* make it transfer.
+
+That indirection is the entire hardening strategy. Because the format is a declared
+manifest rather than `JSON.stringify(SAVE)`, the code shape is decoupled from `SAVE`'s
+internal shape, which gives all of this for free:
+
+- adding a manifest entry later doesn't invalidate existing codes (importers fill the
+  new field from current defaults)
+- removing one doesn't break old codes (unknown keys are ignored and reported)
+- device-local settings can never leak — audio, accessibility, palette, Chaos Mode and
+  the debug switches are deliberately absent, and a regression check asserts it
+- every value is re-validated and every collection capped on import, so a hand-edited
+  code can't inject `lvl: 9e99` or an array big enough to fill localStorage
+- a truncated or altered code fails its checksum and is refused **whole**
+
+`SAVE_TRANSFER_VERSION` describes the *envelope*, not the manifest. Adding or removing
+manifest entries must **not** bump it — that would break compatibility the design already
+handles. Bump it only if the envelope itself changes, and keep reading the old version.
+
+`parseSaveCode()` validates without writing, which is what lets the UI show the player
+what a code contains before they overwrite a career. Keep that separation.
+
 ## Screens: use `hideAllScreens()`
 
 Every screen opener hides the others through `hideAllScreens(exceptId)`. It used

@@ -8,6 +8,57 @@ engineering detail lives in the patch notes inside the game and in the commit hi
 
 ---
 
+## v1.18.2 — Take your progress with you
+
+**Your save now moves between devices.**
+
+Progress has always lived in browser storage, which means it lives on *one device, in one
+browser*. Play on your phone and your laptop and you had two unrelated careers with no way
+to reconcile them. That's now fixed.
+
+**Debug/Dev → 💾 Transfer Progress** exports everything you've earned as a single
+copy-pasteable code, and imports it on the other device. It carries rank and XP, every
+doctrine, medals, campaign clears and stars, time trials, the secret level, rivals, doctrine
+lessons, your whole crate collection, daily streaks, the Gauntlet dossier and lifetime
+record, career stats and your leaderboard.
+
+### Built to survive updates
+
+The code deliberately isn't a dump of the save file. It carries an explicit list of progress
+fields, each one validated on the way in. That indirection is the whole point:
+
+- A future update adding something new **won't invalidate codes you already have** — the new
+  field just takes its default.
+- A code carrying something an older build doesn't recognise still imports everything else,
+  and tells you what it skipped.
+- A code that's been truncated or edited **fails its integrity check and is refused
+  outright**, rather than half-applied. Arriving with half a career is worse than being told
+  to re-copy it.
+
+Nothing is written until you've pressed Check, seen exactly what the code contains — rank,
+wins, campaign, medals, crate items, Gauntlet record — and confirmed it.
+
+**Your device settings deliberately don't travel.** Audio, reduce motion, the colourblind
+palette, Chaos Mode and the debug switches all stay as they are on the receiving device.
+Importing someone's progress should never reach into their accessibility settings.
+
+### 🎯 No Luck
+
+One switch in Settings that silences every chance-driven event: supply drops, defectors,
+surprise barrages, the Golden Drone, crazy voicelines, cutscenes, and the ultra-rare hidden
+events. A battle is then decided by what you commit and nothing else.
+
+Worth being precise about what it does *not* cover: weather and lane terrain still vary
+between battles. Those are rolled once before the fight and shown to you, rather than sprung
+on you during it, so they're a condition you plan around rather than luck that lands on you.
+
+### Cutscenes
+
+Now its own setting rather than an item buried in the Random Events sub-list, and it's
+honoured at the source — which means it also silences the cinematic a legendary kill streak
+earns. That one isn't a random event, so the old sub-toggle never covered it and cutscenes
+could still appear for a player who'd turned them off.
+
 ## v1.18.1 — Pacing the Adjutant
 
 The Gauntlet shipped climbing far too steeply. Player feedback said it "grew incredibly
