@@ -303,14 +303,38 @@ locked. Revisit once the backend can validate progress server-side (see <code>do
 const p=parseSaveCode(c); console.log(p.ok, p.summary, p.notes);
 applySaveCode(p);</code></pre>
 
-<h2><span class="n">08</span>Testing</h2>
+<h2><span class="n">08</span>Commitment budgets &amp; support units (v1.21.0)</h2>
+<p class="muted">Two systems that are easy to break from the console without noticing.</p>
+<ul>
+  <li><strong>Stance and orders are one-change-per-battle.</strong> <code>G.stanceChanges</code> and
+      <code>G.groupChanges</code> both start at 1. Changes are free while <code>G.prep&gt;0</code>; the
+      tutorial is exempt outright. To demo freely on camera, just set them high:
+      <code>G.stanceChanges=99; G.groupChanges=99</code> — or set <code>G.prep=180</code> to put the
+      fight back into prep, which also refreezes the field.</li>
+  <li><code>setStance()</code> and <code>setGroupDoctrine()</code> return <strong>false</strong> when a
+      change is refused. If a scripted capture run silently ends up in the wrong posture, that return
+      value is why.</li>
+  <li><strong>Field Reassessment</strong> is the only refund and grants one of each:
+      <code>REVENTS.orders.run()</code> fires it on demand.</li>
+  <li><strong>Support units never shoot</strong> (<code>canShoot=!u.support||u.charging</code>), and that
+      includes the EW Jammer. <code>fixCats</code> decides both what a Medic/Engineer heals
+      <em>and</em> what it stands behind — change one, change both.</li>
+  <li><code>u.charging</code> is a one-way latch. Once a support unit gives up and charges it never goes
+      back, even if a friendly arrives. To reset one for a demo, set <code>u.charging=false</code>
+      manually.</li>
+</ul>
+<p class="muted"><strong>Prep is now player-ended</strong> (<code>PREP_MAX=180</code>). CP does not accrue
+during it — the equivalent income is granted up front via <code>PREP_GRANT_SECS</code>. If you are
+measuring economy, measure from the first live tick, not from <code>start()</code>.</p>
+
+<h2><span class="n">09</span>Testing</h2>
 <ol>
   <li><code>python3 -m http.server 8080</code></li>
   <li><code>node tests/regression.js</code> — exits 0 on pass</li>
 </ol>
 <p class="muted">Override the target with <code>PORT=</code> or <code>BASE_URL=</code>.</p>
 
-<h2><span class="n">09</span>Future tools — add here as they land</h2>
+<h2><span class="n">10</span>Future tools — add here as they land</h2>
 <ul>
   <li><span class="tag planned">planned</span> Global leaderboard admin / score invalidation (needs the backend)</li>
   <li><span class="tag planned">planned</span> Deterministic seed override for reproducible capture runs</li>
@@ -319,7 +343,7 @@ applySaveCode(p);</code></pre>
 </ul>
 
 <footer>
-  Frontline Commander — internal reference. Last updated for <strong>v1.19.0</strong>.<br>
+  Frontline Commander — internal reference. Last updated for <strong>v1.21.0</strong>.<br>
   Keep this current: a stale tools file is worse than none, because you'll trust it.
 </footer>
 

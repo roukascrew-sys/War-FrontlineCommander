@@ -43,6 +43,7 @@ function resolveExecutablePath() {
 const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT || 8080}/wargame.html`;
 
 const GROUP_KEYS_LEN_CHECK = o => o && Object.keys(o).length === 3;
+const GROUP_FREE_CHANGES_MIRROR = 1;   // mirrors GROUP_FREE_CHANGES in the game file
 (async () => {
   const launchOpts = { args: ['--no-sandbox'] };
   const exe = resolveExecutablePath();
@@ -2098,7 +2099,7 @@ const GROUP_KEYS_LEN_CHECK = o => o && Object.keys(o).length === 3;
     ok(lock.opened === false && !lock.shown,
       '[transfer lock] the transfer SCREEN itself refuses to open while locked — the gate is not just a hidden button a console call walks past');
 
-    // 23b. standing orders — rank gates, defaults, and the shared change cooldown
+    // 23b. standing orders — rank gates and defaults (the change MODEL is covered in 25)
     const orders = await gp.evaluate(() => {
       SAVE.debugUnlockAll = false; SAVE.lvl = 5;
       SAVE.groups = { arty: 'off', armor: 'off', drone: 'off' }; persist();
@@ -2107,24 +2108,25 @@ const GROUP_KEYS_LEN_CHECK = o => o && Object.keys(o).length === 3;
       const openAt60 = GROUP_KEYS.map(k => groupUnlocked(k));
       LAUNCH = null; sel.mode = 'skirmish'; start();
       const defaults = GROUP_KEYS.map(k => G.groups[k]);
-      G.groupCd = 0;
+      // orders are now a commitment rather than a cooldown: free in prep, one change once live
+      G.prep = 0; G.frozen = false; G.groupChanges = 1;
       const first = setGroupDoctrine('arty', 'battery');
-      const second = setGroupDoctrine('armor', 'assault');   // instantly after — must be refused
-      const cd = G.groupCd;
+      const second = setGroupDoctrine('armor', 'assault');   // budget spent — must be refused
+      const cd = G.groupChanges;
       // a save edited to arm an order the account has not earned must not survive into battle
       SAVE.lvl = 5; SAVE.groups = { arty: 'bombard', armor: 'assault', drone: 'hvt' }; persist();
       LAUNCH = null; start();
       const smuggled = GROUP_KEYS.map(k => G.groups[k]);
       SAVE.lvl = 60; SAVE.groups = { arty: 'off', armor: 'off', drone: 'off' }; persist();
       return { lockedAt5, openAt60, defaults, first, second, cd, smuggled,
-               gates: GROUP_KEYS.map(k => GROUP_DOCTRINES[k].lvl), swapCd: GROUP_SWAP_CD };
+               gates: GROUP_KEYS.map(k => GROUP_DOCTRINES[k].lvl) };
     });
     ok(orders.lockedAt5.every(v => !v) && orders.openAt60.every(v => v),
       `[orders] all three arms are rank-gated (${orders.gates.join(' / ')}) and closed at low rank`);
     ok(orders.defaults.every(v => v === 'off'),
       '[orders] every arm defaults to no standing order — none is armed until the player chooses it');
-    ok(orders.first === true && orders.second === false && orders.cd > 0,
-      `[orders] a change starts a shared ${orders.swapCd}s cooldown and a second change is refused while it runs`);
+    ok(orders.first === true && orders.second === false && orders.cd === 0,
+      '[orders] once the battle is live the single change is spent by the first order and the next is refused');
     ok(orders.smuggled.every(v => v === 'off'),
       '[orders] an order armed in a hand-edited save is dropped to off if the account has not earned it');
 
@@ -2317,18 +2319,33 @@ const GROUP_KEYS_LEN_CHECK = o => o && Object.keys(o).length === 3;
       spawn('R', 'arty', 1, 560);           // the only valid target
       const cbu = G.units.find(u => u.key === 'cbat');
       const pick = nearestEnemy(cbu);
+      /* Targeting is measured with the decoys present; SUPPRESSION is measured after they
+         are cleared away. Left in, the tank closes and kills the counter-battery vehicle
+         about a second and a half in, after which the gun's suppression decays back to zero
+         on its own — sampling at the end of the window then reads a working suppressor as a
+         broken one. Suppression is a field the escort's job is to protect, so measuring it
+         with the escort deliberately absent is measuring the mechanic, not the escort. */
+      for (const o of G.units) if (o.side === 'R' && o.key !== 'arty') o.alive = false;
       const gun = G.units.find(u => u.side === 'R' && u.key === 'arty');
       const sup0 = gun.sup || 0;
-      for (let t = 0; t < 60; t++) step(0.05);
+      const d0 = Math.abs(gun.x - cbu.x);
+      let supPeak = sup0;
+      for (let t = 0; t < 60; t++) { step(0.05); supPeak = Math.max(supPeak, gun.sup || 0); }
       return { picked: pick.tgt ? pick.tgt.key : null, rng: UNITS.cbat.rng, artyRng: UNITS.arty.rng,
-               mlrsRng: UNITS.mlrs.rng, supRose: (gun.sup || 0) > sup0,
+               mlrsRng: UNITS.mlrs.rng, supRose: supPeak > sup0 + 0.25,
+               sup0, sup1: supPeak, d0, gunAlive: gun.alive, cbFlag: !!cbu.counterBattery, lvl: SAVE.lvl,
                rankGate: UNIT_RANK_GATE.cbat, artyOrderRank: GROUP_DOCTRINES.arty.lvl };
     });
     ok(cb.picked === 'arty',
       `[counter-battery] engages ONLY artillery — walked past a rifle and a tank both nearer to reach the gun (picked ${cb.picked})`);
-    ok(cb.rng > cb.artyRng && cb.rng > cb.mlrsRng,
-      `[counter-battery] out-ranges every gun in the game (${cb.rng} vs artillery ${cb.artyRng} / rockets ${cb.mlrsRng})`);
-    ok(cb.supRose, '[counter-battery] suppresses enemy guns at range — a battery is silenced before it is destroyed');
+    /* Deliberately out-ranges the standard howitzer but NOT the heaviest rocket battery.
+       At 300 it beat everything with no reply at all, which is a hard counter with no
+       counter-play; sitting just under Rocket Artillery makes it a duel a gun player can
+       win by bringing the right tube. */
+    ok(cb.rng > cb.artyRng && cb.rng < cb.mlrsRng,
+      `[counter-battery] out-ranges the howitzer (${cb.rng} vs ${cb.artyRng}) but sits just under Rocket Artillery (${cb.mlrsRng}), so guns can trade back instead of being answered with no reply`);
+    ok(cb.supRose,
+      `[counter-battery] suppresses enemy guns at range — a battery is silenced before it is destroyed (sup ${cb.sup0}→${cb.sup1.toFixed(2)} peak at ${cb.d0.toFixed(0)}px of ${cb.rng})`);
     ok(cb.rankGate === cb.artyOrderRank,
       `[counter-battery] unlocks at the same rank as the first artillery order (${cb.rankGate}) — arriving earlier would be answering nothing`);
 
@@ -2390,23 +2407,41 @@ const GROUP_KEYS_LEN_CHECK = o => o && Object.keys(o).length === 3;
       trySmoke(1, 620);
       const dr = G.units.find(u => u.key === 'drone');
       const wallX = 620 - SMOKE_R;
-      for (let t = 0; t < 140 && dr.alive; t++) step(0.05);   // 7s, well inside the bank's life
-      const droneStopped = dr.alive && dr.x < wallX + 12 && G.smokes.length > 0;
-      const droneX = dr.x;
+      /* Measure the FURTHEST the drone ever gets, not where it happens to be at the end.
+         Parked on the boundary for seven seconds it flickers marginally in and out of the
+         bank, so it sometimes acquires, dives and destroys itself right at the edge — which
+         is fine (it never crosses) but made an end-state sample read as a failure about a
+         third of the time. Both halves are asserted: it must reach the wall AND never pass
+         it, so a drone that simply died early cannot pass this by standing still. */
+      let maxX = dr.x;
+      for (let t = 0; t < 140; t++) { step(0.05); if (dr.alive) maxX = Math.max(maxX, dr.x); }
+      const droneStopped = maxX < wallX + 12 && maxX > wallX - 40 && G.smokes.length > 0;
+      const droneX = maxX;
 
       // the combo: smoke + an enemy jammer in reach = pinned
       fresh();
       spawn('R', 'rifle', 1, 600); spawn('B', 'jammer', 1, 640);
       trySmoke(1, 600);
       const victim = G.units.find(u => u.side === 'R');
+      /* Let the pin ENGAGE before measuring. The jammer that applies it is processed after
+         the unit it pins within the same frame, so the victim always gets exactly one frame
+         of movement before it takes hold — measuring from t=0 was reading that single frame
+         of travel as "the pin does not work".
+         The jammer is also held on its mark for the duration. Left to walk, it advances out
+         of its own 152px reach roughly two seconds in and the pin lapses — which is correct
+         behaviour and not what this check is about. Pinning the jammer isolates the pin. */
+      const jam = G.units.find(u => u.side === 'B'), jamX = jam.x;
+      const hold = n => { for (let t = 0; t < n; t++) { step(0.05); jam.x = jamX; } };
+      hold(6);
       const x0 = victim.x;
-      for (let t = 0; t < 40; t++) step(0.05);
-      const pinned = (victim.smokePin || 0) > 0 && Math.abs(victim.x - x0) < 1;
+      hold(40);
+      const pinned = (victim.smokePin || 0) > 0 && Math.abs(victim.x - x0) < 0.5;
+      const pinDbg = `pin=${victim.smokePin} moved=${Math.abs(victim.x-x0).toFixed(2)} inSmoke=${!!smokeAt(victim.x,victim.y)} smokes=${G.smokes.length} alive=${victim.alive}`;
       // ...and it releases once the smoke is gone
       G.smokes = [];
       for (let t = 0; t < 40; t++) step(0.05);
       const released = !(victim.smokePin > 0) && Math.abs(victim.x - x0) > 0.5;
-      return { lockedAt5, aSees, bSees, bothOutside, insideSees, droneStopped, droneX, wallX, pinned, released };
+      return { lockedAt5, aSees, bSees, bothOutside, insideSees, droneStopped, droneX, wallX, pinned, released, pinDbg };
     });
     ok(smoke.lockedAt5, `[smoke] is rank-gated and refuses to fire below its rank`);
     ok(smoke.bothOutside, '[smoke] precondition — both probes are outside the bank, with it between them');
@@ -2415,8 +2450,8 @@ const GROUP_KEYS_LEN_CHECK = o => o && Object.keys(o).length === 3;
     ok(smoke.insideSees,
       '[smoke] two units inside the same bank can still see each other, so smoke never becomes a total combat freeze');
     ok(smoke.droneStopped,
-      `[smoke] walls out flying kamikazes — they stall at the edge instead of crossing (stopped at x=${smoke.droneX.toFixed(0)}, wall at ${smoke.wallX})`);
-    ok(smoke.pinned, '[smoke] anything caught in smoke inside an EW jammer\'s reach is pinned: immobile and unable to fire');
+      `[smoke] walls out flying kamikazes — they reach the bank and never pass it (furthest x=${smoke.droneX.toFixed(0)}, wall at ${smoke.wallX})`);
+    ok(smoke.pinned, `[smoke] anything caught in smoke inside an EW jammer's reach is pinned: immobile and unable to fire (${smoke.pinDbg})`);
     ok(smoke.released, '[smoke] the pin releases as soon as the smoke is gone — it is a condition, not a kill');
 
     // 24e. the Adjutant fights in its own posture and gives its own orders
@@ -2454,6 +2489,161 @@ const GROUP_KEYS_LEN_CHECK = o => o && Object.keys(o).length === 3;
       `[adjutant] its orders actually drive enemy units — hold lines are honoured for the red side too, which they were not before ${adj.threw ? ':: ' + adj.threw : ''}`);
     ok(!adj.plain.stance && !adj.plain.orders,
       '[adjutant] no other battle kind gives the enemy a posture or orders — the toolkit stays exclusive to the Gauntlet');
+
+    /* ─────────────────────────────────────────────────────────────────────────
+       25. v1.21.0 — prep, Legendary+, order commitment, Medic/Engineer.
+       ───────────────────────────────────────────────────────────────────────── */
+    const v121 = await gp.evaluate(() => {
+      SAVE.lvl = 60; SAVE.seenTut = true; SAVE.debugUnlockAll = true; persist();
+      const fresh = d => { LAUNCH = null; sel.mode = 'skirmish'; sel.diff = d || 'veteran'; start();
+        for (const k in G.unlocked) G.unlocked[k] = true; };
+      const o = {};
+
+      // balance numbers
+      o.ifvSplash = UNITS.ifv.splash; o.cbatRng = UNITS.cbat.rng; o.mlrsRng = UNITS.mlrs.rng;
+
+      // skirmish has no tech gate; blitz keeps it
+      fresh('veteran');
+      o.skirmishTech = G.techMode; o.skirmishAllOpen = Object.values(G.unlocked).every(v => v);
+      LAUNCH = null; sel.mode = 'blitz'; start();
+      o.blitzTech = G.techMode;
+
+      // prep: long, ends on demand, no CP accrual, income granted up front
+      fresh('veteran');
+      o.prepStart = G.prep; o.prepMax = PREP_MAX;
+      const cp0 = G.cp;
+      for (let i = 0; i < 200; i++) step(0.05);
+      o.cpDrift = G.cp - cp0;
+      o.grant = Math.round(G.cpRate * PREP_GRANT_SECS);
+      o.cpHasGrant = cp0 >= o.grant;
+      G.prep = 0.001; for (let i = 0; i < 4; i++) step(0.05);
+      o.prepEnded = G.prep === 0 && !G.frozen;
+
+      // Legendary+ is behavioural, not a stat wall
+      LAUNCH = null; sel.mode = 'skirmish'; sel.diff = 'legendaryplus'; start();
+      o.lpStance = G.enemyStance; o.lpStrikes = G.enemyFire ? G.enemyFire.strikes.slice() : null;
+      o.lpQual = DIFFS.legendaryplus.qualMul; o.legQual = DIFFS.legendary.qualMul;
+      o.lpEcon = DIFFS.legendaryplus.cpMul; o.legEcon = DIFFS.legendary.cpMul;
+      G.prep = 0; G.frozen = false; G.gauntStrikeT = 0; G.units.length = 0;
+      for (let i = 0; i < 6; i++) spawn('B', 'rifle', i % 3, 300 + i * 20);
+      o.lpTelegraphed = false;
+      for (let i = 0; i < 200; i++) { step(0.05); if (G.gauntTele) o.lpTelegraphed = true; }
+      LAUNCH = null; sel.diff = 'veteran'; start();
+      o.plainHasNone = !G.enemyStance && !G.enemyFire;
+
+      // orders: free during prep, ONE change once live, event grants another
+      fresh('veteran');
+      G.groups.arty = 'off'; G.groups.armor = 'off'; G.groups.drone = 'off';
+      o.prepChanges = [setGroupDoctrine('arty', 'battery'), setGroupDoctrine('armor', 'assault'), setGroupDoctrine('drone', 'hvt')];
+      o.budgetAfterPrep = G.groupChanges;
+      G.prep = 0; G.frozen = false;
+      o.liveFirst = setGroupDoctrine('arty', 'marching');
+      o.liveSecond = setGroupDoctrine('armor', 'support');
+      REVENTS.orders.run();
+      o.afterEvent = setGroupDoctrine('armor', 'support');
+
+      /* STANCE follows the same commitment model, and this is the check that matters most:
+         stance previously had no cost of ANY kind, so it was the one channel a player could
+         still micro freely. Free in prep, one change live, greyed out once spent. */
+      fresh('veteran');
+      o.stanceBudget = G.stanceChanges; o.stanceCap = STANCE_FREE_CHANGES;
+      o.stancePrep = [setStance('defend'), setStance('skirmish'), setStance('assault')];
+      o.stanceBudgetAfterPrep = G.stanceChanges;
+      G.prep = 0; G.frozen = false;
+      o.stanceLiveFirst = setStance('defend');
+      o.stanceLiveSecond = setStance('skirmish');
+      o.stanceStuck = G.stance;                       // the refused change must not have landed
+      syncStanceUI();
+      o.stanceGreyed = ['assault', 'skirmish'].every(s =>
+        document.getElementById('stance-' + s).classList.contains('spent'));
+      o.stanceOnStillLit = document.getElementById('stance-defend').classList.contains('on') &&
+                           !document.getElementById('stance-defend').classList.contains('spent');
+      REVENTS.orders.run();
+      o.stanceAfterEvent = setStance('skirmish');
+
+      // Medic / Engineer
+      fresh('veteran'); G.prep = 0; G.frozen = false; G.aiHold = true; G.units.length = 0;
+      spawn('B', 'rifle', 1, 500); spawn('B', 'medic', 1, 560);
+      const rif = G.units.find(u => u.key === 'rifle'), med = G.units.find(u => u.key === 'medic');
+      rif.hp = 10; rif.spd = 0;
+      for (let i = 0; i < 120; i++) step(0.05);
+      o.medTrail = rif.x - med.x; o.trailTarget = SUPPORT_TRAIL; o.rifHealed = rif.hp > 10;
+      // a medic must NOT repair a tank, and an engineer must NOT heal infantry
+      fresh('veteran'); G.prep = 0; G.frozen = false; G.aiHold = true; G.units.length = 0;
+      spawn('B', 'tank', 1, 500); spawn('B', 'medic', 1, 540);
+      const t2 = G.units.find(u => u.key === 'tank'); t2.hp = 40; t2.spd = 0;
+      for (let i = 0; i < 80; i++) step(0.05);
+      o.medicOnTank = t2.hp;
+      fresh('veteran'); G.prep = 0; G.frozen = false; G.aiHold = true; G.units.length = 0;
+      spawn('B', 'rifle', 1, 500); spawn('B', 'engineer', 1, 540);
+      const r3 = G.units.find(u => u.key === 'rifle'); r3.hp = 10; r3.spd = 0;
+      for (let i = 0; i < 80; i++) step(0.05);
+      o.engOnInf = r3.hp;
+      // an engineer DOES repair a tank
+      fresh('veteran'); G.prep = 0; G.frozen = false; G.aiHold = true; G.units.length = 0;
+      spawn('B', 'tank', 1, 500); spawn('B', 'engineer', 1, 540);
+      const t4 = G.units.find(u => u.key === 'tank'); t4.hp = 40; t4.spd = 0;
+      for (let i = 0; i < 80; i++) step(0.05);
+      o.engOnTank = t4.hp;
+      // alone in the lane, it charges
+      fresh('veteran'); G.prep = 0; G.frozen = false; G.aiHold = true; G.units.length = 0;
+      spawn('B', 'medic', 1, 300); spawn('R', 'rifle', 1, 700);
+      const m5 = G.units.find(u => u.key === 'medic'); const mx0 = m5.x;
+      for (let i = 0; i < 200 && m5.alive; i++) step(0.05);
+      o.charged = m5.charging === true && m5.x > mx0 + 50;
+      o.medicCost = UNITS.medic.cost; o.engCost = UNITS.engineer.cost;
+      return o;
+    });
+    ok(v121.ifvSplash === 6, `[balance] IFV splash rolled back to 6 (was 8)`);
+    ok(v121.cbatRng === 265 && v121.cbatRng < v121.mlrsRng,
+      `[balance] Counter-Battery drops to ${v121.cbatRng}, just under Rocket Artillery's ${v121.mlrsRng} so guns can trade back instead of being answered with no reply`);
+    ok(v121.skirmishTech === false && v121.skirmishAllOpen,
+      '[balance] Skirmish has no in-battle tech purchase at all — the default mode now plays like the rest of the game');
+    ok(v121.blitzTech === true,
+      '[balance] Blitz keeps the tech tree, where the escalating unlock is the shape of the run');
+
+    ok(v121.prepStart === v121.prepMax && v121.prepMax >= 180,
+      `[prep] the phase now runs up to ${v121.prepMax}s rather than a fixed countdown`);
+    ok(Math.abs(v121.cpDrift) < 0.01,
+      `[prep] CP does NOT accrue during prep (drift ${v121.cpDrift.toFixed(2)}) — an open-ended phase that printed money would just be a wait with a right answer`);
+    ok(v121.cpHasGrant,
+      `[prep] the income the old fixed prep would have generated is granted UP FRONT instead (${v121.grant} CP), so the opening wave is the size it always was`);
+    ok(v121.prepEnded, '[prep] the player ends it on demand');
+
+    ok(v121.lpStance && v121.lpStrikes && v121.lpStrikes.length === 3,
+      `[legendary+] the AI picks a stance for the battle (${v121.lpStance}) and carries the full strike rotation`);
+    ok(v121.lpTelegraphed,
+      '[legendary+] its strikes actually fire, and are telegraphed exactly like the player-facing ones');
+    ok(v121.lpQual - v121.legQual < 0.15 && v121.lpEcon - v121.legEcon < 0.3,
+      `[legendary+] is BEHAVIOURAL, not a stat wall — quality ${v121.legQual}→${v121.lpQual} and economy ${v121.legEcon}→${v121.lpEcon} are barely a step`);
+    ok(v121.plainHasNone,
+      '[legendary+] no other difficulty gets a stance or strikes — the toolkit is what the tier IS');
+
+    ok(v121.prepChanges.every(Boolean) && v121.budgetAfterPrep === GROUP_FREE_CHANGES_MIRROR,
+      `[orders] changing orders during prep is free and does not spend the live budget (${v121.budgetAfterPrep} left)`);
+    ok(v121.liveFirst === true && v121.liveSecond === false,
+      '[orders] once the fight is live you get exactly one change — a commitment, not a cooldown');
+    ok(v121.afterEvent === true,
+      '[orders] the Field Reassessment event hands back another change');
+
+    ok(v121.stancePrep.every(Boolean) && v121.stanceBudgetAfterPrep === v121.stanceCap,
+      `[stance] settling a posture during prep is free and does not spend the live budget (${v121.stanceBudgetAfterPrep} left)`);
+    ok(v121.stanceLiveFirst === true && v121.stanceLiveSecond === false && v121.stanceStuck === 'defend',
+      '[stance] once the fight is live you get exactly ONE change — stance used to be a free toggle, which made it a micro channel rather than a posture');
+    ok(v121.stanceGreyed && v121.stanceOnStillLit,
+      '[stance] the postures you can no longer take grey out, so a spent commitment is visible rather than a surprise mid-fight');
+    ok(v121.stanceAfterEvent === true,
+      '[stance] Field Reassessment hands back a change of stance as well as of orders');
+
+    ok(Math.abs(v121.medTrail - v121.trailTarget) < 6 && v121.rifHealed,
+      `[medic] hangs back behind the troops it is treating (${v121.medTrail.toFixed(0)}px, target ${v121.trailTarget}) and heals them`);
+    ok(v121.medicOnTank === 40 && v121.engOnInf === 10,
+      '[medic/engineer] each only mends its own half of the roster — a Medic cannot repair a tank and an Engineer cannot heal infantry');
+    ok(v121.engOnTank > 40, `[engineer] repairs vehicles (40 → ${v121.engOnTank.toFixed(0)})`);
+    ok(v121.charged,
+      '[medic/engineer] with nothing of theirs left in the lane they stop being support and charge in');
+    ok(v121.medicCost < 42 && v121.engCost < 42,
+      `[medic/engineer] both are cheaper than the single unit they replace (${v121.medicCost} / ${v121.engCost} vs 42)`);
 
     // the boot-guard check above throws ONE error on purpose to prove a mid-battle fault no
     // longer covers a live match; everything else must still be clean

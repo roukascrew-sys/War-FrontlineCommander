@@ -818,6 +818,66 @@ properly). `#hud` is **not** a `.screen` — it's the battle itself — so opene
 that need it hidden still say so explicitly. The regression suite checks every
 opener pair leaves exactly one screen visible.
 
+## Commitment budgets: stance & standing orders (v1.21.0)
+
+Stance and standing orders share one model, and it is worth knowing why before touching
+either. Both are **free during prep and cost one change once the fight is live**:
+
+```js
+const STANCE_FREE_CHANGES=1;   // G.stanceChanges
+const GROUP_FREE_CHANGES=1;    // G.groupChanges
+```
+
+Three things about it are load-bearing:
+
+1. **The prep test is `G.prep>0`, never `G.frozen`.** `G.frozen` is only raised by the first
+   `step()`, so a change made in the window between the battle being created and that first
+   tick landing gets billed against the live budget. This was a real bug; both call sites now
+   test `G.prep` alone.
+2. **The tutorial is exempt outright** (`G.prep>0||G.tutorial`). It runs with `prep:0` and its
+   whole job is letting a new player press the buttons to see what they do.
+3. **`REVENTS.orders` (Field Reassessment) is the only refund**, and it grants one of *each*.
+   Adding a second source of changes is the thing most likely to quietly undo the design —
+   the budget is what makes the choice a decision.
+
+`setStance()` and `setGroupDoctrine()` both return a **boolean** for whether the change
+landed. Callers that assume they always succeed will silently desync their UI.
+
+Spent stances get the `.spent` class via `syncStanceUI()`, which is called on change, on the
+event, and at the moment prep ends. If you add a fourth stance, nothing else needs touching.
+
+## Support units: `support`, `fixCats` and `charging` (v1.21.0)
+
+`support:true` means "never shoots" — it gates fire through `const canShoot=!u.support||u.charging;`.
+The EW Jammer carries it too, so a change to support behaviour touches the jammer as well as
+the Medic and Engineer.
+
+`fixCats` is what splits the Medic (`['inf']`) from the Engineer (`['veh','arty']`), and it
+drives **two** separate things: which units `supportTick` will heal, and which units the
+positioning block will anchor behind. Both go through `canFix(u,o)`; keep them consistent or
+you get a unit that follows something it cannot mend.
+
+The anchor search deliberately **skips other support units** (`if(o.support)continue;`).
+Without that, two Medics pair off and shelter behind each other while the line they exist to
+support goes untreated.
+
+`u.charging` is a one-way latch: once a support unit finds nothing left to anchor on it stops
+being support for the rest of its life, even if a friendly later arrives. That is intentional
+— a unit that oscillated between charging and retreating looked broken.
+
+## Win-condition floors (v1.20.0 / v1.21.0)
+
+`BOMBARD_HQ_FLOOR=1` is applied in **two** places and both matter:
+
+- the arc-projectile landing handler, for the Bombardment order — and it deliberately never
+  calls `checkWin()`;
+- the HQ-contact branch of `updateUnits`, for drones under the Base Bomber order, keyed on
+  `unitGroup(u).mode==='bomber'`.
+
+Both exist so an order that ignores the enemy army entirely cannot close a game. If you add a
+third "hit the HQ without fighting" behaviour, it needs the same floor, or it becomes the
+fastest win in the game within a day of shipping.
+
 ## Known rough edges (good first fixes)
 - `checkMedals()` `alldocs` line (~930) has a leftover ternary typo
   (`'allocs'`) — the Grand Marshal medal never grants. Fix: just pass

@@ -1,6 +1,6 @@
 # Frontline Commander — Complete Unit & Synergy Tier List
 
-**As of v1.20.0.** Every unit, every commander power, every secret, ranked — plus the combos
+**As of v1.21.0.** Every unit, every commander power, every secret, ranked — plus the combos
 that matter, because in this game a unit's tier is mostly decided by what it's standing next
 to.
 
@@ -94,7 +94,7 @@ armour) delete it. Against anything else it's a wall.
 — fixes armour's biggest failure mode. Tank + Medic is a genuine problem for the AI to solve.
 **Countered by:** AT Team, Attack Heli, Kamikaze Drone, Armour Breaker order.
 
-### 🚙 IFV — 48 CP · 108 HP · 18 dmg · SA · 96 rng · splash 8
+### 🚙 IFV — 48 CP · 108 HP · 18 dmg · SA · 96 rng · splash 6
 *Buffed in v1.20.0 (was 96 HP / 16 dmg / 90 rng / 6 splash).*
 
 The most flexible unit in the roster. `light` armour still resists small arms (0.70), splash
@@ -160,23 +160,42 @@ units** — `onlyAir` is absolute.
 A pure insurance policy. B tier because its rating is bimodal: S when they bring air, D when
 they don't. Two in a mixed force is correct; more is a wasted lane.
 
-### ✚ Medic — 42 CP · 44 HP · heal 9 / 66 radius · no weapon
-Sustained healing on everything nearby. Turns fragile high-value units (AT, Sniper) into
-units that survive the fight they win.
+### ✚ Medic — 30 CP · 44 HP · heal 10 / 66 radius · `fixCats: inf`
+### 🔧 Engineer — 34 CP · 48 HP · heal 11 / 70 radius · `fixCats: veh, arty`
+*Split in v1.21.0.* The old 42 CP Medic healed everything; these two each cover half the
+roster and cannot cover the other half. Both are cheaper than the unit they replace, so a
+single-arm army pays **less** than before and a mixed army pays more — which is the correct
+direction, because a mixed army is the stronger army.
 
-Scales with what it's protecting: a Medic behind three AT Teams is A tier; a Medic behind
-three rifles is C.
+Both hold station `SUPPORT_TRAIL` (30px) **behind** whatever they're mending and walk back to
+it at 0.55× pace if they drift ahead. That positioning is most of their value: the previous
+Medic jogged into the front rank and died before it healed anything worth healing.
+
+With nothing of theirs left alive in the lane they stop being support and **charge** — full
+speed, 11–13 melee damage. It's a bad attack on purpose. A support unit standing in an empty
+field is a worse outcome than a bad attacker.
+
+Both scale entirely with what they're protecting: an Engineer behind two Tanks is A tier, an
+Engineer behind one IFV is C. **Medic + AT Team is the single best CP-for-CP pairing in the
+game** at 68 CP total.
+
+**The split's real cost:** an all-armour push that used to travel with one Medic now needs an
+Engineer specifically, and an infantry line that wants its Tank repaired needs both. Watch for
+this reading as a tax rather than a decision — see *Balance items I'd watch*.
 
 ### 🧨 Rocket Artillery — 82 CP · 52 HP · 20 dmg × 4 salvo · HE · 270 rng · splash 30
 Four-shell salvo with 30 splash at the longest range in the game. Against a clustered
 infantry push it's the highest burst damage available.
 
 **52 HP is the catch.** Anything reaching it kills it instantly, and Counter-Battery
-now out-ranges it.
+now out-ranges it — though at 265 the rocket battery out-ranges it *back*, which is the trade.
 
-### 🛰 Counter-Battery — 78 CP · 70 HP · 46 dmg · HE · 300 rng · `counterBattery`
-*New in v1.20.0.* Engages **artillery and nothing else**, out-ranges every gun (300 vs 230/270),
-and suppresses guns at range so a battery goes quiet before it dies.
+### 🛰 Counter-Battery — 78 CP · 70 HP · 46 dmg · HE · 265 rng · `counterBattery`
+*New in v1.20.0, retuned in v1.21.0.* Engages **artillery and nothing else** and suppresses
+guns at range (0.75/s, comfortably above the 0.34/s natural decay) so a battery goes quiet
+before it dies. **265 range** out-ranges the howitzer's 230 but sits under Rocket Artillery's
+270 — at 300 it beat every gun in the game with no reply at all, which is a hard counter with
+no counter-play. A rocket player can now trade back.
 
 B tier as a *rating*, but the rating is entirely matchup-dependent: **S against a gun line,
 D against anything else.** Against Stationary Batteries (a fixed, known coordinate) and
@@ -190,6 +209,12 @@ genuinely threatening.
 **Hard-countered by three separate things:** EW Jammer (`antiDrone`), any rapid-fire unit
 (×2.4 vs drones), and now **Smoke Screen** (walls them out entirely). Three counters is a lot
 — B rather than A.
+
+**Under the Base Bomber order (v1.21.0) they can no longer close a game.** Drones on that
+order flatten an HQ to 1 and stop, exactly like Bombardment; someone who isn't on a suicide
+run has to walk in. This was a five-second repeatable win on the lower difficulties, where
+the AI didn't defend against it at all. A *normal* drone dive still finishes a base — the
+floor is a property of the order, not of the unit.
 
 ---
 
@@ -286,9 +311,18 @@ it, so the whole force lands together.
 235 CP for the pair. The interceptor clears enemy air so the gunship can loiter. Genuinely
 strong and genuinely a lot of your economy — a mid-game investment, not an opener.
 
-### 7. ✚ Medic + 🎯 Sniper / 🚀 AT — *A*
+### 7. ✚ Medic + 🎯 Sniper / 🚀 AT — *A+*
 Both of those are high-damage, low-HP units that die to a stiff breeze. Sustained healing
-converts them from trades into sustained damage.
+converts them from trades into sustained damage — and at 30 CP the Medic is now cheap enough
+that Medic + AT (68 CP total) is the best CP-for-CP pairing available.
+
+### 7b. 🔧 Engineer + 🛡 Tank — *A*
+The armour half of the same idea, and the reason the split exists. 104 CP buys a 180 HP heavy
+that keeps being a 180 HP heavy. The Engineer sits 30px behind it and repairs through the
+engagement rather than after it.
+
+**The trap:** the Engineer cannot touch your infantry and the Medic cannot touch your tank. An
+army that fields both arms and one support unit is worse off than it was in v1.20.0.
 
 ### 8. ⚡ EMP + any push — *A*
 Free, 32s cooldown, near-total lane suppression. Time it with a tank push and you get a free
@@ -305,17 +339,27 @@ because it's the mistake people will make.
 Ordered by how likely they are to need a pass. Full detail with fix options in
 `docs/BALANCE_NOTES.md`.
 
-1. **IFV post-buff (108 HP / 18 dmg / 8 splash)** — the buff was correct in direction, but
-   the IFV was already the most flexible unit in the roster. If it becomes the default
-   opener, roll back the splash to 6 first.
-2. **Smoke + Jammer pin** — a *complete* denial effect. I capped it by requiring two pieces
+1. **The Medic/Engineer split as a support tax** — this is the one I'd watch first. A mixed
+   army now pays 64 CP for support where it paid 42. That's the intended cost, but the failure
+   mode is players simply fielding neither and the whole support role going unused. If that
+   happens, the fix is *radius*, not price: widen `healR` so one of them covers more of the
+   line, rather than making them cheap enough to spam.
+2. **One stance and one order change per battle** — the biggest feel change in v1.21.0 and the
+   most likely to need a pass. If the commitment reads as punishing rather than decisive, the
+   dial is the Field Reassessment event's frequency, not the budget itself. Two free changes
+   would put us straight back to micro.
+3. **Smoke + Jammer pin** — a *complete* denial effect. I capped it by requiring two pieces
    and by making the smoke symmetrical, but "cannot move and cannot shoot" is the strongest
    crowd control in the game. If it's oppressive, make the pin reduce fire rate by 80% rather
    than stopping it entirely.
-3. **Counter-Battery at 300 range** — currently out-ranges everything with no counter-play
-   from the gun's side. That's intentional (it's a hard counter) but if guns feel unplayable
-   against it, drop to 265 so Rocket Artillery (270) can trade back.
 4. **AT Team at 38 CP** — was already the best value in the game before I buffed it. Watch
    whether armour becomes unplayable rather than merely counterable.
-5. **Rifleman vs heavy at 0.28** — working as designed, but new players consistently discover
+5. **Base Bomber and Bombardment both flooring at 1 HP** — correct, but it means two of the
+   nine standing orders now cannot close a game by themselves. If both feel dead rather than
+   supporting, the answer is a *finisher* incentive (bonus for the unit that walks in), not
+   removing the floor.
+6. **Rifleman vs heavy at 0.28** — working as designed, but new players consistently discover
    this the hard way. Not a balance problem; possibly a *communication* one.
+
+*Resolved since v1.20.0:* the IFV's splash buff (rolled back to 6) and Counter-Battery at 300
+range (dropped to 265) were both on this list and both have been acted on.

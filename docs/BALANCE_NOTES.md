@@ -1,5 +1,23 @@
 # Balance notes — Standing Orders (v1.19.0)
 
+> **Update, v1.21.0.** Item 1 below has been resolved, and not by any of the three options
+> I listed. Bombardment now grinds an HQ to **1 HP and stops** (`BOMBARD_HQ_FLOOR`), so a gun
+> line can flatten a base but never take one — somebody still has to walk in. The same floor
+> now applies to drones under **Base Bomber**, which turned out to be the worse offender: on
+> the lower difficulties the AI didn't defend against it at all and it was a repeatable
+> five-second win.
+>
+> That is closest in spirit to option 2 (cap the damage) but cleaner: rather than tuning a
+> fraction, the order simply cannot deliver the killing blow. It preserves the fantasy
+> completely — the base *is* flattened — and removes the non-interactive win by construction
+> rather than by number. Worth noting for next time: when a mechanic's problem is "it can win
+> without engaging", the fix that worked was changing *what it can do*, not *how much*.
+>
+> Also since this document was written: orders lost their 30-second cooldown in favour of one
+> change per battle, and stance gained the same budget. Anywhere below that reasons about
+> swapping orders mid-fight, read "one change, then commit."
+
+
 Written after implementing and measuring the three arm doctrines. These are the places I
 think the system is most likely to break, ranked by how much I'd worry. Numbers come from
 headless simulation, not from feel — where I say "measured", there's a probe behind it.

@@ -8,6 +8,96 @@ engineering detail lives in the patch notes inside the game and in the commit hi
 
 ---
 
+## v1.21.0 — Decide, then fight
+
+This build is mostly about one idea: **the plan should be a decision, not a stream of
+adjustments.** Prep is now as long as you want it, and what you settle there is what you
+take into the fight.
+
+### ⏳ Prep runs until you say go
+
+The old ten-second countdown is gone. The phase now lasts as long as you need — up to three
+minutes, so an abandoned tab can't sit frozen forever — and ends the moment you tap.
+
+**CP does not tick during prep.** An open-ended phase that also printed money would just be
+a wait with a right answer: sit there for three minutes, start rich. Instead, the income the
+old fixed prep would have generated is handed to you **up front**. Your opening wave is
+exactly the size it always was. You just get to think about it.
+
+### ⚑ One stance. One change of orders.
+
+Stance used to be free and unlimited, which quietly made it a micro channel rather than a
+posture — flick to Skirmish while they push, back to Assault the second they stop. Standing
+orders had a 30-second timer, which really only said *wait, then micro anyway*.
+
+Both now work the same way:
+
+- **Free during prep.** Try every combination, cost nothing.
+- **One change once the line is live.** That's the whole budget.
+- A posture you can no longer take **greys out**, so a spent commitment is something you can
+  see rather than something you discover at the worst possible moment.
+
+### 📋 Field Reassessment (new event)
+
+An uncommon battlefield event that hands you back one change of stance *and* one change of
+orders. It's deliberately uncommon rather than rare — the commitment has to be the normal
+experience for it to mean anything, but a fight that's gone completely sideways should
+occasionally offer a road back. It can be switched off with the other random events.
+
+### ☠ New difficulty — Legendary+
+
+Not "Legendary with bigger numbers". Its stat line is barely a step above: quality 1.85 →
+1.92, economy 2.2 → 2.5. Another +50% economy would only have been a bigger number to
+out-grind.
+
+What actually changes is that it's the only difficulty whose AI **plays the game you play**.
+It picks a stance for the battle and calls in commander strikes, under exactly your
+constraints — one posture for the whole fight, real cooldowns, and fire support telegraphed
+the same way yours is. You get the same warning you'd give an opponent.
+
+### ✚🔧 The Medic is now two units
+
+- **✚ Medic — 30 CP.** Patches **infantry**.
+- **🔧 Engineer — 34 CP.** Repairs **vehicles and guns**.
+
+Both are cheaper than the single unit they replace, and neither can do the other's job. A
+mixed army now wants both, and an all-armour push that used to travel with a Medic has to
+actually pay for its own support.
+
+They also behave like support now: they hold station **behind** whatever they're mending and
+walk back to it at half pace if they drift ahead, instead of jogging into the front rank and
+dying first. And if there's nothing of theirs left alive in the lane, they stop being support
+entirely and **charge** — full speed, straight ahead, with a poor little melee attack. It is
+meant to be poor. A support unit with nothing to do standing in a field is a worse outcome
+than a bad attacker.
+
+### 💣 Base Bomber can't take a base either
+
+Same problem Bombardment had. A drone swarm on that order ignores the enemy army completely,
+and on the lower difficulties the AI simply didn't defend against it — a repeatable
+five-second win with no engagement in it at all.
+
+Drones under **Base Bomber** now flatten an HQ to 1 and stop, exactly like shelling.
+Somebody who isn't on a suicide run has to walk in. A normal drone dive still finishes a base
+as it always did — this is a property of the *order*, not of drones.
+
+### Also in this build
+
+- **Skirmish no longer charges for tech tiers.** It's the mode a new player meets first and
+  the one everything else is measured against; being the only place you also had to buy your
+  way up a tree made the main mode feel unlike the rest of the game. Blitz and Survival keep
+  it — both are short-form modes where the escalating unlock *is* the shape of the run.
+- **IFV splash back to 6.** The buff landed on what was already the most flexible unit in
+  the roster.
+- **Counter-Battery range 300 → 265**, just under Rocket Artillery's 270, so a gun player can
+  trade back instead of being answered with no reply at all.
+- **The Counter-Battery has a real sprite.** It had no branch of its own and was falling
+  through to the generic vehicle body, which is why it looked like it came from a different
+  game. Same wheels and hull as the rest of the fleet now, with a flat phased-array panel and
+  a sweeping track blip.
+
+---
+
 ## v1.20.0 — Shelling can't take a base
 
 **Bombardment can no longer win a battle.** Shelling now grinds an enemy HQ down to 1 and

@@ -368,6 +368,9 @@
   #stance-assault.on{background:#ff9f40;border-color:#ff9f40;} #stance-assault:hover{border-color:#ff9f40;color:#ff9f40;}
   #stance-defend.on{background:#3fd07a;border-color:#3fd07a;} #stance-defend:hover{border-color:#3fd07a;color:#3fd07a;}
   #stance-skirmish.on{background:#5ff0e0;border-color:#5ff0e0;} #stance-skirmish:hover{border-color:#5ff0e0;color:#5ff0e0;}
+  /* a stance you can no longer switch to — the change for this battle is already spent */
+  .ctrl-b.spent{opacity:.34;filter:grayscale(1);}
+  .ctrl-b.spent:hover{border-color:var(--line);color:var(--dim);}
   /* group-doctrine chips + their popover */
   #groupbar{position:relative;}
   #groupbar .ctrl-b{min-width:30px;position:relative;}
@@ -1782,7 +1785,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.20.0</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.21.0</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -1832,7 +1835,7 @@
     <div id="combo"><div class="n">x2</div><div class="l">COMBO</div></div>
     <div id="killfeed"></div>
     <div id="announce"><div class="txt"></div><div class="sub"></div></div>
-    <div id="prepbanner"><div class="pb-t">PREP PHASE</div><div class="pb-n">10</div><div class="pb-s">queue your opening wave — the enemy is frozen · <b>SKIP ▸</b></div></div>
+    <div id="prepbanner"><div class="pb-t">PREP PHASE</div><div class="pb-n">3:00</div><div class="pb-s">set your opening &amp; your orders — the enemy is frozen and no CP is ticking · <b>TAP TO BEGIN ▸</b></div></div>
     <div id="lanehint">▲ click a lane to deploy</div>
     <!-- stance + speed controls -->
     <div id="ctrlbar">
@@ -1843,9 +1846,9 @@
       </div>
       <div class="ctrl-grp" id="stancebar">
         <span class="ctrl-lbl">STANCE</span>
-        <button class="ctrl-b on" id="stance-assault" title="Assault (Z) — push for the enemy HQ">⚔</button>
-        <button class="ctrl-b" id="stance-defend" title="Defend (X) — hold the centre line, shields up (contests the Domination zone)">⛨</button>
-        <button class="ctrl-b" id="stance-skirmish" title="Skirmish (C) — poke from range, fall back">➹</button>
+        <button class="ctrl-b on" id="stance-assault" title="Assault (Z) — push for the enemy HQ. Free during prep; one change once the line is live.">⚔</button>
+        <button class="ctrl-b" id="stance-defend" title="Defend (X) — hold the centre line, shields up (contests the Domination zone). Free during prep; one change once the line is live.">⛨</button>
+        <button class="ctrl-b" id="stance-skirmish" title="Skirmish (C) — poke from range, fall back. Free during prep; one change once the line is live.">➹</button>
       </div>
       <div class="ctrl-grp" id="speedbar">
         <span class="ctrl-lbl">SPEED</span>
@@ -1946,7 +1949,7 @@
     </div>
     <button class="play-btn" id="btn-play">▶ DEPLOY</button>
     <div class="medal-row" id="medal-row"></div>
-    <div class="hint">Deploy: click a card (or press 1–9) then a lane · 0 = missile strike · R = recon flare · F = EMP (Rank 3) · S = smoke screen (Rank 20) · Q/W/E = quick-deploy to top/mid/bottom · Z/X/C = Assault/Defend/Skirmish stance · SPEED ½×–2× &amp; STANCE controls sit on the battlefield · In Skirmish/Blitz/Survival you buy your way up the tech tree mid-fight · 📡 Live Chat lets Twitch viewers command the enemy · SPACE = pause.</div>
+    <div class="hint">Deploy: click a card (or press 1–9) then a lane · 0 = missile strike · R = recon flare · F = EMP (Rank 3) · S = smoke screen (Rank 20) · Q/W/E = quick-deploy to top/mid/bottom · Z/X/C = Assault/Defend/Skirmish stance (free during prep, then one change) · SPEED ½×–2× &amp; STANCE controls sit on the battlefield · In Skirmish/Blitz/Survival you buy your way up the tech tree mid-fight · 📡 Live Chat lets Twitch viewers command the enemy · SPACE = pause.</div>
   </div>
 
   <!-- TITLE / ATTRACT SCREEN -->
@@ -2474,7 +2477,7 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   rallySeen:0,         // how many times the community card has been shown (frequency-capped)
   rallyDone:false,     // player followed or dismissed it for good — never ask again
   lastPlayedDay:null,  // 'YYYY-MM-DD' of the previous session, drives the welcome-back line
-  ambient:true,randomEvents:true,evSupply:true,evVoice:true,evCutscene:true,evBarrage:true,evDefector:true,
+  ambient:true,randomEvents:true,evSupply:true,evVoice:true,evCutscene:true,evBarrage:true,evDefector:true,evOrders:true,
   noLuck:false,          // 🎯 NO LUCK — one master override that silences every chance-driven event
   saveTransferUnlocked:false, // 💾 gates the cross-device transfer tool — see DEV_CODES.deltavault88
   groups:{arty:'off',armor:'off',drone:'off'}, // per-arm standing orders; all OFF until chosen
@@ -2826,7 +2829,7 @@ const UNITS={
   tank:{name:'Tank',glyph:'🛡',cat:'veh',cost:70,cd:2.2,hp:180,dmg:26,rof:1.3,rng:100,spd:24,col:'#ffb347',
     aa:false,splash:14,r:12,armor:true,desc:'armoured breakthrough'},
   ifv:{name:'IFV',glyph:'🚙',cat:'veh',cost:48,cd:1.5,hp:108,dmg:18,rof:0.7,rng:96,spd:30,col:'#ffc766',
-    aa:false,splash:8,r:10,armor:true,desc:'fast, shreds infantry'},
+    aa:false,splash:6,r:10,armor:true,desc:'fast, shreds infantry'},
   arty:{name:'Artillery',glyph:'🎆',cat:'arty',cost:60,cd:2.6,hp:60,dmg:34,rof:2.4,rng:230,spd:12,col:'#ff9f7f',
     aa:false,splash:26,r:11,arc:true,desc:'long-range area fire'},
   aa:{name:'AA Vehicle',glyph:'🚨',cat:'veh',cost:44,cd:1.8,hp:80,dmg:30,rof:0.9,rng:150,spd:26,col:'#7fffaa',
@@ -2838,8 +2841,17 @@ const UNITS={
   // ── Phase 1 additions ──
   sniper:{name:'Sniper',glyph:'🎯',cat:'inf',cost:40,cd:1.6,hp:18,dmg:34,rof:2.4,rng:210,spd:20,col:'#c9e0ff',
     aa:false,splash:0,r:6,vsArmor:0.35,precise:true,desc:'long-range, shreds infantry, useless vs armour'},
-  medic:{name:'Medic',glyph:'✚',cat:'inf',cost:42,cd:2.2,hp:44,dmg:0,rof:99,rng:0,spd:26,col:'#9fffce',
-    aa:false,splash:0,r:8,heal:9,healR:66,support:true,desc:'heals & patches nearby troops — no weapon'},
+  /* MEDIC and ENGINEER are the same idea split in two, each cheaper than the single unit
+     they replace, each only able to fix its own half of the roster. `fixCats` is what they
+     mend; it also decides which friendly units they try to stay behind. Both carry a small
+     melee attack for the case where there is nothing left of theirs to support — a support
+     unit with literally nothing to do is a wasted 30 CP standing in a field. */
+  medic:{name:'Medic',glyph:'✚',cat:'inf',cost:30,cd:2.0,hp:44,dmg:11,rof:1.5,rng:16,spd:26,col:'#9fffce',
+    aa:false,splash:0,r:8,heal:10,healR:66,support:true,fixCats:['inf'],
+    desc:'patches up INFANTRY only. Hangs back behind the troops it is treating; if none are left it fixes bayonets and charges.'},
+  engineer:{name:'Engineer',glyph:'🔧',cat:'inf',cost:34,cd:2.0,hp:48,dmg:13,rof:1.6,rng:16,spd:24,col:'#ffd08a',
+    aa:false,splash:0,r:8,heal:11,healR:70,support:true,fixCats:['veh','arty'],
+    desc:'repairs VEHICLES and GUNS only. Hangs back behind the hulls it is working on; if none are left it charges in with a wrench.'},
   mlrs:{name:'Rocket Arty',glyph:'🧨',cat:'arty',cost:82,cd:3.6,hp:52,dmg:20,rof:3.0,rng:270,spd:9,col:'#ff8f6f',
     aa:false,splash:30,r:11,arc:true,salvo:4,desc:'devastating rocket salvo, very fragile'},
   /* COUNTER-BATTERY RADAR — the realistic answer to guns. Real counter-battery works by
@@ -2850,7 +2862,11 @@ const UNITS={
      — which is the whole point. It answers the artillery orders (a Stationary Battery is a
      fixed, known coordinate, and a Bombardment gun parks at the edge of ITS range, well
      inside this one's) without becoming another general-purpose gun line. */
-  cbat:{name:'Counter-Battery',glyph:'🛰',cat:'veh',cost:78,cd:3.2,hp:70,dmg:46,rof:2.8,rng:300,spd:16,col:'#9fe0ff',
+  /* Range is 265, deliberately just UNDER Rocket Artillery's 270. At 300 it out-ranged every
+     gun with no reply at all, which is a hard counter with no counter-play; at 265 the
+     heaviest rocket battery can shoot back, so the matchup is a duel the gun player can win
+     by bringing the right tube rather than an automatic loss. */
+  cbat:{name:'Counter-Battery',glyph:'🛰',cat:'veh',cost:78,cd:3.2,hp:70,dmg:46,rof:2.8,rng:265,spd:16,col:'#9fe0ff',
     aa:false,splash:14,r:11,arc:true,counterBattery:true,
     desc:'ONLY engages enemy artillery — out-ranges every gun and suppresses it at range. Useless against anything else.'},
   jammer:{name:'EW Jammer',glyph:'📵',cat:'veh',cost:52,cd:2.8,hp:84,dmg:0,rof:99,rng:0,spd:20,col:'#b0a0ff',
@@ -2874,7 +2890,7 @@ const UNITS={
 };
 // appended at the end rather than grouped with the other infantry so every existing
 // number-hotkey (1-9) and tutorial "press N" instruction keeps pointing at the same unit
-const HOTBAR=['rifle','atgm','sniper','tank','ifv','arty','mlrs','aa','heli','drone','medic','jammer','cbat','interceptor','gunship','flame','swarm'];
+const HOTBAR=['rifle','atgm','sniper','tank','ifv','arty','mlrs','aa','heli','drone','medic','engineer','jammer','cbat','interceptor','gunship','flame','swarm'];
 /* Secret unlocks stay INVISIBLE until earned — not greyed-out-with-a-lock, genuinely absent, so
    discovering the Glitch Front is a real surprise. Anything that lists the roster (Field Manual,
    attract battles, chaos spawns, AI picks) filters through here. */
@@ -2883,7 +2899,7 @@ function unitRevealed(key){ return (SECRET_UNITS.indexOf(key)<0 || !!SAVE.secret
 function visibleRoster(){ return HOTBAR.filter(unitRevealed); }
 
 /* ── IN-BATTLE TECH TIERS — in normal modes you buy your way up the tree mid-fight ── */
-const UNIT_TIER={rifle:1,atgm:1,ifv:1,swarm:1, sniper:2,tank:2,aa:2,arty:2,drone:2,medic:2,flame:2, heli:3,mlrs:3,jammer:3,cbat:3,interceptor:3,gunship:3};
+const UNIT_TIER={rifle:1,atgm:1,ifv:1,swarm:1, sniper:2,tank:2,aa:2,arty:2,drone:2,medic:2,engineer:2,flame:2, heli:3,mlrs:3,jammer:3,cbat:3,interceptor:3,gunship:3};
 const TIER_UNLOCK={1:0,2:60,3:130}; // CP paid once per battle to open a tier's units
 /* Rank gates on individual units. Separate from the in-battle tech tiers on purpose: a tier
    is something you buy DURING a fight, a rank gate is something you earn ACROSS fights.
@@ -2905,8 +2921,8 @@ const DMG_MATRIX={           //  vs: inf   light  heavy  air    struct
   he:{inf:1.30,light:1.15,heavy:0.72,air:0.30,struct:1.45}, // high explosive
   aa:{inf:0.35,light:0.50,heavy:0.30,air:2.40,struct:0.20}, // anti-air
 };
-const UNIT_DMGTYPE={rifle:'sa',atgm:'ap',sniper:'sa',tank:'ap',ifv:'sa',arty:'he',mlrs:'he',aa:'aa',heli:'ap',drone:'ap',swarm:'ap',medic:null,jammer:null,cbat:'he',interceptor:'aa',gunship:'he',flame:'sa',voidwarden:'he'};
-const UNIT_ARMORCLASS={rifle:'inf',atgm:'inf',sniper:'inf',medic:'inf',tank:'heavy',ifv:'light',arty:'light',mlrs:'light',aa:'light',jammer:'light',cbat:'light',heli:'air',drone:'air',swarm:'air',interceptor:'air',gunship:'air',flame:'inf',voidwarden:'heavy'};
+const UNIT_DMGTYPE={rifle:'sa',atgm:'ap',sniper:'sa',tank:'ap',ifv:'sa',arty:'he',mlrs:'he',aa:'aa',heli:'ap',drone:'ap',swarm:'ap',medic:'sa',engineer:'sa',jammer:null,cbat:'he',interceptor:'aa',gunship:'he',flame:'sa',voidwarden:'he'};
+const UNIT_ARMORCLASS={rifle:'inf',atgm:'inf',sniper:'inf',medic:'inf',engineer:'inf',tank:'heavy',ifv:'light',arty:'light',mlrs:'light',aa:'light',jammer:'light',cbat:'light',heli:'air',drone:'air',swarm:'air',interceptor:'air',gunship:'air',flame:'inf',voidwarden:'heavy'};
 const UNIT_CRIT={sniper:0.24}; // precision units land the occasional double-damage hit
 function dmgMul(dt,ac){ return (dt&&DMG_MATRIX[dt]&&DMG_MATRIX[dt][ac||'inf'])||1; }
 
@@ -2919,7 +2935,7 @@ const AGES=[
   {name:'Future',     glyph:'⬢', hqMul:3.20, unit:1.95, sup:3.0, evo:960, slots:4, col:'#c9a0ff'},
 ];
 // which age each unit becomes available in (Evolution mode gates the roster by age)
-const UNIT_MINAGE={rifle:0,ifv:0,medic:0, atgm:1,tank:1,aa:1, sniper:2,arty:2,jammer:2,flame:2, mlrs:3,heli:3,interceptor:3,cbat:3, drone:4,gunship:4};
+const UNIT_MINAGE={rifle:0,ifv:0,medic:0,engineer:1, atgm:1,tank:1,aa:1, sniper:2,arty:2,jammer:2,flame:2, mlrs:3,heli:3,interceptor:3,cbat:3, drone:4,gunship:4};
 
 /* ── PRODUCTION SPAWNERS — expensive structures built just ahead of your HQ that
    pump out a unit on a timer. A long-term economy investment. Capped per side. ── */
@@ -2990,8 +3006,19 @@ const SPEEDS=[0.5,1,2];
    All three default to OFF, are rank-gated (30/38/46), and share a single 30-second
    change cooldown so a fight cannot be micro-managed by cycling doctrines every time the
    situation shifts — committing to an order is the decision. */
+const SUPPORT_TRAIL=30;        // how far behind the unit it is mending a Medic/Engineer sits
+const SUPPORT_FALLBACK=0.55;   // pace at which it walks BACK to that station if it drifts ahead
 const GROUP_STEP_PX=27;        // one "step" for positioning orders
-const GROUP_SWAP_CD=30;        // seconds between ANY two doctrine changes
+/* Orders are a COMMITMENT, not a cooldown. You may set them freely during prep — which is
+   now as long as you want it — and once the fight is live you get ONE change in hand. A
+   timer said "wait, then micro anyway"; a single change says "decide". An uncommon
+   battlefield event (REVENTS.orders) hands you another. */
+const GROUP_FREE_CHANGES=1;    // order changes available once the battle is live
+/* STANCE works the same way, and for the same reason. It used to be a free toggle with no
+   cost of any kind, which made it a micro channel rather than a posture: cycle to Skirmish
+   while they push, back to Assault the second they stop. You now settle on a posture during
+   prep — free, as many times as you like — and carry ONE change into the fight. */
+const STANCE_FREE_CHANGES=1;   // stance changes available once the battle is live
 const GROUP_EVADE_PENALTY=2.6; // evasive units read this much further away to enemy targeting
 const BOMBARD_HQ_FLOOR=1;      // shelling can reduce an HQ to this, never below — see the arc-shell handler
 const GROUP_BOMBARD_MUL=0.25;  /* HQ damage per bombardment shell vs a normal round. Tuned down
@@ -3409,15 +3436,42 @@ const DIFFS={
   veteran:  {name:'Veteran',  cpMul:1.00, qualMul:1.04, think:1.0,  open:3, smart:false, aggr:0,    playerCp:1.02, col:'#ffce5a', glyph:'🎖️', fx:1},
   elite:    {name:'Elite',    cpMul:1.36, qualMul:1.24, think:0.76, open:4, smart:true,  aggr:0.55, playerCp:1.0,  col:'#ff9f40', glyph:'⚔️', fx:2},
   legendary:{name:'Legendary',cpMul:2.35, qualMul:1.85, think:0.36, open:8, smart:true,  aggr:1.0,  playerCp:1.0,  col:'#ff5a4a', glyph:'🔥', fx:3},
+  /* LEGENDARY+ is deliberately NOT "Legendary with bigger numbers". Its stat line is barely
+     above Legendary — the step up is entirely BEHAVIOURAL: it is the only difficulty whose
+     AI picks a stance for the battle and calls in commander strikes, and it does both under
+     exactly the constraints a human plays under (one stance for the whole fight, real
+     cooldowns, telegraphed fire support). Another +50% economy would only have made a
+     bigger number to out-grind; this makes an opponent doing what you are doing. */
+  legendaryplus:{name:'Legendary+',cpMul:2.5, qualMul:1.92, think:0.32, open:8, smart:true, aggr:1.0, playerCp:1.0,
+    col:'#ff2fa0', glyph:'☠', fx:3, aiStance:true, aiStrikes:true},
 };
-const PREP_TIME=10; // seconds of frozen prep before a battle begins — queue your opening wave
-const GAME_VERSION='1.20.0';
+/* PREP is now as long as the player wants, up to a hard cap. It ends when they say so.
+   Two consequences, both deliberate:
+     · CP does NOT accrue during prep. An open-ended phase that also printed money would
+       just be "wait three minutes for a full bank", which is not a decision, it is a chore
+       with a right answer.
+     · To keep the opening wave the same size it always was, the CP that the old fixed
+       10-second prep would have generated is granted UP FRONT instead (cpRate x 10). The
+       player starts with exactly what they used to have at the moment the fight began. */
+const PREP_MAX=180;        // hard cap, so an idle tab cannot sit frozen forever
+const PREP_GRANT_SECS=10;  // seconds of income granted up front, replacing prep-phase accrual
+const GAME_VERSION='1.21.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.21.0',notes:[
+    'PREP IS NOW YOURS. The phase runs as long as you want it (up to three minutes) and ends when you say so. CP does NOT tick during it \u2014 an open-ended phase that also printed money would just be a wait with a right answer \u2014 so the income the old fixed ten-second prep would have generated is granted UP FRONT instead. Your opening wave is exactly the size it always was; you simply get to think about it.',
+    'NEW DIFFICULTY \u2014 \u2620 LEGENDARY+. Deliberately NOT "Legendary with bigger numbers": its stat line is barely a step above. What changes is that it is the only difficulty whose AI picks a STANCE for the battle and calls in COMMANDER STRIKES, under exactly the constraints you play under \u2014 one stance for the whole fight, real cooldowns, and fire support telegraphed the same way yours is. Another +50% economy would only have been a bigger number to out-grind.',
+    'STANCE AND STANDING ORDERS ARE NOW COMMITMENTS, NOT TIMERS. Settle both freely during prep \u2014 which is now as long as you want \u2014 and carry exactly ONE change of each into the live fight. Stance had no cost at all before, which made it a micro channel rather than a posture; orders had a 30-second timer, which only said "wait, then micro anyway". A single change says "decide". A stance you can no longer switch to greys out, so the commitment is visible rather than a surprise. The new uncommon FIELD REASSESSMENT event hands one of each back mid-battle.',
+    'THE MEDIC IS NOW TWO UNITS. \u271a Medic (30 CP) patches INFANTRY; \ud83d\udd27 Engineer (34 CP) repairs VEHICLES and GUNS. Both are cheaper than the single unit they replace and neither can do the other\'s job. They hang back behind whatever they are mending rather than leading the line, walk back to it if they drift ahead \u2014 and if nothing of theirs is left in the lane they stop being support entirely and charge in with a poor little melee attack, because a support unit with nothing to do is worse than a bad attacker.',
+    'BASE BOMBER can no longer win a battle either. A drone swarm on that order ignores the enemy army completely, and on the lower difficulties the AI did not defend it at all \u2014 a repeatable five-second win with no engagement. Drones under that order now flatten an HQ to 1 and stop, exactly like Bombardment: somebody who is not on a suicide run has to walk in. A normal drone dive still finishes a base as before.',
+    'SKIRMISH no longer charges for tech tiers. It is the mode a new player meets first and the one everything else is measured against, and being the only place you also had to buy your way up a tree made the main mode feel unlike the rest of the game. Blitz and Survival keep it \u2014 both are short-form modes where the escalating unlock IS the shape of the run.',
+    'BALANCE \u2014 IFV splash back to 6 (the buff landed on what was already the most flexible unit in the roster). Counter-Battery range 300\u2192265, just under Rocket Artillery\'s 270, so a gun player can trade back instead of being answered with no reply at all.',
+    'The Counter-Battery had no sprite branch of its own and was falling through to the generic vehicle body, which is why it looked like it came from a different game. It now has a proper one \u2014 same wheels and hull as the rest of the fleet, with a flat phased-array panel and a sweeping track blip.',
+  ]},
   {v:'1.20.0',notes:[
     'BOMBARDMENT CAN NO LONGER WIN A BATTLE. Shelling now grinds an enemy HQ down to 1 and stops there \u2014 it can flatten a base but it cannot take it. Somebody still has to walk in and finish the job, exactly like holding ground needs troops standing on it. Without that floor a gun line was a win condition that never had to touch the enemy army, and a match could end on a timer with no interaction at all.',
     'NEW UNIT \u2014 \ud83d\udef0 COUNTER-BATTERY (Rank 30, Tier 3, 78 CP). The realistic answer to guns: it tracks incoming shells back to the tube that fired them, so it engages ARTILLERY and nothing else. It out-ranges every gun in the game (300 vs artillery\'s 230) and suppresses them at range, so a dug-in battery goes quiet before it dies. Against anything that is not a gun it is a very expensive paperweight \u2014 which is the point. It unlocks at the same rank as the first artillery standing order, because it exists to answer those orders.',
@@ -4570,7 +4624,8 @@ function newGame(){
        so it could never be afforded at any point in any battle — a purchase advertised in
        the build menu that the economy made impossible. 350 leaves real headroom above the
        dearest structure while still forcing a genuine save-up. */
-    cp:60+((L&&L.startCp)||0), cpRate:9*(perk.cpMul||1)*(diff.playerCp||1), cpMax:350,
+    cp:60+((L&&L.startCp)||0)+Math.round(9*(perk.cpMul||1)*(diff.playerCp||1)*PREP_GRANT_SECS),
+    cpRate:9*(perk.cpMul||1)*(diff.playerCp||1), cpMax:350,
     ecp:70, ecpRate:11*diff.cpMul*ecpMul,
     hq:{B:hqHP,R:mode==='survival'?1:hqHP}, hqMax:{B:hqHP,R:mode==='survival'?1:hqHP},
     hqFloor:1, // lowest HQ fraction seen (campaign star tracking)
@@ -4585,7 +4640,7 @@ function newGame(){
     wave:0, waveT:0, waveInterval:30,
     clock:kind==='blitz'?120:0,
     // 10-second prep: queue your opening deployment while everything is frozen
-    prep:(kind==='tutorial'||kind==='attract')?0:PREP_TIME, frozen:false,
+    prep:(kind==='tutorial'||kind==='attract')?0:PREP_MAX, frozen:false, prepReady:false,
     aiT:kind==='tutorial'?1e9:0.8, aiThink:1.15*(diff.think||1),
     aiHold:kind==='tutorial', // AI frozen until tutorial releases it
     aiSmart:!!diff.smart,
@@ -4610,8 +4665,9 @@ function newGame(){
     const want=(SAVE.groups&&SAVE.groups[gk])||'off';
     G.groups[gk]=(want!=='off'&&groupUnlocked(gk)&&groupOpt(gk,want))?want:'off';
   }
-  G.groupCd=0;
-  G.enemyStance=null; G.enemyGroups=null;  // only the Gauntlet's Adjutant ever gets these
+  G.groupChanges=GROUP_FREE_CHANGES;
+  G.stanceChanges=STANCE_FREE_CHANGES;
+  G.enemyStance=null; G.enemyGroups=null; G.enemyFire=null;  // earned by the Gauntlet or by Legendary+
   G.speed=SAVE.speed||1;
   // country flavour — player's chosen nation, enemy gets a different one
   G.country=sel.country||'generic';
@@ -4620,7 +4676,12 @@ function newGame(){
   G.ages=(kind==='evolution');
   G.age=0; G.evo=0; G.enemyAge=0; G.enemyAgeT=28; G.turrets=[]; G.spawners=[]; G.scorches=[]; G.decals=[]; G.chaosRareT=null;
   // in-battle tech unlocks — normal modes make you buy the tree; Evolution gates by age
-  G.techMode=(kind==='skirmish'||kind==='blitz'||kind==='survival');
+  /* Skirmish is the game's DEFAULT fight — the one a new player meets first and the one every
+     other mode is measured against. Making it the only place you also have to buy your way up
+     a tech tree made the main mode feel unlike the rest of the game rather than representative
+     of it. Blitz and Survival keep it: both are deliberately odd, short-form modes where the
+     escalating unlock IS the shape of the run. */
+  G.techMode=(kind==='blitz'||kind==='survival');
   G.unlocked={};
   for(const key of HOTBAR){
     if(G.ages) G.unlocked[key]=(UNIT_MINAGE[key]<=G.age);
@@ -4662,6 +4723,15 @@ function newGame(){
     G.enemyBias=null;                                 // its composition comes from the dossier, not a flavour bias
     G.enemyStance=G.gaunt.stance||null;               // the Adjutant fights in a posture of its own
     G.enemyGroups=G.gaunt.orders||null;               // ...and gives its arms standing orders
+    G.enemyFire={strikes:G.gaunt.strikes||[],tier:G.gaunt.tier||0,lane:G.gaunt.lane};
+  }
+  /* LEGENDARY+ earns the same toolkit by difficulty rather than by dossier: ONE stance for
+     the whole battle (the rule the player now plays under too) and the full strike rotation
+     on the standard telegraphed cadence. */
+  if(diff.aiStance&&!G.tutorial&&!G.attract)G.enemyStance=pick(['assault','defend','skirmish']);
+  if(diff.aiStrikes&&!G.tutorial&&!G.attract){
+    G.enemyFire={strikes:['precision','gunrun','barrage'],tier:5,lane:-1};
+    G.gauntStrikeT=34;
   }
   G.hype=0; G.hypeTrains=0; // Phase 2 hype meter — chat energy that pays out CP on a full train
   // daily mutators
@@ -4745,7 +4815,7 @@ function spawn(side,key,lane,xOverride){
        (the unit simply behaves as if the flag were absent), so there is a regression check
        asserting every behavioural flag in UNITS survives a spawn. */
     lowAir:!!u.lowAir,gunship:!!u.gunship,hunter:!!u.hunter,antiDrone:!!u.antiDrone,orbit:!!u.orbit,
-    counterBattery:!!u.counterBattery,
+    counterBattery:!!u.counterBattery, fixCats:u.fixCats||null,
     vsArmor:u.vsArmor||1,vsAir:u.vsAir||1,cat:u.cat,
     name:unitName(key, side==='B'?G.country:G.enemyCountry),
     dmgType:UNIT_DMGTYPE[key]||'sa', armorClass:UNIT_ARMORCLASS[key]||'inf', crit:UNIT_CRIT[key]||0, cover:false,
@@ -5131,6 +5201,20 @@ const REVENTS={
     explode(u.x,u.y,34,'B',14);
     announce('🏳 DEFECTOR','an enemy '+ (UNITS[u.key]?UNITS[u.key].name:'unit') +' joins us','#5ff0e0');
     if(SAVE.evVoice)say("Well, well. A change of heart on the enemy line. Welcome aboard.",'mock',1); } },
+  /* FIELD REASSESSMENT — the release valve on the one-change-per-battle commitment. Both
+     stance and standing orders are settled in prep and carry a single change into the
+     fight; this hands back one of each. It is deliberately uncommon rather than rare: the
+     commitment has to be the normal experience for it to mean anything, but a fight that
+     turns completely against you should occasionally offer a way back in. */
+  orders:{ flag:'evOrders', run(){
+    if(!G)return;
+    G.stanceChanges=(G.stanceChanges||0)+1;
+    const arms=!!(G.groups&&GROUP_KEYS.some(groupUnlocked));
+    if(arms)G.groupChanges=(G.groupChanges||0)+1;
+    announce('📋 FIELD REASSESSMENT',arms?'another change of stance and orders':'another change of stance','#ffce5a');
+    if(SAVE.evVoice)say(pick(["Staff have re-read the ground. You may change your posture once more.","New assessment from the map room — revise your plan if you want to.","Command authorises one more change of doctrine. Use it well."]),'grim',1);
+    try{syncStanceUI();}catch(e){}
+    try{buildGroupBar();}catch(e){} } },
   golden:{ flag:'gagGolden', run(){ const lane=(Math.random()*3)|0;
     spawn('R','drone',lane); const g=G.units[G.units.length-1];
     g.golden=true; g.kamikaze=false; g.diving=null; g.dmg=0; g.hp=g.maxHp=26; g.spd*=1.15;
@@ -5727,10 +5811,11 @@ function step(dt){
   if(G.paused||G.over)return;
   G.t+=dt;
   updateAmbientMotes(dt); // purely decorative background drift — keeps running through prep/attract too
-  // ── 10-second prep: the field is frozen while you queue your opening wave ──
+  // ── prep: the field is frozen while you queue your opening wave and settle your doctrine ──
   if(G.prep>0){
-    G.frozen=true; G.prep-=dt; G.cp=Math.min(G.cpMax,G.cp+G.cpRate*dt); // CP still flows so you can stage units
+    G.frozen=true; G.prep-=dt;   // NO CP accrual — the equivalent was granted up front, see PREP_GRANT_SECS
     if(G.prep<=0){ G.prep=0; G.frozen=false; announce('⚔ ENGAGE','the line is live','#ffce5a'); SND.combo(4);
+      try{syncStanceUI();}catch(e){}   // stance and orders stop being free the instant the line goes live
       if(!G.tutorial&&!G.attract)narr('battleStart'); }
     updateUnits(dt); updateFX(dt);  // units idle (frozen); deploy ripples still settle
     return;
@@ -5749,8 +5834,8 @@ function step(dt){
   if(G.barrage)barrageTick(dt);   // rolling barrage creeps up the field
   if(G.gunrun)gunrunTick(dt);     // gunship strafing run marches down a lane
   smokeTick(dt);                                      // 🌫 smoke banks thin out and expire
-  if(G.groupCd>0)G.groupCd=Math.max(0,G.groupCd-dt);  // group-doctrine change cooldown
-  if(G.gaunt){ gauntStrikeTick(dt);                 // ◈ the Adjutant's own off-map fire support
+
+  if(G.enemyFire){ gauntStrikeTick(dt);             // enemy off-map fire support (Gauntlet / Legendary+)
     if(G.gauntGun)gauntGunTick(dt);
     if(G.gauntBarrage)gauntBarrageTick(dt); }
   if(G.reconCd>0)G.reconCd=Math.max(0,G.reconCd-dt);
@@ -5907,9 +5992,11 @@ function counterBatteryTick(u,dt){
     if(dist(o.x,o.y,u.x,u.y)<u.rng)o.sup=Math.min(1,(o.sup||0)+0.75*dt);
   }
 }
+// does this support unit mend that unit? (null fixCats = the old behaviour, mend anything)
+function canFix(u,o){ return !u.fixCats || u.fixCats.indexOf(o.cat)>=0; }
 function supportTick(u,dt){
   if(u.heal>0){
-    for(const o of G.units){ if(o.alive&&o.side===u.side&&o!==u&&o.hp<o.maxHp&&dist(o.x,o.y,u.x,u.y)<u.healR){
+    for(const o of G.units){ if(o.alive&&o.side===u.side&&o!==u&&o.hp<o.maxHp&&canFix(u,o)&&dist(o.x,o.y,u.x,u.y)<u.healR){
       o.hp=Math.min(o.maxHp,o.hp+u.heal*dt);
       o.sup=Math.max(0,(o.sup||0)-dt*0.4);
       if(Math.random()<dt*1.4)G.parts.push({x:o.x,y:o.y-o.r,vx:rnd(-8,8),vy:-rnd(10,26),life:0.5,age:0,col:'#9fffce',sz:2});
@@ -6023,7 +6110,7 @@ function updateUnits(dt){
       continue;
     }
     // rout — a pinned unit recoils toward home instead of pressing forward
-    if(supp>=0.9 && !u.support){
+    if(supp>=0.9 && (!u.support||u.charging)){
       u.x-=dir(u.side)*u.spd*spdMul*0.6*dt;
       if(u.cd>0)u.cd-=dt; continue;
     }
@@ -6040,6 +6127,40 @@ function updateUnits(dt){
       if(myStance==='defend'){ stMul=0.5; holdLine=W*0.5; u.shield=true; } // hold the CENTRE line (sits right on the Domination capture zone)
       else if(myStance==='skirmish'){ stMul=0.75; kite=true; }
     }
+    /* ── SUPPORT POSITIONING (Medic / Engineer) ──────────────────────────────────
+       A unit whose whole job is keeping other units alive should not be the first thing
+       into contact. These two look for the nearest friendly they are qualified to fix IN
+       THEIR OWN LANE and hold station just behind it, falling back at a walk if they have
+       somehow ended up in front.
+
+       If there is nothing of theirs left in the lane they stop being support entirely and
+       CHARGE — full speed, straight ahead, and they will swing at whatever they reach. It
+       is a poor attack and it is meant to be; the alternative is a unit with nothing to do
+       standing in a field, which is a worse outcome than a bad one. */
+    if(u.fixCats&&!u.charging){
+      let anchor=null, ad=1e9;
+      for(const o of G.units){
+        if(!o.alive||o.side!==u.side||o===u||o.lane!==u.lane)continue;
+        // anchor on something that actually fights: two Medics otherwise pair off and
+        // shelter behind each other while the line they exist to support goes untreated
+        if(o.support)continue;
+        if(!canFix(u,o))continue;
+        const d=Math.abs(o.x-u.x);
+        if(d<ad){ad=d;anchor=o;}
+      }
+      if(anchor){
+        holdLine=anchor.x-fwd*SUPPORT_TRAIL;        // sit this far behind the thing it is mending
+        // if it is somehow ahead of its charge, walk back rather than sprint
+        if((u.x-holdLine)*fwd>0)stMul=SUPPORT_FALLBACK;
+        kite=false; u.shield=false;
+      } else {
+        // nothing of ours left in this lane — commit
+        u.charging=true;
+        floatText(u.x,u.y-unitVisualR(u)-8,u.key==='engineer'?'WRENCH OUT':'BAYONETS','#ffce5a');
+      }
+    }
+    if(u.charging){ holdLine=null; stMul=1; kite=false; }
+
     /* GROUP DOCTRINE — positioning. Applied AFTER the stance block and overwriting it,
        because for the units an order covers the order IS the posture; a battery told to dig
        in must not also be trying to hold the centre line because the army is in Defend. */
@@ -6081,8 +6202,10 @@ function updateUnits(dt){
         u.evasive=true;                        // read as further away by enemy targeting
       }
     }
-    // acquire & fire (support units never shoot)
-    if(tgt&&d<=rngEff && !u.support){
+    /* Acquire & fire. Support units never shoot — EXCEPT one that has given up on support
+       and charged, which is the entire point of the charge. */
+    const canShoot=!u.support||u.charging;
+    if(tgt&&d<=rngEff && canShoot){
       u.vx=0;
       // skirmishers give ground when the enemy crowds inside their comfort range
       if(kite && d<rngEff*0.55){ u.x-=dir(u.side)*u.spd*spdMul*0.9*dt; }
@@ -6149,7 +6272,20 @@ function updateUnits(dt){
       else{
         // siege damage scales with the unit's damage type vs structures (HE levels bases, rifles barely dent them)
         const hit=(u.dmg*3+(u.armor?40:12))*(0.6+dmgMul(u.dmgType,'struct'));
-        G.hq[foe]=Math.max(0,G.hq[foe]-hit);
+        /* BASE BOMBER gets the same floor as Bombardment, and for the same reason. A drone
+           swarm on Base Bomber ignores the enemy army completely, and on the lower difficulty
+           tiers the AI does not defend against it at all — the result was a repeatable
+           five-second win with no engagement whatsoever. Drones under that order can now
+           flatten an HQ but not take it: somebody who is not on a suicide run has to walk in.
+           Applied to the ORDER, not to drones generally, so a normal drone dive still finishes
+           a base exactly as before. */
+        const g0=unitGroup(u);
+        const floorIt=!!(g0&&g0.mode==='bomber');
+        G.hq[foe]=Math.max(floorIt?BOMBARD_HQ_FLOOR:0,G.hq[foe]-hit);
+        if(floorIt&&G.hq[foe]<=BOMBARD_HQ_FLOOR&&!G.bomberFloorNoted&&u.side==='B'){
+          G.bomberFloorNoted=true;
+          announce('☄ HQ FLATTENED','drones cannot finish it — send someone in','#ffdf7f');
+        }
         if(u.side==='B'){G.dmgDealt+=hit;} else {G.dmgTaken+=hit;}
         explode(hqX,u.y,30,u.side,18); u.alive=false;
         if(foe==='B'){G.shake=Math.max(G.shake,SAVE.reduceMotion?5:14);G.flash=Math.max(G.flash,0.5);SND.hqhit();chatReact('hqhit');narr('hqYours');frontNews('Home Command takes a direct hit — capital under threat, officials confirm','hqB',9);}
@@ -6634,6 +6770,18 @@ function drawUnitSprite(u,px,py){
     cx.fillStyle=lt; cx.beginPath();cx.arc(0,-3.4,1.9,0,6.28);cx.fill();
     cx.fillStyle=col; cx.beginPath();cx.arc(0,-4.2,2.5,Math.PI,0);cx.fill(); cx.fillRect(-2.5,-4.2,5,1);
     if(key==='medic'){ cx.fillStyle='#ff5a4a'; cx.fillRect(-1.4,0.4,2.8,0.9); cx.fillRect(-0.45,-0.6,0.9,2.9); }
+    else if(key==='engineer'){
+      /* Reads as the Medic's opposite number at a glance: same silhouette, but a tool roll on
+         the back and a wrench in hand instead of a cross on the chest. Built from the same
+         primitives as every other infantry marker so it does not look imported. */
+      cx.fillStyle=dsteel; rr(-3.4,-0.9,2.2,4.2,0.9); cx.fill();          // tool roll on the back
+      cx.strokeStyle=dk; cx.lineWidth=0.6; cx.beginPath(); cx.moveTo(-2.4,0.4); cx.lineTo(-2.4,3.1); cx.stroke();
+      const wr='#c8d2e0';                                                  // bright metal so it reads at 1x
+      cx.strokeStyle=wr; cx.lineWidth=1.5;                                  // wrench, held low and forward
+      cx.beginPath(); cx.moveTo(0.6,1.2); cx.lineTo(4.2,-0.4); cx.stroke();
+      cx.fillStyle=wr; cx.beginPath(); cx.arc(4.6,-0.6,1.05,0,6.28); cx.fill();
+      cx.fillStyle=col;   cx.beginPath(); cx.arc(5.1,-0.9,0.5,0,6.28); cx.fill();   // the wrench's jaw
+    }
     else if(key==='atgm'){ cx.strokeStyle=gun;cx.lineWidth=2.6;cx.beginPath();cx.moveTo(-2,-1);cx.lineTo(7,-4);cx.stroke();
       cx.fillStyle='#ffce5a';cx.beginPath();cx.arc(7,-4,1,0,6.28);cx.fill(); }
     else if(key==='sniper'){ cx.strokeStyle=gun;cx.lineWidth=1.4;cx.beginPath();cx.moveTo(-2,0.2);cx.lineTo(9,-1.6);cx.stroke();
@@ -6675,6 +6823,31 @@ function drawUnitSprite(u,px,py){
       cx.strokeStyle=dsteel;cx.lineWidth=2.6;cx.beginPath();cx.moveTo(-2,-3);cx.lineTo(12,-9);cx.stroke();
       cx.fillStyle=dsteel;cx.beginPath();cx.arc(12,-9,1.2,0,6.28);cx.fill();
     }
+  } else if(key==='cbat'){
+    /* Counter-battery radar vehicle. Built from the same parts as the rest of the fleet —
+       road wheels, a slab hull with a rim-light, a dark steel fitting — so it reads as
+       belonging to the same army. Its identity is the big flat PHASED-ARRAY PANEL (a
+       rectangle, deliberately not the Jammer's dish) plus a short stubby counter-fire tube.
+       It previously had no branch at all and fell through to the generic fallback body,
+       which is why it looked like it came from a different game. */
+    cx.fillStyle='#171b22'; for(const wx of [-6,-1.5,4]){cx.beginPath();cx.arc(wx,4,2,0,6.28);cx.fill();}
+    cx.fillStyle=col; rr(-8.5,-2.2,17,5.2,1.5);cx.fill(); cx.strokeStyle=dk;cx.lineWidth=1.1;cx.stroke();
+    cx.strokeStyle=lt;cx.lineWidth=0.7;cx.beginPath();cx.moveTo(-8,-2);cx.lineTo(7,-2);cx.stroke(); // hull-top highlight
+    // mast + flat array panel, tilted back like a real tracking radar
+    cx.strokeStyle=steel;cx.lineWidth=1.5;cx.beginPath();cx.moveTo(-2,-2.2);cx.lineTo(-2,-6);cx.stroke();
+    cx.save(); cx.translate(-2,-6); cx.rotate(-0.42);
+    cx.fillStyle=dsteel; cx.fillRect(-1.1,-5.4,2.2,10.8);              // panel backing
+    cx.fillStyle=lt;     cx.fillRect(-0.35,-5,1.4,10);                  // array face
+    cx.strokeStyle=dk;cx.lineWidth=0.5;
+    for(let i=-4;i<=4;i+=2){cx.beginPath();cx.moveTo(-0.35,i);cx.lineTo(1.05,i);cx.stroke();} // array elements
+    cx.restore();
+    // a slow sweep blip so it reads as actively tracking rather than parked
+    const sw=(performance.now()/620)%1;
+    cx.globalAlpha=0.5*(1-sw); cx.strokeStyle='#cfeaff'; cx.lineWidth=0.9;
+    cx.beginPath(); cx.arc(-2,-6,2.5+sw*7,-1.5,0.5); cx.stroke(); cx.globalAlpha=1;
+    // short counter-fire tube, stubby next to a howitzer's
+    cx.strokeStyle=dsteel;cx.lineWidth=2.2;cx.beginPath();cx.moveTo(4,-2.6);cx.lineTo(11,-5.4);cx.stroke();
+    cx.fillStyle=dsteel;cx.beginPath();cx.arc(11,-5.4,1.1,0,6.28);cx.fill();
   } else if(key==='jammer'){
     cx.fillStyle='#171b22'; for(const wx of [-6,-1.5,4]){cx.beginPath();cx.arc(wx,4,2,0,6.28);cx.fill();}
     cx.fillStyle=col; rr(-8,-2,16,5,1.5);cx.fill();cx.strokeStyle=dk;cx.stroke();
@@ -6949,7 +7122,10 @@ function syncHUD(){
   }
   // prep-phase countdown banner
   const pb=document.getElementById('prepbanner');
-  if(pb){ if(G.prep>0&&!G.attract){ pb.classList.add('show'); pb.querySelector('.pb-n').textContent=Math.ceil(G.prep); }
+  if(pb){ if(G.prep>0&&!G.attract){ pb.classList.add('show');
+      // the number is now a REMAINING budget, not a countdown to the start — the player ends it
+      const m=Math.floor(G.prep/60), sec=Math.floor(G.prep%60);
+      pb.querySelector('.pb-n').textContent=m>0?(m+':'+String(sec).padStart(2,'0')):Math.ceil(G.prep); }
     else pb.classList.remove('show'); }
   // air-support strike buttons (gunship / barrage / precision)
   for(const type of STRIKE_KEYS){ const el=document.getElementById('card-'+type); if(!el)continue;
@@ -7002,7 +7178,7 @@ const HB_GROUP_END={sniper:1,ifv:1,mlrs:1,drone:1,cbat:1};
 const HB_TABS=[
   {id:'ground',label:'⚔ Ground',col:'#ffb347',units:new Set(['rifle','atgm','sniper','tank','ifv','arty','mlrs','flame'])},
   {id:'air',label:'✈ Air & AD',col:'#c9a0ff',units:new Set(['aa','heli','drone','interceptor','gunship','swarm'])},
-  {id:'support',label:'🛠 Support',col:'#3fd07a',units:new Set(['medic','jammer','cbat'])},
+  {id:'support',label:'🛠 Support',col:'#3fd07a',units:new Set(['medic','engineer','jammer','cbat'])},
   {id:'production',label:'🏭 Production',col:'#5ff0e0',spawners:true},
 ];
 const HB_MAX_TABS=5, HB_MAX_PER_TAB=9;
@@ -8597,8 +8773,13 @@ function gauntletCommit(won){
    freeze and the game-speed control like every other battlefield system. */
 const GAUNT_TELE_TIME=2.6;   // seconds of warning before a strike lands — real reaction time
 
+/* Enemy fire support. Built for the Gauntlet's Adjutant and originally keyed straight to
+   G.gaunt; now driven by G.enemyFire so any opponent that has earned the toolkit can use it.
+   Legendary+ is the other caller. The telegraph, cadence and aiming are identical whoever is
+   firing, so a player learns to read it once. */
 function gauntStrikeTick(dt){
-  if(!G.gaunt||!G.gaunt.strikes.length||G.over||G.frozen)return;
+  const EF=G.enemyFire;
+  if(!EF||!EF.strikes||!EF.strikes.length||G.over||G.frozen)return;
   // a telegraph already on the board: run it down, then fire
   if(G.gauntTele){
     G.gauntTele.t-=dt;
@@ -8610,12 +8791,12 @@ function gauntStrikeTick(dt){
   // cadence tightens as the ladder climbs, with a floor so it never becomes a drum roll
   // cadence tightens across nine rungs now, not five — the old 3s-per-tier slope reached
   // its floor less than halfway up the new ladder and stopped being an escalation at all
-  const tier=G.gaunt.tier;
+  const tier=EF.tier||0;
   G.gauntStrikeT=Math.max(18,36-tier*1.9)+rnd(-3,7);
-  const type=pick(G.gaunt.strikes);
+  const type=pick(EF.strikes);
   // aim: the lane it has you filed under, otherwise wherever your strength actually is
   let lane;
-  if(G.gaunt.lane>=0&&Math.random()<0.6)lane=G.gaunt.lane;
+  if(EF.lane>=0&&Math.random()<0.6)lane=EF.lane;
   else{ const s=[0,0,0];
     for(const u of G.units)if(u.side==='B'&&u.alive)s[u.lane]+=u.maxHp*0.02+u.dmg*0.1;
     lane=(s[0]||s[1]||s[2])?s.indexOf(Math.max(...s)):((Math.random()*3)|0); }
@@ -8659,7 +8840,7 @@ function gauntStrikeTick(dt){
 function gauntStrikeFire(te){
   if(!G||G.over)return;
   // strike power ramps from the rung that arms gunships onward, gently, over the longer ladder
-  const tier=G.gaunt?G.gaunt.tier:0, pw=1+Math.max(0,tier-5)*0.09;
+  const tier=(G.enemyFire&&G.enemyFire.tier)||0, pw=1+Math.max(0,tier-5)*0.09;
   if(te.type==='precision'){
     const rad=42, dmg=44*pw, ty=G.laneY[te.lane]*H;
     for(let i=0;i<4;i++){
@@ -8720,7 +8901,7 @@ function gauntBarrageTick(dt){
 }
 /* The visible half of the promise above. Drawn in world space with the rest of the field. */
 function drawGauntFx(){
-  if(!G||!G.gaunt)return;
+  if(!G||(!G.enemyFire&&!G.gaunt))return;
   const te=G.gauntTele;
   if(te){
     const frac=1-te.t/te.max;                  // 0 → 1 as the strike closes
@@ -9032,6 +9213,7 @@ const TUT_STEPS=[
   {say:"Your deck's sorted into tabs. GROUND is infantry and armour. AIR & AD is aircraft plus the anti-air that swats them. SUPPORT is your no-weapon helpers — the Medic that heals and the EW Jammer that fries drones. PRODUCTION builds factories that pump out units over time. Every unit lives in one of those four.",mood:'deadpan',spot:'#hotbar',wait:11},
   {say:"See the SPEED control on the left of the field? Half-speed buys you thinking time and cleaner micro; two-times fast-forwards a won fight. And SPACE pauses whenever you need a breather.",mood:'deadpan',spot:'#speedbar',wait:8.5},
   {say:"Right beside it, STANCE. Assault pushes hard for their HQ. Skirmish pokes from max range and falls back. Defend digs in on the centre line — that's your Domination stance, since it holds the middle where the capture zone sits.",mood:'deadpan',spot:'#stancebar',wait:10},
+  {say:"Settle on one during prep — switching is free until the line goes live. After that you get exactly one change, so pick a posture and fight it. Here in the tutorial, press whatever you like.",mood:'deadpan',spot:'#stancebar',wait:8},
   {say:"That's the whole toolkit. Want the full roster and every counter written out? The Field Manual off the title screen has all of it — but you've got more than enough to win this.",mood:'proud',wait:7.5},
   {say:"That's everything, Commander. Their HQ sits on the right — crack it before they crack yours. I'm releasing their army... now. Good luck. Try not to embarrass us.",mood:'proud',wait:6.5,last:true},
 ];
@@ -9307,7 +9489,7 @@ function start(){
   const hqLbl=document.getElementById('hqB-lbl'); if(hqLbl)hqLbl.textContent=equippedBadge().glyph+' YOUR HQ';
   const big=(G.kind==='campaign'&&G.mission)?G.mission.name:
             (G.kind==='indoc'&&G.indoc)?G.indoc.name:((MODES[G.mode]&&MODES[G.mode].name)||G.kind);
-  if(G.prep>0)announce('⏳ PREP · '+String(big).toUpperCase(),'queue your opening wave — enemy frozen','#5ff0e0');
+  if(G.prep>0)announce('⏳ PREP · '+String(big).toUpperCase(),'set your opening — start when you are ready','#5ff0e0');
   else announce(String(big).toUpperCase(),DOCTRINES[G.doc].name+' · '+DIFFS[G.diff].name+' · '+G.wx.name,DOCTRINES[G.doc].col);
   if(!G.tutorial){
     if(G.wxKey!=='clear')say(G.wx.line,'grim',1);
@@ -9431,14 +9613,35 @@ function syncAgeUI(){
   tb.disabled=(have>=slots);
 }
 function setStance(s){
-  if(!G||G.over||!STANCES[s])return;
-  if(G.stance===s)return;
+  if(!G||G.over||!STANCES[s])return false;
+  if(G.stance===s)return false;
+  /* Free while the fight has not started. Testing G.prep rather than G.frozen matters:
+     G.frozen is only raised by the first step(), so a stance chosen the instant the battle
+     screen opens would otherwise be billed against the live budget. The tutorial is exempt
+     outright — it runs with no prep phase at all and its whole job is letting you press the
+     buttons to see what they do. */
+  if(!(G.prep>0||G.tutorial)){
+    if((G.stanceChanges||0)<=0){
+      announce('⚑ POSTURE HOLDS','no change of stance left this battle — set it during prep','#ff5a4a');
+      return false;
+    }
+    G.stanceChanges--;
+  }
   G.stance=s;
-  announce(STANCES[s].glyph+' '+STANCES[s].name.toUpperCase()+' STANCE','',STANCES[s].col);
+  announce(STANCES[s].glyph+' '+STANCES[s].name.toUpperCase()+' STANCE',
+    G.prep>0?'':(G.stanceChanges>0?G.stanceChanges+' change left':'no changes left'),STANCES[s].col);
   syncStanceUI();
+  return true;
 }
 function syncStanceUI(){
-  for(const s in STANCES){ const b=document.getElementById('stance-'+s); if(b)b.classList.toggle('on',G&&G.stance===s); }
+  const spent=!!G&&!(G.prep>0)&&(G.stanceChanges||0)<=0;
+  for(const s in STANCES){
+    const b=document.getElementById('stance-'+s); if(!b)continue;
+    const on=G&&G.stance===s;
+    b.classList.toggle('on',!!on);
+    // everything you can no longer pick reads as spent, so the commitment is visible
+    b.classList.toggle('spent',spent&&!on);
+  }
 }
 
 /* ── GROUP-DOCTRINE UI ─────────────────────────────────────────────────────────
@@ -9479,7 +9682,8 @@ function toggleGroupPop(gk){
   pop.onclick=e=>e.stopPropagation();
   const render=()=>{
     const mode=(G&&G.groups&&G.groups[gk])||'off';
-    const cd=G?Math.ceil(G.groupCd||0):0;
+    const inPrep=!!(G&&G.prep>0);
+    const left=G?(G.groupChanges||0):0;
     if(!groupUnlocked(gk)){
       pop.innerHTML=`<div class="gp-h" style="color:${gd.col}">${gd.glyph} ${gd.name.toUpperCase()} ORDERS</div>`+
         `<div class="gp-lock">🔒 Unlocks at Rank ${gd.lvl}. These are standing orders for a whole arm — they arrive once you have enough of the roster in play for the choice to mean something.</div>`;
@@ -9491,7 +9695,11 @@ function toggleGroupPop(gk){
       `<div class="gp-d">${desc}</div>${cost?`<div class="gp-c">⚠ ${cost}</div>`:''}</button>`;
     h+=row('off','✕ No standing order','This arm follows the army stance like everything else.','');
     for(const o of gd.opts)h+=row(o.id,o.glyph+' '+o.name,escapeHTML(o.desc),escapeHTML(o.cost));
-    if(cd>0)h+=`<div class="gp-cd">Orders can be changed again in ${cd}s — one change per ${GROUP_SWAP_CD}s.</div>`;
+    h+=inPrep
+      ? `<div class="gp-cd" style="color:var(--good)">Free to change during prep — set your whole plan before you begin.</div>`
+      : (left>0
+        ? `<div class="gp-cd" style="color:var(--warn)">${left} change${left===1?'':'s'} left this battle.</div>`
+        : `<div class="gp-cd">No changes left — these orders stand for the rest of the fight.</div>`);
     pop.innerHTML=h;
     pop.querySelectorAll('.gp-o').forEach(btn=>{
       btn.onclick=()=>{ if(setGroupDoctrine(gk,btn.dataset.gid))render(); };
@@ -9511,12 +9719,19 @@ function setGroupDoctrine(gk,id){
   if(id!=='off'&&!groupOpt(gk,id))return false;
   const cur=(G.groups&&G.groups[gk])||'off';
   if(cur===id)return false;
-  if(G.groupCd>0){
-    announce('⏳ ORDERS LOCKED','wait '+Math.ceil(G.groupCd)+'s before changing again','#ff5a4a');
-    return false;
+  /* Free while the line is still being set; a real commitment once the shooting starts.
+     Tested on G.prep ALONE — G.frozen is only raised by the first simulation tick, so a
+     change made in the instant between the battle being created and that tick landing was
+     being charged against the player's one live change. */
+  const inPrep=G.prep>0;
+  if(!inPrep){
+    if((G.groupChanges||0)<=0){
+      announce('📋 ORDERS STAND','no changes left this battle — set them during prep','#ff5a4a');
+      return false;
+    }
+    G.groupChanges--;
   }
   G.groups[gk]=id;
-  G.groupCd=GROUP_SWAP_CD;
   // remember it for next battle — an order is a loadout choice, not an in-fight reaction
   if(!SAVE.groups||typeof SAVE.groups!=='object')SAVE.groups={};
   SAVE.groups[gk]=id; persist();
@@ -9533,7 +9748,9 @@ function syncGroupUI(){
     b.classList.toggle('armed',mode!=='off');
   }
   const pop=document.getElementById('grouppop');
-  if(pop&&pop._render&&G&&G.groupCd>0)pop._render();   // live-count the cooldown while it is open
+  if(pop&&pop._render&&G&&G._grpPrep!==(G.prep>0)){
+    G._grpPrep=(G.prep>0); pop._render();               // repaint when prep ends and orders lock in
+  }
 }
 function quickDeploy(lane){
   if(STRIKES[G.selCard])tryStrike(G.selCard,lane,W*0.6);
@@ -10065,7 +10282,7 @@ function renderSettings(){
     `<div style="font-size:13px;font-weight:800;color:var(--purple);letter-spacing:.5px;margin:6px 2px -2px">🧰 ADVANCED</div>`+
     settingRow('Deck Layout','Build your own hotbar tabs instead of the built-in categories — up to 5 tabs of up to 9 units each. Production stays pinned on the end.',
       `<button class="sbtn" id="set-deck" style="font-size:11px;padding:6px 11px">🗂 ${customTabsValid(SAVE.hbTabs)?'Edit ('+SAVE.hbTabs.length+' custom)':'Customise'}</button>`)+
-    settingRow('Standing Orders','Per-arm orders for artillery, armour and drones that override your stance for those units. Chosen on the battlefield from the ORDERS row above STANCE — they unlock at Rank '+GROUP_DOCTRINES.arty.lvl+', '+GROUP_DOCTRINES.armor.lvl+' and '+GROUP_DOCTRINES.drone.lvl+'.',
+    settingRow('Standing Orders','Per-arm orders for artillery, armour and drones that override your stance for those units. Chosen on the battlefield from the ORDERS row above STANCE. Like your stance, they are free to change during prep and cost your single change once the fight is live. They unlock at Rank '+GROUP_DOCTRINES.arty.lvl+', '+GROUP_DOCTRINES.armor.lvl+' and '+GROUP_DOCTRINES.drone.lvl+'.',
       `<span style="font-size:11px;font-weight:800;color:${GROUP_KEYS.every(groupUnlocked)?'var(--good)':'var(--faint)'};white-space:nowrap">${GROUP_KEYS.filter(groupUnlocked).length}/${GROUP_KEYS.length} unlocked</span>`)+
     settingRow('Cutscenes','Brief cinematic close-ups of the action. This is the master switch — it also silences the cinematic a legendary kill streak earns, which is not a random event and would otherwise still play.',`<button id="set-cutscenes" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evCutscene)}</button>`)+
     `<div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.5px;margin:6px 2px -2px">🎲 RANDOM EVENTS</div>`+
@@ -10081,6 +10298,7 @@ function renderSettings(){
     settingRow('· Crazy Voicelines','Off-the-rails narrator outbursts',`<button id="set-ev-voice" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evVoice)}</button>`)+
     settingRow('· Artillery Barrage','A surprise shelling rakes a lane',`<button id="set-ev-barr" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evBarrage)}</button>`)+
     settingRow('· Defectors','An enemy unit switches sides mid-battle',`<button id="set-ev-def" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evDefector)}</button>`)+
+    settingRow('· Field Reassessment','Staff hand you another change of stance and standing orders mid-battle',`<button id="set-ev-ord" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evOrders)}</button>`)+
     `</div>`+
     `<div style="font-size:13px;font-weight:800;color:var(--cyan);letter-spacing:.5px;margin:6px 2px -2px">😄 FUN &amp; GAGS</div>`+
     settingRow('Unit Chatter','Troops quip when deployed & after kills',`<button id="set-gag-chat" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.gagChatter)}</button>`)+
@@ -10112,6 +10330,7 @@ function renderSettings(){
   bind('set-ev-voice',()=>{ SAVE.evVoice=!SAVE.evVoice; persist(); });
   bind('set-ev-barr',()=>{ SAVE.evBarrage=!SAVE.evBarrage; persist(); });
   bind('set-ev-def',()=>{ SAVE.evDefector=!SAVE.evDefector; persist(); });
+  bind('set-ev-ord',()=>{ SAVE.evOrders=!SAVE.evOrders; persist(); });
   bind('set-chaos',()=>{ SAVE.chaosMode=!SAVE.chaosMode; persist(); });
   bind('set-gag-chat',()=>{ SAVE.gagChatter=!SAVE.gagChatter; persist(); });
   bind('set-gag-gold',()=>{ SAVE.gagGolden=!SAVE.gagGolden; persist(); });
