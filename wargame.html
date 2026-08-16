@@ -1230,6 +1230,11 @@
   .bt-score{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--cyan);}
 
   /* ── INDOCTRINATION ── */
+  /* section divider between the doctrine half of the school and the field-systems half */
+  .ind-sec{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:12px;font-weight:800;
+    letter-spacing:.6px;color:var(--gold);margin:14px 2px 6px;padding-top:10px;border-top:1px solid var(--line);}
+  .ind-sec:first-of-type{border-top:none;padding-top:0;margin-top:8px;}
+  .ind-sec span{font-size:10.5px;font-weight:600;letter-spacing:0;color:var(--faint);}
   .ind-card{display:flex;align-items:center;gap:12px;background:var(--panel);border:1.5px solid var(--dc,var(--line));
     border-radius:11px;padding:11px 14px;margin-bottom:7px;cursor:pointer;transition:.12s;text-align:left;width:100%;}
   .ind-card:hover{transform:translateY(-2px);box-shadow:0 0 18px -6px var(--dc,var(--blue));}
@@ -1785,7 +1790,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.21.0</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.22.0</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -1809,9 +1814,9 @@
        see openSettings()/#set-back below, rather than dumping you out to the title mid-match. -->
   <button class="tb-btn" id="btn-settings">⚙ Settings</button>
   <!-- every dev/testing tool lives behind this one button so the topbar stays a player's toolbar -->
-  <button class="tb-btn" id="btn-debug">🐞 Debug/Dev</button>
+  <button class="tb-btn" id="btn-debug" title="Debug / Dev tools — Ctrl+Shift+D from anywhere, including mid-battle. Escape or ☰ Menu closes it.">🐞 Debug/Dev</button>
   <button class="tb-btn hidden" id="btn-pause">⏸ Pause</button>
-  <button class="tb-btn" id="btn-menu">☰ Menu</button>
+  <button class="tb-btn" id="btn-menu" title="Closes whatever panel is open. With nothing open, returns to the main menu.">☰ Menu</button>
 </div>
 
 <div id="stage">
@@ -2002,7 +2007,7 @@
       <div class="title-grp">
         <div class="title-grp-lbl">Learn</div>
         <div class="title-btns2">
-          <button class="t-btn indoc" id="t-indoc"><b>🎓 Indoctrination</b><small id="t-indoc-sub">try every doctrine</small></button>
+          <button class="t-btn indoc" id="t-indoc"><b>🎓 Indoctrination</b><small id="t-indoc-sub">doctrines &amp; field systems</small></button>
         </div>
       </div>
       <div class="title-grp">
@@ -2090,7 +2095,7 @@
   <div class="screen hidden" id="indoc">
     <button class="back-btn" id="indoc-back">◀ Title</button>
     <h1>🎓 <b>INDOCTRINATION</b></h1>
-    <div class="tag" style="margin-bottom:6px">Nine short lessons, one per doctrine — every one of them stacked in your favour on purpose. You're handed the doctrine (locked or not), a roster cut to just its units, and an enemy built to lose to it. Play them to find out which doctrine you actually enjoy before you commit to grinding for it.</div>
+    <div class="tag" style="margin-bottom:6px">Short lessons, every one of them stacked in your favour on purpose — a roster cut to just what the lesson is about, and an enemy built to lose to it. <b>Doctrine School</b> is nine fights, one per doctrine: play them to find out which doctrine you actually enjoy before committing to grind for it. <b>Field School</b> is the newer systems — commitment, the support split, counter-battery, smoke and the HQ floor — each in the one situation where it obviously matters. Anything you have not unlocked yet is playable here anyway.</div>
     <div class="man-wrap"><div class="man-body" id="indoc-body"></div></div>
   </div>
 
@@ -2314,7 +2319,7 @@
   <div id="debugmodal">
     <div class="fr-card" style="max-width:620px;text-align:left">
       <div class="fr-h" style="text-align:center">🐞 Debug / Dev Tools</div>
-      <div class="fr-p" style="text-align:center">Testing tools, kept out of the way of normal play. Event triggers fire the real function directly — the same code path as when it happens naturally — so most need a live battle running.</div>
+      <div class="fr-p" style="text-align:center">Testing tools, kept out of the way of normal play. Event triggers fire the real function directly — the same code path as when it happens naturally — so most need a live battle running.<br><span style="color:var(--faint);font-size:11px">Open and close this from anywhere with <b>Ctrl+Shift+D</b> · <b>Esc</b> or <b>☰ Menu</b> also closes it</span></div>
       <div id="dbg-toggles"></div>
       <div id="dbg-code-wrap">
         <label for="dbg-code">Access code</label>
@@ -2483,6 +2488,12 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   groups:{arty:'off',armor:'off',drone:'off'}, // per-arm standing orders; all OFF until chosen
   hbTabs:null,           // custom deck layout: null = the built-in category tabs. See activeTabs().
   chaosMode:false,
+  /* 🧪 EXPERIMENTAL MODE — opt-in, off by default. Systems that change how the game is
+     PLAYED rather than what is in it live behind this switch, so a new player meets the
+     game as it has always worked and a veteran can go looking for more. Snapshotted into
+     G at battle start (G.experimental) so flipping it never changes the rules of a fight
+     already in progress. See EXPERIMENTS for what it currently covers. */
+  experimental:false,
   gagChatter:true,gagGolden:true,gagVictory:true,
   history:[],career:{battles:0,wins:0,losses:0,kills:0,deploys:0,cpSpent:0,strikes:0,units:{},dmgDealt:0,timePlayed:0},
   rivalry:{}, equippedBadge:null, equippedTitle:null, rivals:{}, rivalsBadgeEarned:false,
@@ -2907,6 +2918,14 @@ const TIER_UNLOCK={1:0,2:60,3:130}; // CP paid once per battle to open a tier's 
    exists to answer those orders and arriving before them would be answering nothing. */
 const UNIT_RANK_GATE={cbat:30};
 function unitRankOk(key){ const r=UNIT_RANK_GATE[key]; return !r||rankGateOk(r); }
+/* Commander powers carry their own rank gates. Routed through one helper so a Field School
+   lesson can hand out the power it is ABOUT — a Smoke Screen lesson that will not let you
+   press S is not a lesson. Three call sites: the deck card, the hotkey, and trySmoke itself,
+   and all three have to agree or the card lights up and the button does nothing. */
+function strikeRankOk(key){ const s=STRIKES[key];
+  if(!s||!s.rank)return true;
+  if(G&&G.rankFree)return true;
+  return rankGateOk(s.rank); }
 function unitTier(key){return UNIT_TIER[key]||1;}
 function tierUnlockCost(key){return TIER_UNLOCK[unitTier(key)]||0;}
 
@@ -3019,6 +3038,31 @@ const GROUP_FREE_CHANGES=1;    // order changes available once the battle is liv
    while they push, back to Assault the second they stop. You now settle on a posture during
    prep — free, as many times as you like — and carry ONE change into the fight. */
 const STANCE_FREE_CHANGES=1;   // stance changes available once the battle is live
+
+/* ═══ 🧪 EXPERIMENTAL MODE ═══════════════════════════════════════════════════════
+   Both commitments above are OPT-IN. Measured across six full battles with a player
+   that re-reads the field every two seconds and acts on a read it has held for six:
+   40 changes wanted, 7 granted, 33 refused. The budget binds inside the first minute
+   and stays bound for the rest of the fight. That is exactly the intended feel for
+   someone who wants a posture to MEAN something — and exactly the wrong first
+   experience for someone still learning what the three postures do.
+
+   So the rule ships off. `EXPERIMENTS` is the registry: one entry per system, each
+   with the copy the Settings screen shows, so adding the next experiment is a table
+   entry rather than another scattered `if(SAVE.x)`.
+
+   The switch is READ ONCE, at battle start, into G.experimental. Flipping it in
+   Settings mid-fight — which is reachable from the pause menu — must never change
+   the rules of a battle already under way. ═══════════════════════════════════════ */
+const EXPERIMENTS=[
+  {id:'commit', name:'Doctrine Commitment', glyph:'⚑',
+   blurb:'Your stance and your standing orders are settled during prep — free, as many times as you like — and each carries exactly ONE change into the live fight. Postures you can no longer take grey out. The uncommon Field Reassessment event hands one of each back.',
+   why:'Without it, stance is a free toggle you flick every time the field shifts, which makes it a micro channel rather than a posture. With it, the plan you take in is the plan you fight.'},
+];
+function experimentalOn(){ return !!SAVE.experimental; }
+/* Battles read the SNAPSHOT, menus read the live switch. G may be null (title screen,
+   Settings before a fight), in which case the live switch is the honest answer. */
+function battleExperimental(){ return G ? !!G.experimental : experimentalOn(); }
 const GROUP_EVADE_PENALTY=2.6; // evasive units read this much further away to enemy targeting
 const BOMBARD_HQ_FLOOR=1;      // shelling can reduce an HQ to this, never below — see the arc-shell handler
 const GROUP_BOMBARD_MUL=0.25;  /* HQ damage per bombardment shell vs a normal round. Tuned down
@@ -3077,7 +3121,14 @@ const GROUP_DOCTRINES={
 };
 const GROUP_KEYS=Object.keys(GROUP_DOCTRINES);
 function groupOpt(gk,id){ const g=GROUP_DOCTRINES[gk]; return g&&g.opts.find(o=>o.id===id)||null; }
-function groupUnlocked(gk){ const g=GROUP_DOCTRINES[gk]; return !!g&&rankGateOk(g.lvl); }
+/* A Field School lesson that ARRIVES with an order given must also be able to show it on the
+   ORDERS bar and in its popover, or the lesson teaching that order renders a padlock over the
+   very thing it is about. G.rankFree carries the same exemption the unit deck uses. */
+function groupUnlocked(gk){ const g=GROUP_DOCTRINES[gk];
+  if(!g)return false;
+  if(G&&G.rankFree)return true;
+  if(G&&G.groups&&G.groups[gk]&&G.groups[gk]!=='off'&&G.indoc)return true;
+  return rankGateOk(g.lvl); }
 /* The active order for a unit, or null. Player side only — these are a player control, and
    handing the same toolkit to the AI would change every difficulty tier's tuning at once. */
 function unitGroup(u){
@@ -3403,7 +3454,7 @@ function beatTodayRecord(g,won,score){
     beatTodayAdd('camp-'+g.mission.id,'Campaign · '+g.mission.name,'🎖',score);
     if(g.timeTrial)beatTodayAdd('tt-'+g.mission.id,'Time Trial · '+g.mission.name,'⏱',score);
   }
-  else if(g.kind==='indoc'&&g.indoc)beatTodayAdd('indoc-'+g.indoc.doctrine,'Indoctrination · '+g.indoc.name,'🎓',score);
+  else if(g.kind==='indoc'&&g.indoc)beatTodayAdd('indoc-'+indocId(g.indoc),'Indoctrination · '+g.indoc.name,'🎓',score);
   else if(g.kind==='daily')beatTodayAdd('daily','Daily Challenge','🎯',score);
   else if(g.kind==='secret')beatTodayAdd('secret','The Glitch Front','☢',score);
   else if(g.kind==='rival'&&g.general)beatTodayAdd('rival-'+g.general.name,'Rival · '+g.general.name,'⚔',score);
@@ -3455,17 +3506,27 @@ const DIFFS={
        player starts with exactly what they used to have at the moment the fight began. */
 const PREP_MAX=180;        // hard cap, so an idle tab cannot sit frozen forever
 const PREP_GRANT_SECS=10;  // seconds of income granted up front, replacing prep-phase accrual
-const GAME_VERSION='1.21.0';
+const GAME_VERSION='1.22.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.22.0',notes:[
+    '\ud83e\uddea EXPERIMENTAL MODE \u2014 a new opt-in section in Settings, OFF by default. Rule changes that alter how the game is PLAYED rather than what is in it now live behind one switch, so a new player meets the game as it has always worked and a veteran can go looking for more. Nothing behind it is needed to see any content, and turning it on or off never touches your progress.',
+    'DOCTRINE COMMITMENT IS NOW THAT SWITCH. One stance and one change of standing orders per battle is a real constraint \u2014 played out over six full battles with a commander re-reading the field every two seconds, 40 changes were wanted and 7 granted. That is the right feel for someone who wants a posture to MEAN something and the wrong first experience for someone still learning what the three postures do. With Experimental off, stance and orders are the free toggles they have always been.',
+    'A battle reads the switch ONCE, when it starts. Settings is reachable from the pause menu, so reading it live would let a player change the rules of a fight they were losing \u2014 and would mean a battle could start permissive and end restrictive.',
+    '\ud83c\udf93 FIELD SCHOOL \u2014 five new Indoctrination lessons, taking the school from nine to fourteen. The original nine teach a DOCTRINE; these teach a SYSTEM, each dropping you into the one situation where it obviously matters: One Plan, One Fight (commitment \u2014 forced on for that lesson so you can feel the rule before deciding whether you want it), Two Kinds Of Repair (Medic vs Engineer), Answer The Guns (Counter-Battery), Blind And Pinned (Smoke + EW), and Somebody Has To Walk In (the HQ floor). A lesson hands you the unit or power it is about even if your rank has not earned it \u2014 the same rule that has always let you play a locked doctrine here \u2014 and that exemption never leaks into a normal battle.',
+    'ONE WAY OUT. ESCAPE now walks exactly one step back up whatever is stacked \u2014 crate overlay, then modal, then the orders popover, then the screen, then pausing a live battle. It never skips a level and never quits a fight, so it is always safe to press.',
+    '\u2630 MENU IS ALSO THE CLOSE BUTTON. It sits in the topbar above every panel, so when a panel is open it is the button already under your thumb. It now closes the top layer first and only acts as Menu once nothing is stacked \u2014 previously it ignored the panel entirely and offered to abandon the battle underneath, which is a destructive answer to "close this".',
+    '\ud83d\udc1e DEV TOOLS ON A KEY \u2014 Ctrl+Shift+D opens AND closes the Debug/Dev panel from anywhere, mid-battle included. Escape and \u2630 Menu close it too. It does not fire while you are typing in a field, so entering a dev code cannot toggle the panel out from under you. Backtick is untouched \u2014 it is still the AI thinking overlay.',
+    'The Engineer had no sprite of its own and was falling through to the plain infantry body \u2014 the same defect the Counter-Battery had. It now reads as the Medic\u2019s opposite number: same silhouette, tool roll on the back and a wrench in hand instead of a cross on the chest.',
+  ]},
   {v:'1.21.0',notes:[
     'PREP IS NOW YOURS. The phase runs as long as you want it (up to three minutes) and ends when you say so. CP does NOT tick during it \u2014 an open-ended phase that also printed money would just be a wait with a right answer \u2014 so the income the old fixed ten-second prep would have generated is granted UP FRONT instead. Your opening wave is exactly the size it always was; you simply get to think about it.',
     'NEW DIFFICULTY \u2014 \u2620 LEGENDARY+. Deliberately NOT "Legendary with bigger numbers": its stat line is barely a step above. What changes is that it is the only difficulty whose AI picks a STANCE for the battle and calls in COMMANDER STRIKES, under exactly the constraints you play under \u2014 one stance for the whole fight, real cooldowns, and fire support telegraphed the same way yours is. Another +50% economy would only have been a bigger number to out-grind.',
-    'STANCE AND STANDING ORDERS ARE NOW COMMITMENTS, NOT TIMERS. Settle both freely during prep \u2014 which is now as long as you want \u2014 and carry exactly ONE change of each into the live fight. Stance had no cost at all before, which made it a micro channel rather than a posture; orders had a 30-second timer, which only said "wait, then micro anyway". A single change says "decide". A stance you can no longer switch to greys out, so the commitment is visible rather than a surprise. The new uncommon FIELD REASSESSMENT event hands one of each back mid-battle.',
+    'STANCE AND STANDING ORDERS BECOME COMMITMENTS, NOT TIMERS (opt-in as of 1.22.0 \u2014 see Experimental Mode). Settle both freely during prep \u2014 which is now as long as you want \u2014 and carry exactly ONE change of each into the live fight. Stance had no cost at all before, which made it a micro channel rather than a posture; orders had a 30-second timer, which only said "wait, then micro anyway". A single change says "decide". A stance you can no longer switch to greys out, so the commitment is visible rather than a surprise. The new uncommon FIELD REASSESSMENT event hands one of each back mid-battle.',
     'THE MEDIC IS NOW TWO UNITS. \u271a Medic (30 CP) patches INFANTRY; \ud83d\udd27 Engineer (34 CP) repairs VEHICLES and GUNS. Both are cheaper than the single unit they replace and neither can do the other\'s job. They hang back behind whatever they are mending rather than leading the line, walk back to it if they drift ahead \u2014 and if nothing of theirs is left in the lane they stop being support entirely and charge in with a poor little melee attack, because a support unit with nothing to do is worse than a bad attacker.',
     'BASE BOMBER can no longer win a battle either. A drone swarm on that order ignores the enemy army completely, and on the lower difficulties the AI did not defend it at all \u2014 a repeatable five-second win with no engagement. Drones under that order now flatten an HQ to 1 and stop, exactly like Bombardment: somebody who is not on a suicide run has to walk in. A normal drone dive still finishes a base as before.',
     'SKIRMISH no longer charges for tech tiers. It is the mode a new player meets first and the one everything else is measured against, and being the only place you also had to buy your way up a tree made the main mode feel unlike the rest of the game. Blitz and Survival keep it \u2014 both are short-form modes where the escalating unlock IS the shape of the run.',
@@ -3964,8 +4025,53 @@ const INDOC=[
     brief:"Insurgency. An armoured column, at night, against men who cost you forty percent less and are very hard to see coming. You will not win a stand-up fight and you should not try. Let the armour commit down a lane, then hit it from inside its own dust with flame and AT. Patience is the doctrine.",
     lesson:"Insurgency trades ground for casualties. Cheap, hidden infantry ambushing committed armour beats meeting that armour head-on — every single time."},
 ];
-function indocFor(key){ return INDOC.find(l=>l.doctrine===key)||null; }
-function indocClearedCount(){ return INDOC.filter(l=>SAVE.indocDone&&SAVE.indocDone[l.doctrine]).length; }
+/* ── FIELD SCHOOL — the second half of Indoctrination.
+   The nine above teach a DOCTRINE: here is a playstyle, here is an enemy it beats. These
+   teach a SYSTEM: here is a mechanic, here is the only situation where it obviously matters.
+   Same design rules — recruit difficulty, stacked deck, one sentence to leave with — plus
+   three of their own:
+
+     · `id` is the save key, so it must never change once shipped. The nine doctrine lessons
+       use their doctrine key as their id, which is what they were already keyed by, so old
+       saves carry over untouched.
+     · `rankFree` lets a lesson hand out a unit the player has not earned yet. A lesson about
+       Counter-Battery that a Rank 5 player cannot see the card for teaches nothing.
+     · `experimental` forces the commitment rules ON for that lesson regardless of the
+       Settings switch. The whole point of the ⚑ lesson is to let someone feel the rule
+       before deciding whether they want it, and asking them to go and enable it first is
+       exactly the friction the opt-in exists to avoid. ── */
+const INDOC_FIELD=[
+  {id:'commit',doctrine:'bastion',name:'One Plan, One Fight',glyph:'⚑',col:'#ffce5a',
+    weather:'clear',diff:'recruit',ecpMul:0.6,startCp:110,experimental:true,
+    allow:['rifle','atgm','tank','medic'],enemyAllow:['rifle','tank'],enemyBias:'tank',
+    brief:"This one is about the plan, not the roster. Doctrine Commitment is on for this lesson: during prep you can try every posture as often as you like, and the moment the line goes live you have exactly ONE change of stance in hand. They open with infantry and follow with armour — so the posture that beats the opening is not the posture that beats what comes after it. Spend your change on the second half, not the first.",
+    lesson:"Under Commitment, prep is where the thinking happens. Read what the enemy is BUILDING toward and set the posture for that — your one live change is for the thing you could not have predicted."},
+  {id:'support',doctrine:'mass',name:'Two Kinds Of Repair',glyph:'🔧',col:'#ffd08a',
+    weather:'overcast',diff:'recruit',ecpMul:0.6,startCp:120,
+    allow:['rifle','tank','medic','engineer'],enemyAllow:['rifle','atgm'],enemyBias:'rifle',
+    brief:"The Medic became two units and neither can do the other's job. ✚ Medic patches infantry. 🔧 Engineer repairs vehicles and guns. You have riflemen and a tank in the same force, so you need both — and watch where they stand: they hold station behind whatever they are mending rather than leading it. If everything they can fix dies, they fix bayonets instead. Do not rely on that.",
+    lesson:"Medic for men, Engineer for machines — a mixed army needs both, and support units earn their cost by standing BEHIND the thing they keep alive."},
+  {id:'cbat',doctrine:'fires',name:'Answer The Guns',glyph:'🛰',col:'#9fe0ff',rankFree:true,
+    weather:'clear',diff:'recruit',ecpMul:0.7,startCp:140,openEnemy:3,
+    allow:['cbat','rifle','atgm'],enemyAllow:['arty','rifle'],enemyBias:'arty',
+    brief:"They brought a gun line and almost nothing to guard it. 🛰 Counter-Battery is your answer and it is a specialist: it engages ARTILLERY and nothing else, it out-ranges the howitzer, and it suppresses a battery at range so the guns go quiet before they die. Screen it with a rifle or two — against anything that is not a gun it is a very expensive paperweight.",
+    lesson:"Counter-Battery is a hard counter with a hard limit. It answers guns and only guns, so bring it when you SEE artillery — never blind."},
+  {id:'smoke',doctrine:'guerrilla',name:'Blind And Pinned',glyph:'🌫',col:'#c9d6e6',rankFree:true,
+    weather:'clear',diff:'recruit',ecpMul:0.6,startCp:130,openEnemy:3,
+    allow:['jammer','rifle','atgm'],enemyAllow:['drone','rifle','tank'],enemyBias:'drone',
+    brief:"Two pieces that are worth more together than apart. 🌫 Smoke Screen — press S — blocks line of sight for BOTH sides and walls out drones so they stall at the edge instead of crossing. 📵 The EW Jammer suppresses whatever is near it. Catch something inside a smoke bank AND inside the jammer's reach and it is PINNED: it cannot move and it cannot shoot. They are coming with drones. Wall them, then pin what walks through.",
+    lesson:"Smoke blinds you too — that symmetry is what makes placing it a decision. Its real payoff is the jammer combo: two investments for the strongest crowd control in the game."},
+  {id:'floor',doctrine:'fires',name:'Somebody Has To Walk In',glyph:'💣',col:'#ff9f40',
+    weather:'overcast',diff:'recruit',ecpMul:0.55,startCp:150,
+    allow:['arty','rifle','drone'],enemyAllow:['rifle'],enemyBias:'rifle',
+    groups:{arty:'bombard',armor:'off',drone:'off'},
+    brief:"Your guns are already under Bombardment orders — they will ignore the enemy army entirely, walk to the edge of their range and shell the base. Watch what happens when the enemy HQ reaches 1. It stops. Shelling can flatten a base; it cannot take one. Get a rifleman across the line and finish it, because nothing else in your force ever will.",
+    lesson:"Bombardment and Base Bomber grind an HQ to 1 and stop. They are a clock, not a win condition — ground still has to be taken by somebody standing on it."},
+];
+const INDOC_ALL=INDOC.concat(INDOC_FIELD);
+function indocId(L){ return L.id||L.doctrine; }
+function indocFor(key){ return INDOC_ALL.find(l=>indocId(l)===key)||null; }
+function indocClearedCount(){ return INDOC_ALL.filter(l=>SAVE.indocDone&&SAVE.indocDone[indocId(l)]).length; }
 
 /* Seeded from the last loadout the player actually fought with, so a returning session
    doesn't start by re-picking four dropdowns they already chose last time. SAVE.lastSel is
@@ -4662,9 +4768,19 @@ function newGame(){
      at rank 50 cannot arm them at rank 5. */
   G.groups={};
   for(const gk of GROUP_KEYS){
-    const want=(SAVE.groups&&SAVE.groups[gk])||'off';
-    G.groups[gk]=(want!=='off'&&groupUnlocked(gk)&&groupOpt(gk,want))?want:'off';
+    // a lesson that is ABOUT an order arrives with it already given; otherwise the
+    // player's saved preference, dropped to off if its rank gate is not met
+    const want=(L&&L.groups&&L.groups[gk])||(SAVE.groups&&SAVE.groups[gk])||'off';
+    const lessonSet=!!(L&&L.groups&&L.groups[gk]&&L.groups[gk]!=='off');
+    G.groups[gk]=(want!=='off'&&(lessonSet||groupUnlocked(gk))&&groupOpt(gk,want))?want:'off';
   }
+  /* 🧪 Snapshot the experimental switch for the whole battle. Settings is reachable from
+     the pause menu, so reading SAVE live would let a player flip the rules of a fight they
+     are losing — and would also mean a fight could START permissive and END restrictive. */
+  /* A Field School lesson may force the commitment rules ON so it can teach them — the
+     point of that lesson is to let someone FEEL the rule before deciding whether they want
+     it, and sending them to Settings first is the friction the opt-in exists to avoid. */
+  G.experimental=experimentalOn()||!!(L&&L.experimental);
   G.groupChanges=GROUP_FREE_CHANGES;
   G.stanceChanges=STANCE_FREE_CHANGES;
   G.enemyStance=null; G.enemyGroups=null; G.enemyFire=null;  // earned by the Gauntlet or by Legendary+
@@ -4682,6 +4798,10 @@ function newGame(){
      of it. Blitz and Survival keep it: both are deliberately odd, short-form modes where the
      escalating unlock IS the shape of the run. */
   G.techMode=(kind==='blitz'||kind==='survival');
+  /* A lesson's own whitelist is the authority on what it hands you: a lesson ABOUT
+     Counter-Battery whose card a Rank 5 player cannot see teaches nothing. Same principle
+     as playing a locked doctrine here, which the school has always allowed. */
+  G.rankFree=!!(L&&L.rankFree);
   G.unlocked={};
   for(const key of HOTBAR){
     if(G.ages) G.unlocked[key]=(UNIT_MINAGE[key]<=G.age);
@@ -5031,7 +5151,7 @@ function barrageTick(dt){
 const SMOKE_R=118, SMOKE_DUR=13;
 function trySmoke(lane,x){
   if(iwGaslightBlock())return false;
-  if(!rankGateOk(STRIKES.smoke.rank))return false;
+  if(!strikeRankOk('smoke'))return false;
   if(!strikeReady('smoke'))return false;
   G.strikeCds.smoke=strikeCdMax('smoke');
   if(!G.smokes)G.smokes=[];
@@ -5208,6 +5328,10 @@ const REVENTS={
      turns completely against you should occasionally offer a way back in. */
   orders:{ flag:'evOrders', run(){
     if(!G)return;
+    /* 🧪 Only meaningful while the commitment experiment is on — with it off nothing is
+       being withheld, so handing a change back is a prize for nothing. Fall through to a
+       supply drop instead of firing a no-op event the player will read as broken. */
+    if(!battleExperimental()){ REVENTS.supply.run(); return; }
     G.stanceChanges=(G.stanceChanges||0)+1;
     const arms=!!(G.groups&&GROUP_KEYS.some(groupUnlocked));
     if(arms)G.groupChanges=(G.groupChanges||0)+1;
@@ -7216,7 +7340,7 @@ function buildQuickbar(){
   const qb=document.getElementById('quickbar'); if(!qb)return; qb.innerHTML='';
   for(const type of STRIKE_KEYS){ const s=STRIKES[type];
     if(type==='rods'&&!SAVE.secretDone)continue; // hidden until the secret level is cleared
-    const locked=s.rank&&!rankGateOk(s.rank);
+    const locked=s.rank&&!strikeRankOk(type);   // `type` is the STRIKES id; s.key is the hotkey letter
     const el=document.createElement('div');
     el.className='card'+(locked?' cant':''); el.id='card-'+type; el.style.borderColor=s.col;
     el.innerHTML=`<span class="key">${s.key}</span><div class="glyph" style="color:${s.col}">${locked?'🔒':s.glyph}</div>
@@ -7273,7 +7397,7 @@ function buildHotbar(){
   HOTBAR.forEach((key,i)=>{
     if(!oneDeck && (!tab.units||!tab.units.has(key)))return;
     if(key==='swarm'&&!SAVE.secretDone)return; // hidden until the secret level is cleared
-    if(!unitRankOk(key))return;                // rank-gated units are absent, not teased
+    if(!unitRankOk(key)&&!(G&&G.rankFree))return;  // rank-gated units are absent, not teased — unless a lesson is handing one out
     if(oneDeck && G.allowed.indexOf(key)<0)return;
     if(oneDeck)i=deckIdx.indexOf(key);
     const u=UNITS[key];
@@ -7979,12 +8103,12 @@ function endGame(winner,reason){
   // ── INDOCTRINATION: mark the doctrine's lesson cleared (cosmetic progress; gates nothing) ──
   G.indocResult=null;
   if(G.kind==='indoc'&&G.indoc){
-    const key=G.indoc.doctrine;
+    const key=indocId(G.indoc);
     if(!SAVE.indocDone)SAVE.indocDone={};
     const firstClear=won&&!SAVE.indocDone[key];
     if(won){ SAVE.indocDone[key]=true; if(firstClear)addXP(150); }
     G.indocResult={doctrine:key,name:G.indoc.name,lesson:G.indoc.lesson,won,firstClear,
-      cleared:indocClearedCount(),total:INDOC.length};
+      cleared:indocClearedCount(),total:INDOC_ALL.length};
     if(firstClear&&typeof gcEvent==='function')gcEvent('indoc-clear');
   }
   // ── SECRET LEVEL ("Glitch Front") cleared: unlock the Drone Swarm + Rods from God, badge + bonus XP ──
@@ -9110,11 +9234,16 @@ function launchTimeTrial(id){
 /* ── INDOCTRINATION — a doctrine lesson. Forces the doctrine (bypassing its rank gate on
    purpose), hands both sides a whitelisted roster, and runs on a generous economy. See the
    INDOC table for the design rules these launches have to hold to. ── */
-function launchIndoc(doctrineKey){
-  const L=indocFor(doctrineKey); if(!L)return;
+function launchIndoc(lessonId){
+  const L=indocFor(lessonId); if(!L)return;
   LAUNCH={type:'indoc',indoc:L,doctrine:L.doctrine,diff:L.diff||'recruit',weather:L.weather,
     ecpMul:L.ecpMul||0.6,startCp:L.startCp||80,openEnemy:L.openEnemy||0,
-    allowed:L.allow,enemyAllowed:L.enemyAllow,enemyBias:L.enemyBias||null};
+    allowed:L.allow,enemyAllowed:L.enemyAllow,enemyBias:L.enemyBias||null,
+    /* Field School extras. All three are opt-in per lesson so the nine doctrine lessons
+       are launched byte-identically to how they always were. */
+    rankFree:!!L.rankFree,            // show units the player has not earned yet
+    experimental:!!L.experimental,    // force the commitment rules on for this lesson
+    groups:L.groups||null};           // pre-set standing orders the lesson is about
   if(typeof gcEvent==='function')gcEvent('indoc-start');
   start();
 }
@@ -9578,7 +9707,7 @@ window.addEventListener('keydown',e=>{
   if(k==='r'){G.selCard='recon';showLaneHint();return;}
   if(k==='f'){ if(SAVE.lvl>=3){G.selCard='emp';showLaneHint();} return; }
   // S selects the smoke screen (rank 20)
-  if(k==='s'){ if(rankGateOk(STRIKES.smoke.rank)){G.selCard='smoke';showLaneHint();} return; }
+  if(k==='s'){ if(strikeRankOk('smoke')){G.selCard='smoke';showLaneHint();} return; }
   // G / B select the gunship run & rolling barrage air-support strikes
   if(k==='g'){G.selCard='gunrun';showLaneHint();return;}
   if(k==='b'){G.selCard='barrage';showLaneHint();return;}
@@ -9615,12 +9744,16 @@ function syncAgeUI(){
 function setStance(s){
   if(!G||G.over||!STANCES[s])return false;
   if(G.stance===s)return false;
-  /* Free while the fight has not started. Testing G.prep rather than G.frozen matters:
+  /* 🧪 The one-change budget is an EXPERIMENT (see EXPERIMENTS). With it off, stance is
+     the free toggle it has always been and none of the below runs at all.
+
+     Free while the fight has not started. Testing G.prep rather than G.frozen matters:
      G.frozen is only raised by the first step(), so a stance chosen the instant the battle
      screen opens would otherwise be billed against the live budget. The tutorial is exempt
      outright — it runs with no prep phase at all and its whole job is letting you press the
      buttons to see what they do. */
-  if(!(G.prep>0||G.tutorial)){
+  const budgeted=battleExperimental()&&!(G.prep>0||G.tutorial);
+  if(budgeted){
     if((G.stanceChanges||0)<=0){
       announce('⚑ POSTURE HOLDS','no change of stance left this battle — set it during prep','#ff5a4a');
       return false;
@@ -9629,18 +9762,28 @@ function setStance(s){
   }
   G.stance=s;
   announce(STANCES[s].glyph+' '+STANCES[s].name.toUpperCase()+' STANCE',
-    G.prep>0?'':(G.stanceChanges>0?G.stanceChanges+' change left':'no changes left'),STANCES[s].col);
+    budgeted?(G.stanceChanges>0?G.stanceChanges+' change left':'no changes left'):'',STANCES[s].col);
   syncStanceUI();
   return true;
 }
 function syncStanceUI(){
-  const spent=!!G&&!(G.prep>0)&&(G.stanceChanges||0)<=0;
+  const budgeted=!!G&&battleExperimental();
+  const spent=budgeted&&!(G.prep>0||G.tutorial)&&(G.stanceChanges||0)<=0;
   for(const s in STANCES){
     const b=document.getElementById('stance-'+s); if(!b)continue;
     const on=G&&G.stance===s;
     b.classList.toggle('on',!!on);
     // everything you can no longer pick reads as spent, so the commitment is visible
     b.classList.toggle('spent',spent&&!on);
+  }
+  /* The row label carries the budget. Without it the greyed-out chips are the FIRST time
+     a player learns the rule, which is the wrong moment — they have already spent it. */
+  const lbl=document.querySelector('#stancebar .ctrl-lbl');
+  if(lbl){
+    if(!budgeted||!G){ lbl.textContent='STANCE'; lbl.removeAttribute('title'); }
+    else if(G.prep>0||G.tutorial){ lbl.textContent='STANCE · FREE'; lbl.title='Free to change during prep. One change once the line is live.'; }
+    else { const n=Math.max(0,G.stanceChanges||0);
+      lbl.textContent='STANCE · '+(n?n+' LEFT':'SET'); lbl.title=n?n+' change of stance left this battle':'No change of stance left this battle'; }
   }
 }
 
@@ -9682,6 +9825,7 @@ function toggleGroupPop(gk){
   pop.onclick=e=>e.stopPropagation();
   const render=()=>{
     const mode=(G&&G.groups&&G.groups[gk])||'off';
+    const budgeted=!!G&&battleExperimental()&&!G.tutorial;
     const inPrep=!!(G&&G.prep>0);
     const left=G?(G.groupChanges||0):0;
     if(!groupUnlocked(gk)){
@@ -9695,7 +9839,7 @@ function toggleGroupPop(gk){
       `<div class="gp-d">${desc}</div>${cost?`<div class="gp-c">⚠ ${cost}</div>`:''}</button>`;
     h+=row('off','✕ No standing order','This arm follows the army stance like everything else.','');
     for(const o of gd.opts)h+=row(o.id,o.glyph+' '+o.name,escapeHTML(o.desc),escapeHTML(o.cost));
-    h+=inPrep
+    if(budgeted)h+=inPrep
       ? `<div class="gp-cd" style="color:var(--good)">Free to change during prep — set your whole plan before you begin.</div>`
       : (left>0
         ? `<div class="gp-cd" style="color:var(--warn)">${left} change${left===1?'':'s'} left this battle.</div>`
@@ -9719,11 +9863,13 @@ function setGroupDoctrine(gk,id){
   if(id!=='off'&&!groupOpt(gk,id))return false;
   const cur=(G.groups&&G.groups[gk])||'off';
   if(cur===id)return false;
-  /* Free while the line is still being set; a real commitment once the shooting starts.
+  /* 🧪 Same experiment as stance (see EXPERIMENTS). Off, orders change freely.
+
+     Free while the line is still being set; a real commitment once the shooting starts.
      Tested on G.prep ALONE — G.frozen is only raised by the first simulation tick, so a
      change made in the instant between the battle being created and that tick landing was
      being charged against the player's one live change. */
-  const inPrep=G.prep>0;
+  const inPrep=G.prep>0||G.tutorial||!battleExperimental();
   if(!inPrep){
     if((G.groupChanges||0)<=0){
       announce('📋 ORDERS STAND','no changes left this battle — set them during prep','#ff5a4a');
@@ -9797,7 +9943,18 @@ document.getElementById('btn-stream').onclick=()=>{SAVE.streamOn=!SAVE.streamOn;
 document.getElementById('btn-sound').onclick=()=>{SAVE.sound=!SAVE.sound;persist();refreshTopbar();if(SAVE.sound){actx();beep(600,0.08,'square',0.06);}};
 document.getElementById('btn-narr').onclick=()=>{SAVE.narrator=!SAVE.narrator;persist();refreshTopbar();
   if(SAVE.narrator)say("Iron Marshal, back on the net. Let's win something.",'deadpan',2); else narrStop();};
-document.getElementById('btn-menu').onclick=()=>{ if(G&&!G.over){ if(!confirm('Abandon the current battle and return to menu?'))return; } openMenu(); };
+/* ☰ MENU is also the CLOSE button for whatever is on top of the game.
+
+   It sits in the topbar, which is visible over every panel — so when a panel is open it is
+   the button already under the player's thumb, and reaching for it to get rid of that panel
+   is the obvious move. Previously it ignored the panel entirely and offered to abandon the
+   battle underneath, which is a destructive answer to "close this". Now it closes the top
+   layer first, exactly like Escape, and only acts as Menu once nothing is stacked. */
+document.getElementById('btn-menu').onclick=()=>{
+  if(closeTopLayer())return;
+  if(G&&!G.over){ if(!confirm('Abandon the current battle and return to menu?'))return; }
+  openMenu();
+};
 document.getElementById('btn-settings').onclick=()=>openSettings();
 
 /* ═══ VOICE SETTINGS MODAL — picks one of the browser's own voices. No API, no key. ═══ */
@@ -9934,7 +10091,7 @@ const DEV_CODES={
       SAVE.medals={}; for(const id in MEDALS)SAVE.medals[id]=1;
       SAVE.chestOwned={}; for(const c of CHEST_COSMETICS)SAVE.chestOwned[c.id]=true;
       // doctrine school marked complete
-      SAVE.indocDone={}; for(const l of INDOC)SAVE.indocDone[l.doctrine]=true;
+      SAVE.indocDone={}; for(const l of INDOC_ALL)SAVE.indocDone[indocId(l)]=true;
       SAVE.seenTut=true;
       persist();
       return 'Account maxed — Rank '+MAX_LVL+', secret level cleared, Drone Swarm + Rods from God unlocked, all cosmetics owned.';
@@ -10282,9 +10439,19 @@ function renderSettings(){
     `<div style="font-size:13px;font-weight:800;color:var(--purple);letter-spacing:.5px;margin:6px 2px -2px">🧰 ADVANCED</div>`+
     settingRow('Deck Layout','Build your own hotbar tabs instead of the built-in categories — up to 5 tabs of up to 9 units each. Production stays pinned on the end.',
       `<button class="sbtn" id="set-deck" style="font-size:11px;padding:6px 11px">🗂 ${customTabsValid(SAVE.hbTabs)?'Edit ('+SAVE.hbTabs.length+' custom)':'Customise'}</button>`)+
-    settingRow('Standing Orders','Per-arm orders for artillery, armour and drones that override your stance for those units. Chosen on the battlefield from the ORDERS row above STANCE. Like your stance, they are free to change during prep and cost your single change once the fight is live. They unlock at Rank '+GROUP_DOCTRINES.arty.lvl+', '+GROUP_DOCTRINES.armor.lvl+' and '+GROUP_DOCTRINES.drone.lvl+'.',
+    settingRow('Standing Orders','Per-arm orders for artillery, armour and drones that override your stance for those units. Chosen on the battlefield from the ORDERS row above STANCE. They unlock at Rank '+GROUP_DOCTRINES.arty.lvl+', '+GROUP_DOCTRINES.armor.lvl+' and '+GROUP_DOCTRINES.drone.lvl+'.',
       `<span style="font-size:11px;font-weight:800;color:${GROUP_KEYS.every(groupUnlocked)?'var(--good)':'var(--faint)'};white-space:nowrap">${GROUP_KEYS.filter(groupUnlocked).length}/${GROUP_KEYS.length} unlocked</span>`)+
     settingRow('Cutscenes','Brief cinematic close-ups of the action. This is the master switch — it also silences the cinematic a legendary kill streak earns, which is not a random event and would otherwise still play.',`<button id="set-cutscenes" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evCutscene)}</button>`)+
+    /* 🧪 EXPERIMENTAL sits in its own section, above Random Events, with the master switch
+       FIRST and the individual experiments described underneath it. The framing matters:
+       these change how the game is played, not what is in it, so the copy has to say what
+       turning it on will feel like rather than just name the feature. */
+    `<div style="font-size:13px;font-weight:800;color:var(--cyan);letter-spacing:.5px;margin:6px 2px -2px">🧪 EXPERIMENTAL</div>`+
+    settingRow('🧪 Experimental Mode','<b>Off by default, and meant to be.</b> These are rule changes for players who already know the game — they make it harder and more deliberate, not bigger. Nothing here is needed to see any content, and turning it on or off never touches your progress. A battle reads this switch once, when it starts, so flipping it mid-fight never changes the rules of the fight you are in.',
+      `<button id="set-experimental" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.experimental)}</button>`)+
+    EXPERIMENTS.map(x=>settingRow('· '+x.glyph+' '+x.name,
+      escapeHTML(x.blurb)+' <i style="color:var(--faint)">'+escapeHTML(x.why)+'</i>',
+      `<span style="font-size:11px;font-weight:800;color:${SAVE.experimental?'var(--good)':'var(--faint)'};white-space:nowrap">${SAVE.experimental?'ACTIVE':'off'}</span>`)).join('')+
     `<div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.5px;margin:6px 2px -2px">🎲 RANDOM EVENTS</div>`+
     /* NO LUCK sits ABOVE the individual switches because it overrides all of them. Presenting
        it as just another toggle in the list would invite the reasonable-but-wrong reading that
@@ -10331,6 +10498,12 @@ function renderSettings(){
   bind('set-ev-barr',()=>{ SAVE.evBarrage=!SAVE.evBarrage; persist(); });
   bind('set-ev-def',()=>{ SAVE.evDefector=!SAVE.evDefector; persist(); });
   bind('set-ev-ord',()=>{ SAVE.evOrders=!SAVE.evOrders; persist(); });
+  /* Re-renders (bind already does) so the per-experiment ACTIVE/off pips follow the master
+     switch immediately, and syncs the battlefield row in case Settings was opened mid-fight
+     — the RULES of that fight do not change (G.experimental is a snapshot), but the label
+     must not keep advertising a budget the player just switched off for future battles. */
+  bind('set-experimental',()=>{ SAVE.experimental=!SAVE.experimental; persist();
+    try{ syncStanceUI(); buildGroupBar(); }catch(e){} });
   bind('set-chaos',()=>{ SAVE.chaosMode=!SAVE.chaosMode; persist(); });
   bind('set-gag-chat',()=>{ SAVE.gagChatter=!SAVE.gagChatter; persist(); });
   bind('set-gag-gold',()=>{ SAVE.gagGolden=!SAVE.gagGolden; persist(); });
@@ -10540,27 +10713,41 @@ function openIndoc(){
 }
 function renderIndoc(){
   const el=document.getElementById('indoc-body'); if(!el)return;
-  const done=indocClearedCount();
+  const done=indocClearedCount(), total=INDOC_ALL.length;
   let h=`<div class="road-now"><span class="road-now-badge">🎓</span>`+
-    `<div class="road-now-bar"><i style="width:${Math.round(done/INDOC.length*100)}%"></i></div>`+
-    `<span class="road-now-txt">${done}/${INDOC.length} lessons cleared</span></div>`;
-  if(done===INDOC.length)
-    h+=`<div class="lb-note">Every doctrine studied. You've now actually played all nine — pick the one you liked, not the one that sounded good.</div>`;
+    `<div class="road-now-bar"><i style="width:${Math.round(done/total*100)}%"></i></div>`+
+    `<span class="road-now-txt">${done}/${total} lessons cleared</span></div>`;
+  if(done===total)
+    h+=`<div class="lb-note">Every lesson studied — nine doctrines and the whole field course. You've actually played all of it, which is the only way any of it sticks.</div>`;
   else
-    h+=`<div class="lb-note">These are teaching fights, not tests: <b>easy on purpose</b>, with the roster cut down and the enemy chosen to lose to the doctrine you're being handed. Doctrines you haven't unlocked yet are playable here anyway — that's the point.</div>`;
-  for(const L of INDOC){
-    const d=DOCTRINES[L.doctrine]||{}; const cleared=!!(SAVE.indocDone&&SAVE.indocDone[L.doctrine]);
-    const locked=!SAVE.unlocked.includes(L.doctrine);
+    h+=`<div class="lb-note">These are teaching fights, not tests: <b>easy on purpose</b>, with the roster cut down and the enemy chosen to lose to whatever you're being handed. Anything you haven't unlocked yet is playable here anyway — that's the point.</div>`;
+
+  /* One card renderer, two sections. The DOCTRINE half answers "how should I play?"; the
+     FIELD half answers "what does this button actually do?". They are separated because a
+     player looking for one is not usually looking for the other. */
+  const card=(L)=>{
+    const d=DOCTRINES[L.doctrine]||{};
+    const id=indocId(L), cleared=!!(SAVE.indocDone&&SAVE.indocDone[id]);
+    const sys=!!L.glyph;                       // Field School entries carry their own glyph
+    const locked=!sys&&!SAVE.unlocked.includes(L.doctrine);
     const roster=L.allow.map(k=>UNITS[k]?UNITS[k].glyph:'').join(' ');
-    h+=`<button class="ind-card${cleared?' done':''}" style="--dc:${d.col||'var(--line)'}" data-doc="${escapeHTML(L.doctrine)}">`+
-      `<span class="ind-glyph">${d.glyph||'🎓'}</span>`+
+    const sub=sys
+      ? escapeHTML(d.name||L.doctrine)+' doctrine · <i style="color:var(--faint)">field course</i>'
+      : escapeHTML(d.name||L.doctrine)+(locked?' · <i style="color:var(--faint)">not yet unlocked — playable here</i>':'');
+    return `<button class="ind-card${cleared?' done':''}" style="--dc:${(sys?L.col:d.col)||'var(--line)'}" data-doc="${escapeHTML(id)}">`+
+      `<span class="ind-glyph">${sys?L.glyph:(d.glyph||'🎓')}</span>`+
       `<span class="ind-tx">`+
         `<span class="ind-nm">${escapeHTML(L.name)}</span>`+
-        `<span class="ind-doc">${escapeHTML(d.name||L.doctrine)}${locked?' · <i style="color:var(--faint)">not yet unlocked — playable here</i>':''}</span>`+
+        `<span class="ind-doc">${sub}</span>`+
         `<span class="ind-teaches">${roster} &nbsp;vs&nbsp; ${L.enemyAllow.map(k=>UNITS[k]?UNITS[k].glyph:'').join(' ')} &nbsp;·&nbsp; ${escapeHTML(WEATHERS[L.weather]?WEATHERS[L.weather].name:L.weather)}</span>`+
       `</span>`+
       `<span class="ind-state">${cleared?'✔ Cleared':'▶ Start'}</span></button>`;
-  }
+  };
+  h+=`<div class="ind-sec">🎓 DOCTRINE SCHOOL <span>how to play — one lesson per doctrine</span></div>`;
+  for(const L of INDOC)h+=card(L);
+  h+=`<div class="ind-sec">🛠 FIELD SCHOOL <span>what the newer systems actually do</span></div>`;
+  for(const L of INDOC_FIELD)h+=card(L);
+
   el.innerHTML=h; el.scrollTop=0;
   el.querySelectorAll('.ind-card').forEach(c=>{ c.onclick=()=>launchIndoc(c.dataset.doc); });
 }
@@ -11331,12 +11518,80 @@ document.getElementById('t-chest').onclick=()=>openChestModal();
 document.getElementById('chest-open').onclick=()=>doChestOpen();
 document.getElementById('chest-close').onclick=()=>closeChestModal();
 document.getElementById('chest-modal').addEventListener('click',e=>{ if(e.target.id==='chest-modal')closeChestModal(); });
-// Escape closes the crate overlay. Capture phase so it lands before the battle hotkey handler,
-// which ignores it anyway while a .screen is up — this is purely for keyboard users.
+/* ═══ ONE WAY OUT, AND ONE WAY IN ═══════════════════════════════════════════════
+   Every overlay used to own its own exit: a Close button here, a ◀ Back there, and a
+   couple with neither — the Debug panel in particular could be opened from anywhere and
+   then only left by finding one specific button. That is fine until you are three panels
+   deep on a phone.
+
+   ESCAPE now walks ONE step back up whatever is stacked, in the order things were opened:
+     crate overlay → modal overlay → orders popover → screen → live battle (pause).
+   It never skips a level and never quits a battle, so it is always safe to press.
+
+   The DEV TOOLS get a chord of their own (Ctrl/⌘+Shift+D) that both opens AND
+   closes them, so the panel is one keystroke from anywhere in the game including mid-fight,
+   and one keystroke back out again. ═══════════════════════════════════════════════ */
+/* firstrun is deliberately absent: it is a question the player has to answer, not a panel
+   they wandered into, and dismissing it silently would just make it reappear next launch. */
+const OVERLAY_IDS=['debugmodal','voicemodal','twitchmodal','feedbackmodal'];
+function topOverlay(){
+  for(const id of OVERLAY_IDS){ const el=document.getElementById(id);
+    if(el&&el.classList.contains('show'))return el; }
+  return null;
+}
+function openScreen(){   // the .screen currently showing, if any
+  const els=document.querySelectorAll('.screen');
+  for(const el of els){ if(!el.classList.contains('hidden'))return el; }
+  return null;
+}
+function toggleDevTools(){
+  const el=document.getElementById('debugmodal');
+  if(el&&el.classList.contains('show'))closeDebugModal(); else openDebugModal();
+}
+/* Close exactly one stacked layer. Returns true if there WAS one.
+
+   #menu is itself a .screen but is deliberately never closed here: it is the destination,
+   not a panel, and a Menu button that walked you off the menu would be a trap. */
+function closeTopLayer(){
+  const chest=document.getElementById('chest-modal');
+  if(chest&&!chest.classList.contains('hidden')){ closeChestModal(); return true; }
+  const ov=topOverlay();
+  if(ov){ ov.classList.remove('show'); return true; }
+  if(document.getElementById('grouppop')){ closeGroupPop(); return true; }
+  const scr=openScreen();
+  if(scr&&scr.id!=='menu'){
+    /* Settings opened MID-BATTLE has a real back path of its own (it resumes the fight
+       rather than dumping you at the title), so hand it to the button that knows that. */
+    const back=scr.querySelector('.back-btn');
+    if(back){ back.click(); return true; }
+    showTitle(); return true;
+  }
+  return false;
+}
+/* Escape does the same walk, and when nothing is stacked over a live battle it pauses —
+   which is the one more step back a player expects and is still not destructive. */
+function escapeOneLevel(){
+  if(closeTopLayer())return true;
+  if(G&&!G.over&&!G.attract&&!G.paused&&!G.tutorial){ togglePause(); return true; }
+  return false;
+}
 window.addEventListener('keydown',e=>{
-  if(e.key!=='Escape')return;
-  const m=document.getElementById('chest-modal');
-  if(m&&!m.classList.contains('hidden')){ e.preventDefault(); closeChestModal(); }
+  if(e.key==='Escape'){
+    // never steal Escape from a text field — it is how you abandon an edit
+    const t=e.target;
+    if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;
+    if(escapeOneLevel())e.preventDefault();
+    return;
+  }
+  /* Ctrl/⌘+Shift+D — open AND close the dev tools from anywhere, mid-battle included.
+     NOT backtick: that is already the AI thinking overlay, and a capture-phase handler
+     taking it would have silently killed an existing binding. A modifier chord also cannot
+     be hit by accident by someone mashing the keyboard during a fight. */
+  const t=e.target;
+  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;
+  if((e.ctrlKey||e.metaKey)&&e.shiftKey&&(e.key==='D'||e.key==='d')){
+    e.preventDefault(); toggleDevTools();
+  }
 },true);
 document.getElementById('t-patchnotes').onclick=()=>openPatchNotes();
 document.getElementById('pn-back').onclick=()=>showTitle();
@@ -11566,7 +11821,7 @@ function showTitle(){
                                       : 'one foe that studies you'; } }catch(e){}
   try{ const ind=document.getElementById('t-indoc-sub');
     if(ind){ const d=indocClearedCount();
-      ind.textContent = d===0?'try every doctrine':(d>=INDOC.length?'all 9 lessons cleared':`${d}/${INDOC.length} lessons cleared`); } }catch(e){}
+      ind.textContent = d===0?'doctrines & field systems':(d>=INDOC_ALL.length?`all ${INDOC_ALL.length} lessons cleared`:`${d}/${INDOC_ALL.length} lessons cleared`); } }catch(e){}
   startAttract();
   musicStart('menu');
   if(!SAVE.seenTut){ setTimeout(()=>{ if(!document.getElementById('title').classList.contains('hidden'))

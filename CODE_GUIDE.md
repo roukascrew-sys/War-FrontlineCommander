@@ -818,6 +818,77 @@ properly). `#hud` is **not** a `.screen` — it's the battle itself — so opene
 that need it hidden still say so explicitly. The regression suite checks every
 opener pair leaves exactly one screen visible.
 
+## 🧪 Experimental Mode (v1.22.0)
+
+`SAVE.experimental` is one switch, off by default, that gates rule changes — things that
+alter how the game is *played* rather than what is *in* it. Three rules govern it:
+
+1. **`EXPERIMENTS` is the registry.** One entry per experiment, carrying the copy the
+   Settings screen renders. Adding the next experiment should be a table entry, not another
+   scattered `if(SAVE.something)`.
+2. **Battles read `G.experimental`, menus read `experimentalOn()`.** Use `battleExperimental()`
+   in gameplay code — it returns the battle's snapshot when a battle exists and the live
+   switch otherwise. Reading `SAVE.experimental` directly inside a battle is a bug: Settings
+   is reachable from the pause menu, so a player could change the rules of a fight they were
+   losing, and a battle could begin permissive and end restrictive.
+3. **A lesson can force it on** (`INDOC_FIELD` entries with `experimental:true`), because the
+   lesson teaching a rule has to be able to demonstrate it regardless of the setting. That is
+   the only override; nothing else raises the flag.
+
+An experiment that is off must be **absent, not hidden**. The rule does not run, the UI says
+nothing about it (`syncStanceUI` resets the row label to plain `STANCE`), and anything whose
+only purpose is to relieve the rule — `REVENTS.orders` — falls through to something real
+rather than firing a no-op.
+
+## Field School: system lessons in Indoctrination (v1.22.0)
+
+`INDOC` (nine doctrine lessons) and `INDOC_FIELD` (five system lessons) concatenate into
+`INDOC_ALL`. Everything else keys off `indocId(L)`, which is `L.id || L.doctrine`.
+
+**The nine original lessons must keep `id === doctrine`.** That is what they were already
+keyed by in `SAVE.indocDone`, so existing cleared progress survives; changing one silently
+resets a player's school. There is a regression check asserting exactly this.
+
+Field lessons carry three optional escape hatches, all off for the original nine:
+
+| Field | Effect |
+|---|---|
+| `rankFree` | `G.rankFree` — bypasses `unitRankOk` in the deck, `strikeRankOk` for powers, and `groupUnlocked` for orders |
+| `experimental` | forces the commitment rules on for that lesson |
+| `groups` | the lesson arrives with a standing order already given |
+
+`strikeRankOk(key)` exists because a power's rank gate had **three** call sites — the deck
+card, the hotkey and the ability function itself — and all three have to agree or the card
+lights up and the button does nothing.
+
+The exemptions are scoped to `G`, so they vanish the moment the lesson ends. There is a
+regression check that a Rank 5 player who has just played the Counter-Battery lesson cannot
+see the card in a normal battle.
+
+## Exits: `closeTopLayer()` and `escapeOneLevel()` (v1.22.0)
+
+One stack, walked one level at a time:
+
+```
+crate overlay → modal overlay (OVERLAY_IDS) → orders popover → .screen → (Escape only) pause
+```
+
+- `closeTopLayer()` closes one layer and returns whether there was one. **`#menu` is
+  deliberately excluded** — it is the destination, not a panel, and a Menu button that walked
+  you off the menu would be a trap.
+- `escapeOneLevel()` is `closeTopLayer()` plus a pause fallback over a live battle. Escape
+  must never be destructive, so it pauses rather than quitting.
+- The ☰ Menu button calls `closeTopLayer()` **first** and only offers to abandon the battle
+  when nothing is stacked.
+- `firstrun` is intentionally absent from `OVERLAY_IDS`: it is a question the player has to
+  answer, not a panel they wandered into.
+
+Both the Escape handler and the dev-tools chord (Ctrl/⌘+Shift+D) bail out when the
+event target is an `input`, `textarea` or `contenteditable`. Typing a dev code into the panel
+would otherwise toggle the panel out from under you. The chord deliberately avoids backtick —
+that key is already the AI thinking overlay, and a capture-phase handler taking it would have
+silently killed an existing binding.
+
 ## Commitment budgets: stance & standing orders (v1.21.0)
 
 Stance and standing orders share one model, and it is worth knowing why before touching

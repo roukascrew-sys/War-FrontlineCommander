@@ -8,6 +8,134 @@ engineering detail lives in the patch notes inside the game and in the commit hi
 
 ---
 
+## v1.22.0 — Experimental Mode, Field School, and one way out
+
+This is a build about **restraint**. Last update added a rule that changes how the whole
+game is played. This one takes that rule, measures it honestly, and then puts it behind a
+switch — because a good rule and a good default are not the same thing.
+
+---
+
+### 🧪 Experimental Mode
+
+There is a new **EXPERIMENTAL** section in Settings. It is **off by default**, and it is
+meant to stay that way for most people.
+
+Everything behind it changes how the game is *played* rather than what is *in* it. Nothing
+behind it is needed to see any content, unlock anything, or finish anything. Turning it on
+or off never touches your progress, and you can flip it back the moment you decide you
+don't like it.
+
+**Right now it contains one experiment: ⚑ Doctrine Commitment.**
+
+#### Why it isn't the default
+
+Last build made stance and standing orders one-change-per-battle. Before shipping that as
+the way the game works, I played it properly — six full battles with a commander that
+re-reads the field every two seconds and only acts on a read it has held for six, which is
+roughly how a thoughtful player behaves.
+
+**40 stance changes wanted. 7 granted. 33 refused.**
+
+The budget binds inside the first minute and stays bound for the rest of the fight. That is
+*exactly* the intended feel if you want a posture to mean something — you commit, you live
+with it, and the fight is decided by the plan you brought. It is also *exactly* the wrong
+first experience for someone who is still working out what the three postures even do. Being
+told "no" by a rule you haven't learned yet isn't depth, it's a wall.
+
+So: veterans get the rule, newcomers get the game. Same build.
+
+#### One detail worth calling out
+
+**A battle reads the switch once, when it starts.** Settings is reachable from the pause
+menu, so reading it live would let someone flip the rules of a fight they were losing — and
+would mean a battle could begin permissive and end restrictive. The snapshot makes that
+impossible by construction.
+
+#### With it on
+
+- Stance and orders are **free during prep** — try every combination, cost nothing.
+- **One change of each** once the line is live.
+- The budget is shown **on the row label** (`STANCE · 1 LEFT`) *before* it runs out. Greyed
+  chips shouldn't be the first time you learn a rule exists; by then you've already spent it.
+- The uncommon **Field Reassessment** event hands one of each back.
+- With the switch off, that event now falls through to a supply drop instead of firing a
+  no-op nobody would understand.
+
+---
+
+### 🎓 Field School — five new Indoctrination lessons
+
+Indoctrination goes from **nine lessons to fourteen**.
+
+The original nine teach a **doctrine**: here's a playstyle, here's an enemy it beats. The
+five new ones teach a **system** — each drops you into the one situation where a mechanic
+obviously matters, with the roster cut to just that, and an enemy built to make the point.
+
+| Lesson | Teaches |
+|---|---|
+| ⚑ **One Plan, One Fight** | Doctrine Commitment |
+| 🔧 **Two Kinds Of Repair** | Medic vs Engineer |
+| 🛰 **Answer The Guns** | Counter-Battery |
+| 🌫 **Blind And Pinned** | Smoke + EW Jammer |
+| 💣 **Somebody Has To Walk In** | The HQ floor |
+
+Same rules as the original nine: recruit difficulty, stacked deck, one sentence to leave
+with. Losing here teaches nothing, so they're easy on purpose.
+
+**One Plan, One Fight forces Commitment on for itself**, regardless of your Settings switch.
+The entire point is to let you *feel* the rule before deciding whether you want it — sending
+you to Settings first is the exact friction the opt-in exists to remove. The enemy opens
+with infantry and follows with armour, so the posture that beats the opening is not the
+posture that beats what comes after it. That's the lesson.
+
+**A lesson also hands you the unit or power it's about, even if your rank hasn't earned it.**
+A Counter-Battery lesson whose card a Rank 5 player can't see teaches nothing. This is the
+same rule that has always let you play a locked doctrine in the school — and the exemption
+does not leak: at the same rank, outside the lesson, the unit is still absent and the power
+still refuses to fire.
+
+---
+
+### ⎋ One way out
+
+Every overlay used to own its own exit — a Close button here, a ◀ Back there, and a couple
+with neither. Fine until you're three panels deep on a phone.
+
+**Escape now walks exactly one step back** up whatever is stacked:
+
+> crate overlay → modal → orders popover → screen → pause a live battle
+
+It never skips a level and it never quits a battle, so it is always safe to press. Over a
+live fight with nothing stacked it pauses — one more step back, still not destructive.
+
+**☰ Menu is now also the Close button.** It sits in the topbar above every panel, so when a
+panel is open it's already the button under your thumb. It now closes the top layer first
+and only acts as Menu once nothing is stacked. Previously it ignored the panel entirely and
+offered to abandon the battle underneath, which is a destructive answer to "close this".
+
+The menu screen itself is never treated as a layer, so Menu can't walk you off the menu.
+
+### 🐞 Dev tools on a key
+
+**Ctrl+Shift+D** opens *and* closes the Debug/Dev panel from anywhere, mid-battle included.
+Escape and ☰ Menu close it too. It doesn't fire while you're typing in a field, so entering a
+dev code can't toggle the panel out from under you. Backtick is untouched — that's still the
+AI thinking overlay.
+
+---
+
+### Also in this build
+
+- **The Engineer has a real sprite.** It had no branch of its own and was falling through to
+  the plain infantry body — the same defect the Counter-Battery had last build. It now reads
+  as the Medic's opposite number: same silhouette, tool roll on the back, wrench in hand
+  instead of a cross on the chest.
+- The stance tooltips, the battle hint bar and the tutorial all now say what the commitment
+  rule is, when it applies, and that prep is free.
+
+---
+
 ## v1.21.0 — Decide, then fight
 
 This build is mostly about one idea: **the plan should be a decision, not a stream of
@@ -25,6 +153,9 @@ old fixed prep would have generated is handed to you **up front**. Your opening 
 exactly the size it always was. You just get to think about it.
 
 ### ⚑ One stance. One change of orders.
+
+> **Updated in v1.22.0:** this rule is now **opt-in**, behind Experimental Mode, and off by
+> default. Everything below describes it with the switch turned on.
 
 Stance used to be free and unlimited, which quietly made it a micro channel rather than a
 posture — flick to Skirmish while they push, back to Assault the second they stop. Standing

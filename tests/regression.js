@@ -44,6 +44,7 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
 
 const GROUP_KEYS_LEN_CHECK = o => o && Object.keys(o).length === 3;
 const GROUP_FREE_CHANGES_MIRROR = 1;   // mirrors GROUP_FREE_CHANGES in the game file
+const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the game file
 (async () => {
   const launchOpts = { args: ['--no-sandbox'] };
   const exe = resolveExecutablePath();
@@ -1264,7 +1265,7 @@ const GROUP_FREE_CHANGES_MIRROR = 1;   // mirrors GROUP_FREE_CHANGES in the game
         trials: Object.keys(SAVE.timeTrials).length === CAMPAIGN.length,
         secret: SAVE.secretUnlocked && SAVE.secretDone && SAVE.secretBadgeEarned,
         crates: Object.keys(SAVE.chestOwned).length === CHEST_COSMETICS.length,
-        indoc: Object.keys(SAVE.indocDone).length === INDOC.length,
+        indoc: Object.keys(SAVE.indocDone).length === INDOC_ALL.length,   // doctrine school + field school
         boxCleared: document.getElementById('dbg-code').value === '',
       };
     });
@@ -1272,7 +1273,7 @@ const GROUP_FREE_CHANGES_MIRROR = 1;   // mirrors GROUP_FREE_CHANGES in the game
     ok(code.lvl === code.maxLvl && code.xp === 0, `[dev-code] rank goes to the ceiling with xp zeroed (${code.lvl}/${code.xp})`);
     ok(code.docs === code.allDocs && code.camp && code.trials, '[dev-code] all doctrines unlocked, campaign cleared, every time trial passed');
     ok(code.secret, '[dev-code] the secret level is unlocked AND cleared — this is what gates the Drone Swarm and Rods from God');
-    ok(code.crates && code.indoc, '[dev-code] full crate collection and every doctrine lesson marked cleared');
+    ok(code.crates && code.indoc, '[dev-code] full crate collection and every lesson in the school marked cleared');
     ok(code.boxCleared, '[dev-code] the input clears after a successful apply');
 
     const secretKit = await vp.evaluate(() => {
@@ -1492,20 +1493,30 @@ const GROUP_FREE_CHANGES_MIRROR = 1;   // mirrors GROUP_FREE_CHANGES in the game
     ok(pausePreserve.after.paused && pausePreserve.after.screenUp,
       '[settings] a deliberate pause survives a Settings visit instead of being force-resumed');
 
-    // abandoning via Menu while Settings is open must not strand it on top of the menu screen
+    /* Menu with Settings open. As of 1.22.0 the Menu button is ALSO the close button, so the
+       first press closes Settings (resuming the battle underneath, which is what Settings'
+       own Back does mid-fight) and only the second press abandons. The original guarantee
+       this check was written for still has to hold at the end of that sequence: Settings must
+       never be left rendered on top of the menu screen. */
     const stranding = await xp.evaluate(() => {
       showTitle(); leaveTitle(); LAUNCH = null; sel.mode = 'skirmish'; start(); G.paused = false;
       document.getElementById('btn-settings').click();
       const wasOpen = !document.getElementById('settings').classList.contains('hidden');
       const origConfirm = window.confirm; window.confirm = () => true;
-      document.getElementById('btn-menu').click();
+      document.getElementById('btn-menu').click();          // 1st press: close the panel
+      const afterFirst = { settingsOpen: !document.getElementById('settings').classList.contains('hidden'),
+                           battleAlive: !!G && !G.over };
+      document.getElementById('btn-menu').click();          // 2nd press: abandon
       window.confirm = origConfirm;
-      return { wasOpen, strandedOverMenu: !document.getElementById('settings').classList.contains('hidden'),
+      return { wasOpen, afterFirst,
+               strandedOverMenu: !document.getElementById('settings').classList.contains('hidden'),
                menuVisible: !document.getElementById('menu').classList.contains('hidden') };
     });
     ok(stranding.wasOpen, '[settings] precondition — settings was open before abandoning');
+    ok(!stranding.afterFirst.settingsOpen && stranding.afterFirst.battleAlive,
+      '[settings] the FIRST Menu press closes Settings and leaves the battle running — "close this" must not be answered by destroying the thing underneath');
     ok(!stranding.strandedOverMenu && stranding.menuVisible,
-      '[settings] abandoning via Menu while Settings is open does not strand it over the menu screen');
+      '[settings] the second press abandons, and Settings is never left stranded over the menu screen');
 
     // Settings opened from the TITLE (no live battle) must still behave exactly as before
     const fromTitle = await xp.evaluate(() => {
@@ -2103,12 +2114,18 @@ const GROUP_FREE_CHANGES_MIRROR = 1;   // mirrors GROUP_FREE_CHANGES in the game
     const orders = await gp.evaluate(() => {
       SAVE.debugUnlockAll = false; SAVE.lvl = 5;
       SAVE.groups = { arty: 'off', armor: 'off', drone: 'off' }; persist();
+      /* groupUnlocked() consults the live battle so a Field School lesson can show the order
+         it is teaching. Clear any battle first, or this reads a leftover lesson's exemption
+         as the account's own rank. */
+      openMenu();
       const lockedAt5 = GROUP_KEYS.map(k => groupUnlocked(k));
       SAVE.lvl = 60; persist();
       const openAt60 = GROUP_KEYS.map(k => groupUnlocked(k));
       LAUNCH = null; sel.mode = 'skirmish'; start();
       const defaults = GROUP_KEYS.map(k => G.groups[k]);
-      // orders are now a commitment rather than a cooldown: free in prep, one change once live
+      /* Orders are a commitment rather than a cooldown — but only under Experimental Mode as
+         of 1.22.0, so the snapshot on the live battle has to be raised to exercise it. */
+      G.experimental = true;
       G.prep = 0; G.frozen = false; G.groupChanges = 1;
       const first = setGroupDoctrine('arty', 'battery');
       const second = setGroupDoctrine('armor', 'assault');   // budget spent — must be refused
@@ -2494,7 +2511,10 @@ const GROUP_FREE_CHANGES_MIRROR = 1;   // mirrors GROUP_FREE_CHANGES in the game
        25. v1.21.0 — prep, Legendary+, order commitment, Medic/Engineer.
        ───────────────────────────────────────────────────────────────────────── */
     const v121 = await gp.evaluate(() => {
-      SAVE.lvl = 60; SAVE.seenTut = true; SAVE.debugUnlockAll = true; persist();
+      /* The commitment rules became OPT-IN in 1.22.0 (see EXPERIMENTS). This section is
+         about the rules themselves, so it turns the switch on and restores it at the end —
+         section 26 is what proves the default is off and that off really means absent. */
+      SAVE.lvl = 60; SAVE.seenTut = true; SAVE.debugUnlockAll = true; SAVE.experimental = true; persist();
       const fresh = d => { LAUNCH = null; sel.mode = 'skirmish'; sel.diff = d || 'veteran'; start();
         for (const k in G.unlocked) G.unlocked[k] = true; };
       const o = {};
@@ -2592,6 +2612,7 @@ const GROUP_FREE_CHANGES_MIRROR = 1;   // mirrors GROUP_FREE_CHANGES in the game
       for (let i = 0; i < 200 && m5.alive; i++) step(0.05);
       o.charged = m5.charging === true && m5.x > mx0 + 50;
       o.medicCost = UNITS.medic.cost; o.engCost = UNITS.engineer.cost;
+      SAVE.experimental = false; persist();   // leave the default as we found it
       return o;
     });
     ok(v121.ifvSplash === 6, `[balance] IFV splash rolled back to 6 (was 8)`);
@@ -2644,6 +2665,211 @@ const GROUP_FREE_CHANGES_MIRROR = 1;   // mirrors GROUP_FREE_CHANGES in the game
       '[medic/engineer] with nothing of theirs left in the lane they stop being support and charge in');
     ok(v121.medicCost < 42 && v121.engCost < 42,
       `[medic/engineer] both are cheaper than the single unit they replace (${v121.medicCost} / ${v121.engCost} vs 42)`);
+
+    /* ══ 26. v1.22.0 — EXPERIMENTAL MODE, FIELD SCHOOL, ONE WAY OUT ══
+       The through-line of this section: an OPT-IN rule must be genuinely absent when it is
+       off, genuinely present when it is on, and must never change under a player mid-fight.
+       And a lesson's teaching exemptions must never leak into a real battle. */
+    const v122 = await gp.evaluate(() => {
+      const o = {};
+      o.defaultOff = DEFAULT_SAVE.experimental === false;
+      o.registry = EXPERIMENTS.map(x => x.id);
+
+      // ── OFF: the rule is absent, not merely hidden ──
+      SAVE.lvl = 60; SAVE.debugUnlockAll = true; SAVE.experimental = false;
+      SAVE.groups = { arty: 'off', armor: 'off', drone: 'off' }; persist();
+      LAUNCH = null; sel.mode = 'skirmish'; sel.diff = 'veteran'; start();
+      G.prep = 0; G.frozen = false;
+      o.offSnapshot = G.experimental;
+      o.offStance = [setStance('defend'), setStance('skirmish'), setStance('assault'), setStance('defend')];
+      o.offOrders = [setGroupDoctrine('arty', 'battery'), setGroupDoctrine('arty', 'marching'),
+                     setGroupDoctrine('armor', 'assault'), setGroupDoctrine('armor', 'support')];
+      syncStanceUI();
+      o.offLabel = document.querySelector('#stancebar .ctrl-lbl').textContent;
+      o.offGreyed = ['assault', 'skirmish'].some(k => document.getElementById('stance-' + k).classList.contains('spent'));
+      /* The refund event has nothing to refund with the rule off. Two things must be true:
+         it must NOT hand back a change (that would be a prize for nothing), and it must do
+         something real instead of firing a visible no-op. A supply drop lands a crate in
+         G.drops — it does not add CP or a unit, which is what an earlier version of this
+         check looked for and why it read a working fall-through as a failure. */
+      SAVE.evSupply = true; persist();
+      G.units.length = 0;
+      const drops0 = (G.drops || []).length, budget0 = G.stanceChanges;
+      REVENTS.orders.run();
+      o.offEventNoRefund = G.stanceChanges === budget0;
+      o.offEventDidSomething = (G.drops || []).length > drops0;
+
+      // ── ON: the rule binds ──
+      SAVE.experimental = true; persist();
+      LAUNCH = null; start(); G.prep = 0; G.frozen = false;
+      o.onSnapshot = G.experimental;
+      o.onStance = [setStance('defend'), setStance('skirmish')];
+      o.onOrders = [setGroupDoctrine('arty', 'battery'), setGroupDoctrine('armor', 'assault')];
+      syncStanceUI();
+      o.onLabel = document.querySelector('#stancebar .ctrl-lbl').textContent;
+      o.onGreyed = document.getElementById('stance-assault').classList.contains('spent');
+      // prep is still free with the rule on
+      LAUNCH = null; start();
+      o.onPrepFree = [setStance('defend'), setStance('skirmish'), setStance('assault')];
+      o.onPrepBudget = G.stanceChanges;
+
+      // ── the snapshot: flipping the switch mid-fight must not change THIS fight ──
+      LAUNCH = null; start(); G.prep = 0; G.frozen = false;
+      SAVE.experimental = false; persist();
+      o.snapFirst = setStance('defend'); o.snapSecond = setStance('skirmish');
+      SAVE.experimental = true; persist();
+      LAUNCH = null; start(); G.prep = 0; G.frozen = false;
+      SAVE.experimental = false; persist();   // battle began with it ON
+      o.snapStillBudgeted = setStance('defend') === true && setStance('skirmish') === false;
+      SAVE.experimental = false; persist();
+      return o;
+    });
+    ok(v122.defaultOff, '[experimental] ships OFF — a rule change that alters how the game is played must not be the first thing a new player meets');
+    ok(v122.registry.includes('commit'), `[experimental] the switch is a registry, not a scattered set of ifs (${v122.registry.join(', ')})`);
+    ok(v122.offSnapshot === false && v122.offStance.every(Boolean) && v122.offOrders.every(Boolean),
+      '[experimental off] stance and orders are the free toggles they have always been — the rule is absent, not merely hidden');
+    ok(v122.offLabel === 'STANCE' && !v122.offGreyed,
+      `[experimental off] the battlefield UI says nothing about a budget that does not exist (label "${v122.offLabel}")`);
+    ok(v122.offEventNoRefund && v122.offEventDidSomething,
+      '[experimental off] Field Reassessment hands back nothing (there is nothing being withheld) and falls through to a real supply drop rather than firing a visible no-op');
+    ok(v122.onSnapshot === true && v122.onStance[0] === true && v122.onStance[1] === false,
+      '[experimental on] stance binds to exactly one change once the line is live');
+    ok(v122.onOrders[0] === true && v122.onOrders[1] === false,
+      '[experimental on] standing orders bind to their own single change');
+    ok(v122.onLabel !== 'STANCE' && v122.onGreyed,
+      `[experimental on] the budget is on the row label BEFORE it runs out, so greyed chips are not the first time the rule is explained (label "${v122.onLabel}")`);
+    ok(v122.onPrepFree.every(Boolean) && v122.onPrepBudget === STANCE_FREE_CHANGES_MIRROR,
+      '[experimental on] prep is still free and does not spend the live budget');
+    ok(v122.snapFirst === true && v122.snapSecond === false && v122.snapStillBudgeted,
+      '[experimental] a battle reads the switch ONCE at start — flipping it from the pause menu cannot change the rules of the fight in progress');
+
+    // 26b. FIELD SCHOOL — new lessons, and their exemptions must not leak
+    const school = await gp.evaluate(() => {
+      const o = {};
+      SAVE.lvl = 5; SAVE.debugUnlockAll = false; SAVE.experimental = false;
+      SAVE.indocDone = {}; persist();
+      o.total = INDOC_ALL.length; o.doctrine = INDOC.length; o.field = INDOC_FIELD.length;
+      const ids = INDOC_ALL.map(indocId);
+      o.dupeIds = ids.filter((v, i) => ids.indexOf(v) !== i);
+      // the nine doctrine lessons must keep their old save keys or cleared progress resets
+      o.legacyKeys = INDOC.every(L => indocId(L) === L.doctrine);
+      openIndoc();
+      o.cards = document.querySelectorAll('.ind-card').length;
+      o.sections = document.querySelectorAll('.ind-sec').length;
+
+      // every field lesson launches and arrives configured
+      o.lessons = {};
+      for (const L of INDOC_FIELD) {
+        const id = indocId(L);
+        launchIndoc(id);
+        const deck = [...document.querySelectorAll('#hotbar .card')].map(c => c.id.replace('card-', ''));
+        o.lessons[id] = {
+          kind: G.kind, diff: G.diff,
+          rosterVisible: L.allow.every(k => deck.includes(k)),
+          exp: G.experimental, groups: JSON.stringify(G.groups),
+          hasBrief: !!L.brief, hasLesson: !!L.lesson, recruit: (L.diff || 'recruit') === 'recruit',
+        };
+      }
+      // the commitment lesson forces the rule on despite the setting being off
+      o.commitForces = o.lessons.commit.exp === true && SAVE.experimental === false;
+      // the bombardment lesson arrives with the order it is about, and its chip is not a padlock
+      launchIndoc('floor');
+      const chip = document.getElementById('grp-arty');
+      o.floorOrder = G.groups.arty;
+      o.floorChip = chip ? { armed: chip.classList.contains('armed'), locked: chip.classList.contains('locked') } : null;
+      // rank exemptions: present inside the lesson...
+      launchIndoc('cbat'); G.prep = 0; G.frozen = false; G.cp = 500;
+      o.cbatInLesson = !!document.getElementById('card-cbat') && tryDeploy('cbat', 1) === true;
+      launchIndoc('smoke'); G.prep = 0; G.frozen = false;
+      o.smokeInLesson = trySmoke(1, 600) === true;
+      // ...and ABSENT in a normal battle at the same rank
+      LAUNCH = null; sel.mode = 'skirmish'; start(); G.prep = 0; G.frozen = false;
+      o.cbatOutside = !document.getElementById('card-cbat');
+      o.smokeOutside = trySmoke(1, 600) === false;
+      o.smokeCardLockedOutside = document.getElementById('card-smoke').classList.contains('cant');
+      // clearing records under the lesson's own id
+      launchIndoc('smoke'); G.prep = 0; G.frozen = false; G.hq.R = 0; checkWin();
+      o.clearedUnderId = !!SAVE.indocDone.smoke;
+      SAVE.indocDone = {}; SAVE.lvl = 60; persist();
+      return o;
+    });
+    ok(school.total === school.doctrine + school.field && school.field === 5,
+      `[field school] the school grew from ${school.doctrine} to ${school.total} lessons (${school.field} new)`);
+    ok(school.dupeIds.length === 0 && school.legacyKeys,
+      '[field school] ids are unique AND the nine doctrine lessons keep their original save keys, so existing cleared progress survives the change');
+    ok(school.cards === school.total && school.sections === 2,
+      `[field school] both sections render every lesson (${school.cards} cards in ${school.sections} sections)`);
+    ok(Object.values(school.lessons).every(l => l.kind === 'indoc' && l.recruit && l.hasBrief && l.hasLesson && l.rosterVisible),
+      '[field school] every new lesson runs at recruit, carries a briefing and a one-sentence takeaway, and puts its whole roster on the deck');
+    ok(school.commitForces,
+      '[field school] the commitment lesson forces the rule ON for itself — you feel it before deciding whether you want it, rather than being sent to Settings first');
+    ok(school.floorOrder === 'bombard' && school.floorChip && school.floorChip.armed && !school.floorChip.locked,
+      '[field school] a lesson about an order arrives with that order given and its chip armed rather than padlocked');
+    ok(school.cbatInLesson && school.smokeInLesson,
+      '[field school] a lesson hands you the unit or power it is about even at a rank that has not earned it');
+    ok(school.cbatOutside && school.smokeOutside && school.smokeCardLockedOutside,
+      '[field school] and that exemption does NOT leak — at the same rank outside the lesson, the unit is absent and the power refuses to fire');
+    ok(school.clearedUnderId,
+      '[field school] a cleared lesson records under its own id');
+
+    // 26c. ONE WAY OUT — Escape, the dev-tools key, and Menu-as-close
+    const exits = await gp.evaluate(() => {
+      const o = {};
+      const shown = id => { const e = document.getElementById(id); return !!e && e.classList.contains('show'); };
+      const screenNow = () => { const e = [...document.querySelectorAll('.screen')].find(x => !x.classList.contains('hidden')); return e ? e.id : null; };
+      SAVE.lvl = 60; SAVE.debugUnlockAll = true; persist();
+      showTitle();
+      o.toggleOpens = (toggleDevTools(), shown('debugmodal'));
+      o.toggleCloses = (toggleDevTools(), !shown('debugmodal'));
+      /* Backtick must still belong to the AI overlay. The battle key handler bails out while
+         ANY .screen is visible, so the precondition is reported alongside the result — a bare
+         false here would otherwise be indistinguishable from "a briefing screen was up". */
+      SAVE.seenTut = true; SAVE.modeBriefsSeen = SAVE.modeBriefsSeen || {}; persist();
+      const fr = document.getElementById('firstrun'); if (fr) fr.classList.remove('show');
+      LAUNCH = null; sel.mode = 'skirmish'; start(); G.prep = 0; G.frozen = false;
+      const scrUp = document.querySelector('.screen:not(.hidden)');
+      o.backtickScreenClear = !scrUp;
+      const ai0 = !!SAVE.aiDebug;
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: '`', bubbles: true }));
+      o.backtickStillAiDebug = (!!SAVE.aiDebug !== ai0) && !shown('debugmodal');
+      SAVE.aiDebug = ai0; persist();
+      showTitle();
+      // escape walks one level, never two
+      openDebugModal(); openManual('basics');
+      o.escClosedModalOnly = (escapeOneLevel(), !shown('debugmodal') && screenNow() === 'manual');
+      o.escThenClosedScreen = (escapeOneLevel(), screenNow() !== 'manual');
+      // mid-battle: dev tools reachable, escape closes it, battle intact
+      LAUNCH = null; sel.mode = 'skirmish'; start(); G.prep = 0; G.frozen = false;
+      toggleDevTools();
+      o.battleOpen = shown('debugmodal');
+      escapeOneLevel();
+      o.battleLiveAfter = !!G && !G.over && !shown('debugmodal');
+      // escape with nothing stacked PAUSES rather than quitting — always safe to press
+      o.escPaused = (escapeOneLevel(), !!G && !!G.paused);
+      if (G && G.paused) togglePause();
+      // Menu closes the top layer instead of offering to abandon the fight underneath
+      openDebugModal();
+      document.getElementById('btn-menu').click();
+      o.menuClosedModal = !shown('debugmodal') && !!G && !G.over;
+      // ...and #menu itself is never something Menu closes
+      openMenu();
+      o.menuNotATrap = (closeTopLayer() === false && screenNow() === 'menu');
+      return o;
+    });
+    ok(exits.toggleOpens && exits.toggleCloses,
+      '[exits] one dev-tools chord both opens and closes the panel (Ctrl/⌘+Shift+D)');
+    ok(exits.backtickScreenClear && exits.backtickStillAiDebug,
+      '[exits] the dev-tools chord did NOT take backtick — that key is still the AI thinking overlay, and a capture-phase handler grabbing it would have silently killed an existing binding');
+    ok(exits.escClosedModalOnly && exits.escThenClosedScreen,
+      '[exits] Escape walks exactly ONE level back up the stack, never two');
+    ok(exits.battleOpen && exits.battleLiveAfter,
+      '[exits] the dev tools open mid-battle and closing them leaves the fight running');
+    ok(exits.escPaused,
+      '[exits] Escape over a live battle with nothing stacked PAUSES rather than quitting — it is always safe to press');
+    ok(exits.menuClosedModal,
+      '[exits] ☰ Menu closes the panel on top instead of offering to abandon the battle underneath — a destructive answer to "close this"');
+    ok(exits.menuNotATrap,
+      '[exits] the menu screen is never treated as a layer to close, so Menu can never walk you off the menu');
 
     // the boot-guard check above throws ONE error on purpose to prove a mid-battle fault no
     // longer covers a live match; everything else must still be clean

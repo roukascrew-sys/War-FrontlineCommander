@@ -1,6 +1,6 @@
 # Frontline Commander — Complete Unit & Synergy Tier List
 
-**As of v1.21.0.** Every unit, every commander power, every secret, ranked — plus the combos
+**As of v1.22.0.** Every unit, every commander power, every secret, ranked — plus the combos
 that matter, because in this game a unit's tier is mostly decided by what it's standing next
 to.
 
@@ -344,10 +344,13 @@ Ordered by how likely they are to need a pass. Full detail with fix options in
    mode is players simply fielding neither and the whole support role going unused. If that
    happens, the fix is *radius*, not price: widen `healR` so one of them covers more of the
    line, rather than making them cheap enough to spam.
-2. **One stance and one order change per battle** — the biggest feel change in v1.21.0 and the
-   most likely to need a pass. If the commitment reads as punishing rather than decisive, the
-   dial is the Field Reassessment event's frequency, not the budget itself. Two free changes
-   would put us straight back to micro.
+2. **One stance and one order change per battle** — now **opt-in**, behind Experimental Mode,
+   and off by default as of v1.22.0. Measured over six full battles with a deliberate player:
+   40 changes wanted, 7 granted, 33 refused. That is the right feel for someone who wants a
+   posture to mean something and the wrong default for someone still learning the postures.
+   If it reads as punishing rather than decisive *for the players who opted in*, the dial is
+   the Field Reassessment event's frequency, not the budget itself — two free changes would
+   put us straight back to micro.
 3. **Smoke + Jammer pin** — a *complete* denial effect. I capped it by requiring two pieces
    and by making the smoke symmetrical, but "cannot move and cannot shoot" is the strongest
    crowd control in the game. If it's oppressive, make the pin reduce fire rate by 80% rather

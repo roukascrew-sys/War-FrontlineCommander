@@ -208,6 +208,8 @@ need a live battle running.</p>
   <tr><td><span class="key">Q</span> / <span class="key">W</span> / <span class="key">E</span></td><td>Quick-deploy to top / mid / bottom lane</td></tr>
   <tr><td><span class="key">Z</span> / <span class="key">X</span> / <span class="key">C</span></td><td>Assault / Defend / Skirmish stance</td></tr>
   <tr><td><span class="key">`</span></td><td>Toggle AI thinking overlay</td></tr>
+  <tr><td><span class="key">Ctrl</span>+<span class="key">Shift</span>+<span class="key">D</span></td><td>Open / close the Debug &amp; Dev panel (works mid-battle)</td></tr>
+  <tr><td><span class="key">Esc</span></td><td>Close one layer: overlay &rarr; modal &rarr; popover &rarr; screen &rarr; pause</td></tr>
   <tr><td><span class="key">Space</span></td><td>Pause</td></tr>
 </table>
 </div>
@@ -303,7 +305,45 @@ locked. Revisit once the backend can validate progress server-side (see <code>do
 const p=parseSaveCode(c); console.log(p.ok, p.summary, p.notes);
 applySaveCode(p);</code></pre>
 
-<h2><span class="n">08</span>Commitment budgets &amp; support units (v1.21.0)</h2>
+<h2><span class="n">08</span>Getting in and out (v1.22.0)</h2>
+<ul>
+  <li><strong>Ctrl+Shift+D</strong> opens AND closes this panel from anywhere, mid-battle included. Not backtick &mdash; that is still the AI thinking overlay.
+      <code>toggleDevTools()</code> is the entry point if you want it on a button.</li>
+  <li><strong>Esc</strong> walks one level back up the stack: crate overlay &rarr; modal &rarr; orders popover
+      &rarr; screen &rarr; pause. It never quits a battle. <code>escapeOneLevel()</code> / <code>closeTopLayer()</code>
+      both return a boolean for whether there was a layer to close.</li>
+  <li><strong>&#9776; Menu</strong> calls <code>closeTopLayer()</code> first, so during capture it closes the panel
+      rather than prompting to abandon the fight underneath.</li>
+  <li>Neither hotkey fires while focus is in an <code>input</code>/<code>textarea</code> — that is why typing an
+      access code into the box above does not toggle the panel shut.</li>
+</ul>
+
+<h2><span class="n">09</span>Experimental Mode (v1.22.0)</h2>
+<p class="muted">One switch, <code>SAVE.experimental</code>, OFF by default. It gates rule changes rather than content.</p>
+<ul>
+  <li><code>EXPERIMENTS</code> is the registry the Settings screen renders from. Add an entry, not another
+      scattered <code>if</code>.</li>
+  <li>Gameplay code must call <strong><code>battleExperimental()</code></strong>, never <code>SAVE.experimental</code>.
+      A battle snapshots the switch into <code>G.experimental</code> at start, so flipping it from the pause
+      menu cannot change the rules of the fight in progress. To demo the ON behaviour in a live fight,
+      set <code>G.experimental=true</code> directly.</li>
+  <li>With it OFF the rule is <em>absent</em>, not hidden: stance and orders change freely, the STANCE row
+      label stays plain, and <code>REVENTS.orders</code> falls through to a supply drop.</li>
+</ul>
+
+<h2><span class="n">10</span>Field School lessons (v1.22.0)</h2>
+<ul>
+  <li><code>INDOC</code> (9 doctrine) + <code>INDOC_FIELD</code> (5 system) = <code>INDOC_ALL</code>. Everything keys off
+      <code>indocId(L)</code>, which is <code>L.id || L.doctrine</code>.</li>
+  <li><strong>Never change an existing lesson&rsquo;s id</strong> — it is the <code>SAVE.indocDone</code> key, and the nine
+      originals must keep <code>id === doctrine</code> or every player&rsquo;s cleared school resets.</li>
+  <li><code>launchIndoc(id)</code> drives them. <code>rankFree</code> lends the unit/power the lesson is about,
+      <code>experimental</code> forces the commitment rules on, <code>groups</code> pre-arms a standing order.</li>
+  <li>All three live on <code>G</code>, so they end with the lesson. There is a regression check that they do
+      not leak into a normal battle at the same rank.</li>
+</ul>
+
+<h2><span class="n">11</span>Commitment budgets &amp; support units (v1.21.0)</h2>
 <p class="muted">Two systems that are easy to break from the console without noticing.</p>
 <ul>
   <li><strong>Stance and orders are one-change-per-battle.</strong> <code>G.stanceChanges</code> and
@@ -327,14 +367,14 @@ applySaveCode(p);</code></pre>
 during it — the equivalent income is granted up front via <code>PREP_GRANT_SECS</code>. If you are
 measuring economy, measure from the first live tick, not from <code>start()</code>.</p>
 
-<h2><span class="n">09</span>Testing</h2>
+<h2><span class="n">12</span>Testing</h2>
 <ol>
   <li><code>python3 -m http.server 8080</code></li>
   <li><code>node tests/regression.js</code> — exits 0 on pass</li>
 </ol>
 <p class="muted">Override the target with <code>PORT=</code> or <code>BASE_URL=</code>.</p>
 
-<h2><span class="n">10</span>Future tools — add here as they land</h2>
+<h2><span class="n">13</span>Future tools — add here as they land</h2>
 <ul>
   <li><span class="tag planned">planned</span> Global leaderboard admin / score invalidation (needs the backend)</li>
   <li><span class="tag planned">planned</span> Deterministic seed override for reproducible capture runs</li>
@@ -343,7 +383,7 @@ measuring economy, measure from the first live tick, not from <code>start()</cod
 </ul>
 
 <footer>
-  Frontline Commander — internal reference. Last updated for <strong>v1.21.0</strong>.<br>
+  Frontline Commander — internal reference. Last updated for <strong>v1.22.0</strong>.<br>
   Keep this current: a stale tools file is worse than none, because you'll trust it.
 </footer>
 
