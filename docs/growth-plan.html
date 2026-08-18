@@ -1,0 +1,608 @@
+<title>The Zero-Budget Front</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap">
+
+<style>
+:root{
+  --paper:#E9ECF1; --surface:#FFFFFF; --sunk:#DFE4EC;
+  --ink:#12171F; --body:#2A323E; --muted:#586274; --faint:#858E9C;
+  --rule:#C4CBD6; --hair:#D8DDE6;
+  --accent:#8C6210; --accent-soft:#F3E7C9; --accent-line:#C3A04A;
+  --good:#1B6845; --good-soft:#DCEBE2;
+  --warn:#8F5413; --warn-soft:#F6E8D6;
+  --crit:#962C24; --crit-soft:#F7DFDC;
+  --sim:#2C4A6E; --sim-soft:#DEE6F1;
+  --measure:64ch;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E121A; --surface:#161C26; --sunk:#0A0D13;
+    --ink:#EEF2F8; --body:#C4CCD9; --muted:#8B95A5; --faint:#69737F;
+    --rule:#293241; --hair:#1F2733;
+    --accent:#E0B75A; --accent-soft:#2C2413; --accent-line:#7A6224;
+    --good:#5BC98E; --good-soft:#12251C;
+    --warn:#E0A05A; --warn-soft:#2A1E12;
+    --crit:#E8776B; --crit-soft:#2B1614;
+    --sim:#8BB0DC; --sim-soft:#141D28;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E121A; --surface:#161C26; --sunk:#0A0D13;
+  --ink:#EEF2F8; --body:#C4CCD9; --muted:#8B95A5; --faint:#69737F;
+  --rule:#293241; --hair:#1F2733;
+  --accent:#E0B75A; --accent-soft:#2C2413; --accent-line:#7A6224;
+  --good:#5BC98E; --good-soft:#12251C;
+  --warn:#E0A05A; --warn-soft:#2A1E12;
+  --crit:#E8776B; --crit-soft:#2B1614;
+  --sim:#8BB0DC; --sim-soft:#141D28;
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--paper); color:var(--body);
+  font-family:"Newsreader",Georgia,"Times New Roman",serif;
+  font-size:17.5px; line-height:1.62; font-optical-sizing:auto;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px; margin:0 auto; padding:0 22px 120px;}
+
+/* ---------- masthead ---------- */
+.mast{padding:52px 0 26px; border-bottom:2px solid var(--ink);}
+.eyebrow{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; font-weight:500;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--muted);
+  display:flex; flex-wrap:wrap; gap:6px 18px; margin-bottom:20px;
+}
+.eyebrow b{color:var(--accent); font-weight:600;}
+h1{
+  font-family:"Archivo",system-ui,sans-serif; font-weight:700;
+  font-size:clamp(34px,6vw,60px); line-height:1.02; letter-spacing:-.022em;
+  color:var(--ink); margin:0 0 16px; text-wrap:balance; max-width:16ch;
+}
+.standfirst{
+  font-size:clamp(18px,2.2vw,21px); line-height:1.5; color:var(--muted);
+  max-width:56ch; margin:0; font-style:italic;
+}
+
+/* ---------- section scaffolding ---------- */
+section{padding:44px 0 8px; border-bottom:1px solid var(--hair);}
+section:last-of-type{border-bottom:none;}
+.sec-head{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; font-weight:600;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--accent);
+  margin:0 0 10px;
+}
+h2{
+  font-family:"Archivo",system-ui,sans-serif; font-weight:600;
+  font-size:clamp(24px,3.4vw,34px); line-height:1.12; letter-spacing:-.015em;
+  color:var(--ink); margin:0 0 18px; text-wrap:balance; max-width:24ch;
+}
+h3{
+  font-family:"Archivo",system-ui,sans-serif; font-weight:600;
+  font-size:19px; line-height:1.3; color:var(--ink);
+  margin:34px 0 10px; text-wrap:balance;
+}
+h4{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-weight:600;
+  font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);
+  margin:26px 0 8px;
+}
+p{margin:0 0 15px; max-width:var(--measure);}
+ul,ol{margin:0 0 15px; padding-left:20px; max-width:var(--measure);}
+li{margin-bottom:7px;}
+strong{color:var(--ink); font-weight:600;}
+em{font-style:italic;}
+a{color:var(--accent); text-underline-offset:2px;}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+code{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.86em;
+  background:var(--sunk); padding:1px 5px; border-radius:3px; color:var(--ink);
+}
+
+/* ---------- two-column body + margin rail ---------- */
+.cols{display:grid; grid-template-columns:minmax(0,1fr) 250px; gap:44px; align-items:start;}
+@media (max-width:900px){ .cols{grid-template-columns:1fr; gap:20px;} }
+.rail{
+  position:sticky; top:22px;
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px; line-height:1.5;
+}
+@media (max-width:900px){ .rail{position:static;} }
+.stat{
+  border-left:3px solid var(--accent-line); padding:9px 0 9px 13px; margin-bottom:16px;
+}
+.stat .n{
+  display:block; font-family:"Archivo",system-ui,sans-serif; font-weight:700;
+  font-size:29px; line-height:1; color:var(--ink); letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;
+}
+.stat .l{display:block; color:var(--muted); margin-top:6px;}
+
+/* ---------- callouts ---------- */
+.note{
+  border:1px solid var(--rule); border-left:4px solid var(--accent-line);
+  background:var(--surface); padding:16px 18px; margin:20px 0; max-width:var(--measure);
+  border-radius:2px;
+}
+.note.warn{border-left-color:var(--warn); background:var(--warn-soft);}
+.note.crit{border-left-color:var(--crit); background:var(--crit-soft);}
+.note.good{border-left-color:var(--good); background:var(--good-soft);}
+.note.sim{border-left-color:var(--sim); background:var(--sim-soft);}
+.note p:last-child{margin-bottom:0;}
+.note .tag{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase; display:block; margin-bottom:7px;
+}
+.note.warn .tag{color:var(--warn);} .note.crit .tag{color:var(--crit);}
+.note.good .tag{color:var(--good);} .note.sim .tag{color:var(--sim);}
+.note .tag{color:var(--accent);}
+
+/* ---------- data ---------- */
+.scroll{overflow-x:auto; margin:20px 0; border:1px solid var(--rule); border-radius:2px; background:var(--surface);}
+table{border-collapse:collapse; width:100%; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12.5px;}
+th,td{padding:9px 13px; text-align:left; border-bottom:1px solid var(--hair); vertical-align:top;}
+th{
+  font-weight:600; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); background:var(--sunk); border-bottom:1px solid var(--rule);
+  white-space:nowrap;
+}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap;}
+tbody tr:last-child td{border-bottom:none;}
+tr.hi td{background:var(--accent-soft);}
+tr.hi td:first-child{box-shadow:inset 3px 0 0 var(--accent-line);}
+
+pre{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px; line-height:1.55;
+  background:var(--sunk); color:var(--ink); border:1px solid var(--rule);
+  padding:15px 17px; overflow-x:auto; margin:20px 0; border-radius:2px;
+  font-variant-numeric:tabular-nums;
+}
+
+/* ---------- phases ---------- */
+.phase{
+  border:1px solid var(--rule); background:var(--surface); border-radius:2px;
+  padding:20px 22px; margin:16px 0;
+}
+.phase-top{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:6px;}
+.phase-n{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; font-weight:600;
+  letter-spacing:.14em; color:var(--surface); background:var(--ink);
+  padding:3px 8px; border-radius:2px;
+}
+.phase-t{font-family:"Archivo",system-ui,sans-serif; font-weight:600; font-size:20px; color:var(--ink);}
+.phase-h{
+  margin-left:auto; font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:11.5px; color:var(--muted); white-space:nowrap;
+}
+.phase ul{max-width:none;}
+
+/* ---------- experiments ---------- */
+.xp{border-top:1px solid var(--hair); padding:18px 0;}
+.xp:first-of-type{border-top:1px solid var(--rule);}
+.xp-top{display:flex; align-items:baseline; gap:11px; flex-wrap:wrap; margin-bottom:7px;}
+.xp-t{font-family:"Archivo",system-ui,sans-serif; font-weight:600; font-size:17.5px; color:var(--ink);}
+.chip{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10px; font-weight:600;
+  letter-spacing:.1em; text-transform:uppercase; padding:3px 7px; border-radius:2px;
+  border:1px solid currentColor; white-space:nowrap;
+}
+.c-hi{color:var(--good);} .c-mid{color:var(--warn);} .c-odd{color:var(--sim);} .c-risk{color:var(--crit);}
+.xp p{margin-bottom:9px;}
+.xp .do{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px;
+  color:var(--muted); max-width:var(--measure);
+}
+.xp .do b{color:var(--ink); font-weight:600;}
+
+/* ---------- prompt blocks ---------- */
+.prompt{
+  border:1px dashed var(--accent-line); background:var(--accent-soft);
+  padding:15px 17px; margin:14px 0; border-radius:2px;
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px; line-height:1.6;
+  color:var(--ink); white-space:pre-wrap; overflow-x:auto;
+}
+.tool{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; font-weight:600;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:22px 0 6px;
+}
+footer{
+  margin-top:56px; padding-top:22px; border-top:2px solid var(--ink);
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11.5px;
+  color:var(--muted); line-height:1.7;
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important;}}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow">
+    <span>Frontline Commander</span>
+    <span>Growth plan</span>
+    <span><b>Budget $0</b></span>
+    <span>Supersedes GTM-01 &amp; 2026-FLC-01</span>
+  </div>
+  <h1>The Zero-Budget Front</h1>
+  <p class="standfirst">Two previous plans bet everything on Steam and Twitch. Neither shipped. This one starts from the measured funnel, prices every move in hours, and tells you which work to refuse.</p>
+</header>
+
+<section>
+  <div class="sec-head">Bottom line</div>
+  <div class="cols">
+    <div>
+      <h2>You cannot currently receive money. Fix that before anything else.</h2>
+      <p>The only string matching <code>donate</code> anywhere in the 12,000-line codebase is a <em>fake donation-alert gag</em> — a joke that flashes "viewer donated $5" to distract the streamer. There is no Ko-fi link, no pay-what-you-want, no store, no payment path of any kind.</p>
+      <p>So the honest statement of the problem is not "profits are low". It is that <strong>revenue is structurally zero and would remain zero at any traffic level.</strong> A million plays a month would still produce nothing. Everything else in this document is downstream of that.</p>
+      <p>The second finding is that promotion is currently the <em>wrong work</em>. Against the measured funnel, six hours spent on the itch.io page returns about <strong>134 new players per hour</strong>. Twenty hours spent doubling your traffic returns about <strong>14 per hour</strong>. You are pouring water into a bucket with a measured, known hole in it.</p>
+      <p>The third is that the two existing plans describe a marketing department. You are one person. Every action below is priced in hours and can be done alone.</p>
+    </div>
+    <aside class="rail">
+      <div class="stat"><span class="n">$0</span><span class="l">Revenue ceiling today, at any traffic</span></div>
+      <div class="stat"><span class="n">10&times;</span><span class="l">Conversion work vs promotion work, per hour</span></div>
+      <div class="stat"><span class="n">127</span><span class="l">Real page visits measured. Plan for this scale, not a launch</span></div>
+    </aside>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">Diagnosis</div>
+  <h2>Why the last two plans produced nothing</h2>
+  <p>This is not a criticism of the writing — both documents are well argued. It is a structural diagnosis, because repeating the structure will repeat the result.</p>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th>What the plans assumed</th><th>Actual state</th><th>Consequence</th></tr></thead>
+    <tbody>
+      <tr><td>A Steam page as the hub every link returns to</td><td>No Steam page. $100 + ~35h to make one</td><td>Every funnel diagram terminates at a page that does not exist</td></tr>
+      <tr><td>"20 mid-size Twitch streamers"</td><td>Solo dev, no press kit, no track record</td><td>Cold outreach at ~2&ndash;7% reply, unbounded hours</td></tr>
+      <tr><td>1 short-form clip per day</td><td>~1.5h each &rarr; 45h/month</td><td>Exceeds a realistic solo marketing budget twofold</td></tr>
+      <tr><td>Battle pass, seasons, cosmetic IAP</td><td>No backend, no payments</td><td>Revenue plan with no collection mechanism</td></tr>
+      <tr><td>KPI: wishlists</td><td>Nothing to wishlist</td><td>The headline metric is unmeasurable</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>The common thread: <strong>both plans front-load the most expensive, most competitive, least certain channel</strong> — a paid storefront launch amplified by creators — and treat the thing you actually have as a demo for it. But the thing you actually have is unusual and valuable on its own terms: a self-contained, zero-install, mobile-capable HTML5 strategy game in a single file.</p>
+  <p>That shape has its own distribution economy, and neither document mentions it once.</p>
+</section>
+
+<section>
+  <div class="sec-head">Evidence</div>
+  <div class="cols">
+    <div>
+      <h2>Four simulations, and where they disagree with intuition</h2>
+      <p>The brief was that sticking to one path has not worked. That is testable rather than merely motivational, so I tested it. All four models live in <code>sim/</code> and are runnable and tunable.</p>
+
+      <div class="note warn">
+        <span class="tag">Read this before the numbers</span>
+        <p>Every rate below is an <strong>assumption</strong>, not a measurement, and they are set deliberately pessimistic. Absolute values are close to meaningless. What survives across a wide sweep of the assumptions is the <em>ranking</em>, and that is the only thing you should act on.</p>
+      </div>
+
+      <h3>1. "Diversify everything" is wrong</h3>
+      <p>Twenty thousand simulated dev-lifetimes, six months each, twelve attempts a month, spread over <em>k</em> channels. Outcomes are heavy-tailed, as real marketing outcomes are.</p>
+<pre> channels    median       mean     P(flop)  P(breakout)
+        1     3,970      7,728       24.5%         1.3%
+        2     4,498      7,371       20.6%         1.2%
+        3     4,388      7,006       19.3%         1.1%
+        5     3,954      6,600       19.1%         1.0%
+        8     3,599      6,028       20.2%         0.7%</pre>
+      <p>Spreading wide <em>lowers your risk of total failure</em> — but it also flattens the tail that produces a breakout. The best median is <strong>k=2</strong>, and the effect is modest. Under a much stronger learning curve, k=1 wins outright.</p>
+      <p>So the honest answer to "diversify" is: <strong>run two or three channels seriously.</strong> Not one. Not eight. This model treats every attempt as costing the same hour, though — which is the assumption that turns out to be doing all the damage.</p>
+
+      <h3>2. The real split is not channels. It is whether the work keeps paying.</h3>
+      <p>Re-run with effort as the currency and a distinction between <em>decaying</em> actions (a Reddit post, a TikTok — dead in 48 hours) and <em>residual</em> ones (a portal listing, a directory entry, an evergreen video — placed once, trickles forever).</p>
+<pre>strategy                            visits/yr   day 365
+ALL-IN reddit ("the same path")        27,461         0
+ALL-IN short video                     58,387         0
+Steam-style push (video+DM+devlog)     61,669         1
+ALL-IN residual (portals/tags/wiki)   684,509     3,275
+BARBELL 60 residual / 40 spiky        423,992     1,919</pre>
+      <div class="note sim">
+        <span class="tag">Honest caveat</span>
+        <p>This result is partly <em>built into</em> the assumption that residual placements never decay. What the model genuinely adds is the magnitude, and the burnout column: stop all marketing at month six, and every spiky strategy retains <strong>0%</strong> of its daily traffic while residual strategies retain <strong>~46%</strong>.</p>
+      </div>
+
+      <h3>3. Residual work is a finite inventory, so order matters</h3>
+      <p>The previous model's real lie was letting you spend on residual forever. There are only so many portals and directories in the world. Priced honestly, the whole inventory is <strong>44 hours of work, total, ever</strong> — about two months at a realistic pace. After that it is exhausted and you are on spiky channels whether you like it or not.</p>
+<pre>order of work                visits/yr   day 365
+residual FIRST                  35,185        31
+blend 50/50                     30,214         9
+spiky first, residual later     28,352        32</pre>
+      <p>Residual-first wins, but modestly. The reason to do it first is not the 24% traffic edge — it is that those 44 hours are the only marketing work you will ever do <em>once</em>.</p>
+
+      <h3>4. The finding that should change your week</h3>
+      <p>Against the measured funnel — 127 visits, 32 loads, 17 tutorial starts, 7 first battles — what does one hour buy?</p>
+      <div class="scroll">
+      <table>
+        <thead><tr><th>Intervention</th><th class="num">Hours</th><th class="num">Players</th><th class="num">Per hour</th></tr></thead>
+        <tbody>
+          <tr><td>Do nothing</td><td class="num">&mdash;</td><td class="num">276</td><td class="num">&mdash;</td></tr>
+          <tr><td>itch page: gif first, "no download" line</td><td class="num">4</td><td class="num">438</td><td class="num">40</td></tr>
+          <tr><td>itch page + mobile embed + tags</td><td class="num">6</td><td class="num">525</td><td class="num">42</td></tr>
+          <tr class="hi"><td>Page <em>and</em> on-ramp together</td><td class="num">6</td><td class="num">1,080</td><td class="num">134</td></tr>
+          <tr><td>Double your traffic, page left broken</td><td class="num">20</td><td class="num">551</td><td class="num">14</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p><strong>Twenty hours of hard promotional work, with the page as it is, produces fewer players than six hours of page work.</strong> That is the whole argument for sequencing, and it is the single most actionable line in this document.</p>
+    </div>
+    <aside class="rail">
+      <div class="stat"><span class="n">k=2</span><span class="l">Optimal channel count by median. Not one, not eight</span></div>
+      <div class="stat"><span class="n">0%</span><span class="l">Of spiky-channel traffic survives six months of silence</span></div>
+      <div class="stat"><span class="n">44h</span><span class="l">The entire residual inventory. Then it is gone</span></div>
+      <div class="stat"><span class="n">134</span><span class="l">Players per hour from page + on-ramp work</span></div>
+    </aside>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">The plan</div>
+  <h2>Four phases, priced in hours</h2>
+  <p>Assumes roughly 20 marketing hours a month alongside development. Do not start a phase before the one above it is finished — the sequencing <em>is</em> the strategy.</p>
+
+  <div class="phase">
+    <div class="phase-top"><span class="phase-n">PHASE 0</span><span class="phase-t">Make money collectable, and stop the leak</span><span class="phase-h">~11 hours &middot; week 1</span></div>
+    <p>Nothing here is promotion. All of it multiplies every future hour.</p>
+    <ul>
+      <li><strong>Ko-fi account + link</strong> (0.5h). Free, no platform cut on one-off tips. Put it on the itch page, in the Discord, and in the game's existing community card.</li>
+      <li><strong>Turn on itch.io "pay what you want" with a $0 minimum</strong> (0.5h). Costs nothing, changes nothing for the player, and is the single highest-conversion donation surface you have because it sits at the moment of intent.</li>
+      <li><strong>Rebuild the itch page</strong> (4h) — animated GIF as the <em>first</em> screenshot, "plays in your browser, no download" as the opening line, embed 1280&times;720 with Mobile Friendly and Fullscreen ticked, and the full tag set.</li>
+      <li><strong>An in-game support surface</strong> (2h, dev work). The community card system already exists; a second card after a Gauntlet clear or a campaign win is the natural moment to ask.</li>
+      <li><strong>A share/brag loop</strong> (4h, dev work). After a Gauntlet clear, offer a one-tap copyable line: <em>"I beat ASCENDANT on attempt 6. The AI had adapted to my drone rush."</em> This is the only free viral mechanism you have and the Gauntlet's memory makes it genuinely unusual.</li>
+    </ul>
+  </div>
+
+  <div class="phase">
+    <div class="phase-top"><span class="phase-n">PHASE 1</span><span class="phase-t">Spend the residual inventory</span><span class="phase-h">~44 hours &middot; months 1&ndash;2</span></div>
+    <p>Work you do once that keeps returning traffic. This is the only such work that exists, so protect it from being crowded out by anything spiky.</p>
+    <ul>
+      <li><strong>HTML5 portal submissions</strong> (14h) — the highest-value item in the entire document, and absent from both prior plans. See the warning below before you start.</li>
+      <li><strong>Web-game directories and wikis</strong> (7h) &mdash; ~15 of them.</li>
+      <li><strong>itch devlogs</strong> (6h) &mdash; you already write these; they surface in itch's own feeds, so publish them <em>there</em> rather than only in the repo.</li>
+      <li><strong>Evergreen video</strong> (9h) &mdash; not clips. A "how to beat the Gauntlet" or full longplay that ranks for a search term and keeps ranking.</li>
+      <li><strong>Discord server listings</strong> (4h) &mdash; ~8 directories.</li>
+      <li><strong>Speedrun.com submission</strong> (2h) &mdash; free, permanent, and it recruits other people to make content about your game for you.</li>
+      <li><strong>Internet Archive upload</strong> (2h) &mdash; free permanent hosting for a self-contained HTML file, and it is indexed.</li>
+    </ul>
+  </div>
+
+  <div class="phase">
+    <div class="phase-top"><span class="phase-n">PHASE 2</span><span class="phase-t">Two spiky channels, run properly</span><span class="phase-h">20h/month &middot; months 3&ndash;6</span></div>
+    <p>The simulation says two or three, and that specialising raises your hit rate. Pick two and stay on them long enough to get good.</p>
+    <ul>
+      <li><strong>Recommended pair: niche Reddit + short-form video.</strong> Reddit because <code>r/WebGames</code>, <code>r/incremental_games</code>, <code>r/BrowserGames</code> and <code>r/playmygame</code> are small, forgiving, and directly on-target for a zero-install game. Short-form because it has the heaviest tail available to you &mdash; it is the only channel here with a realistic path to a breakout.</li>
+      <li><strong>Not streamer DMs.</strong> Lowest hit rate, unbounded hours, and it needs the social proof you do not have yet. Revisit at Phase 3 with a real player count to open on.</li>
+      <li>Post in US evening hours &mdash; 62% of measured traffic is US.</li>
+    </ul>
+  </div>
+
+  <div class="phase">
+    <div class="phase-top"><span class="phase-n">PHASE 3</span><span class="phase-t">Only now, consider spending money</span><span class="phase-h">gated &middot; month 6+</span></div>
+    <p>See the Steam section below for the trigger conditions. Do not pass this gate on enthusiasm.</p>
+  </div>
+
+  <div class="note crit">
+    <span class="tag">Engineering and security warning &mdash; portals</span>
+    <p>Most HTML5 portals that pay revenue share require <strong>their own advertising SDK</strong>, loaded from their domain. Your game currently ships a strict Content-Security-Policy that permits no external scripts at all, and that policy is deliberate — it is the thing that makes a single-file game safe to embed anywhere.</p>
+    <p>Adding a portal SDK means loosening the CSP for that build. <strong>Do this as a separate build target, never in the itch build.</strong> Keep the clean, no-external-scripts version as the one you distribute yourself. Portals that accept a submission with no SDK at all are strictly preferable; submit to those first and treat SDK integration as a decision you make once, with a specific partner, for a specific revenue share.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">Experiments</div>
+  <div class="cols">
+    <div>
+      <h2>Twelve fringe moves, ranked by strangeness</h2>
+      <p>The brief asked for methods outside the usual path. These are ordered from "unusual but sound" to "genuinely odd". Each carries an effort chip and a kill criterion, because an experiment without a stopping rule is just a hobby.</p>
+
+      <div class="xp">
+        <div class="xp-top"><span class="xp-t">The school Chromebook front</span><span class="chip c-hi">Highest value</span></div>
+        <p><strong>13% of your measured traffic is ChromeOS.</strong> That is not a browser preference; that is school-managed hardware. Combined with 20% iOS, a large share of your audience is a student on a locked-down device looking for something that runs without installing anything.</p>
+        <p>"Unblocked games" sites — usually Google Sites, GitHub Pages or Netlify mirrors — aggregate exactly this. They command enormous, sustained traffic and are invisible to conventional games marketing. Your game is a <em>single self-contained HTML file</em>, which is precisely what they can host.</p>
+        <p class="do"><b>Do:</b> ship an official embed snippet and a "mirror this game" permission note. Accept that mirrors will strip attribution — so put a persistent, quiet "latest version at &lt;url&gt;" on the title screen. Rips then become distribution. <b>Kill if:</b> mirror traffic shows no referral back after 60 days.</p>
+      </div>
+
+      <div class="xp">
+        <div class="xp-top"><span class="xp-t">Sell the making-of, not the game</span><span class="chip c-hi">Highest value</span></div>
+        <p>You have a browser game with <strong>393 regression tests</strong>, balance decisions made by simulation rather than feel, and a documented case where you measured 40 wanted stance changes against 7 granted before shipping a rule. Developer audiences share that kind of writing; player audiences do not share strategy-game screenshots.</p>
+        <p class="do"><b>Do:</b> one post — "I ran 20,000 simulations to decide whether my game should let you change your mind." Hacker News, <code>r/gamedev</code>, dev.to, lobste.rs. <b>Kill if:</b> two posts land under 50 points each.</p>
+      </div>
+
+      <div class="xp">
+        <div class="xp-top"><span class="xp-t">The Gauntlet keeps a public record</span><span class="chip c-mid">Medium</span></div>
+        <p>Your adaptive opponent is the most genuinely novel thing in the game and it is currently invisible outside a single player's save. An AI that publicly reports its own record — "the Adjutant has beaten 1,247 commanders and lost 96 times" — is a story that updates itself.</p>
+        <p class="do"><b>Do:</b> needs the Supabase backend already documented in the repo. <b>Kill if:</b> the backend slips past month 3 — do not let this block anything.</p>
+      </div>
+
+      <div class="xp">
+        <div class="xp-top"><span class="xp-t">Give streamers a tool, not a game</span><span class="chip c-mid">Medium</span></div>
+        <p>Every streamer receives "please play my game" daily and ignores it. Almost none receive "here is a free interactive segment your chat can play, no install, no account, works in a browser source."</p>
+        <p class="do"><b>Do:</b> reframe the existing Twitch integration as a standalone stream toy with its own one-page site. Pitch to streamers under 200 viewers, who need segment ideas and answer their DMs. <b>Kill if:</b> 40 outreach messages yield under 2 uses.</p>
+      </div>
+
+      <div class="xp">
+        <div class="xp-top"><span class="xp-t">Publish the secret, not the game</span><span class="chip c-odd">Odd</span></div>
+        <p>There is a hidden level — the Glitch Front — gated behind beating every campaign time trial. "Nobody has found the secret level yet" is a better hook than any feature list, because it is an invitation rather than a claim.</p>
+        <p class="do"><b>Do:</b> post the <em>hint</em>, never the solution, in ARG-adjacent and puzzle communities. <b>Kill if:</b> no one posts about finding it within 30 days.</p>
+      </div>
+
+      <div class="xp">
+        <div class="xp-top"><span class="xp-t">The daily challenge as a standalone habit</span><span class="chip c-mid">Medium</span></div>
+        <p>Wordle's entire distribution was a shareable daily result grid. You already generate a deterministic daily seed; you are missing the shareable artifact.</p>
+        <p class="do"><b>Do:</b> emit a compact spoiler-free result block for the daily. <b>Kill if:</b> under 5% of daily players copy it.</p>
+      </div>
+
+      <div class="xp">
+        <div class="xp-top"><span class="xp-t">Enter jams you cannot win</span><span class="chip c-odd">Odd</span></div>
+        <p>itch jams give a permanent listing on a page with its own traffic, and jam ratings periods guarantee that strangers will actually play and comment. You do not need to place; you need the residual page and the feedback.</p>
+        <p class="do"><b>Do:</b> submit an existing mode reskinned to a theme where rules allow. Read the rules — many jams forbid pre-existing work. <b>Kill if:</b> two jams yield under 100 plays each.</p>
+      </div>
+
+      <div class="xp">
+        <div class="xp-top"><span class="xp-t">Localise into one language, chosen by data</span><span class="chip c-odd">Odd</span></div>
+        <p>10% of measured traffic is India, against 62% US. Most indie games localise into French/German/Spanish by reflex. Your data does not point there.</p>
+        <p class="do"><b>Do:</b> nothing yet — the game is text-heavy and this is expensive. Revisit only if the India share holds above 10% at n&gt;1,000. <b>Noted here because it is the kind of thing a default plan gets wrong.</b></p>
+      </div>
+
+      <div class="xp">
+        <div class="xp-top"><span class="xp-t">Be embeddable on purpose</span><span class="chip c-odd">Odd</span></div>
+        <p>Zero dependencies and one file means anyone's blog, Neocities page or class site can host you. Nobody offers this, so nobody does it.</p>
+        <p class="do"><b>Do:</b> publish a copy-paste <code>&lt;iframe&gt;</code> snippet and an explicit licence for non-commercial embedding. <b>Kill if:</b> under 3 embeds in 90 days.</p>
+      </div>
+
+      <div class="xp">
+        <div class="xp-top"><span class="xp-t">Let the enemy generals have accounts</span><span class="chip c-risk">Speculative</span></div>
+        <p>The rivalry system already writes dialogue that remembers beating you. A bot account posting in character — "Commander roukas has now defeated me four times. This will not continue." — is a content engine with no ongoing writing cost.</p>
+        <p class="do"><b>Do:</b> only after the backend. <b>Kill if:</b> it reads as spam to any community — this one has real reputational downside, so it is last for a reason.</p>
+      </div>
+
+      <div class="xp">
+        <div class="xp-top"><span class="xp-t">Charity and creator bundles</span><span class="chip c-mid">Medium</span></div>
+        <p>itch bundles put your page in front of enormous audiences at zero cash cost. The game is free, so you forfeit nothing but gain a listing and a permanent bump in followers.</p>
+        <p class="do"><b>Do:</b> watch itch's bundle calls and apply. <b>Kill if:</b> nothing accepted in 6 months.</p>
+      </div>
+
+      <div class="xp">
+        <div class="xp-top"><span class="xp-t">Ship a floppy</span><span class="chip c-risk">Speculative</span></div>
+        <p>The whole game is 863KB. It fits, with room, on a 1.44MB floppy disk. That is a genuinely shareable object and a photograph that circulates on its own merits in retro-computing communities.</p>
+        <p class="do"><b>Do:</b> one photo, one post. Costs an afternoon and a disk. <b>Kill after one attempt</b> — this is a lottery ticket, not a channel.</p>
+      </div>
+    </div>
+    <aside class="rail">
+      <div class="stat"><span class="n">13%</span><span class="l">ChromeOS traffic. School devices, and an invisible channel</span></div>
+      <div class="stat"><span class="n">863KB</span><span class="l">Whole game. Fits on a floppy disk with room to spare</span></div>
+      <div class="stat"><span class="n">393</span><span class="l">Regression tests. The making-of is more shareable than the game</span></div>
+    </aside>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">The spend question</div>
+  <h2>The one case where money might be justified</h2>
+  <p>The brief allows spending only against concrete evidence of return. There is exactly one candidate: <strong>Steam Direct, $100.</strong></p>
+  <p>The arithmetic is genuinely favourable at first glance. At $4.99 with Steam's 30% cut you net $3.49, so the fee is recouped at <strong>29 sales</strong>. That is a low bar.</p>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Store page visits</th><th class="num">@2% conv</th><th class="num">@6%</th><th class="num">@12%</th></tr></thead>
+    <tbody>
+      <tr><td>500</td><td class="num">$35</td><td class="num">$105</td><td class="num">$210</td></tr>
+      <tr><td>1,500</td><td class="num">$105</td><td class="num">$314</td><td class="num">$629</td></tr>
+      <tr><td>5,000</td><td class="num">$349</td><td class="num">$1,048</td><td class="num">$2,096</td></tr>
+      <tr><td>15,000</td><td class="num">$1,048</td><td class="num">$3,144</td><td class="num">$6,287</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note crit">
+    <span class="tag">The $100 is not the cost</span>
+    <p>The real cost is the <strong>30&ndash;40 hours</strong> of store assets, capsule art, trailer, build packaging and review iteration. Those same hours are the entire residual inventory (44h &rarr; ~35,000 visits/year) plus the page fix (6h &rarr; 4&times; the players from traffic you already have).</p>
+    <p>Steam wishlists convert from an <em>audience</em>, not from traffic. With no audience, $100 buys a page nobody visits and you have spent your best 40 hours to get it.</p>
+  </div>
+
+  <h4>Trigger conditions — pay only when both are true</h4>
+  <ol>
+    <li><strong>&ge;1,500 monthly plays, sustained two months.</strong> Proves traffic exists at all.</li>
+    <li><strong>&ge;150 Discord members, or &ge;8% D7 return rate.</strong> Proves an <em>audience</em> exists, which is the thing that actually converts.</li>
+  </ol>
+  <p>Until both hold, the answer is no, and it is no for a reason you can point at rather than a feeling.</p>
+</section>
+
+<section>
+  <div class="sec-head">Delegation</div>
+  <h2>What I cannot make, and exactly how to get it</h2>
+  <p>I cannot record video, generate images, or operate your accounts. Everything below is either a free tool with exact steps, or a prompt to paste verbatim.</p>
+
+  <div class="tool">01 &middot; The GIF — the single highest-value asset</div>
+  <p>This is the first screenshot on your itch page and the main lever on the 75% who never press Run Game. Free tools: <strong>ShareX</strong> (Windows), <strong>Kap</strong> (macOS), <strong>Peek</strong> (Linux).</p>
+  <ol>
+    <li>Start a Skirmish, enable Chaos Mode, and play until the field is full.</li>
+    <li>Record <strong>6&ndash;10 seconds</strong> at 1280&times;720 — capture a Rods from God strike or a full-lane collision, not the menu.</li>
+    <li>Export at ~800px wide, 10&ndash;12fps, <strong>under 3MB</strong>. Use <a href="https://ezgif.com">ezgif.com</a> (free) to optimise if it is over.</li>
+    <li>Upload as <em>screenshot #1</em>, before any static image.</li>
+  </ol>
+  <p>You already have the ffmpeg recipe for this in the repo from the last GIF build — reuse it.</p>
+
+  <div class="tool">02 &middot; Cover art — paste into any image generator</div>
+  <p>Works in Midjourney, DALL·E, Ideogram (has a free tier), or Leonardo (free daily credits). itch cover art is <strong>630&times;500</strong>.</p>
+  <div class="prompt">Cover art for a browser strategy game called FRONTLINE COMMANDER.
+Top-down tactical view of three parallel battle lanes converging on a
+fortified headquarters. Two armies in blue and red, tiny readable unit
+silhouettes — tanks, infantry, artillery, drones. Dark navy background
+(#0a0e14) with gold highlights (#ffce5a) and cyan accents (#5ff0e0).
+Flat vector poster style, high contrast, clean geometry, no photorealism,
+no gradients-as-decoration. Composition leaves the upper-left third clear
+for a title. Legible at 200px wide.
+--ar 63:50 --no text, no watermark, no letters</div>
+  <p><strong>Important:</strong> generate the art without text, then add the wordmark yourself in <a href="https://www.photopea.com">Photopea</a> (free, browser-based, Photoshop-like). Image generators produce unreliable lettering.</p>
+
+  <div class="tool">03 &middot; Short-form video</div>
+  <p>Free editor: <strong>CapCut</strong> desktop, or <strong>DaVinci Resolve</strong> free. Structure, which matters more than the footage:</p>
+  <ul>
+    <li><strong>0&ndash;2s</strong> — the payoff first. The biggest explosion you have, no build-up, no logo.</li>
+    <li><strong>2&ndash;8s</strong> — the hook in on-screen text: <em>"my Twitch chat controls the enemy army"</em> or <em>"this AI remembers how you beat it"</em>.</li>
+    <li><strong>8&ndash;20s</strong> — one clean sequence showing that claim being true.</li>
+    <li><strong>Last frame</strong> — a static card with the URL, held 2 seconds.</li>
+  </ul>
+  <p>Vertical 1080&times;1920. Captions burned in — most viewing is muted.</p>
+
+  <div class="tool">04 &middot; The itch.io page copy — use as written</div>
+  <div class="prompt">FIRST LINE (this is the whole conversion lever):
+Plays instantly in your browser. No download, no signup, no account.
+
+THEN:
+A three-lane war game with a real counter web — 18 units where damage
+type meets armour class, nine doctrines, weather and terrain per lane.
+
+Your Twitch chat can play as the enemy army.
+An adaptive opponent studies your last run and refuses to lose the
+same way twice.
+There is a secret level. Nobody has posted about finding it.
+
+TAGS: strategy, real-time, war, singleplayer, html5, browser,
+tactical, military, no-download, mobile-friendly</div>
+
+  <div class="tool">05 &middot; Portal submission list — work top down</div>
+  <p>Start with the ones that accept a plain HTML5 build with no SDK: <strong>Newgrounds</strong>, <strong>itch</strong> (done), <strong>Internet Archive</strong>, <strong>GX.games</strong>, <strong>Armor Games</strong>. Then the rev-share portals that require an SDK and a separate build: <strong>CrazyGames</strong>, <strong>GameDistribution</strong>, <strong>Poki</strong> (curated, hardest, highest payout). Re-read the CSP warning above before touching that second group.</p>
+</section>
+
+<section>
+  <div class="sec-head">Measurement</div>
+  <h2>What to watch, and what to ignore</h2>
+  <p>GoatCounter is already wired with per-player funnel events, which is better instrumentation than most indie games ever get. Use it, and resist over-reading it.</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Metric</th><th class="num">Now</th><th class="num">Target</th><th>Why it is the one to watch</th></tr></thead>
+    <tbody>
+      <tr class="hi"><td>visit &rarr; load</td><td class="num">25%</td><td class="num">40%+</td><td>The 75% leak. Everything else is multiplied by this</td></tr>
+      <tr><td>load &rarr; first battle</td><td class="num">22%</td><td class="num">45%+</td><td>Whether the on-ramp works</td></tr>
+      <tr><td>tutorial completion</td><td class="num">24%</td><td class="num">70%+</td><td>Should already have moved — the hang was fixed in v1.17.2</td></tr>
+      <tr><td>return visits</td><td class="num">&mdash;</td><td class="num">8% D7</td><td><strong>The only metric that compounds.</strong> Also a Steam gate</td></tr>
+      <tr><td>revenue surfaces live</td><td class="num">0</td><td class="num">2</td><td>Currently the binding constraint on all profit</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="note warn">
+    <span class="tag">Small numbers lie</span>
+    <p>At n=32 players, a swing of ten percentage points is noise. Treat reproducible bugs as established — you reproduced the tutorial hang directly, and that is not a statistical claim — but do not act on percentage movements until the sample is in the hundreds. The fastest way to waste this plan is to chase a number that moved because four people did something.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">If you do only one thing</div>
+  <h2>This week, in order</h2>
+  <ol>
+    <li><strong>Set up Ko-fi and switch on itch pay-what-you-want.</strong> One hour. Until this exists, every other hour in this document earns exactly zero.</li>
+    <li><strong>Record the GIF and rewrite the itch page.</strong> Four hours, and worth more than the next twenty spent on promotion.</li>
+    <li><strong>Submit to Newgrounds and the Internet Archive.</strong> Two hours, permanent, no SDK required.</li>
+  </ol>
+  <p>Seven hours. That is the whole first week, and it takes you from a structurally unmonetisable game with a leaking front door to one that can receive money and keep the players it already attracts.</p>
+</section>
+
+<footer>
+  Frontline Commander &middot; growth plan &middot; supersedes GTM-01 and 2026-FLC-01<br>
+  Simulations in <code>sim/portfolio.py</code>, <code>sim/effort.py</code>, <code>sim/plan.py</code>, <code>sim/money.py</code> &mdash; all parameters are assumptions, all are tunable, all are meant to be argued with.<br>
+  Funnel figures from GoatCounter at build v1.17.1, n=127 visits. Treat as directional.
+</footer>
+
+</div>
