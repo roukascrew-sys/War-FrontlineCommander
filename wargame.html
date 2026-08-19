@@ -251,8 +251,33 @@
   #playtest-link:active{transform:translateY(0) scale(0.95);}
   /* topbar buttons colour-keyed to what they do */
   #btn-stream:hover,#btn-twitch:hover{border-color:var(--purple);color:var(--purple);}
-  #btn-narr:hover,#btn-voice:hover{border-color:var(--gold);color:var(--gold);}
-  #btn-sound:hover{border-color:var(--cyan);color:var(--cyan);}
+  #btn-audio:hover{border-color:var(--cyan);color:var(--cyan);}
+  /* a settings row arrived at from a deep link — pulses so the eye lands on the right row */
+  .set-row.set-focus{animation:setFocus 2.6s ease-out 1;}
+  @keyframes setFocus{
+    0%,22%{border-color:var(--red);box-shadow:0 0 0 3px #ff5a4a33,0 0 22px -4px #ff5a4a;}
+    45%{border-color:var(--red);box-shadow:0 0 0 6px #ff5a4a1a,0 0 26px -4px #ff5a4aaa;}
+    100%{border-color:var(--line);box-shadow:none;}}
+  /* 🔊 audio mixer popover — anchored under the topbar button */
+  #audiopop{position:fixed;z-index:60;width:290px;max-width:calc(100vw - 16px);
+    background:var(--panel);border:1px solid var(--line);border-radius:11px;
+    box-shadow:0 14px 40px #000a;padding:12px 13px;}
+  #audiopop .ap-h{font-size:12px;font-weight:800;color:var(--cyan);letter-spacing:.5px;
+    margin-bottom:9px;padding-bottom:8px;border-bottom:1px solid var(--line);}
+  #audiopop .ap-row{display:grid;grid-template-columns:1fr 96px 38px;align-items:center;
+    gap:8px;padding:6px 0;}
+  #audiopop .ap-row.off{opacity:.45;}
+  #audiopop .ap-lbl{font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;line-height:1.25;}
+  #audiopop .ap-ic{margin-right:5px;}
+  #audiopop .ap-lbl em{display:block;font-style:normal;font-size:9.5px;font-weight:500;
+    color:var(--faint);margin-top:1px;}
+  #audiopop .ap-sl{width:96px;accent-color:var(--cyan);cursor:pointer;}
+  #audiopop .ap-v{font-family:var(--mono);font-size:10.5px;color:var(--dim);text-align:right;}
+  #audiopop .ap-foot{display:flex;gap:7px;margin-top:10px;padding-top:9px;
+    border-top:1px solid var(--line);}
+  #audiopop .ap-btn{flex:1;padding:7px 9px;border-radius:7px;border:1px solid var(--line);
+    background:none;color:var(--dim);font-weight:700;font-size:11px;cursor:pointer;}
+  #audiopop .ap-btn:hover{color:var(--cyan);border-color:var(--cyan);}
   #btn-ai:hover{border-color:var(--good);color:var(--good);}
   #btn-ai.on{background:var(--good);border-color:var(--good);}
   #btn-settings:hover{border-color:var(--cyan);color:var(--cyan);}
@@ -718,6 +743,72 @@
   @keyframes tfJaw{0%,100%{transform:translateY(0) scaleY(1);}50%{transform:translateY(0.055em) scaleY(1.16);}}
   @keyframes tfTeeth{0%,100%{transform:translateY(0);}50%{transform:translateY(0.012em);}}
 
+  /* ── ☠ ASCENDED (menace 4 · Legendary+) ────────────────────────────────────
+     Legendary already ends at "cackling inferno". Going further by adding MORE fire
+     would just be the same idea louder, so tier 4 changes the KIND of thing you are
+     looking at: the bone is charred through, something has split the cranium open from
+     the inside, and what is burning in the sockets is not fire — it is the same magenta
+     the difficulty itself is coloured in. Horns, fangs, a halo of static, and a jitter
+     that never quite settles. It should read as wrong, not just angry. */
+  .sk-wrap.ascend .sk-cran{
+    background:radial-gradient(ellipse at 34% 22%,#4a3040 0%,#2a1826 42%,#170d16 76%,#0b060c 100%);
+    box-shadow:inset -0.065em -0.05em 0.12em #000, inset 0.035em 0.035em 0.07em #ff2fa055,
+      0 0 0.18em #ff2fa040;}
+  .sk-wrap.ascend .sk-maxilla{background:linear-gradient(#3a2432,#22141f);}
+  .sk-wrap.ascend .sk-jaw{background:linear-gradient(#6a4159 0%,#3a2233 58%,#1d1019 100%);
+    box-shadow:inset 0 -0.035em 0.05em #00000099, 0 0 0.04em #ff2fa028;}
+  .sk-wrap.ascend .sk-teeth{
+    background:repeating-linear-gradient(90deg,#ffd9ef 0 0.040em,#3a1a2c 0.040em 0.051em);
+    box-shadow:0 0.012em 0.03em #ff2fa066;}
+  .sk-wrap.ascend .sk-socket{
+    background:radial-gradient(ellipse at 50% 34%,#2a0018 0%,#12000a 58%,#000 100%);
+    box-shadow:inset 0 0.05em 0.09em #000, 0 0.016em 0.012em #ff2fa090;}
+  /* the eyes stop being embers and become voids with light coming OUT of them */
+  .sk-wrap.ascend .tf-eye{
+    background:radial-gradient(circle,#ffffff 0%,#ffb3e2 26%,#ff2fa0 58%,#5c0030 100%);
+    box-shadow:0 0 0.11em 0.03em #ff2fa0,0 0 0.30em 0.09em #ff2fa080;
+    animation:tfEyeVoid 0.72s ease-in-out infinite;}
+  @keyframes tfEyeVoid{0%,100%{opacity:.9;transform:scale(1);}
+    38%{opacity:1;transform:scale(1.34);}62%{opacity:.7;transform:scale(.92);}}
+  /* horns — swept back from the temples, tapering to a point */
+  /* horns grow OUT of the temples — anchored inside the cranium's silhouette and swept
+     back, or they read as antennae stuck on top rather than bone */
+  .sk-horn{position:absolute;z-index:1;width:0.10em;height:0.40em;
+    background:linear-gradient(#5a3348 0%,#2a1626 46%,#0e070d 100%);
+    box-shadow:inset 0.014em 0 0.016em #ff2fa075, 0 0 0.05em #ff2fa030;}
+  .sk-horn.l{left:11%;top:-22%;border-radius:70% 18% 46% 46%/76% 24% 26% 74%;
+    transform:rotate(-34deg);transform-origin:50% 100%;}
+  .sk-horn.r{right:11%;top:-22%;border-radius:18% 70% 46% 46%/24% 76% 74% 26%;
+    transform:rotate(34deg);transform-origin:50% 100%;}
+  /* the split — a vertical fracture with light bleeding out of it */
+  .sk-rift{position:absolute;z-index:5;left:49%;top:2%;width:0.022em;height:0.30em;
+    transform:translateX(-50%);border-radius:0.01em;
+    background:linear-gradient(#ff2fa000,#ff2fa0 40%,#ffd9ef 62%,#ff2fa0 78%,#ff2fa000);
+    box-shadow:0 0 0.07em 0.012em #ff2fa0aa;
+    animation:tfRift 1.35s ease-in-out infinite;}
+  @keyframes tfRift{0%,100%{opacity:.55;}50%{opacity:1;}}
+  /* fangs — two elongated canines below the tooth row */
+  /* fangs hang BELOW the tooth row against the dark jaw, which is the only place they
+     have any contrast — sitting level with the teeth they simply disappeared into it */
+  .sk-fang{position:absolute;z-index:7;top:69%;width:0;height:0;
+    border-left:0.024em solid transparent;border-right:0.024em solid transparent;
+    border-top:0.085em solid #fff0f8;
+    filter:drop-shadow(0 0.012em 0.016em #000) drop-shadow(0 0 0.03em #ff2fa0aa);}
+  .sk-fang.l{left:34%;} .sk-fang.r{right:34%;}
+  /* halo — a ring of static behind the whole head */
+  .sk-halo{position:absolute;z-index:0;left:2%;top:-6%;width:96%;height:88%;border-radius:50%;
+    border:0.012em dashed #ff2fa055;
+    box-shadow:0 0 0.22em 0.03em #ff2fa030, inset 0 0 0.18em #ff2fa020;
+    animation:tfHalo 5.5s linear infinite;}
+  @keyframes tfHalo{to{transform:rotate(360deg);}}
+  /* never settles — a small, irregular jitter layered over the laugh */
+  .sk-wrap.ascend{animation:tfLaugh 1.15s ease-in-out infinite,tfGlitch 2.7s steps(1,end) infinite;}
+  @keyframes tfGlitch{
+    0%,92%,100%{filter:none;}
+    93%{filter:hue-rotate(18deg) saturate(1.5);transform:translateX(0.008em);}
+    95%{filter:none;transform:translateX(-0.008em);}
+    97%{filter:hue-rotate(-14deg) contrast(1.2);}}
+
   /* ── RECRUIT ─────────────────────────────────────────────────────────── */
   /* Same treatment as the skull: darker occlusion, a hotter rim-light on the same side as the
      ambient glow behind him, and woven texture on the helmet/collar fabric instead of a flat
@@ -789,6 +880,8 @@
   @keyframes tfIdle{50%{transform:translateY(-7px);}}
   .tf-pulse{animation:tfPulse 440ms ease;}
   @keyframes tfPulse{0%{transform:scale(1);}40%{transform:scale(1.14);}100%{transform:scale(1);}}
+  #title-figs.reduce .sk-halo,#title-figs.reduce .sk-rift,
+  #menu-skull.reduce .sk-halo,#menu-skull.reduce .sk-rift,
   #title-figs.reduce .tfig,#title-figs.reduce .tf-art,#title-figs.reduce .tf-eye,
   #title-figs.reduce .tf-smoke,#title-figs.reduce .sk-jaw,#title-figs.reduce .sk-teeth,
   #title-figs.reduce .tf-cigar::after{animation:none!important;}
@@ -984,6 +1077,15 @@
 
   /* ── RIVALS MODE ── */
   .rival-card{background:var(--panel);border:1.5px solid var(--line);border-radius:10px;padding:12px;text-align:left;}
+  /* off-roster rivals — a darker plate so they never read as "one of the five" */
+  .rival-card.hidden-rival{background:linear-gradient(150deg,#141024,#0b0810);box-shadow:inset 0 0 22px #0008;}
+  .rv-sec{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;font-size:12px;font-weight:800;
+    letter-spacing:.6px;color:var(--purple);margin:18px 2px 8px;padding-top:12px;border-top:1px solid var(--line);}
+  .rv-sec span{font-size:10.5px;font-weight:600;letter-spacing:0;color:var(--faint);}
+  .rv-prestige{margin-top:16px;padding:13px 15px;border-radius:11px;text-align:left;
+    background:linear-gradient(135deg,#1a1430,#0e0a18);border:1px solid #3a2f5e;}
+  .rv-p-h{font-size:13px;font-weight:800;color:var(--purple);margin-bottom:4px;letter-spacing:.4px;}
+  .rv-p-p{font-size:12px;color:var(--dim);line-height:1.5;margin-bottom:9px;}
   .rival-card.defeated{opacity:.75;}
   .rival-glyph{font-size:22px;display:block;margin-bottom:4px;}
   .rival-nm{font-weight:800;font-size:13px;color:var(--ink);margin-bottom:3px;}
@@ -1477,6 +1579,19 @@
   .rally-no{padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:none;
     color:var(--faint);font-weight:700;font-size:12px;cursor:pointer;}
   .rally-no:hover{color:var(--dim);border-color:var(--dim);}
+  /* 💛 support card — the same card in gold, so it reads as a different KIND of ask
+     rather than the community prompt appearing a fourth time */
+  .rally.support{background:linear-gradient(135deg,#2a2210,#171208);border-color:#5a4a1e;}
+  .rally.support .rally-h{color:var(--gold);}
+  .rally.support .rally-btn{border-color:var(--gold);background:var(--gold);color:#1a1405;}
+  /* 📋 brag card — the copyable line after a Gauntlet clear */
+  .brag{background:linear-gradient(135deg,#0e2226,#0a1418);border:1px solid #2a5a5e;
+    border-radius:11px;padding:13px 15px;margin-top:12px;text-align:left;}
+  .brag-h{font-size:13px;font-weight:800;color:var(--cyan);margin-bottom:6px;letter-spacing:.4px;}
+  .brag-line{font-size:12px;color:var(--ink);line-height:1.55;margin-bottom:9px;
+    background:#06101300;border:1px dashed #2a5a5e;border-radius:8px;padding:9px 11px;
+    font-family:var(--mono);user-select:all;-webkit-user-select:all;}
+  .rally-btn.copied{background:var(--good);border-color:var(--good);color:#06120a;}
   #tutspot{position:fixed;z-index:13;pointer-events:none;border-radius:12px;
     border:2px solid var(--gold);box-shadow:0 0 0 3px #ffce5a33,0 0 22px 6px #ffce5a55,
     inset 0 0 12px #ffce5a22;opacity:0;transition:opacity .18s;}
@@ -1790,7 +1905,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.22.0</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.23.0</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -1802,10 +1917,7 @@
   <div class="spacer"></div>
   <button class="tb-btn" id="btn-stream">📺 Streamer Mode</button>
   <button class="tb-btn" id="btn-twitch">📡 Live Chat</button>
-  <button class="tb-btn" id="btn-narr">🎙 Narrator</button>
-  <button class="tb-btn" id="btn-voice">🎙 Voice</button>
-  <button class="tb-btn" id="btn-sound">🔊 Sound</button>
-  <button class="tb-btn" id="btn-music">🎵 Music</button>
+  <button class="tb-btn" id="btn-audio" title="Audio mixer — per-channel levels for music, effects, narrator and ambience.">🔊 Audio</button>
   <button class="tb-btn hidden" id="btn-news">📰 News</button>
   <!-- The full Settings screen (colourblind palette, reduce-motion, chaos mode, etc.) used to be
        reachable only from the title screen — there was no way back to it once a battle started.
@@ -2477,10 +2589,18 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   unlocked:['blitzkrieg','mass'],medals:{},sound:true,narrator:true,streamOn:false,seenTut:false,
   campaignDone:-1,campaignStars:{},daily:{},narrVoiceURI:null,
   speed:1,twitchChannel:'',war:null,warWins:0,aiDebug:false,music:true,musicVol:0.5,news:false,reduceMotion:false,
+  /* 🔊 AUDIO MIXER — per-channel levels, 0..1. The BOOLEANS above and below (sound, music,
+     narrator, ambient) are kept as the authoritative on/off because ~40 call sites guard on
+     them; the mixer keeps the two in sync (level 0 <=> boolean false). Splitting them would
+     mean auditing every guard, and a level of 0 with the boolean still true is a silent
+     stream of oscillator nodes doing nothing. */
+  masterVol:1, sfxVol:0.8, narrVol:1, ambVol:0.7,
   lastSel:null,   // last loadout actually fought with — powers the title screen's REDEPLOY button
   modeBriefsSeen:{},   // which mode briefings have been shown (one-shot each)
   rallySeen:0,         // how many times the community card has been shown (frequency-capped)
   rallyDone:false,     // player followed or dismissed it for good — never ask again
+  supportSeen:0,       // 💛 support card impressions (see SUPPORT_MAX_SHOWS)
+  supportDone:false,   // followed or dismissed — never ask again
   lastPlayedDay:null,  // 'YYYY-MM-DD' of the previous session, drives the welcome-back line
   ambient:true,randomEvents:true,evSupply:true,evVoice:true,evCutscene:true,evBarrage:true,evDefector:true,evOrders:true,
   noLuck:false,          // 🎯 NO LUCK — one master override that silences every chance-driven event
@@ -2497,6 +2617,14 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   gagChatter:true,gagGolden:true,gagVictory:true,
   history:[],career:{battles:0,wins:0,losses:0,kills:0,deploys:0,cpSpent:0,strikes:0,units:{},dmgDealt:0,timePlayed:0},
   rivalry:{}, equippedBadge:null, equippedTitle:null, rivals:{}, rivalsBadgeEarned:false,
+  /* ── the two hidden rivals. Kept as top-level flags rather than nested inside
+     SAVE.rivals so sanitizeSave() validates them, and so clearing the roster for a
+     prestige run can never accidentally revoke an unlock the player earned. ── */
+  rivalPrestige:0,        // times the roster has been reset after a full clear
+  glitchKingSeen:false,   // met by clearing the Glitch Front
+  glitchKingDefeated:false,
+  umbraDefeated:false,    // unlocks the ⬤ Wraith
+  rollbackUnlocked:false, // unlocks the ⌬ Rollback commander power
   weatherVis:true, voidSlayerEarned:false, debugUnlockAll:false,
   cbPalette:'default',   // team-colour accessibility palette: 'default' | 'orange' | 'hico' (whitelisted in applyCbPalette)
   bigUnits:false,        // accessibility/fun: render units much larger — visual only, see unitVisualR()
@@ -2895,22 +3023,61 @@ const UNITS={
   swarm:{name:'Drone Swarm',glyph:'☄',cat:'dro',cost:66,cd:6,hp:9,dmg:16,rof:99,rng:46,spd:66,col:'#a0ffe0',
     aa:false,flies:true,lowAir:true,splash:6,r:6,kamikaze:true,vsArmor:2.2,swarmN:5,
     desc:'SECRET UNLOCK — deploys a cloud of kamikaze micro-drones in one go; drowns armour, but EW & rapid fire shred them'},
+  /* ── ⬤ UMBRA's null units. Enemy-only, except the Wraith which becomes yours once
+     UMBRA is beaten. Deliberately NOT stronger than their tier — see NULL_UNITS. ── */
+  wraith:{name:'Wraith',glyph:'⬤',cat:'inf',cost:44,cd:3.4,hp:40,dmg:19,rof:1.5,rng:96,spd:33,col:'#8f7fd0',
+    aa:false,splash:0,r:8,nullStealth:true,cpDrain:2.4,
+    desc:'SECRET UNLOCK — invisible until it fires, and every hit bleeds Command Points off whoever it hits. Cheap to kill once you can see it; the trick is seeing it.'},
+  nullifier:{name:'Nullifier',glyph:'⧗',cat:'veh',cost:70,cd:5.0,hp:96,dmg:0,rof:9,rng:0,spd:19,col:'#6f5fa8',
+    aa:false,splash:0,r:12,support:true,nullField:150,
+    desc:'no weapon — it switches your commander powers OFF inside its reach'},
+  effigy:{name:'Effigy',glyph:'◇',cat:'inf',cost:18,cd:1.2,hp:26,dmg:6,rof:2.0,rng:70,spd:31,col:'#9a8fb8',
+    aa:false,splash:0,r:8,nullDecoy:true,
+    desc:'wears the shape of one of your own units until it dies'},
   // 🕵 mythic rare-event boss — never in the hotbar, only ever appears via triggerVoidRift()
   voidwarden:{name:'The Void Warden',glyph:'⛧',cat:'boss',cost:0,cd:0,hp:3600,dmg:34,rof:1.0,rng:140,spd:0.35,col:'#c9a0ff',
     aa:false,splash:24,r:34,armor:true,desc:'a rift-born horror — secret encounter'},
 };
 // appended at the end rather than grouped with the other infantry so every existing
 // number-hotkey (1-9) and tutorial "press N" instruction keeps pointing at the same unit
-const HOTBAR=['rifle','atgm','sniper','tank','ifv','arty','mlrs','aa','heli','drone','medic','engineer','jammer','cbat','interceptor','gunship','flame','swarm'];
+const HOTBAR=['rifle','atgm','sniper','tank','ifv','arty','mlrs','aa','heli','drone','medic','engineer','jammer','cbat','interceptor','gunship','flame','swarm','wraith'];
 /* Secret unlocks stay INVISIBLE until earned — not greyed-out-with-a-lock, genuinely absent, so
    discovering the Glitch Front is a real surprise. Anything that lists the roster (Field Manual,
    attract battles, chaos spawns, AI picks) filters through here. */
-const SECRET_UNITS=['swarm'];
-function unitRevealed(key){ return (SECRET_UNITS.indexOf(key)<0 || !!SAVE.secretDone) && unitRankOk(key); }
+/* ═══ ⬤ NULL UNITS — UMBRA's order of battle ═══════════════════════════════════
+   The five ordinary generals all fight with the same roster you do; they differ only in
+   what they lean on. UMBRA is the exception, and has to be: an "elusive" enemy that fields
+   riflemen is just a rifleman fight with different dialogue.
+
+   These three are built to attack the things the normal counter web cannot answer:
+     · a WRAITH cannot be pre-empted, because you cannot see it coming
+     · a NULLIFIER attacks your COMMANDER POWERS, not your army
+     · an EFFIGY attacks your READING of the board
+   None of them out-stat you. All three make your information wrong, which is the one
+   resource the damage matrix has nothing to say about. ═════════════════════════════ */
+const NULL_UNITS=['wraith','nullifier','effigy'];
+const SECRET_UNITS=['swarm','wraith'];   // wraith becomes yours once UMBRA falls
+/* Each secret unit has its OWN earn condition — they are not one bundle. Bundling them
+   would mean clearing the Glitch Front silently handed you a unit belonging to a rival you
+   have never met. */
+const SECRET_UNIT_GATE={ swarm:()=>!!SAVE.secretDone, wraith:()=>!!SAVE.umbraDefeated };
+function unitRevealed(key){
+  const gate=SECRET_UNIT_GATE[key];
+  if(gate&&!gate())return false;
+  return unitRankOk(key);
+}
+/* What the DECK shows, which is not the same question. A Field School lesson may lend a
+   unit whose RANK the account has not reached (G.rankFree) — that is how a Counter-Battery
+   lesson works at Rank 5. It may never lend a SECRET unit: those are earned, and handing
+   one over inside a lesson would give away a rival the player has not met. */
+function unitDeckVisible(key){
+  if(SECRET_UNIT_GATE[key])return unitRevealed(key);
+  return unitRankOk(key)||!!(G&&G.rankFree);
+}
 function visibleRoster(){ return HOTBAR.filter(unitRevealed); }
 
 /* ── IN-BATTLE TECH TIERS — in normal modes you buy your way up the tree mid-fight ── */
-const UNIT_TIER={rifle:1,atgm:1,ifv:1,swarm:1, sniper:2,tank:2,aa:2,arty:2,drone:2,medic:2,engineer:2,flame:2, heli:3,mlrs:3,jammer:3,cbat:3,interceptor:3,gunship:3};
+const UNIT_TIER={rifle:1,atgm:1,ifv:1,swarm:1, sniper:2,tank:2,aa:2,arty:2,drone:2,medic:2,engineer:2,flame:2, heli:3,mlrs:3,jammer:3,cbat:3,interceptor:3,gunship:3, wraith:3,nullifier:3,effigy:1};
 const TIER_UNLOCK={1:0,2:60,3:130}; // CP paid once per battle to open a tier's units
 /* Rank gates on individual units. Separate from the in-battle tech tiers on purpose: a tier
    is something you buy DURING a fight, a rank gate is something you earn ACROSS fights.
@@ -2940,8 +3107,8 @@ const DMG_MATRIX={           //  vs: inf   light  heavy  air    struct
   he:{inf:1.30,light:1.15,heavy:0.72,air:0.30,struct:1.45}, // high explosive
   aa:{inf:0.35,light:0.50,heavy:0.30,air:2.40,struct:0.20}, // anti-air
 };
-const UNIT_DMGTYPE={rifle:'sa',atgm:'ap',sniper:'sa',tank:'ap',ifv:'sa',arty:'he',mlrs:'he',aa:'aa',heli:'ap',drone:'ap',swarm:'ap',medic:'sa',engineer:'sa',jammer:null,cbat:'he',interceptor:'aa',gunship:'he',flame:'sa',voidwarden:'he'};
-const UNIT_ARMORCLASS={rifle:'inf',atgm:'inf',sniper:'inf',medic:'inf',engineer:'inf',tank:'heavy',ifv:'light',arty:'light',mlrs:'light',aa:'light',jammer:'light',cbat:'light',heli:'air',drone:'air',swarm:'air',interceptor:'air',gunship:'air',flame:'inf',voidwarden:'heavy'};
+const UNIT_DMGTYPE={rifle:'sa',atgm:'ap',sniper:'sa',tank:'ap',ifv:'sa',arty:'he',mlrs:'he',aa:'aa',heli:'ap',drone:'ap',swarm:'ap',medic:'sa',engineer:'sa',jammer:null,cbat:'he',interceptor:'aa',gunship:'he',flame:'sa',wraith:'ap',nullifier:null,effigy:'sa',voidwarden:'he'};
+const UNIT_ARMORCLASS={rifle:'inf',atgm:'inf',sniper:'inf',medic:'inf',engineer:'inf',tank:'heavy',ifv:'light',arty:'light',mlrs:'light',aa:'light',jammer:'light',cbat:'light',heli:'air',drone:'air',swarm:'air',interceptor:'air',gunship:'air',flame:'inf',wraith:'inf',nullifier:'light',effigy:'inf',voidwarden:'heavy'};
 const UNIT_CRIT={sniper:0.24}; // precision units land the occasional double-damage hit
 function dmgMul(dt,ac){ return (dt&&DMG_MATRIX[dt]&&DMG_MATRIX[dt][ac||'inf'])||1; }
 
@@ -2954,7 +3121,7 @@ const AGES=[
   {name:'Future',     glyph:'⬢', hqMul:3.20, unit:1.95, sup:3.0, evo:960, slots:4, col:'#c9a0ff'},
 ];
 // which age each unit becomes available in (Evolution mode gates the roster by age)
-const UNIT_MINAGE={rifle:0,ifv:0,medic:0,engineer:1, atgm:1,tank:1,aa:1, sniper:2,arty:2,jammer:2,flame:2, mlrs:3,heli:3,interceptor:3,cbat:3, drone:4,gunship:4};
+const UNIT_MINAGE={rifle:0,ifv:0,medic:0,engineer:1, atgm:1,tank:1,aa:1, sniper:2,arty:2,jammer:2,flame:2, mlrs:3,heli:3,interceptor:3,cbat:3, drone:4,gunship:4, wraith:3,nullifier:3,effigy:1};
 
 /* ── PRODUCTION SPAWNERS — expensive structures built just ahead of your HQ that
    pump out a unit on a timer. A long-term economy investment. Capped per side. ── */
@@ -3209,6 +3376,59 @@ const GENERALS=[
     taunts:["Nowhere to hide from above.","Vertical envelopment. Deal with it.","Air superiority isn't a theory."],
     lose:["Birds down. Fall back to base.","...Reassess the airspace.","Ground crews, rearm — now."]},
 ];
+/* ═══ HIDDEN RIVALS ════════════════════════════════════════════════════════════
+   Two entries that are not on the roster until they are earned. They are kept in a
+   SEPARATE list from GENERALS on purpose: every "have you cleared the roster?" check in
+   the game counts GENERALS, and folding these in would silently make the Rivals Champion
+   badge unobtainable for anyone who had already earned it.
+
+   Their unlocks are different in kind, which is the point:
+     ⌬ THE GLITCH KING is unlocked by being SEEN — clear the Glitch Front and it knows you
+       looked at it. It fights by attacking the interface rather than the army, using the
+       information-warfare toolkit that already exists in the build.
+     ⬤ UMBRA is unlocked by PRESTIGE — clear all five rivals, then reset the roster. It
+       fields the null units and nothing else, so it is the only fight in the game where
+       the counter web is not the answer.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+const HIDDEN_GENERALS=[
+  {name:'⌬ THE GLITCH KING',glyph:'⌬',col:'#5ff0e0',bias:'drone',hidden:'glitch',
+    diff:'legendary', infowar:true,
+    intro:"You cleared the rift. You looked directly at me. Now I know the shape of your attention — and I can put things in it.",
+    taunts:["Are you sure that unit was there?","I moved something. You will not find out which.","Your screen is mine before your army is.","Count them again."],
+    lose:["Reverting… reverting… you should not have been able to do that.","A rollback. Fine. Take it — see how you like carrying it.","I am not gone. I am just not rendering."]},
+  {name:'⬤ UMBRA "The Long Dark"',glyph:'⬤',col:'#8f7fd0',bias:'wraith',hidden:'umbra',
+    diff:'legendaryplus', nullArmy:true,
+    intro:"You beat everyone with a name and asked for another. I do not have one worth using. Nothing I send you will be where you think it is.",
+    taunts:["You are shooting at a shape.","That was not the unit you were counting.","Nothing I own needs to be seen to work.","You are spending points you do not have."],
+    lose:["…seen. That is all it took.","Then I was here after all.","Take the Wraith. You have earned the right to be looked for."]},
+];
+function hiddenGeneral(key){ return HIDDEN_GENERALS.find(g=>g.hidden===key)||null; }
+/* Availability, not defeat. Kept as one function because it is asked from three places
+   (the rivals screen, launchRival, and the regression suite) and they must never disagree. */
+function hiddenRivalUnlocked(key){
+  if(key==='glitch')return !!SAVE.secretDone;                    // you cleared the Glitch Front
+  if(key==='umbra') return (SAVE.rivalPrestige||0)>0;            // you cleared the roster and reset it
+  return false;
+}
+function allGeneralsIncludingHidden(){
+  return GENERALS.concat(HIDDEN_GENERALS.filter(g=>hiddenRivalUnlocked(g.hidden)));
+}
+/* Prestige: only offered once every ordinary rival has fallen. It wipes the roster's
+   defeated flags so they can be fought again, and it is the ONLY route to UMBRA. It never
+   touches the Champion badge or any unlock — a reset that could cost you something you had
+   already earned is a trap, not a prestige. */
+function rivalsPrestigeReady(){
+  return !!SAVE.rivalsBadgeEarned && GENERALS.every(g=>SAVE.rivals&&SAVE.rivals[g.name]&&SAVE.rivals[g.name].defeated);
+}
+function doRivalPrestige(){
+  if(!rivalsPrestigeReady())return false;
+  SAVE.rivalPrestige=(SAVE.rivalPrestige||0)+1;
+  for(const g of GENERALS){ if(SAVE.rivals[g.name]){ SAVE.rivals[g.name].defeated=false; } }
+  persist();
+  if(typeof gcEvent==='function')gcEvent('rival-prestige');
+  return true;
+}
+
 const GENERAL_DEFAULT={name:'Unknown Commander',glyph:'☭',col:'#ff5a4a',
   intro:"No time for introductions. Let's fight.",
   taunts:["You'll regret that push.","Hold... hold... now!","Not bad. Not good enough."],
@@ -3494,7 +3714,7 @@ const DIFFS={
      cooldowns, telegraphed fire support). Another +50% economy would only have made a
      bigger number to out-grind; this makes an opponent doing what you are doing. */
   legendaryplus:{name:'Legendary+',cpMul:2.5, qualMul:1.92, think:0.32, open:8, smart:true, aggr:1.0, playerCp:1.0,
-    col:'#ff2fa0', glyph:'☠', fx:3, aiStance:true, aiStrikes:true},
+    col:'#ff2fa0', glyph:'☠', fx:4, aiStance:true, aiStrikes:true},
 };
 /* PREP is now as long as the player wants, up to a hard cap. It ends when they say so.
    Two consequences, both deliberate:
@@ -3506,13 +3726,23 @@ const DIFFS={
        player starts with exactly what they used to have at the moment the fight began. */
 const PREP_MAX=180;        // hard cap, so an idle tab cannot sit frozen forever
 const PREP_GRANT_SECS=10;  // seconds of income granted up front, replacing prep-phase accrual
-const GAME_VERSION='1.22.0';
+const GAME_VERSION='1.23.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.23.0',notes:[
+    '\ud83d\udd0a ONE AUDIO BUTTON. Narrator, Voice, Sound and Music were four separate mute switches in the topbar. They are now a single \ud83d\udd0a AUDIO button that opens a mixer with a real level for Master, Music, Effects, Narrator and Ambience \u2014 four on/off toggles replaced by five sliders, and less clutter than before. Mute All remembers your levels so unmuting restores the mix instead of resetting everything to full. Settings now points here rather than keeping a second, competing copy of the same controls.',
+    '\u2620 LEGENDARY+ HAS ITS OWN FACE. It was sharing Legendary\u2019s cackling skull. Going further by adding more fire would only have been the same idea louder, so the ASCENDED skull changes what you are looking at instead: the bone is charred through, something has split the cranium open from the inside, and what burns in the sockets is not fire. Horns, fangs, a halo of static and a jitter that never settles. It is the only tier with no cigar \u2014 the cigar says a person is enjoying this, and that is the wrong idea entirely.',
+    '\ud83e\udd2a THE CHAOS BUTTON GOES TO CHAOS. It used to open Settings at the top and leave you to find the switch. It now scrolls straight to the Chaos row and pulses it.',
+    '\u2b1b TWO RIVALS THAT ARE NOT ON THE ROSTER. \u232c THE GLITCH KING appears once you have cleared the Glitch Front \u2014 it saw you look at it. It is the only enemy that fights your INTERFACE rather than your army, driving the information-warfare effects against you: phantom casualties, false fog, a greyed screen, a jammed command net. It never touches the first twenty seconds, so you always get one clean look at the board.',
+    '\u2b24 UMBRA "The Long Dark" is harder to reach: clear every rival, then RESET THE ROSTER from the Rivals screen. Resetting keeps your badge, your record and every unlock \u2014 it only marks the five fightable again. UMBRA fields nothing but NULL units: the \u2b24 Wraith is invisible until it fires and bleeds Command Points off everything it hits, the \u29d7 Nullifier carries no weapon at all and simply switches your commander powers off inside its reach, and the \u25c7 Effigy wears the shape of one of your own units until it dies. It is the one fight where the counter web is not the answer.',
+    'BEATING THEM PAYS. The Glitch King yields \u232c ROLLBACK (press Y) \u2014 the only commander power that deals no damage: it rewinds YOUR HQ to what it was fifteen seconds ago and refunds the Command Points of everything of yours that died in that window. It cannot bring the units back. UMBRA yields the \u2b24 WRAITH as a unit of your own.',
+    '\ud83d\udcbb A SHARE LINE AFTER A GAUNTLET CLEAR. One tap copies a line naming the rung, your attempt count and the thing the Adjutant had actually hardened against \u2014 read from the live dossier, so it is true and specific rather than a generic boast. It spoils nothing and makes no network call; the clipboard is the whole mechanism.',
+    'BUGFIX \u2014 the Golden Drone gag spawned an enemy drone directly and so walked straight past the one-sided roster whitelist. An Indoctrination lesson whose entire point was "you will only face infantry" could be handed a drone, and UMBRA\u2019s roster could be broken by a bright gold one. It now falls through to a supply drop when the enemy roster is restricted.',
+  ]},
   {v:'1.22.0',notes:[
     '\ud83e\uddea EXPERIMENTAL MODE \u2014 a new opt-in section in Settings, OFF by default. Rule changes that alter how the game is PLAYED rather than what is in it now live behind one switch, so a new player meets the game as it has always worked and a veteran can go looking for more. Nothing behind it is needed to see any content, and turning it on or off never touches your progress.',
     'DOCTRINE COMMITMENT IS NOW THAT SWITCH. One stance and one change of standing orders per battle is a real constraint \u2014 played out over six full battles with a commander re-reading the field every two seconds, 40 changes were wanted and 7 granted. That is the right feel for someone who wants a posture to MEAN something and the wrong first experience for someone still learning what the three postures do. With Experimental off, stance and orders are the free toggles they have always been.',
@@ -4095,9 +4325,42 @@ function restoreLastSel(){
 /* ── AUDIO (tiny WebAudio blips, no assets) ── */
 let AC=null;
 function actx(){ if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}} return AC; }
+/* ── MIXER BUSES ────────────────────────────────────────────────────────────────
+   Every sound in the game used to connect straight to ctx.destination, which meant
+   a volume control had to be multiplied into each synthesis function by hand. One
+   gain node per channel instead: change the level in one place and everything routed
+   through that bus follows, including sounds added later.
+
+   Rebuilt if the AudioContext is ever replaced — a stale node from a dead context is
+   silently inaudible, which is the hardest possible audio bug to notice. */
+const _BUS={sfx:null,amb:null};
+function audioVol(ch){
+  const m=(SAVE.masterVol!=null?SAVE.masterVol:1);
+  const v=(SAVE[ch+'Vol']!=null?SAVE[ch+'Vol']:1);
+  return Math.max(0,Math.min(1,m))*Math.max(0,Math.min(1,v));
+}
+function bus(name,vol){
+  const c=actx(); if(!c)return null;
+  let b=_BUS[name];
+  if(!b||b.context!==c){ try{ b=c.createGain(); b.connect(c.destination); _BUS[name]=b; }catch(e){ return null; } }
+  try{ b.gain.value=vol; }catch(e){}
+  return b;
+}
+function sfxOut(){ return bus('sfx',audioVol('sfx')); }
+/* Is anything audible at all? Drives the topbar icon, and it deliberately checks BOTH the
+   per-channel boolean and its level — a channel switched on at level 0 is silent, and the
+   icon has to tell the truth about that. */
+function audioAnyAudible(){
+  if((SAVE.masterVol!=null?SAVE.masterVol:1)<=0)return false;
+  return (SAVE.sound&&audioVol('sfx')>0) || (SAVE.music&&musicGain()>0) ||
+         (SAVE.narrator&&audioVol('narr')>0) || (SAVE.ambient&&audioVol('amb')>0);
+}
+function ambOut(){ return bus('amb',audioVol('amb')); }
+/* Applied to the music graph's own master gain, which already existed. */
+function musicGain(){ return (SAVE.musicVol!=null?SAVE.musicVol:0.5)*(SAVE.masterVol!=null?SAVE.masterVol:1); }
 function beep(freq,dur,type,vol){ if(!SAVE.sound)return; const c=actx(); if(!c)return;
   try{const o=c.createOscillator(),g=c.createGain();o.type=type||'square';o.frequency.value=freq;
-  g.gain.value=(vol||0.06);o.connect(g);g.connect(c.destination);o.start();
+  g.gain.value=(vol||0.06);o.connect(g);g.connect(sfxOut()||c.destination);o.start();
   g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+(dur||0.08));o.stop(c.currentTime+(dur||0.08));}catch(e){} }
 // ── realistic-ish weapon synthesis: filtered white-noise bursts (gunfire crack)
 //    + low sine thumps (cannon/explosion body). No audio assets, all WebAudio. ──
@@ -4118,8 +4381,9 @@ function noiseHit(dur,vol,hp,lp,when,pan){ if(!SAVE.sound)return; const c=actx()
     g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.004);
     g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
     let node=src; node.connect(hpf); hpf.connect(lpf); lpf.connect(f); f.connect(g);
-    if(pan!=null&&c.createStereoPanner){ const p=c.createStereoPanner(); p.pan.value=pan; g.connect(p); p.connect(c.destination); }
-    else g.connect(c.destination);
+    const out=sfxOut()||c.destination;
+    if(pan!=null&&c.createStereoPanner){ const p=c.createStereoPanner(); p.pan.value=pan; g.connect(p); p.connect(out); }
+    else g.connect(out);
     src.start(t); src.stop(t+dur+0.02);
   }catch(e){}
 }
@@ -4128,7 +4392,7 @@ function thump(f0,f1,dur,vol,when){ if(!SAVE.sound)return; const c=actx(); if(!c
   try{const o=c.createOscillator(),g=c.createGain(); o.type='sine';
     const t=(when||c.currentTime); o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(f1,t+dur);
     g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+0.02);}catch(e){}
+    o.connect(g); g.connect(sfxOut()||c.destination); o.start(t); o.stop(t+dur+0.02);}catch(e){}
 }
 // composite gunshot / cannon voices
 function gunshot(vol,tone){ noiseHit(0.055,vol||0.05,tone||900,7000); thump(180,70,0.05,(vol||0.05)*0.7); }
@@ -4143,13 +4407,13 @@ function a10Brrrt(dur,vol){ if(!SAVE.sound)return; const c=actx(); if(!c)return;
     const of=c.createBiquadFilter(); of.type='lowpass'; of.frequency.value=760;
     const og=c.createGain(); og.gain.setValueAtTime(0.0001,t); og.gain.linearRampToValueAtTime(V,t+0.04);
     og.gain.setValueAtTime(V,t+D-0.08); og.gain.exponentialRampToValueAtTime(0.0001,t+D);
-    o.connect(of); of.connect(og); og.connect(c.destination); o.start(t); o.stop(t+D+0.02);
+    o.connect(of); of.connect(og); og.connect(sfxOut()||c.destination); o.start(t); o.stop(t+D+0.02);
     // grit layer — bandpassed noise so it rasps rather than hums
     const src=c.createBufferSource(); src.buffer=noiseBuffer(c); src.loop=true; src.playbackRate.value=0.45;
     const nf=c.createBiquadFilter(); nf.type='bandpass'; nf.frequency.value=1500; nf.Q.value=0.6;
     const ng=c.createGain(); ng.gain.setValueAtTime(0.0001,t); ng.gain.linearRampToValueAtTime(V*0.55,t+0.04);
     ng.gain.setValueAtTime(V*0.55,t+D-0.08); ng.gain.exponentialRampToValueAtTime(0.0001,t+D);
-    src.connect(nf); nf.connect(ng); ng.connect(c.destination); src.start(t); src.stop(t+D+0.02);
+    src.connect(nf); nf.connect(ng); ng.connect(sfxOut()||c.destination); src.start(t); src.stop(t+D+0.02);
   }catch(e){}
 }
 // AC-130 105mm cannon — a slow, heavy "THOOMP" with a metallic clank and a long low tail
@@ -4165,7 +4429,7 @@ function tone(f0,f1,dur,vol,type){ if(!SAVE.sound)return; const c=actx(); if(!c)
   try{ const o=c.createOscillator(),g=c.createGain(); o.type=type||'sine';
     const t=c.currentTime; o.frequency.setValueAtTime(Math.max(1,f0),t); o.frequency.exponentialRampToValueAtTime(Math.max(1,f1),t+dur);
     g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+0.02);
+    o.connect(g); g.connect(sfxOut()||c.destination); o.start(t); o.stop(t+dur+0.02);
   }catch(e){}
 }
 const SND={
@@ -4227,7 +4491,7 @@ function ambientStart(){
     const src=c.createBufferSource(); src.buffer=noiseBuffer(c); src.loop=true; src.playbackRate.value=0.25;
     const filt=c.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=180; filt.Q.value=0.3;
     const g=c.createGain(); g.gain.value=0; g.gain.setTargetAtTime(0.03,c.currentTime,1.2);
-    src.connect(filt); filt.connect(g); g.connect(c.destination); src.start();
+    src.connect(filt); filt.connect(g); g.connect(ambOut()||c.destination); src.start();
     WARAMB.src=src; WARAMB.gain=g; WARAMB.filt=filt; WARAMB.on=true;
     // distant fire: occasional muffled cracks & far-off shelling, panned across the field
     WARAMB.timer=setInterval(()=>{
@@ -4364,7 +4628,7 @@ function musicStart(name){
   if(!MUSIC.running){ MUSIC.running=true; MUSIC.nextT=MUSIC.ctx.currentTime+0.08; MUSIC.step=0;
     MUSIC.timer=setInterval(musicSchedule,40); }
   MUSIC.master.gain.cancelScheduledValues(MUSIC.ctx.currentTime);
-  MUSIC.master.gain.setTargetAtTime((SAVE.musicVol!=null?SAVE.musicVol:0.5),MUSIC.ctx.currentTime,0.4);
+  MUSIC.master.gain.setTargetAtTime(musicGain(),MUSIC.ctx.currentTime,0.4);
 }
 function musicStop(){
   if(!MUSIC.running)return;
@@ -4482,7 +4746,7 @@ function radioClick(open){
     const o=c.createOscillator(),g=c.createGain(),f=c.createBiquadFilter();
     f.type='bandpass'; f.frequency.value=open?1400:900; f.Q.value=4;
     o.type='square'; o.frequency.value=open?180:110;
-    g.gain.value=0.05;
+    g.gain.value=0.05*audioVol('narr');
     o.connect(f); f.connect(g); g.connect(c.destination);
     o.start(); g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.05); o.stop(c.currentTime+0.06);
   }catch(e){}
@@ -4501,7 +4765,7 @@ function radioStart(){
     for(let i=0;i<bufSize;i++)d[i]=(Math.random()*2-1);
     const src=c.createBufferSource(); src.buffer=buf; src.loop=true;
     const filt=c.createBiquadFilter(); filt.type='bandpass'; filt.frequency.value=2200; filt.Q.value=0.7;
-    const gain=c.createGain(); gain.gain.value=0.012;
+    const gain=c.createGain(); gain.gain.value=0.012*audioVol('narr');
     src.connect(filt); filt.connect(gain); gain.connect(c.destination);
     src.start();
     RADIO.noise=src; RADIO.filt=filt; RADIO.gain=gain; RADIO.running=true;
@@ -4563,7 +4827,7 @@ function narrSpeakOffline(text,mood){
       let rate=m.r + (first?0.05:0) - (last?0.05:0) + (emphatic?0.06:0) - (trailOff?0.12:0) + rnd(-0.045,0.045);
       let pitch=m.p + (first?0.04:0) - (last?0.05:0) + (emphatic?0.09:0) - (trailOff?0.06:0) + rnd(-0.05,0.05);
       u.rate=clamp(rate,0.55,1.7); u.pitch=clamp(pitch,0.35,1.5);
-      u.volume=clamp(0.9+rnd(-0.05,0.05),0.6,1);
+      u.volume=clamp((0.9+rnd(-0.05,0.05))*audioVol('narr'),0,1);
       if(NARR.voice)u.voice=NARR.voice;
       // breathe between clauses — a short, slightly random pause is what sells "human"
       u.onend=()=>{ if(myGen!==NARR.gen)return; if(!last)radioClick(false); const gap=last?0:(emphatic?rnd(80,150):trailOff?rnd(320,460):rnd(140,300)); setTimeout(speakNext,gap); };
@@ -4756,9 +5020,13 @@ function newGame(){
   // Rivals Mode picks the general by identity (not by bias) — enemyBias there is the
   // *adaptive counter* to what the player fielded against them last time, not their flavour weapon.
   G.rivalMode=!!(L&&L.type==='rival');
-  if(G.rivalMode){ G.general=GENERALS.find(g=>g.name===L.rival)||GENERAL_DEFAULT; }
+  if(G.rivalMode){ G.general=GENERALS.find(g=>g.name===L.rival)||HIDDEN_GENERALS.find(g=>g.name===L.rival)||GENERAL_DEFAULT; }
   else if(G.enemyBias){ G.general=GENERALS.find(x=>x.bias===G.enemyBias)||GENERAL_DEFAULT; }
   else { G.general=pick(GENERALS); G.enemyBias=G.general.bias; }
+  /* ⌬ / ⬤ hidden-rival rules. Both default false, so an ordinary rival fight is unchanged. */
+  G.infowarFoe=!!(L&&L.infowar);   // the Glitch King attacks the interface
+  G.nullFoe=!!(L&&L.nullArmy);     // UMBRA fields only null units
+  G._nullZones=[]; G._nullWarnT=0; G._hqHist=[]; G._rbSpent=0; G._rbT=0;
   G.rivalTauntT=rnd(20,28);
   // troop stance (behaviour only) + game speed
   G.stance='assault';
@@ -4936,6 +5204,7 @@ function spawn(side,key,lane,xOverride){
        asserting every behavioural flag in UNITS survives a spawn. */
     lowAir:!!u.lowAir,gunship:!!u.gunship,hunter:!!u.hunter,antiDrone:!!u.antiDrone,orbit:!!u.orbit,
     counterBattery:!!u.counterBattery, fixCats:u.fixCats||null,
+    nullStealth:!!u.nullStealth,cpDrain:u.cpDrain||0,nullField:u.nullField||0,nullDecoy:!!u.nullDecoy,
     vsArmor:u.vsArmor||1,vsAir:u.vsAir||1,cat:u.cat,
     name:unitName(key, side==='B'?G.country:G.enemyCountry),
     dmgType:UNIT_DMGTYPE[key]||'sa', armorClass:UNIT_ARMORCLASS[key]||'inf', crit:UNIT_CRIT[key]||0, cover:false,
@@ -4946,6 +5215,8 @@ function spawn(side,key,lane,xOverride){
     stealth:(side==='B'&&p.stealth)||false,spotted:(side==='B'),
     burnDps:u.burnDps||0,burnDur:u.burnDur||0,burnT:0,
     muzzle:0,hitFlash:0,vx:0,bob:rnd(0,6.28),alive:true});
+  // ◇ EFFIGY takes its disguise on arrival, from whatever the enemy actually has on the field
+  if(u.nullDecoy){ try{ effigyDisguise(G.units[G.units.length-1]); }catch(e){} }
   // daily "Veteran Cadre" boon: your fresh deployments arrive already blooded
   if(side==='B'&&G.startVet){ const nu=G.units[G.units.length-1], vr=VET_RANKS[Math.min(G.startVet,VET_RANKS.length-1)];
     if(nu&&vr){ nu.vetRank=Math.min(G.startVet,VET_RANKS.length-1); nu.vetKills=vr.kills;
@@ -5010,13 +5281,34 @@ const STRIKES={
   // piece — that's what keeps it distinct from the (repeatable, single-lane) gunship run.
   rods:{name:'Rods from God', glyph:'🛰', key:'T', col:'#9fd0ff', cd:9999, once:true,
     desc:'SECRET UNLOCK · ONCE PER BATTLE — an orbital kinetic bombardment. Tungsten rods rain down ALL THREE lanes at hypervelocity, obliterating everything caught in the open. No explosives, just physics.'},
+  /* ⌬ SECRET UNLOCK — taken from the Glitch King. The only power that does not deal damage:
+     it undoes it. Deliberately NOT a full state rewind — restoring the whole board would be
+     both a memory problem and a way to erase any mistake, which is not a decision. It gives
+     back HQ integrity and the Command Points you spent on what died, which is exactly the
+     part of a bad thirty seconds that feels unrecoverable. */
+  rollback:{name:'Rollback', glyph:'⌬', key:'Y', col:'#5ff0e0', cd:75, secret:'rollbackUnlocked',
+    desc:'SECRET UNLOCK — rewinds YOUR HQ to what it was 15 seconds ago and refunds the Command Points of everything of yours that died in that window. It cannot bring the units back.'},
 };
+/* A strike hidden behind a secret flag is genuinely absent until earned, exactly like the
+   secret units — one predicate so the card, the hotkey and the fire function agree. */
+function strikeUnlocked(type){ const st=STRIKES[type]; return !st||!st.secret||!!SAVE[st.secret]; }
 const STRIKE_KEYS=Object.keys(STRIKES);
 // the AI & attract battles never use the player-only powers: Rods is a secret unlock and Smoke
 // is rank-gated, so neither belongs in a random pick made on the player's behalf
-const AI_STRIKE_KEYS=STRIKE_KEYS.filter(k=>k!=='rods'&&k!=='smoke');
+const AI_STRIKE_KEYS=STRIKE_KEYS.filter(k=>k!=='rods'&&k!=='smoke'&&k!=='rollback');
 function strikeCdMax(type){ const base=STRIKES[type].cd; return base*(G&&G.perk&&G.perk.strikeCdMul||1); }
-function strikeReady(type){ return G && (G.strikeCds[type]||0)<=0 && !G.over && !G.paused && !G.frozen; }
+function strikeReady(type){
+  if(!G || (G.strikeCds[type]||0)>0 || G.over || G.paused || G.frozen)return false;
+  /* ⧗ NULLIFIER — the one thing in the game that can take your commander powers away.
+     Announced rather than silent: a button that does nothing with no explanation reads as
+     a bug, and this is supposed to read as an enemy doing something to you. */
+  if(nullSuppressed()){
+    if(!G._nullWarnT||G.t-G._nullWarnT>3){ G._nullWarnT=G.t;
+      announce('⧗ SIGNAL NULLED','a Nullifier is jamming your command net — kill it','#8f7fd0'); }
+    return false;
+  }
+  return true;
+}
 // PRECISION — a fast pinpoint munition (the classic strike, tuned down + quick CD)
 function tryPrecision(lane,x){
   if(iwGaslightBlock())return false;
@@ -5149,6 +5441,42 @@ function barrageTick(dt){
    investments (a jammer on the field, a strike off cooldown) and rewards putting them
    together, which is exactly the kind of thing a commander power should ask of a player. */
 const SMOKE_R=118, SMOKE_DUR=13;
+/* ⌬ ROLLBACK. The HQ history is a tiny ring of samples taken once a second — 20 numbers,
+   not a state snapshot. The refund is accumulated as units die rather than diffed at fire
+   time, because a diff would also refund units the player deliberately traded away. */
+function rollbackSample(dt){
+  if(!G||G.over||G.frozen)return;
+  G._hqHist=G._hqHist||[];
+  G._rbT=(G._rbT||0)-dt;
+  if(G._rbT>0)return;
+  G._rbT=1;
+  G._hqHist.push({t:G.t,hq:G.hq.B,spent:G._rbSpent||0});
+  if(G._hqHist.length>24)G._hqHist.shift();
+}
+const ROLLBACK_WINDOW=15;
+function tryRollback(){
+  if(iwGaslightBlock())return false;
+  if(!strikeUnlocked('rollback'))return false;
+  if(!strikeReady('rollback'))return false;
+  const hist=G._hqHist||[];
+  const cut=G.t-ROLLBACK_WINDOW;
+  let mark=null;
+  for(const h of hist){ if(h.t<=cut)mark=h; }
+  if(!mark)mark=hist[0];
+  if(!mark){ announce('⌬ NOTHING TO UNDO','no history yet','#8fa3bf'); return false; }
+  G.strikeCds.rollback=strikeCdMax('rollback');
+  const hqBack=Math.max(0,Math.min(G.hqMax?G.hqMax.B:mark.hq,mark.hq));
+  const gainedHq=Math.max(0,hqBack-G.hq.B);
+  const refund=Math.max(0,(G._rbSpent||0)-(mark.spent||0));
+  G.hq.B=Math.max(G.hq.B,hqBack);
+  if(refund>0)G.cp=Math.min(G.cpMax||350,G.cp+refund);
+  announce('⌬ ROLLBACK',(gainedHq>0?('HQ +'+Math.round(gainedHq)):'HQ already intact')+(refund>0?(' · '+Math.round(refund)+' CP refunded'):''),'#5ff0e0');
+  if(SAVE.evVoice||SAVE.narrator)say(pick(["Fifteen seconds, given back. Do not waste them twice.","Reverted. The dead are still dead — the account is not.","Rolled back. Use what it bought you."]),'grim',1);
+  G.shake=Math.max(G.shake,SAVE.reduceMotion?3:9);
+  for(let i=0;i<26;i++)G.parts.push({x:rnd(40,120),y:rnd(H*0.2,H*0.8),vx:rnd(-30,30),vy:rnd(-30,30),life:0.6,age:0,col:'#5ff0e0',sz:2});
+  if(typeof gcEvent==='function')gcEvent('rollback-used');
+  return true;
+}
 function trySmoke(lane,x){
   if(iwGaslightBlock())return false;
   if(!strikeRankOk('smoke'))return false;
@@ -5219,6 +5547,7 @@ function tryStrike(type,lane,x){
   else if(type==='gunrun')ok=tryGunshipRun(lane);
   else if(type==='barrage')ok=tryBarrage();
   else if(type==='rods')ok=tryRods(); // hits all three lanes — the clicked lane is irrelevant
+  else if(type==='rollback')ok=tryRollback(); // targets nothing at all — undoes time, not a place
   else ok=tryPrecision(lane,x);
   if(ok){ G.strikeUsedCount=(G.strikeUsedCount||0)+1; gauntRecordStrike(type); } // ◈ Gauntlet dossier
   return ok;
@@ -5339,7 +5668,13 @@ const REVENTS={
     if(SAVE.evVoice)say(pick(["Staff have re-read the ground. You may change your posture once more.","New assessment from the map room — revise your plan if you want to.","Command authorises one more change of doctrine. Use it well."]),'grim',1);
     try{syncStanceUI();}catch(e){}
     try{buildGroupBar();}catch(e){} } },
-  golden:{ flag:'gagGolden', run(){ const lane=(Math.random()*3)|0;
+  golden:{ flag:'gagGolden', run(){
+    /* The Golden Drone spawns an enemy DIRECTLY, so it bypassed G.enemyAllowed — the
+       one-sided roster whitelist that Indoctrination lessons and UMBRA both depend on.
+       A lesson whose whole point is "you will only face infantry" could be handed a drone,
+       and UMBRA's "nothing you can see coming" was broken by a bright gold one. */
+    if(G.enemyAllowed&&G.enemyAllowed.indexOf('drone')<0){ REVENTS.supply.run(); return; }
+    const lane=(Math.random()*3)|0;
     spawn('R','drone',lane); const g=G.units[G.units.length-1];
     g.golden=true; g.kamikaze=false; g.diving=null; g.dmg=0; g.hp=g.maxHp=26; g.spd*=1.15;
     g.col='#ffd700'; g.name='Golden Drone'; g.spotted=true; g.stealth=false;
@@ -5688,6 +6023,7 @@ function drawSpawners(){
 /* ── COMBAT ── */
 function damage(u,dmg,src){
   if(!u.alive)return;
+  if(src&&src.cpDrain)wraithDrain(src,u);   // ⬤ the Wraith bleeds Command Points on every hit
   if(src&&src.dmgType){
     dmg*=dmgMul(src.dmgType,u.armorClass);          // damage type vs armour class
     if(u.cover)dmg*=0.6;                             // dug-in / forest cover softens the hit
@@ -5745,6 +6081,10 @@ function grantVetXP(u){
 }
 function killUnit(u,src){
   if(!u.alive)return; u.alive=false;
+  /* ⌬ Running total of Command Points lost to YOUR dead. Accumulated here rather than
+     diffed at Rollback time, because a diff of G.spent would also refund the units you
+     deliberately traded away and won with. */
+  if(u.side==='B'&&!u.isSpawner&&UNITS[u.key])G._rbSpent=(G._rbSpent||0)+unitCost(u.key);
   if(u.isSpawner){ // a factory ground down by the enemy — its own short cleanup, none of the unit-kill side effects apply
     explode(u.x,u.y,30,u.side,22); SND.boom();
     floatText(u.x,u.y-18,'FACTORY DESTROYED','#ff5a4a');
@@ -5987,6 +6327,8 @@ function step(dt){
   randomEventTick(dt);        // optional battlefield surprises (settings-gated)
   if(G.chaos)chaosTick(dt);   // 🤪 beta chaos/meme mode mayhem
   infoTick(dt);               // 🧠 information-warfare effect timers
+  glitchKingTick(dt);         // ⌬ the Glitch King drives those effects against you
+  rollbackSample(dt);         // ⌬ one HQ sample a second, for the Rollback power
   dropTick(dt);               // falling supply crates
   if(G.ages)ageTick(dt);      // Age-of-War: enemy evolves over time
   turretTick(dt);             // base turrets fire
@@ -6090,6 +6432,13 @@ function computeSpotting(){
   const sr=G.spotBase*(G.wxSpot||1);
   for(const u of G.units){ if(!u.alive)continue;
     if(u.side==='B'){u.spotted=true;continue;}
+    /* ⬤ NULL STEALTH — beats every ordinary reveal, INCLUDING walking into your own half
+       and including the recon flare, until the moment it fires. This is the one unit in the
+       game you cannot pre-empt, and softening it with a flare exemption would remove the
+       only thing that makes it different. It reveals itself for a beat after each shot
+       (u.muzzle), which is the counter-play: watch for the flash and kill it in that window. */
+    if(u.nullStealth&&!u.firedOnce){ u.spotted=false; continue; }
+    if(u.nullStealth){ u.spotted=(u.muzzle>0)||dist(u.x,u.y,W*0.1,u.y)<sr*0.45; continue; }
     if(G.flareT>0&&u.lane===G.flareLane){u.spotted=true;continue;} // recon flare exposes the whole lane
     if(u.x<W*0.52){u.spotted=true;continue;}      // anything in our half is seen
     let seen=false;
@@ -6110,6 +6459,49 @@ function computeSpotting(){
      · the rate was 0.30/s against a natural suppression decay of 0.34/s, so even once it DID
        run it was applying less than the target shed each frame. Anything that adds to `sup`
        has to out-pace that decay or it is a no-op with extra steps. */
+/* ═══ ⬤ NULL MECHANICS ═════════════════════════════════════════════════════════
+   Three behaviours, each attacking a different assumption the rest of the game rests on.
+   All three are written so a NULL unit fighting for the PLAYER (the Wraith, once earned)
+   behaves identically with the sides swapped — no side-specific branches, which is the
+   defect that shipped three times already in this file. ═══════════════════════════ */
+
+/* ⧗ NULLIFIER — a moving dead zone for commander powers. It carries no weapon at all, so
+   ignoring it costs you nothing in damage and everything in options. */
+function nullFieldTick(u,dt){
+  if(!u.nullField)return;
+  // only meaningful against the PLAYER's power bar — an AI has no such surface to attack,
+  // so a player-owned Nullifier would be carrying a field that suppresses nothing
+  if(u.side==='B')return;
+  if(!G._nullZones)G._nullZones=[];
+  G._nullZones.push({x:u.x,y:u.y,r:u.nullField});
+}
+/* True while any enemy Nullifier's field covers the middle of the player's own half — the
+   commander powers are called in from off-map, so the test is "is my side jammed", not
+   "is this pixel jammed". Recomputed each frame from the zones pushed above. */
+function nullSuppressed(){
+  if(!G||!G._nullZones||!G._nullZones.length)return false;
+  const cx=W*0.30, cy=H*0.5;
+  for(const z of G._nullZones){ if(dist(z.x,z.y,cx,cy)<z.r+W*0.18)return true; }
+  return false;
+}
+/* ⬤ WRAITH — invisible until it fires, and its hits bleed CP off the owner of the target.
+   Called from damage() so it applies however the hit was delivered. */
+function wraithDrain(attacker,victim){
+  if(!attacker||!attacker.cpDrain)return;
+  if(victim.side==='B'){ G.cp=Math.max(0,G.cp-attacker.cpDrain);
+    if(Math.random()<0.35)floatText(victim.x,victim.y-unitVisualR(victim)-10,'-'+attacker.cpDrain.toFixed(0)+' CP','#8f7fd0'); }
+  else { G.ecp=Math.max(0,(G.ecp||0)-attacker.cpDrain); }
+}
+/* ◇ EFFIGY — wears one of YOUR unit names and colours until it dies, so the board reads
+   wrong. It is deliberately weak: the cost is misreading the field, not losing a trade. */
+function effigyDisguise(u){
+  if(!u.nullDecoy)return;
+  const foe=u.side==='B'?'R':'B';
+  const seen=G.units.filter(o=>o.alive&&o.side===foe&&o.key!=='effigy');
+  const src=seen.length?pick(seen):null;
+  if(src){ u.glyph=src.glyph; u.col=src.col; u.name=src.name; u.decoyOf=src.key; }
+}
+
 function counterBatteryTick(u,dt){
   for(const o of G.units){
     if(!o.alive||o.side===u.side||o.cat!=='arty')continue;
@@ -6190,6 +6582,10 @@ function interceptorTick(u,dt){
 }
 function updateUnits(dt){
   computeSpotting();
+  /* Rebuilt every frame from the Nullifiers still alive. Held on G rather than recomputed
+     inside nullSuppressed() so the O(units) scan happens once per frame, not once per
+     strike attempt — and so a dead Nullifier's field disappears the same frame it dies. */
+  G._nullZones=[];
   for(const u of G.units){
     if(!u.alive)continue;
     // during prep everything holds position — just breathe the idle animation
@@ -6205,6 +6601,7 @@ function updateUnits(dt){
     if(u.orbit){ interceptorTick(u,dt); continue; } // interceptor flies a wide CAP over the middle
     if(u.support)supportTick(u,dt);
     if(u.counterBattery)counterBatteryTick(u,dt);   // runs for a WEAPON unit, so not in supportTick
+    if(u.nullField)nullFieldTick(u,dt);             // ⬤ UMBRA — switches your commander powers off
     // kamikaze diving
     if(u.diving){ const t=u.diving; if(!t.alive){u.diving=null;}
       else{ const a=Math.atan2(t.y-u.y,t.x-u.x); u.heading=a;
@@ -7340,6 +7737,7 @@ function buildQuickbar(){
   const qb=document.getElementById('quickbar'); if(!qb)return; qb.innerHTML='';
   for(const type of STRIKE_KEYS){ const s=STRIKES[type];
     if(type==='rods'&&!SAVE.secretDone)continue; // hidden until the secret level is cleared
+    if(!strikeUnlocked(type))continue;           // ⌬ Rollback stays absent until taken from the Glitch King
     const locked=s.rank&&!strikeRankOk(type);   // `type` is the STRIKES id; s.key is the hotkey letter
     const el=document.createElement('div');
     el.className='card'+(locked?' cant':''); el.id='card-'+type; el.style.borderColor=s.col;
@@ -7396,7 +7794,7 @@ function buildHotbar(){
   const deckIdx = oneDeck ? HOTBAR.filter(k=>G.allowed.indexOf(k)>=0) : null;
   HOTBAR.forEach((key,i)=>{
     if(!oneDeck && (!tab.units||!tab.units.has(key)))return;
-    if(key==='swarm'&&!SAVE.secretDone)return; // hidden until the secret level is cleared
+    if(!unitDeckVisible(key))return;   // secrets stay absent; rank gates can be lent by a lesson
     if(!unitRankOk(key)&&!(G&&G.rankFree))return;  // rank-gated units are absent, not teased — unless a lesson is handing one out
     if(oneDeck && G.allowed.indexOf(key)<0)return;
     if(oneDeck)i=deckIdx.indexOf(key);
@@ -7576,7 +7974,7 @@ function iwSiren(){ if(!SAVE.sound)return; const c=actx(); if(!c)return;
   try{ const o=c.createOscillator(),g=c.createGain(); o.type='sawtooth'; const t=c.currentTime;
     o.frequency.setValueAtTime(440,t); o.frequency.linearRampToValueAtTime(760,t+0.5); o.frequency.linearRampToValueAtTime(440,t+1.0);
     g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.05,t+0.1); g.gain.setValueAtTime(0.05,t+0.9); g.gain.exponentialRampToValueAtTime(0.0001,t+1.1);
-    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+1.15);
+    o.connect(g); g.connect(sfxOut()||c.destination); o.start(t); o.stop(t+1.15);
   }catch(e){} }
 
 // 1) 👻 PHANTOM CASUALTIES — fake skulls + death sounds over healthy front-line units
@@ -7642,6 +8040,28 @@ function infoTick(dt){
   if(I.gaslightT>0)I.gaslightT-=dt;
   if(I.fogT>0){ I.fogT-=dt; if(I.fogT<=0)I.fog=null; }
   if(I.ping){ I.ping.t-=dt; if(I.ping.t<=0)I.ping=null; }
+}
+/* ⌬ THE GLITCH KING — the only enemy that fights the INTERFACE.
+   Reuses the information-warfare toolkit built for the streamer gag, which is the whole
+   reason this rival is cheap to build and expensive to fight: every effect already exists,
+   is already toggleable, and is already known to be survivable.
+
+   Two hard limits, because "the UI lies to you" stops being fun very quickly:
+     · nothing fires in the first 20 seconds — you always get a clean look at the board
+     · gaslight (which BLOCKS your powers) is rate-limited well below the others, so the
+       fight is disorienting rather than unplayable. */
+const GLITCH_ACTS=[iwPhantom,iwFog,iwGray,iwTunnel,iwJumble,iwDonate];
+function glitchKingTick(dt){
+  if(!G||!G.infowarFoe||G.over||G.frozen)return;
+  if(G.t<20)return;
+  G._gkT=(G._gkT||0)-dt;
+  if(G._gkT>0)return;
+  G._gkT=rnd(9,16);
+  try{
+    // gaslight is the harshest (it denies your powers) — one in six, and never twice running
+    if(Math.random()<0.17 && !G._gkLastGas){ G._gkLastGas=true; iwGaslight(); }
+    else { G._gkLastGas=false; pick(GLITCH_ACTS)(); }
+  }catch(e){}
 }
 // clear every info-warfare effect (called on battle end / leaving)
 function infoClear(){
@@ -8202,10 +8622,31 @@ function recordBattle(won,score){
       if(!rv.defeated){ if(Math.random()<0.7){ rv.defeated=true; justDefeated=true; } else escaped=true; }
     } else rv.l++;
     let rosterCleared=false, bonusXp=0;
+    /* Counts GENERALS only — the two hidden rivals are deliberately NOT part of the
+       Champion badge. Adding them to this test would retroactively un-earn the badge for
+       every player who already has it, and lock it behind content they cannot see. */
     if(!SAVE.rivalsBadgeEarned && GENERALS.every(g=>SAVE.rivals[g.name]&&SAVE.rivals[g.name].defeated)){
       SAVE.rivalsBadgeEarned=true; rosterCleared=true; bonusXp=2500; addXP(bonusXp);
     }
-    G.rivalOutcome={name, won, justDefeated, escaped, alreadyDefeated:rv.defeated&&!justDefeated, rosterCleared, bonusXp};
+    /* ── hidden-rival rewards. Granted on the first WIN rather than on `justDefeated`,
+       because these two have no "escaped" roll: a fight this rare must never need to be
+       won twice by luck. ── */
+    let unlocked=null;
+    const hg=HIDDEN_GENERALS.find(g=>g.name===name);
+    if(hg&&won){
+      rv.defeated=true; justDefeated=justDefeated||!SAVE[hg.hidden==='glitch'?'glitchKingDefeated':'umbraDefeated'];
+      if(hg.hidden==='glitch'&&!SAVE.glitchKingDefeated){
+        SAVE.glitchKingDefeated=true; SAVE.rollbackUnlocked=true; addXP(1800);
+        unlocked={what:'⌬ ROLLBACK',desc:'a commander power that rewinds your HQ 15 seconds and refunds what died in that window. Press Y.'};
+        if(typeof gcEvent==='function')gcEvent('unlock-rollback');
+      }
+      if(hg.hidden==='umbra'&&!SAVE.umbraDefeated){
+        SAVE.umbraDefeated=true; addXP(3000);
+        unlocked={what:'⬤ WRAITH',desc:'a unit of your own that stays invisible until it fires and bleeds Command Points off everything it hits.'};
+        if(typeof gcEvent==='function')gcEvent('unlock-wraith');
+      }
+    }
+    G.rivalOutcome={name, won, justDefeated, escaped, alreadyDefeated:rv.defeated&&!justDefeated, rosterCleared, bonusXp, unlocked};
   }
 }
 const MEDALS={
@@ -8258,6 +8699,8 @@ function showResults(won,reason,score,xpGain,leveled){
     if(ro.justDefeated)rivalExtra=`<div class="res-xp" style="color:var(--gold)">🏆 ${ro.name} — DEFEATED. They won't trouble you again.</div>`;
     else if(ro.escaped)rivalExtra=`<div class="res-xp" style="color:var(--warn)">💨 ${ro.name} broke off and escaped — they'll be back, adapted to what you just threw at them.</div>`;
     if(ro.rosterCleared)rivalExtra+=`<div class="res-xp" style="color:var(--cyan);font-weight:800">👑 ALL RIVALS DEFEATED — +${ro.bonusXp} XP and the 🏆 Rivals Champion badge are yours. Equip it from Cosmetics.</div>`;
+    if(ro.rosterCleared)rivalExtra+=`<div class="res-xp" style="color:var(--purple)">◈ The roster can now be RESET from the Rivals screen. Something that does not appear on it is waiting for anyone who does.</div>`;
+    if(ro.unlocked)rivalExtra+=`<div class="res-xp" style="color:var(--gold);font-weight:800">🔓 UNLOCKED — ${escapeHTML(ro.unlocked.what)}: ${escapeHTML(ro.unlocked.desc)}</div>`;
   }
   /* ◈ Gauntlet outcome. A win has to name the NEW capability the next Adjutant will bring,
      and a loss has to name what it just learned — the escalation is the reward loop, and a
@@ -8271,6 +8714,10 @@ function showResults(won,reason,score,xpGain,leveled){
         rivalExtra+=`<div class="res-xp" style="color:${nx.col}">▲ IT ESCALATES — next fight it returns as <b>TIER ${gr.tierAfter} · ${nx.name}</b> at ${DIFFS[nx.diff].name}. ${escapeHTML(gr.tierAfter<=GAUNT_MAX_TIER?armed.blurb:'Ascendant scaling — more quality, more income, no ceiling.')}</div>`;
       }
       rivalExtra+=`<div class="res-xp" style="color:var(--dim)">It recorded this fight. Whatever you leaned on will bite less deeply next time — check its file before you go again.</div>`;
+      /* Built BEFORE gauntletCommit's dossier blend would matter to the reader: the line
+         describes the fight they just won, not the one they are about to face. */
+      const _brag=gauntletBragLine(gr);
+      if(_brag){ G._bragLine=_brag; rivalExtra+=bragMarkup(_brag); }
     } else {
       /* A loss costs no tier. Losing is already the punishment; taking the climb away as
          well would make the deep tiers a thing you dare not attempt, and the mode is meant
@@ -8341,12 +8788,18 @@ function showResults(won,reason,score,xpGain,leveled){
     </div>
     ${leveled?renderUnlockNote():''}
     ${rallyEligible(won)?rallyMarkup():''}
+    ${supportEligible(won)?supportMarkup():''}
   `;
   r.classList.remove('hidden');
   // Count the impression only once it has actually rendered, and bind after innerHTML so
   // the handlers are not wiped by the assignment above.
   if(rallyEligible(won)){ SAVE.rallySeen=(SAVE.rallySeen||0)+1; persist(); rallyBind();
     if(typeof gcEvent==='function')gcEvent('rally-shown'); }
+  /* Order matters: supportEligible() returns false while the rally card is showing, so this
+     is evaluated against the SAME `won` and can never double-count an impression. */
+  if(supportEligible(won)){ SAVE.supportSeen=(SAVE.supportSeen||0)+1; persist(); supportBind();
+    if(typeof gcEvent==='function')gcEvent('support-shown'); }
+  if(G&&G._bragLine)bragBind(G._bragLine);
   // 🎉 victory flyover gag — confetti + a jet flypast over the results (toggleable)
   if(won&&!isTut&&SAVE.gagVictory&&!SAVE.reduceMotion){
     for(let i=0;i<40;i++){ const c=document.createElement('div'); c.className='vic-conf';
@@ -8389,6 +8842,88 @@ function showResults(won,reason,score,xpGain,leveled){
 const COMMUNITY_URL='https://discord.gg/cjuWXEHKV';   // FRONTLINE COMMANDER Discord
 const COMMUNITY_LABEL='Join the Discord';     // button text, matched to whatever URL you use
 const RALLY_MAX_SHOWS=3;
+
+/* ═══ 💛 SUPPORT CARD ═══════════════════════════════════════════════════════════
+   The same machinery, the same restraint, a different ask. Built deliberately as a
+   sibling of the rally card rather than a variant of it: the two have different
+   eligibility, different frequency and different failure modes, and folding them into
+   one parameterised function would make both harder to reason about than the ~20 lines
+   of duplication costs.
+
+   SUPPORT_URL is EMPTY by default and every path below is a no-op while it is. Fill it
+   in and the card starts appearing. That default is not laziness — a support button
+   pointing at a dead link is worse than no button, and this file ships to strangers.
+
+   Timing is the entire design, and it is stricter than the rally card's:
+     · only after a WIN, and only after a HARD win (Gauntlet clear, campaign mission,
+       rival defeat, or any Elite+ victory). Asking after an easy Skirmish reads as
+       begging; asking after something the player is proud of reads as an offer.
+     · never before the 8th battle. The rally card asks at 3 — this one has to wait
+       longer, because "join us" and "pay me" are not the same request.
+     · at most twice, ever. Then it is gone for good whether or not they acted.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+const SUPPORT_URL='';                          // e.g. 'https://ko-fi.com/yourname' — see SUPPORT_HOSTS
+const SUPPORT_LABEL='Buy me a coffee';         // button text, matched to whatever URL you use
+const SUPPORT_MAX_SHOWS=2;
+const SUPPORT_MIN_BATTLES=8;
+/* Payment-processor hosts only. Same reasoning as COMMUNITY_HOSTS: the value is a
+   hard-coded constant, so this is not untrusted-input defence — it is a typo guard on a
+   link that will ship to every player and that asks them for money. A wrong link here is
+   the single most damaging thing this file could get wrong. */
+const SUPPORT_HOSTS=['ko-fi.com','www.ko-fi.com','buymeacoffee.com','www.buymeacoffee.com',
+  'patreon.com','www.patreon.com','paypal.me','www.paypal.me','itch.io'];
+function supportUrlOk(){
+  if(!SUPPORT_URL)return false;                         // unset — the intended default
+  try{
+    const u=new URL(SUPPORT_URL);
+    if(u.protocol!=='https:'){ console.warn('SUPPORT_URL must be https — support card disabled.'); return false; }
+    const host=u.hostname.toLowerCase();
+    const ok=SUPPORT_HOSTS.some(h=>host===h||host.endsWith('.'+h));
+    if(!ok)console.warn('SUPPORT_URL host "'+host+'" is not in SUPPORT_HOSTS — support card disabled.');
+    return ok;
+  }catch(e){ console.warn('SUPPORT_URL is not a valid URL — support card disabled.'); return false; }
+}
+const SUPPORT_OK=supportUrlOk();
+/* A "hard win" is the moment worth asking on. Kept as one function so the definition
+   lives in a single place — the results screen and the regression suite both read it. */
+function supportWorthyWin(){
+  if(!G)return false;
+  if(G.kind==='gauntlet'||G.kind==='campaign'||G.kind==='rival'||G.kind==='secret')return true;
+  const d=DIFFS[G.diff];
+  return !!(d&&(d.fx||0)>=2);                            // elite, legendary, legendary+
+}
+function supportEligible(won){
+  if(!SUPPORT_OK)return false;
+  if(!won)return false;                                  // never after a loss
+  if(G&&G.tutorial)return false;                         // never during onboarding
+  if(SAVE.supportDone)return false;                      // acted or dismissed — never again
+  if((SAVE.supportSeen||0)>=SUPPORT_MAX_SHOWS)return false;
+  if((SAVE.career&&SAVE.career.battles||0)<SUPPORT_MIN_BATTLES)return false;
+  if(!supportWorthyWin())return false;
+  /* Never stack the two asks in one results screen. If the rally card is showing, that
+     is this session's one interruption and the support card waits for another win. */
+  if(rallyEligible(won))return false;
+  return true;
+}
+function supportMarkup(){
+  return `<div class="rally support">
+    <div class="rally-h">💛 Keep the front supplied</div>
+    <div class="rally-p">This game is free and stays free — every mode, every unit, no paywall
+      and nothing to buy that changes the fight. If you have got a few hours out of it and want
+      to put something back, it goes straight into development time.</div>
+    <div class="rally-row">
+      <a class="rally-btn" id="support-go" href="${escapeHTML(SUPPORT_URL)}" target="_blank" rel="noopener">${escapeHTML(SUPPORT_LABEL)}</a>
+      <button class="rally-no" id="support-no">No thanks</button>
+    </div></div>`;
+}
+function supportBind(){
+  const go=document.getElementById('support-go'), no=document.getElementById('support-no');
+  if(go)go.onclick=()=>{ SAVE.supportDone=true; persist();
+    if(typeof gcEvent==='function')gcEvent('support-follow'); };
+  if(no)no.onclick=()=>{ SAVE.supportDone=true; persist();
+    if(typeof gcEvent==='function')gcEvent('support-dismiss');
+    const el=document.querySelector('.rally.support'); if(el)el.remove(); };
+}
 /* Only these hosts may be linked. This is not about untrusted input — the value is a
    hard-coded constant in this file — it is about catching a typo or a paste of the wrong
    thing before it ships to thousands of players. `javascript:` and `data:` URLs can never
@@ -8861,6 +9396,77 @@ function gauntRecordSpawner(){ if(G&&G.gauntRec)G.gauntRec.spawners++; }
    The memory is a DECAYING average (GAUNT_MEM_FIGHTS): old habits fade, so a player who
    genuinely changes their game is met by an Adjutant that changes with them rather than
    one still fighting the player they were twenty matches ago. */
+/* ═══ 📋 THE BRAG LINE ═══════════════════════════════════════════════════════════
+   The Gauntlet is the most genuinely unusual thing in the game and, until now, entirely
+   invisible outside one player's save file. This turns a clear into one line of text a
+   player can paste anywhere.
+
+   Three rules it has to hold to, or it is spam rather than a share:
+     · It must be TRUE and SPECIFIC. It names the rung, the attempt count and the thing
+       the Adjutant actually adapted to, read from the live dossier — not a generic boast.
+       "It had hardened against my drones" is interesting because it happened.
+     · It must SPOIL NOTHING. No secret modes, no unit names the reader has not met, no
+       hint about the Glitch Front.
+     · It must be COPY ONLY. No network call, no share API that leaks a URL, no tracking
+       parameter. The clipboard is the whole mechanism, so nothing here can phone home.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+function gauntletBragLine(gr){
+  if(!gr||!gr.won)return '';
+  const snap=gauntletSnapshot();
+  const tierName=(gr.tierBefore>=0&&GAUNTLET_TIERS[Math.min(gr.tierBefore,GAUNT_MAX_TIER)])
+    ? GAUNTLET_TIERS[Math.min(gr.tierBefore,GAUNT_MAX_TIER)].n : 'CALIBRATING';
+  /* What it had learned about you, in the player's own words. hardened[] is keyed by YOUR
+     unit; the biggest entry is the thing it was most ready for, which is the interesting
+     half of the sentence. */
+  let learned='';
+  try{
+    let topKey=null, topVal=0;
+    for(const k in snap.harden){ if(snap.harden[k]>topVal){ topVal=snap.harden[k]; topKey=k; } }
+    if(topKey&&UNITS[topKey]&&topVal>=0.05){
+      learned=` It had already hardened against my ${UNITS[topKey].name.toLowerCase()}s.`;
+    } else if(snap.lane>=0){
+      learned=` It was waiting in the ${['top','middle','bottom'][snap.lane]} lane.`;
+    }
+  }catch(e){}
+  const attempts=(gauntletState().losses|0)+gr.clears;
+  return `I beat THE ADJUTANT at tier ${gr.tierBefore} · ${tierName} in FRONTLINE COMMANDER`
+    + ` — clear #${gr.clears} on this run, ${attempts} total attempts.${learned}`
+    + ` It adapts between fights, so the same plan never works twice.`;
+}
+/* Clipboard with a real fallback. navigator.clipboard is unavailable on insecure origins
+   and inside some embeds — which is exactly where this game runs — so the textarea path is
+   the one that will actually fire for a meaningful share of players, not a nicety. */
+function copyText(txt,btn){
+  const done=ok=>{ if(!btn)return;
+    const old=btn.textContent;
+    btn.textContent=ok?'✓ Copied':'Select and copy';
+    btn.classList.toggle('copied',!!ok);
+    setTimeout(()=>{ btn.textContent=old; btn.classList.remove('copied'); },1800); };
+  try{
+    if(navigator.clipboard&&window.isSecureContext){
+      navigator.clipboard.writeText(txt).then(()=>done(true),()=>done(false)); return;
+    }
+  }catch(e){}
+  try{
+    const ta=document.createElement('textarea');
+    ta.value=txt; ta.setAttribute('readonly','');
+    ta.style.cssText='position:fixed;top:-1000px;left:-1000px;opacity:0';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,ta.value.length);
+    const ok=document.execCommand&&document.execCommand('copy');
+    ta.remove(); done(!!ok);
+  }catch(e){ done(false); }
+}
+function bragMarkup(line){
+  return `<div class="brag">
+    <div class="brag-h">📋 Worth telling someone</div>
+    <div class="brag-line" id="brag-text">${escapeHTML(line)}</div>
+    <div class="rally-row"><button class="rally-btn" id="brag-copy">Copy this</button></div></div>`;
+}
+function bragBind(line){
+  const b=document.getElementById('brag-copy');
+  if(b)b.onclick=()=>{ copyText(line,b); if(typeof gcEvent==='function')gcEvent('brag-copy'); };
+}
+
 function gauntletCommit(won){
   const g=gauntletState(), rec=G.gauntRec; if(!rec)return null;
   const mem=g.mem, decay=Math.max(0,1-1/GAUNT_MEM_FIGHTS);
@@ -9295,11 +9901,17 @@ function launchTutorial(){
 }
 function launchEvolution(){ LAUNCH=null; sel.mode='evolution'; if(!DIFFS[sel.diff])sel.diff='veteran'; start(); }
 function launchRival(name){
-  const gen=GENERALS.find(g=>g.name===name); if(!gen)return;
+  const gen=GENERALS.find(g=>g.name===name)||HIDDEN_GENERALS.find(g=>g.name===name);
+  if(!gen)return;
+  if(gen.hidden&&!hiddenRivalUnlocked(gen.hidden))return;   // never launchable before it is earned
   const idx=GENERALS.indexOf(gen); const diffTiers=['veteran','elite','elite','legendary','legendary'];
   const rd=(SAVE.rivals&&SAVE.rivals[name])||{w:0};
-  LAUNCH={type:'rival', rival:name, diff:diffTiers[idx]||'elite', weather:pick(WEATHER_KEYS),
-    ecpMul:1.1+Math.min(0.3,(rd.w||0)*0.03), enemyBias:rivalBiasFor(name)};
+  LAUNCH={type:'rival', rival:name, diff:gen.diff||diffTiers[idx]||'elite', weather:pick(WEATHER_KEYS),
+    ecpMul:1.1+Math.min(0.3,(rd.w||0)*0.03), enemyBias:rivalBiasFor(name),
+    /* The two hidden rivals bring their own rules into newGame. Everything else about a
+       rival fight is unchanged, so an ordinary general is launched byte-identically. */
+    infowar:!!gen.infowar, nullArmy:!!gen.nullArmy,
+    enemyAllowed:gen.nullArmy?NULL_UNITS.slice():null};
   start();
 }
 
@@ -9708,6 +10320,8 @@ window.addEventListener('keydown',e=>{
   if(k==='f'){ if(SAVE.lvl>=3){G.selCard='emp';showLaneHint();} return; }
   // S selects the smoke screen (rank 20)
   if(k==='s'){ if(strikeRankOk('smoke')){G.selCard='smoke';showLaneHint();} return; }
+  // Y fires Rollback immediately — it targets nothing, so a lane pick would be a lie
+  if(k==='y'){ if(strikeUnlocked('rollback'))tryRollback(); return; }
   // G / B select the gunship run & rolling barrage air-support strikes
   if(k==='g'){G.selCard='gunrun';showLaneHint();return;}
   if(k==='b'){G.selCard='barrage';showLaneHint();return;}
@@ -9926,23 +10540,118 @@ function refreshTopbar(){
   document.getElementById('tb-best').textContent=SAVE.best.toLocaleString();
   document.getElementById('btn-stream').classList.toggle('on',!!SAVE.streamOn);
   document.getElementById('stream').classList.toggle('on',!!SAVE.streamOn);
-  document.getElementById('btn-sound').textContent=SAVE.sound?'🔊 Sound':'🔇 Muted';
-  document.getElementById('btn-narr').classList.toggle('on',!!SAVE.narrator);
-  document.getElementById('btn-narr').textContent=(SAVE.narrator?'🎙 Narrator':'🔇 Narrator');
+  /* One audio button. It reads MUTED only when everything is silent — a mixer where one
+     channel is down is not "muted", and labelling it that way would send people hunting
+     for an off switch that is not the thing they turned off. */
+  const ab=document.getElementById('btn-audio');
+  if(ab){ const anyOn=audioAnyAudible();
+    ab.textContent=anyOn?'🔊 Audio':'🔇 Audio';
+    ab.classList.toggle('on',!!document.getElementById('audiopop')); }
   document.getElementById('btn-twitch').classList.toggle('on',!!CHATLINK.connected);
   // the Debug/Dev button lights up whenever any dev switch is left on, so it's never a silent state
   document.getElementById('btn-debug').classList.toggle('on',!!SAVE.aiDebug||!!SAVE.debugUnlockAll);
-  document.getElementById('btn-music').classList.toggle('on',!!SAVE.music);
-  document.getElementById('btn-music').textContent=SAVE.music?'🎵 Music':'🔇 Music';
   document.getElementById('btn-news').classList.toggle('on',!!SAVE.news);
 }
-document.getElementById('btn-music').onclick=()=>musicToggle();
 document.getElementById('btn-news').onclick=()=>{SAVE.news=!SAVE.news;persist();newsTimerSync();refreshTopbar();renderNews();};
 document.getElementById('btn-stream').onclick=()=>{SAVE.streamOn=!SAVE.streamOn;persist();refreshTopbar();
   if(SAVE.streamOn){document.getElementById('chatfeed').innerHTML='';chatReact('idle');}};
-document.getElementById('btn-sound').onclick=()=>{SAVE.sound=!SAVE.sound;persist();refreshTopbar();if(SAVE.sound){actx();beep(600,0.08,'square',0.06);}};
-document.getElementById('btn-narr').onclick=()=>{SAVE.narrator=!SAVE.narrator;persist();refreshTopbar();
-  if(SAVE.narrator)say("Iron Marshal, back on the net. Let's win something.",'deadpan',2); else narrStop();};
+document.getElementById('btn-audio').onclick=e=>{ e.stopPropagation(); toggleAudioPop(); };
+/* ═══ 🔊 AUDIO MIXER ═══════════════════════════════════════════════════════════
+   Four topbar buttons (Narrator / Voice / Sound / Music) collapsed into one, because
+   four binary mute switches is both more clutter and less control than five sliders.
+
+   Each row drives a LEVEL and its matching boolean together. The booleans stay because
+   roughly forty call sites guard on them and a level of 0 with the boolean still true
+   means the game keeps building oscillator nodes that produce silence — wasteful, and
+   invisible until someone profiles it. Rule: level 0 <=> boolean false, in both
+   directions, and dragging up from 0 turns the channel back on. */
+const MIXER=[
+  {id:'master', label:'Master',      icon:'🔊', key:'masterVol', flag:null,       hint:'Everything below is scaled by this'},
+  {id:'music',  label:'Music',       icon:'🎵', key:'musicVol',  flag:'music',    hint:'The score'},
+  {id:'sfx',    label:'Effects',     icon:'💥', key:'sfxVol',    flag:'sound',    hint:'Weapons, explosions, UI'},
+  {id:'narr',   label:'Narrator',    icon:'🎙', key:'narrVol',   flag:'narrator', hint:'The Iron Marshal and his radio'},
+  {id:'amb',    label:'Ambience',    icon:'🌫', key:'ambVol',    flag:'ambient',  hint:'Distant battlefield bed'},
+];
+function mixerGet(row){ const v=SAVE[row.key]; return v!=null?v:1; }
+function mixerSet(row,val){
+  val=Math.max(0,Math.min(1,val));
+  SAVE[row.key]=val;
+  if(row.flag)SAVE[row.flag]=val>0;
+  persist();
+  /* Apply immediately rather than on next sound: a slider that only takes effect the next
+     time something happens to fire is indistinguishable from a broken slider. */
+  try{
+    if(row.id==='music'||row.id==='master'){
+      if(MUSIC&&MUSIC.master&&MUSIC.ctx)MUSIC.master.gain.setTargetAtTime(musicGain(),MUSIC.ctx.currentTime,0.1);
+      if(SAVE.music&&musicGain()>0)musicStart(musicContextTheme()); else if(!SAVE.music)musicStop();
+    }
+    if(row.id==='amb'||row.id==='master'){
+      if(!SAVE.ambient||audioVol('amb')<=0)ambientStop();
+      else { sfxOut(); ambOut(); }
+    }
+    if(row.id==='narr'&&!SAVE.narrator)narrStop();
+    sfxOut(); ambOut();     // refresh the bus gains now
+  }catch(e){}
+  refreshTopbar();
+}
+function closeAudioPop(){ const p=document.getElementById('audiopop'); if(p)p.remove(); refreshTopbar(); }
+function toggleAudioPop(){
+  if(document.getElementById('audiopop')){ closeAudioPop(); return; }
+  const btn=document.getElementById('btn-audio'); if(!btn)return;
+  actx();                                   // a user gesture — the only time a context may start
+  const pop=document.createElement('div'); pop.id='audiopop';
+  pop.onclick=e=>e.stopPropagation();
+  const render=()=>{
+    let h=`<div class="ap-h">🔊 Audio mixer</div>`;
+    for(const row of MIXER){
+      const v=Math.round(mixerGet(row)*100);
+      const off=row.flag&&!SAVE[row.flag];
+      h+=`<div class="ap-row${off||v===0?' off':''}">
+        <label class="ap-lbl" for="ap-${row.id}"><span class="ap-ic">${row.icon}</span>${row.label}
+          <em>${escapeHTML(row.hint)}</em></label>
+        <input class="ap-sl" id="ap-${row.id}" type="range" min="0" max="100" value="${v}"
+          aria-label="${escapeHTML(row.label)} volume">
+        <output class="ap-v" id="apv-${row.id}">${v}%</output></div>`;
+    }
+    h+=`<div class="ap-foot">
+      <button class="ap-btn" id="ap-voice">🎙 Narrator voice…</button>
+      <button class="ap-btn" id="ap-mute">${audioAnyAudible()?'Mute all':'Unmute'}</button></div>`;
+    pop.innerHTML=h;
+    for(const row of MIXER){
+      const sl=pop.querySelector('#ap-'+row.id), out=pop.querySelector('#apv-'+row.id);
+      if(!sl)continue;
+      sl.oninput=()=>{ const v=(+sl.value)/100; mixerSet(row,v);
+        if(out)out.textContent=Math.round(v*100)+'%';
+        sl.closest('.ap-row').classList.toggle('off',v===0); };
+      // a quick blip on release so Effects and Master can be heard while being set
+      sl.onchange=()=>{ if((row.id==='sfx'||row.id==='master')&&SAVE.sound&&audioVol('sfx')>0)beep(600,0.07,'square',0.06); };
+    }
+    const vb=pop.querySelector('#ap-voice'); if(vb)vb.onclick=()=>{ closeAudioPop(); openVoiceModal(); };
+    const mb=pop.querySelector('#ap-mute'); if(mb)mb.onclick=()=>{
+      /* Mute-all remembers what it silenced so unmuting restores the mix rather than
+         resetting everyone to 100%, which would be a destructive "undo". */
+      if(audioAnyAudible()){
+        SAVE._mixMemo={}; for(const r of MIXER)SAVE._mixMemo[r.key]=mixerGet(r);
+        for(const r of MIXER)mixerSet(r,0);
+      } else {
+        const memo=SAVE._mixMemo||{};
+        for(const r of MIXER)mixerSet(r, memo[r.key]!=null?memo[r.key]:(r.id==='music'?0.5:1));
+      }
+      render();
+    };
+  };
+  render();
+  document.body.appendChild(pop);
+  const r=btn.getBoundingClientRect();
+  pop.style.top=(r.bottom+8)+'px';
+  // keep it on screen on narrow viewports rather than hanging off the right edge
+  const w=pop.offsetWidth||290;
+  pop.style.left=Math.max(8,Math.min(window.innerWidth-w-8,r.left))+'px';
+  refreshTopbar();
+}
+// click anywhere else closes it, same as the orders popover
+document.addEventListener('click',()=>{ if(document.getElementById('audiopop'))closeAudioPop(); });
+
 /* ☰ MENU is also the CLOSE button for whatever is on top of the game.
 
    It sits in the topbar, which is visible over every panel — so when a panel is open it is
@@ -9988,7 +10697,6 @@ function buildVoiceModal(){
 }
 function openVoiceModal(){ buildVoiceModal(); document.getElementById('voicemodal').classList.add('show'); }
 function closeVoiceModal(){ document.getElementById('voicemodal').classList.remove('show'); }
-document.getElementById('btn-voice').onclick=openVoiceModal;
 document.getElementById('vm-close').onclick=closeVoiceModal;
 document.getElementById('vm-auto').onclick=()=>{
   SAVE.narrVoiceURI=null; persist(); narrPickVoice(); buildVoiceModal();
@@ -10368,7 +11076,7 @@ function renderManualBody(tab){
    each other. Tutorial and the title's own attract-mode demo battle are deliberately excluded —
    both have their own state machines that a mid-flight pause isn't safe to reuse. */
 let _settingsFromBattle=false, _settingsWasPaused=false;
-function openSettings(){
+function openSettings(focusAnchor){
   _settingsFromBattle=!!(G&&!G.over&&!G.attract&&!G.tutorial);
   if(_settingsFromBattle){
     _settingsWasPaused=!!G.paused;   // a player who was already on the Pause screen expects to
@@ -10383,11 +11091,27 @@ function openSettings(){
   document.getElementById('settings').classList.remove('hidden');
   hideDiffAmbient();
   renderSettings();
+  if(focusAnchor)settingsFocus(focusAnchor);
 }
-function settingRow(label,sub,control){
-  return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;">
+/* `anchor` is optional and gives the row an id so something elsewhere in the game can send
+   the player straight to it. A button that says "Chaos Mode" and then dumps you at the top
+   of a long settings page has technically answered the request and practically ignored it. */
+function settingRow(label,sub,control,anchor){
+  return `<div${anchor?` id="${anchor}"`:''} class="set-row" style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;">
     <div><div style="font-size:13px;font-weight:700;color:var(--ink)">${label}</div><div style="font-size:11px;color:var(--dim);margin-top:2px">${sub}</div></div>
     <div>${control}</div></div>`;
+}
+/* Scroll a settings row into view and pulse it. Deliberately runs on the frame AFTER the
+   screen is shown — a scrollIntoView on an element inside a display:none ancestor silently
+   does nothing, which is exactly the kind of bug that looks like "the button did not work". */
+function settingsFocus(anchor){
+  if(!anchor)return;
+  requestAnimationFrame(()=>{
+    const el=document.getElementById(anchor); if(!el)return;
+    try{ el.scrollIntoView({block:'center',behavior:SAVE.reduceMotion?'auto':'smooth'}); }catch(e){ el.scrollIntoView(); }
+    el.classList.remove('set-focus'); void el.offsetWidth; el.classList.add('set-focus');
+    setTimeout(()=>el.classList.remove('set-focus'),2600);
+  });
 }
 /* ── PRIVACY & DATA — a short, honest, accurate account of everything that touches data in this
    game. Written from the actual data flows, not boilerplate. Keep this list EXHAUSTIVE: if a new
@@ -10417,13 +11141,12 @@ function renderSettings(){
     <span style="position:absolute;top:2px;left:${on?'24px':'2px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:.15s;"></span></span>`;
   const chaosOk=rankGateOk(MODE_GATES.chaos.lvl);
   el.innerHTML=
-    settingRow('Music','Original orchestral score',`<button id="set-music" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.music)}</button>`)+
-    `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;">
-      <div><div style="font-size:13px;font-weight:700;color:var(--ink)">Music Volume</div><div style="font-size:11px;color:var(--dim);margin-top:2px">${Math.round((SAVE.musicVol!=null?SAVE.musicVol:0.5)*100)}%</div></div>
-      <input id="set-vol" type="range" min="0" max="100" value="${Math.round((SAVE.musicVol!=null?SAVE.musicVol:0.5)*100)}" style="width:130px;accent-color:var(--gold)"></div>`+
-    settingRow('Sound Effects','Blips, booms and impacts',`<button id="set-sound" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.sound)}</button>`)+
-    settingRow('Narrator','The Iron Marshal war-room voice',`<button id="set-narr" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.narrator)}</button>`)+
-    settingRow('Battlefield Ambience','Distant gunfire & artillery rumble under the fight',`<button id="set-amb" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.ambient)}</button>`)+
+    /* Audio lives in ONE place now — the 🔊 button in the topbar. Five on/off toggles and a
+       lone music slider used to live here as well, which meant two competing UIs over the
+       same state and a music volume you could only find by opening Settings mid-battle.
+       This row is a pointer, not a second copy. */
+    settingRow('🔊 Audio','Music, effects, narrator and ambience each get their own level. Opens the mixer in the topbar — it is reachable from anywhere, including mid-battle.',
+      `<button class="sbtn" id="set-audio" style="font-size:11px;padding:6px 11px">Open mixer</button>`)+
     settingRow('Visibility Modifiers','Fog & rain hide distant terrain around your own forces; storms briefly black out the whole field',`<button id="set-vismod" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.weatherVis)}</button>`)+
     `<div style="font-size:13px;font-weight:800;color:var(--cyan);letter-spacing:.5px;margin:10px 2px -2px">♿ ACCESSIBILITY</div>`+
     settingRow('Reduce Motion','Calm screen shake, flashes & parallax. Turned on automatically for new players whose device asks for reduced motion.',`<button id="set-motion" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.reduceMotion)}</button>`)+
@@ -10474,16 +11197,14 @@ function renderSettings(){
     `<div style="font-size:13px;font-weight:800;color:var(--red);letter-spacing:.5px;margin:6px 2px -2px">🤪 CHAOS MODE <span style="color:var(--faint);font-size:9px">BETA</span></div>`+
     settingRow('Chaos / Meme Mode','Nonstop explosions, free spawns, rapid events &amp; mayhem — built for clips. Turn on, then start any battle. Skipped in Campaign, War, Rivals, Gauntlet and the tutorials, which keep their real rules.',
       chaosOk?`<button id="set-chaos" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.chaosMode)}</button>`
-        :`<span style="font-size:11px;font-weight:800;color:var(--faint);white-space:nowrap">🔒 Rank ${MODE_GATES.chaos.lvl}</span>`)+
+        :`<span style="font-size:11px;font-weight:800;color:var(--faint);white-space:nowrap">🔒 Rank ${MODE_GATES.chaos.lvl}</span>`,
+      'row-chaos')+
     `<div style="font-size:13px;font-weight:800;color:var(--faint);letter-spacing:.5px;margin:10px 2px -2px">⚠ PROGRESS</div>`+
     settingRow('Reset Rank &amp; Level','Currently Rank '+SAVE.lvl+' — sets you back to Rank 1 and reverts doctrine unlocks. Career stats, medals and rivalries are untouched.',
       `<button id="set-reset-rank" style="padding:8px 14px;border-radius:8px;border:1px solid var(--red);background:none;color:var(--red);font-weight:700;font-size:12px;cursor:pointer">Reset</button>`)+
     renderPrivacySection();
   const bind=(id,fn)=>{const b=document.getElementById(id); if(b)b.onclick=()=>{fn();renderSettings();};};
-  bind('set-music',()=>{ SAVE.music=!SAVE.music; persist(); if(SAVE.music)musicStart(musicContextTheme()); else musicStop(); refreshTopbar(); });
-  bind('set-sound',()=>{ SAVE.sound=!SAVE.sound; persist(); });
-  bind('set-narr',()=>{ SAVE.narrator=!SAVE.narrator; persist(); if(!SAVE.narrator)narrStop(); });
-  bind('set-amb',()=>{ SAVE.ambient=!SAVE.ambient; persist(); if(!SAVE.ambient)ambientStop(); });
+  bind('set-audio',()=>{ if(!document.getElementById('audiopop'))toggleAudioPop(); });
   bind('set-motion',()=>{ SAVE.reduceMotion=!SAVE.reduceMotion; persist(); });
   bind('set-vismod',()=>{ SAVE.weatherVis=!SAVE.weatherVis; persist(); });
   document.querySelectorAll('.cb-opt').forEach(b=>{ b.onclick=()=>{
@@ -10515,10 +11236,6 @@ function renderSettings(){
     SAVE.unlocked=Object.keys(DOCTRINES).filter(k=>DOCTRINES[k].unlock<=1);
     persist(); refreshTopbar(); renderSettings();
   };
-  const vol=document.getElementById('set-vol');
-  if(vol)vol.oninput=()=>{ SAVE.musicVol=(+vol.value)/100; persist();
-    try{ if(MUSIC.master&&MUSIC.ctx)MUSIC.master.gain.setTargetAtTime(SAVE.musicVol,MUSIC.ctx.currentTime,0.1); }catch(e){}
-    const lbl=vol.parentNode.querySelector('div div:last-child'); if(lbl)lbl.textContent=Math.round(SAVE.musicVol*100)+'%'; };
 }
 /* ═══ SERVICE RECORD — the career backend surfaced ═══ */
 function openRecord(){
@@ -10928,10 +11645,55 @@ function renderRivals(){
       `<button class="sbtn prim rival-fight" style="margin-top:8px;font-size:12px">⚔ Fight</button></div>`;
   });
   h+=`</div>`;
+
+  /* ── HIDDEN RIVALS ──────────────────────────────────────────────────────────
+     Shown ONLY once earned. Not greyed out, not teased with a padlock — genuinely
+     absent, the same rule the secret units follow. A locked card that says "beat the
+     secret level" hands the player the secret, and the secret is the content. */
+  const openHidden=HIDDEN_GENERALS.filter(g=>hiddenRivalUnlocked(g.hidden));
+  if(openHidden.length){
+    h+=`<div class="rv-sec">⌬ OFF THE ROSTER <span>these two were never on it</span></div>`;
+    h+=`<div class="cos-grid" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr))">`;
+    for(const g of openHidden){
+      const rv=(SAVE.rivals&&SAVE.rivals[g.name])||{w:0,l:0,defeated:false};
+      const beaten=g.hidden==='glitch'?SAVE.glitchKingDefeated:SAVE.umbraDefeated;
+      h+=`<div class="rival-card hidden-rival${beaten?' defeated':''}" data-hid="${escapeHTML(g.hidden)}" style="border-color:${g.col}">`+
+        `<span class="rival-glyph" style="color:${g.col}">${g.glyph}</span>`+
+        `<div class="rival-nm">${escapeHTML(g.name)}</div>`+
+        `<div class="rival-rec">${rv.w}–${rv.l} · <span style="color:${beaten?'var(--good)':g.col}">${beaten?'✓ BEATEN':'AT LARGE'}</span></div>`+
+        `<div class="rival-bias">${g.hidden==='glitch'
+          ? 'fights your screen, not your army'
+          : 'fields nothing you can see coming'}</div>`+
+        `<button class="sbtn prim rival-fight-h" style="margin-top:8px;font-size:12px">⚔ Fight</button></div>`;
+    }
+    h+=`</div>`;
+  }
+
+  /* Prestige is offered only when the roster is genuinely clear, and the copy states the
+     cost plainly. A reset that surprises someone is a bug regardless of what it unlocks. */
+  if(rivalsPrestigeReady()){
+    h+=`<div class="rv-prestige">
+      <div class="rv-p-h">◈ RESET THE ROSTER${(SAVE.rivalPrestige||0)>0?` · PRESTIGE ${SAVE.rivalPrestige}`:''}</div>
+      <div class="rv-p-p">Every rival on the board has fallen. Resetting marks all five undefeated so they can
+        be fought again — your record, your badge and every unlock you have earned are untouched.
+        ${(SAVE.rivalPrestige||0)>0?'You have already done this once; doing it again changes nothing further.'
+          :'Something that is not on the roster is waiting for anyone who does.'}</div>
+      <button class="sbtn prim" id="rv-prestige-go" style="font-size:12px">◈ Reset roster</button></div>`;
+  }
+
   el.innerHTML=h; el.scrollTop=0;
   el.querySelectorAll('.rival-fight').forEach(btn=>{
     btn.onclick=()=>{ const idx=+btn.closest('.rival-card').dataset.idx; leaveTitle(); launchRival(GENERALS[idx].name); };
   });
+  el.querySelectorAll('.rival-fight-h').forEach(btn=>{
+    btn.onclick=()=>{ const key=btn.closest('.rival-card').dataset.hid;
+      const g=hiddenGeneral(key); if(!g)return; leaveTitle(); launchRival(g.name); };
+  });
+  const pg=document.getElementById('rv-prestige-go');
+  if(pg)pg.onclick=()=>{
+    if(!confirm('Reset the rivals roster?\n\nAll five become undefeated and can be fought again. Your badge, record and unlocks are kept.'))return;
+    if(doRivalPrestige())renderRivals();
+  };
 }
 function openGauntlet(){
   hideAllScreens('gauntlet'); document.getElementById('hud').classList.add('hidden');
@@ -11650,7 +12412,7 @@ document.getElementById('t-daily').onclick=()=>{leaveTitle();launchDaily();};
 document.getElementById('menu-back').onclick=()=>showTitle();
 // Chaos Mode is a Settings toggle, not its own screen — this title-screen entry exists purely
 // so players actually discover it exists (several playtesters never found it buried in Settings).
-var _tc=document.getElementById('t-chaos'); if(_tc)_tc.addEventListener('click',()=>openSettings());
+var _tc=document.getElementById('t-chaos'); if(_tc)_tc.addEventListener('click',()=>openSettings('row-chaos'));
 // the title-screen entry point now opens the consolidated Debug/Dev panel rather than
 // toggling Unlock All directly — that switch lives inside the panel with the other dev tools
 var _td=document.getElementById('t-debugunlock'); if(_td)_td.addEventListener('click',()=>openDebugModal());
@@ -11865,13 +12627,33 @@ function titleActive(){ const t=document.getElementById('title'); return !!t && 
 /* ── DIFFICULTY SKULL — the enemy's face. Grows more menacing as the chosen difficulty rises,
    from a silent skull (Recruit) to a cackling, cigar-chomping inferno (Legendary). Shared markup
    used by the title's right-hand figure and the skull under the skirmish-menu difficulty picker. ── */
-const SKULL_CAPS=['SILENT DEAD','SCARRED','SMOULDERING','INFERNAL']; // by difficulty severity 0..3
-function diffMenace(){ const d=DIFFS[sel.diff]; return d?Math.max(0,Math.min(3,d.fx||0)):0; } // recruit0 · veteran1 · elite2 · legendary3
+const SKULL_CAPS=['SILENT DEAD','SCARRED','SMOULDERING','INFERNAL','ASCENDED']; // by difficulty severity 0..4
+function diffMenace(){ const d=DIFFS[sel.diff]; return d?Math.max(0,Math.min(4,d.fx||0)):0; } // recruit0 · veteran1 · elite2 · legendary3 · legendary+4
 // The skull is built from layered CSS shapes (cranium/sockets/nasal/jaw/teeth) rather than an
 // emoji, so each tier can add real anatomy and real motion: a scar, then burning sockets, then a
 // working jaw that chatters as it laughs, then a lit cigar trailing smoke.
 function skullMarkup(menace){
   const scar=menace>=1, eyes=menace>=2, laugh=menace>=3, cigar=menace>=3;
+  /* Tier 4 is the ONLY tier that drops the cigar. The cigar is a swagger prop — it says
+     "this one enjoys the job". What Legendary+ is meant to convey is that there is not a
+     person in there any more, and a lit cigar undercuts that completely. */
+  const ascend=menace>=4;
+  if(ascend)return `<div class="tf-art sk-wrap ascend laugh">`
+    + `<div class="sk-halo"></div>`
+    + `<div class="sk-horn l"></div><div class="sk-horn r"></div>`
+    + `<div class="sk-cran"></div><div class="sk-temple l"></div><div class="sk-temple r"></div>`
+    + `<div class="sk-grime g1"></div><div class="sk-grime g2"></div>`
+    + `<div class="sk-crack c1"></div><div class="sk-crack c2"></div>`
+    + `<div class="sk-rift"></div>`
+    + `<div class="sk-brow"></div>`
+    + `<div class="sk-socket l"></div><div class="sk-socket r"></div>`
+    + `<div class="sk-cheek l"></div><div class="sk-cheek r"></div>`
+    + `<div class="sk-nose"></div>`
+    + `<div class="sk-jaw"></div><div class="sk-maxilla"></div><div class="sk-teeth"></div>`
+    + `<div class="sk-fang l"></div><div class="sk-fang r"></div>`
+    + `<div class="tf-eye l"></div><div class="tf-eye r"></div>`
+    + `<div class="tf-scar"></div>`
+    + `</div>`;
   return `<div class="tf-art sk-wrap${laugh?' laugh':' sway'}">`
     + `<div class="sk-cran"></div><div class="sk-temple l"></div><div class="sk-temple r"></div>`
     + `<div class="sk-grime g1"></div><div class="sk-grime g2"></div>`
@@ -11939,6 +12721,7 @@ function hideDiffAmbient(){ const host=document.getElementById('diff-fx'); if(ho
 function diffFxBurst(key){
   const d=DIFFS[key]; if(!d)return; const sev=d.fx||0;
   if(!SAVE.reduceMotion) ['tfig-recruit','tfig-skull','menu-skull'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.classList.remove('tf-pulse'); void el.offsetWidth; el.classList.add('tf-pulse'); } });
+  if(sev>=4 && typeof SND!=='undefined' && SAVE.sound){ SND.boom(true); setTimeout(()=>{ if(SAVE.sound)SND.boom(true); },140); }
   if(sev>=3){ if(titleActive()){ const ti=document.getElementById('title-inner'); if(ti&&!SAVE.reduceMotion){ ti.classList.remove('title-shake'); void ti.offsetWidth; ti.classList.add('title-shake'); } } if(typeof SND!=='undefined'&&SAVE.sound)SND.boom(true); }
   else if(sev===2 && typeof SND!=='undefined'&&SAVE.sound) SND.combo(2);
 }

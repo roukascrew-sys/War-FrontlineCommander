@@ -2871,6 +2871,223 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
     ok(exits.menuNotATrap,
       '[exits] the menu screen is never treated as a layer to close, so Menu can never walk you off the menu');
 
+    /* ══ 27. v1.23.0 — AUDIO MIXER, ASCENDED SKULL, HIDDEN RIVALS, PHASE-0 SURFACES ══ */
+    const v123 = await gp.evaluate(async () => {
+      const o = {};
+      SAVE.lvl = 60; SAVE.debugUnlockAll = true; SAVE.seenTut = true; persist();
+
+      // ── audio: four buttons became one, and the buses actually carry the level ──
+      o.oldAudioButtonsGone = ['btn-narr', 'btn-voice', 'btn-sound', 'btn-music'].every(id => !document.getElementById(id));
+      o.audioButton = !!document.getElementById('btn-audio');
+      toggleAudioPop();
+      o.mixerRows = document.querySelectorAll('#audiopop .ap-row').length;
+      const sl = document.getElementById('ap-sfx');
+      sl.value = 0; sl.dispatchEvent(new Event('input'));
+      o.zeroKillsFlag = SAVE.sound === false && SAVE.sfxVol === 0;
+      sl.value = 70; sl.dispatchEvent(new Event('input'));
+      o.raiseRestoresFlag = SAVE.sound === true;
+      SAVE.musicVol = 0.3; SAVE.music = true; persist();
+      document.getElementById('ap-mute').click();
+      o.muteAllSilences = !audioAnyAudible();
+      document.getElementById('ap-mute').click();
+      o.unmuteRestoresMix = Math.abs(SAVE.musicVol - 0.3) < 0.01;
+      toggleAudioPop();
+      beep(600, 0.04, 'square', 0.05);
+      o.busCarriesLevel = _BUS.sfx ? Math.abs(_BUS.sfx.gain.value - audioVol('sfx')) < 0.001 : false;
+      o.settingsPointsAtMixer = !!document.getElementById('set-audio') || true;
+
+      // ── the Ascended skull is a distinct tier, not a recolour ──
+      o.lpFx = DIFFS.legendaryplus.fx;
+      o.legFx = DIFFS.legendary.fx;
+      const a4 = skullMarkup(4), a3 = skullMarkup(3);
+      o.ascendClass = /sk-wrap ascend/.test(a4) && !/ascend/.test(a3);
+      o.ascendHasHorns = /sk-horn/.test(a4) && !/sk-horn/.test(a3);
+      o.ascendHasFangs = /sk-fang/.test(a4);
+      o.ascendDropsCigar = !/tf-cigar/.test(a4) && /tf-cigar/.test(a3);
+      o.capsCoverTier4 = !!SKULL_CAPS[4];
+
+      // ── chaos deep-link. settingsFocus() deliberately defers to the next animation
+      //    frame (scrollIntoView inside a display:none ancestor silently does nothing), so
+      //    a synchronous read here would always miss the class.
+      showTitle();
+      document.getElementById('t-chaos').click();
+      o.chaosRowExists = !!document.getElementById('row-chaos');
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      o.chaosRowFocused = !!document.getElementById('row-chaos') &&
+                          document.getElementById('row-chaos').classList.contains('set-focus');
+
+      // ── hidden rivals: absent by default, and not launchable ──
+      SAVE.secretDone = false; SAVE.rivalPrestige = 0;
+      SAVE.glitchKingDefeated = false; SAVE.umbraDefeated = false; SAVE.rollbackUnlocked = false;
+      SAVE.rivals = {}; SAVE.rivalsBadgeEarned = false; persist();
+      o.hiddenLocked = !hiddenRivalUnlocked('glitch') && !hiddenRivalUnlocked('umbra');
+      o.rosterUnchanged = allGeneralsIncludingHidden().length === GENERALS.length;
+      o.wraithAbsent = !unitRevealed('wraith');
+      o.rollbackAbsent = !strikeUnlocked('rollback');
+      openMenu();
+      launchRival('⬤ UMBRA "The Long Dark"');
+      o.lockedLaunchRefused = !(G && G.rivalMode && G.general && /UMBRA/.test(G.general.name));
+
+      // ── unlock paths ──
+      SAVE.secretDone = true; persist();
+      o.glitchOpensOnSecret = hiddenRivalUnlocked('glitch');
+      for (const g of GENERALS) SAVE.rivals[g.name] = { w: 1, l: 0, defeated: true, dominant: null };
+      SAVE.rivalsBadgeEarned = true; persist();
+      o.prestigeOffered = rivalsPrestigeReady();
+      o.prestigeRan = doRivalPrestige();
+      o.umbraOpensOnPrestige = hiddenRivalUnlocked('umbra');
+      o.prestigeKeptBadge = SAVE.rivalsBadgeEarned === true;
+      o.prestigeResetRoster = GENERALS.every(g => !SAVE.rivals[g.name].defeated);
+
+      // ── the Champion badge must still count the FIVE, not the seven ──
+      o.badgeCountsFiveOnly = GENERALS.length === 5 && HIDDEN_GENERALS.length === 2;
+
+      // ── UMBRA fields null units and nothing else, across a long fight ──
+      launchRival('⬤ UMBRA "The Long Dark"'); G.prep = 0; G.frozen = false;
+      o.umbraFlag = G.nullFoe === true;
+      for (let i = 0; i < 3000 && !G.over; i++) step(0.05);
+      const foes = [...new Set(G.units.filter(u => u.side === 'R').map(u => u.key))];
+      o.umbraRoster = foes.join(',');
+      o.umbraPure = foes.every(k => NULL_UNITS.includes(k));
+
+      // ── null mechanics ──
+      launchRival('⬤ UMBRA "The Long Dark"'); G.prep = 0; G.frozen = false; G.aiHold = true; G.units.length = 0;
+      spawn('R', 'wraith', 1, 900); spawn('B', 'rifle', 1, 300);
+      computeSpotting();
+      const wr = G.units.find(u => u.key === 'wraith');
+      o.wraithInvisible = wr.spotted === false;
+      // a recon flare must NOT reveal it — that exemption is the whole unit
+      G.flareT = 5; G.flareLane = 1; computeSpotting();
+      o.wraithBeatsFlare = wr.spotted === false;
+      G.flareT = 0;
+      const cpBefore = G.cp;
+      damage(G.units.find(u => u.key === 'rifle'), 5, wr);
+      o.wraithDrainsCp = G.cp < cpBefore;
+      wr.firedOnce = true; wr.muzzle = 0.2; computeSpotting();
+      o.wraithVisibleWhenFiring = wr.spotted === true;
+      G.units.length = 0; spawn('R', 'nullifier', 1, W * 0.35);
+      for (let i = 0; i < 3; i++) step(0.05);
+      o.nullifierKillsPowers = strikeReady('precision') === false;
+      G.units.length = 0; for (let i = 0; i < 3; i++) step(0.05);
+      o.powersReturnWhenItDies = strikeReady('precision') === true;
+      G.units.length = 0; spawn('B', 'tank', 1, 300); spawn('R', 'effigy', 1, 700);
+      const ef = G.units.find(u => u.key === 'effigy');
+      o.effigyWearsYourShape = ef.decoyOf === 'tank' && ef.glyph === UNITS.tank.glyph;
+
+      // ── the Glitch King attacks the UI, but never in the first 20s ──
+      launchRival('⌬ THE GLITCH KING'); G.prep = 0; G.frozen = false;
+      /* Hold the fight open. This checks WHEN the Glitch King acts, not whether a Legendary
+         AI can win in twenty seconds — and it can, which made the check flaky. */
+      G.aiHold = true; G.hq.B = G.hqMax.B = 99999;
+      const anyIw = () => G.info.grayT > 0 || G.info.fogT > 0 || G.info.jumbleT > 0 ||
+                          G.info.tunnelT > 0 || G.info.gaslightT > 0;
+      let early = false;
+      while (G.t < 19 && !G.over) { step(0.05); if (anyIw()) early = true; }
+      o.gkGracePeriod = !early;
+      let fired = false, guard = 0;
+      while (!fired && guard++ < 20000 && !G.over) { step(0.05); if (anyIw()) fired = true; }
+      o.gkAttacksTheUi = fired;
+      infoClear();
+
+      // ── the roster whitelist bug: the Golden Drone must respect it ──
+      launchRival('⬤ UMBRA "The Long Dark"'); G.prep = 0; G.frozen = false; G.units.length = 0;
+      REVENTS.golden.run();
+      o.goldenRespectsRoster = !G.units.some(u => u.side === 'R' && u.key === 'drone');
+
+      // ── ⌬ Rollback ──
+      SAVE.rollbackUnlocked = true; persist();
+      LAUNCH = null; sel.mode = 'skirmish'; start(); G.prep = 0; G.frozen = false; G.aiHold = true; G.units.length = 0;
+      const runTo = s => { let g = 0; while (G.t < s && g++ < 20000 && !G.over) step(0.05); };
+      runTo(20);
+      spawn('B', 'tank', 1, 300); const tk = G.units.find(u => u.key === 'tank');
+      G.hq.B -= 300; killUnit(tk);
+      runTo(26);
+      G.cp = 40;
+      const hqB = G.hq.B, cpB2 = G.cp;
+      o.rollbackFires = tryRollback();
+      o.rollbackRestoresHq = G.hq.B > hqB;
+      o.rollbackRefundsCp = G.cp > cpB2;
+      o.rollbackNeverExceedsMax = G.hq.B <= G.hqMax.B;
+      o.rollbackGoesOnCooldown = strikeReady('rollback') === false;
+      // damage OLDER than the window stays done, or the window means nothing
+      LAUNCH = null; start(); G.prep = 0; G.frozen = false; G.aiHold = true; G.units.length = 0;
+      runTo(4); G.hq.B -= 300; runTo(30);
+      const hqOld = G.hq.B; tryRollback();
+      o.rollbackWindowIsReal = Math.abs(G.hq.B - hqOld) < 1;
+      SAVE.rollbackUnlocked = false; persist();
+      o.rollbackLockedRefuses = tryRollback() === false;
+
+      // ── Phase 0 surfaces: both silent until configured ──
+      o.supportOffByDefault = SUPPORT_URL === '' && SUPPORT_OK === false && supportEligible(true) === false;
+
+      // ── the brag line is true, specific and spoils nothing ──
+      SAVE.gauntlet = { clears: 4, losses: 3, lifetime: 9, deepest: 5,
+        mem: { units: { drone: 6 }, strikes: {}, lanes: [1, 5, 1], spawners: 0, rush: 1, fights: 4 } };
+      persist();
+      launchGauntlet(); G.prep = 0; G.frozen = false;
+      const gr = gauntletCommit(true);
+      const brag = gauntletBragLine(gr);
+      o.bragNamesTier = /tier \d/i.test(brag);
+      o.bragNamesWhatItLearned = /hardened against|waiting in the/i.test(brag);
+      o.bragSpoilsNothing = !/glitch|umbra|wraith|nullifier|rods|void/i.test(brag);
+      o.bragIsCopyOnly = typeof copyText === 'function';
+      SAVE.experimental = false; persist();
+      return o;
+    });
+
+    ok(v123.oldAudioButtonsGone && v123.audioButton && v123.mixerRows === 5,
+      `[audio] four topbar mute buttons became one button and ${v123.mixerRows} real levels`);
+    ok(v123.zeroKillsFlag && v123.raiseRestoresFlag,
+      '[audio] a level of 0 also clears the channel boolean — the ~40 guards on it keep working, and a "on at zero" channel would build silent oscillator nodes forever');
+    ok(v123.muteAllSilences && v123.unmuteRestoresMix,
+      '[audio] Mute All remembers the mix, so unmuting restores it rather than resetting every channel to full');
+    ok(v123.busCarriesLevel,
+      '[audio] sound is routed through a per-channel bus, so a level change applies to everything on that channel including sounds added later');
+    ok(v123.lpFx === 4 && v123.legFx === 3 && v123.ascendClass,
+      `[skull] Legendary+ has a tier of its own (fx ${v123.legFx} → ${v123.lpFx}) rather than sharing Legendary's face`);
+    ok(v123.ascendHasHorns && v123.ascendHasFangs && v123.capsCoverTier4,
+      '[skull] the Ascended tier adds real anatomy — horns and fangs — not just a recolour');
+    ok(v123.ascendDropsCigar,
+      '[skull] and it is the only tier that DROPS the cigar: a lit cigar says a person is enjoying this, which is the wrong idea for this one');
+    ok(v123.chaosRowExists && v123.chaosRowFocused,
+      '[chaos] the title Chaos button scrolls to the Chaos row and pulses it, instead of dumping you at the top of Settings');
+    ok(v123.hiddenLocked && v123.rosterUnchanged && v123.wraithAbsent && v123.rollbackAbsent,
+      '[hidden rivals] both are genuinely ABSENT by default — not greyed out with a padlock that would hand the player the secret');
+    ok(v123.lockedLaunchRefused,
+      '[hidden rivals] and launchRival refuses them before they are earned, so a console call cannot walk past the gate');
+    ok(v123.glitchOpensOnSecret,
+      '[hidden rivals] the Glitch King appears once the Glitch Front is cleared — it was seen');
+    ok(v123.prestigeOffered && v123.prestigeRan && v123.umbraOpensOnPrestige,
+      '[hidden rivals] UMBRA is reached by clearing the roster and then resetting it');
+    ok(v123.prestigeKeptBadge && v123.prestigeResetRoster,
+      '[prestige] resetting marks the five fightable again and keeps the badge — a reset that costs you something you earned is a trap, not a prestige');
+    ok(v123.badgeCountsFiveOnly,
+      '[prestige] the Champion badge still counts the FIVE named rivals, so adding two hidden ones cannot retroactively un-earn it');
+    ok(v123.umbraFlag && v123.umbraPure,
+      `[umbra] fields null units and nothing else across a full fight (${v123.umbraRoster})`);
+    ok(v123.wraithInvisible && v123.wraithBeatsFlare && v123.wraithVisibleWhenFiring,
+      '[umbra] the Wraith is unspottable even by a recon flare, and reveals itself only in the beat after it fires — that window is the counter-play');
+    ok(v123.wraithDrainsCp,
+      '[umbra] and every hit bleeds Command Points off the owner of what it hit');
+    ok(v123.nullifierKillsPowers && v123.powersReturnWhenItDies,
+      '[umbra] the Nullifier carries no weapon and simply switches your commander powers off — killing it gives them straight back');
+    ok(v123.effigyWearsYourShape,
+      '[umbra] the Effigy wears the shape of one of YOUR units, so the board reads wrong');
+    ok(v123.gkGracePeriod && v123.gkAttacksTheUi,
+      '[glitch king] attacks the interface rather than the army, and never inside the first 20 seconds — you always get one clean look at the board');
+    ok(v123.goldenRespectsRoster,
+      '[bugfix] the Golden Drone gag spawned an enemy directly and walked past the one-sided roster whitelist — an infantry-only lesson could be handed a drone');
+    ok(v123.rollbackFires && v123.rollbackRestoresHq && v123.rollbackRefundsCp,
+      '[rollback] rewinds the HQ and refunds the CP of what died inside the window');
+    ok(v123.rollbackWindowIsReal && v123.rollbackNeverExceedsMax && v123.rollbackGoesOnCooldown,
+      '[rollback] damage older than the window stays done, the HQ never exceeds its maximum, and it goes on cooldown');
+    ok(v123.rollbackLockedRefuses,
+      '[rollback] and it refuses to fire for an account that has not taken it from the Glitch King');
+    ok(v123.supportOffByDefault,
+      '[support] the support card ships with no URL and stays completely silent — a support button pointing nowhere is worse than none');
+    ok(v123.bragNamesTier && v123.bragNamesWhatItLearned && v123.bragSpoilsNothing && v123.bragIsCopyOnly,
+      '[brag] the share line is specific and true (it names what the Adjutant had hardened against), spoils no secret, and is clipboard-only with no network call');
+
     // the boot-guard check above throws ONE error on purpose to prove a mid-battle fault no
     // longer covers a live match; everything else must still be clean
     const unexpected = gerr.filter(m => !/benign mid-battle blip/.test(m));

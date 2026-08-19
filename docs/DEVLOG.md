@@ -8,6 +8,89 @@ engineering detail lives in the patch notes inside the game and in the commit hi
 
 ---
 
+## v1.23.0 — Two commanders who were never on the roster
+
+### 🔊 One audio button
+
+Narrator, Voice, Sound and Music were four separate mute switches sitting in the topbar. They're
+now a single **🔊 Audio** button that opens a mixer with a real level for **Master, Music, Effects,
+Narrator and Ambience**.
+
+Four on/off toggles became five sliders — and the topbar got *less* cluttered, not more. Mute All
+remembers your levels, so unmuting restores your mix instead of resetting everything to full.
+Settings now points at the mixer rather than keeping a second, competing copy of the same controls.
+
+### ☠ Legendary+ has its own face
+
+It was borrowing Legendary's cackling skull. Adding more fire would only have been the same idea
+louder, so the **ASCENDED** skull changes *what you're looking at* instead: the bone is charred
+through, something has split the cranium open from the inside, and what's burning in the sockets
+isn't fire.
+
+Horns, fangs, a halo of static, and a jitter that never quite settles. It's also the only tier with
+**no cigar** — a lit cigar says a person is enjoying this, and that's the wrong idea entirely.
+
+### 🤪 The Chaos button goes to Chaos
+
+It used to open Settings at the top and leave you to find the switch. It now scrolls straight to
+the Chaos row and pulses it.
+
+---
+
+## Two rivals that are not on the roster
+
+### ⌬ THE GLITCH KING
+
+Appears once you've cleared the Glitch Front. It saw you look at it.
+
+It's the only enemy in the game that fights your **interface** rather than your army — phantom
+casualties on healthy units, false fog, a greyed screen, a jammed command net. Everything it does
+is real, and none of it is your army losing.
+
+It never touches the first twenty seconds, so you always get one clean look at the board before it
+starts lying to you.
+
+### ⬤ UMBRA "The Long Dark"
+
+Harder to reach: clear every rival, then **reset the roster** from the Rivals screen. Resetting
+keeps your badge, your record and every unlock — it only marks the five fightable again.
+
+UMBRA fields nothing but **null units**:
+
+- **⬤ Wraith** — invisible until it fires, and every hit bleeds Command Points off whatever it hit.
+  A recon flare won't find it. It reveals itself for a beat after each shot; that window is your
+  only counter-play.
+- **⧗ Nullifier** — carries no weapon at all. It simply switches your commander powers **off**
+  inside its reach. Ignoring it costs you nothing in damage and everything in options.
+- **◇ Effigy** — wears the shape of one of *your* units until it dies, so the board reads wrong.
+
+None of them out-stat you. All three make your information wrong, which is the one resource the
+counter web has nothing to say about.
+
+### Beating them pays
+
+- **The Glitch King** yields **⌬ ROLLBACK** (press `Y`) — the only commander power that deals no
+  damage. It rewinds your HQ to what it was fifteen seconds ago and refunds the Command Points of
+  everything of yours that died in that window. It cannot bring the units back.
+- **UMBRA** yields the **⬤ Wraith** as a unit of your own.
+
+---
+
+### 📋 A share line after a Gauntlet clear
+
+One tap copies a line naming the rung, your attempt count, and the thing the Adjutant had *actually*
+hardened against — read from its live file on you, so it's true and specific rather than a generic
+boast. It spoils nothing and makes no network call.
+
+### Bugfix worth naming
+
+The Golden Drone gag spawned an enemy drone **directly**, walking straight past the one-sided roster
+whitelist. An Indoctrination lesson whose entire point was "you will only face infantry" could be
+handed a drone, and UMBRA's roster could be broken by a bright gold one. It now falls through to a
+supply drop when the enemy roster is restricted.
+
+---
+
 ## v1.22.0 — Experimental Mode, Field School, and one way out
 
 This is a build about **restraint**. Last update added a rule that changes how the whole
