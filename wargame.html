@@ -42,11 +42,13 @@
      a directive we forget is DENIED, not silently allowed (without default-src, unlisted
      directives like frame-src/worker-src/form-action fall back to allow-everything).
      The full allowlist is exactly the game's four outbound touchpoints, all hardcoded constants:
-       GoatCounter beacon (img-src) · Twitch IRC (connect-src) · privacy/terms links · feedback form (navigations, not governed by CSP).
+       GoatCounter beacon (img-src) · Twitch IRC (connect-src) · Supabase leaderboard (connect-src,
+       and ONLY when LB_URL is filled in — the grant is harmless while the feature is off) ·
+       privacy/terms links · feedback form (navigations, not governed by CSP).
      'unsafe-inline' stays by architecture: the whole game is one self-contained file (see PHASES.md).
      frame-ancestors is deliberately ABSENT: it is ignored in <meta> CSP anyway, and itch.io must
      be able to embed this game in its player iframe. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' wss://irc-ws.chat.twitch.tv https://*.goatcounter.com; img-src 'self' data: https://*.goatcounter.com; media-src 'none'; worker-src 'none'; frame-src 'none'; form-action 'none'; object-src 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' wss://irc-ws.chat.twitch.tv https://*.goatcounter.com https://*.supabase.co; img-src 'self' data: https://*.goatcounter.com; media-src 'none'; worker-src 'none'; frame-src 'none'; form-action 'none'; object-src 'none'; base-uri 'none'">
 <!-- No-cache: some phones/mail clients aggressively cache a same-named local HTML file and keep
      serving it after we've pushed a newer build — this rules that out as a source of "old version" reports. -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -1312,6 +1314,18 @@
   .lb-row{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);
     border-radius:9px;padding:8px 12px;margin-bottom:5px;font-size:12px;}
   .lb-row.top{border-color:var(--gold);}
+  /* 🌐 global board — opt-in card, mode switcher, and the leave button */
+  .lb-optin{background:var(--panel);border:1px solid var(--line);border-radius:11px;
+    padding:15px 16px;margin-top:10px;display:flex;flex-direction:column;gap:9px;align-items:flex-start;}
+  .lb-lbl{font-size:12px;font-weight:800;color:var(--ink);letter-spacing:.3px;}
+  .lb-optin input{background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    padding:9px 11px;color:var(--ink);font-size:13px;font-family:inherit;width:min(260px,100%);}
+  .lb-optin input:focus{outline:2px solid var(--cyan);outline-offset:1px;}
+  .lb-fine{font-size:11px;color:var(--faint);line-height:1.5;}
+  .lb-modes{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;}
+  .lb-leave{margin-left:8px;background:none;border:1px solid var(--line);border-radius:7px;
+    padding:4px 9px;color:var(--faint);font-weight:700;font-size:10.5px;cursor:pointer;}
+  .lb-leave:hover{color:var(--red);border-color:var(--red);}
   .lb-rank{font-family:var(--mono);font-weight:800;color:var(--dim);min-width:34px;}
   .lb-row.top .lb-rank{color:var(--gold);}
   .lb-main{flex:1;min-width:0;}
@@ -1905,7 +1919,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.23.0</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.24.0</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -2601,6 +2615,13 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   rallyDone:false,     // player followed or dismissed it for good — never ask again
   supportSeen:0,       // 💛 support card impressions (see SUPPORT_MAX_SHOWS)
   supportDone:false,   // followed or dismissed — never ask again
+  /* 🌐 GLOBAL BOARD — opt-IN, and off by default. This is the first feature that ever
+     sends anything off the device, so it is the one place in this game where silence
+     is the wrong default in the other direction: nobody's score leaves their machine
+     until they say so. lbName is what appears publicly and is never auto-filled. */
+  lbOptIn:false,
+  lbName:'',
+  lbAsked:false,       // whether the one-time opt-in prompt has been shown
   lastPlayedDay:null,  // 'YYYY-MM-DD' of the previous session, drives the welcome-back line
   ambient:true,randomEvents:true,evSupply:true,evVoice:true,evCutscene:true,evBarrage:true,evDefector:true,evOrders:true,
   noLuck:false,          // 🎯 NO LUCK — one master override that silences every chance-driven event
@@ -3611,17 +3632,160 @@ function claimChest(){
    rated. The weights are shown in the UI so the number is never mysterious. ── */
 const BOARD_MAX=25;            // rows kept; more than this is scrollback nobody reads
 const BEAT_TODAY_MAX=40;
-const DIFF_WEIGHT={recruit:0.7,veteran:1.0,elite:1.35,legendary:1.8};
-/* ── BACKEND SEAM ─────────────────────────────────────────────────────────────
-   Set this to an object implementing:
-     submit(entry) -> Promise<void>            // entry as built by boardEntry()
-     top(mode, limit) -> Promise<Array<entry>> // global rows, best-first
-   …and renderLeaderboard() gains a GLOBAL tab. Until then it stays null and every
-   surface says "local". Do NOT populate this with sample data to "preview" the UI —
-   a board that shows fake names is indistinguishable from a board that lies.
-   Server-side requirements (score validation, rate limits, auth) are already
-   specified in SECURITY.md under the day-one backend checklist. ── */
-const LEADERBOARD_BACKEND=null;
+/* Board weighting. legendaryplus was MISSING here, so diffWeight() fell through to
+   its 1.0 default and the hardest difficulty in the game scored LOWER than Legendary
+   (1.8) — a Legendary+ win was worth less on the board than an easier one. It is now
+   2.1, above Legendary, which is the only ordering that makes sense.
+   These values MUST match DIFF_WEIGHT in supabase/functions/submit-run/index.ts: the
+   server computes the real rated_score, and if the two disagree the board sorts by one
+   rule while the game promises another. A regression check asserts they match. */
+const DIFF_WEIGHT={recruit:0.7,veteran:1.0,elite:1.35,legendary:1.8,legendaryplus:2.1};
+/* ═══ 🌐 GLOBAL LEADERBOARD — Supabase ═════════════════════════════════════════
+   Fill in the two constants below and the global board turns itself on. Leave them
+   empty (the shipped default) and every path here is a no-op: the game plays exactly
+   as it always has, the Leaderboard screen shows only local runs, and not one byte
+   leaves the device. Same pattern COMMUNITY_URL and SUPPORT_URL follow, for the same
+   reason — a half-configured feature that errors at the player is worse than one
+   that is simply absent.
+
+   ── WHICH KEY GOES HERE ────────────────────────────────────────────────────────
+   The **anon** (publishable) key, and ONLY that one. It is designed to be public and
+   sits in the HTML of every Supabase app on the internet. It is safe here **only
+   because Row Level Security restricts what it can do** — see
+   supabase/migrations/0001_leaderboard.sql, where `runs` has a public SELECT policy
+   and deliberately NO insert/update/delete policy at all.
+
+   The **service_role** key must NEVER appear in this file, in a commit, or in the
+   itch zip. If it ever does, rotate it immediately: deleting the file does not help,
+   because the zip has already been downloaded. It belongs only in the Edge Function's
+   server-side environment.
+
+   ── WHY WRITES GO THROUGH A FUNCTION ───────────────────────────────────────────
+   The browser cannot insert into `runs`. It POSTs a claim to the submit-run Edge
+   Function, which re-derives `rated_score` — the number the board sorts by — from the
+   raw fields. Handing the client that number would make every other check decorative.
+   Everything the browser sends is a claim, not a fact.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+const LB_URL='';        // e.g. 'https://abcdefgh.supabase.co'  — Project Settings → API
+const LB_ANON_KEY='';   // the ANON / publishable key. NEVER the service_role key.
+
+/* Refuses anything that is not an https Supabase project URL. A typo guard rather
+   than untrusted-input defence — these are constants in this file — but a mistyped
+   host would send a player's run to a stranger's server. */
+function lbConfigOk(){
+  if(!LB_URL||!LB_ANON_KEY)return false;                 // unset — the intended default
+  try{
+    const u=new URL(LB_URL);
+    if(u.protocol!=='https:'){ console.warn('LB_URL must be https — global board disabled.'); return false; }
+    if(!/\.supabase\.co$/.test(u.hostname)){ console.warn('LB_URL is not a supabase.co host — global board disabled.'); return false; }
+  }catch(e){ console.warn('LB_URL is not a valid URL — global board disabled.'); return false; }
+  /* A service_role JWT carries "role":"service_role" in its payload. Catching a paste
+     of the wrong key is worth these twelve lines: the alternative is shipping it to
+     every player, at which point the database is world-writable. */
+  try{
+    const mid=LB_ANON_KEY.split('.')[1];
+    if(mid){
+      const claims=JSON.parse(atob(mid.replace(/-/g,'+').replace(/_/g,'/')));
+      if(claims&&claims.role&&claims.role!=='anon'){
+        console.error('LB_ANON_KEY is a "'+claims.role+'" key, not the anon key. Global board disabled. ROTATE THAT KEY NOW.');
+        return false;
+      }
+    }
+  }catch(e){ /* not a JWT we can read — let the server reject it instead */ }
+  return true;
+}
+const LB_OK=lbConfigOk();
+
+/* A tiny REST client rather than the Supabase JS SDK. The SDK is ~40KB minified and
+   would have to be inlined into this file (no external scripts — see the CSP), growing
+   the game by ~5% to reach three endpoints. These are those three. */
+const LB={ token:null, uid:null, tried:false, cache:null, cacheAt:0 };
+
+async function lbFetch(path,opts){
+  const r=await fetch(LB_URL+path,opts);
+  let body=null;
+  try{ body=await r.json(); }catch(e){}
+  if(!r.ok){
+    const msg=(body&&(body.error_description||body.msg||body.error))||('http '+r.status);
+    const e=new Error(msg); e.status=r.status; e.body=body; throw e;
+  }
+  return body;
+}
+/* Anonymous auth: one persistent identity per browser, no signup, no email, no
+   password. That matches how the save already works — one career per device. The
+   token is cached so a reload keeps the same board entry. */
+async function lbAuth(){
+  if(!LB_OK)return null;
+  if(LB.token)return LB.token;
+  try{
+    const cached=JSON.parse(localStorage.getItem('FC_LB_SESSION')||'null');
+    if(cached&&cached.token&&cached.exp&&cached.exp>Date.now()/1000+60){
+      LB.token=cached.token; LB.uid=cached.uid; return LB.token;
+    }
+  }catch(e){}
+  if(LB.tried)return null;      // one attempt per session — never hammer auth on a bad network
+  LB.tried=true;
+  try{
+    const d=await lbFetch('/auth/v1/signup',{method:'POST',
+      headers:{'apikey':LB_ANON_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({data:{}})});
+    if(!d||!d.access_token)return null;
+    LB.token=d.access_token; LB.uid=(d.user&&d.user.id)||null;
+    try{ localStorage.setItem('FC_LB_SESSION',JSON.stringify({token:LB.token,uid:LB.uid,
+      exp:Math.floor(Date.now()/1000)+(d.expires_in||3600)})); }catch(e){}
+    return LB.token;
+  }catch(e){ console.warn('global board: sign-in failed —',e.message); return null; }
+}
+/* The name shown on the board. Local, player-editable, and NEVER auto-filled from
+   anything identifying — no device name, no account, no email. */
+function lbName(){
+  const n=(SAVE.lbName||'').trim();
+  return n?n.slice(0,20):'Commander';
+}
+/* Modes the global board accepts. Must match the CHECK constraint in the migration —
+   submitting anything else is refused server-side, so filtering here just avoids a
+   pointless round trip for Rivals/Gauntlet/campaign runs. */
+const LB_MODES=['skirmish','evolution','blitz','survival','domination','war'];
+
+const LEADERBOARD_BACKEND = LB_OK ? {
+  /* Fire-and-forget. A failed submit must NEVER interrupt the results screen: the
+     player finished a battle, and a network error is not their problem. Every path
+     resolves; nothing here throws into the caller. */
+  async submit(entry){
+    if(!entry||!LB_MODES.includes(entry.mode))return {skipped:'mode'};
+    const tok=await lbAuth();
+    if(!tok)return {skipped:'auth'};
+    try{
+      const res=await lbFetch('/functions/v1/submit-run',{method:'POST',
+        headers:{'apikey':LB_ANON_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+        /* NOTE what is absent: `rated`. The server computes it. Sending it would hand
+           the client the one number the board is ordered by. */
+        body:JSON.stringify({
+          display_name:lbName(),
+          score:entry.score|0, kills:entry.kills|0, duration_s:entry.dur|0,
+          won:!!entry.won, difficulty:entry.diff, mode:entry.mode,
+          doctrine:entry.doc, game_version:GAME_VERSION })});
+      LB.cache=null;            // the board just changed; drop the read cache
+      return res||{ok:true};
+    }catch(e){
+      if(e.status===429)return {skipped:'ratelimit'};
+      console.warn('global board: submit failed —',e.message);
+      return {error:e.message};
+    }
+  },
+  /* Read the board. Cached for 30s so opening and closing the screen does not issue a
+     request per keystroke of curiosity. */
+  async top(mode,limit){
+    const key=mode+'|'+(limit||25);
+    if(LB.cache&&LB.cache.key===key&&Date.now()-LB.cacheAt<30000)return LB.cache.rows;
+    const q='/rest/v1/runs?select=display_name,score,rated_score,kills,duration_s,won,difficulty,mode,doctrine,created_at'
+      +'&mode=eq.'+encodeURIComponent(mode)
+      +'&order=rated_score.desc,created_at.asc&limit='+Math.max(1,Math.min(100,limit||25));
+    const rows=await lbFetch(q,{headers:{'apikey':LB_ANON_KEY,'Accept':'application/json'}});
+    LB.cache={key,rows:rows||[]}; LB.cacheAt=Date.now();
+    return LB.cache.rows;
+  },
+} : null;
 function diffWeight(d){ return DIFF_WEIGHT[d]||1.0; }
 function ratedScore(score,diff){ return Math.round((score||0)*diffWeight(diff)); }
 function boardEntry(g,won,score){
@@ -3726,13 +3890,20 @@ const DIFFS={
        player starts with exactly what they used to have at the moment the fight began. */
 const PREP_MAX=180;        // hard cap, so an idle tab cannot sit frozen forever
 const PREP_GRANT_SECS=10;  // seconds of income granted up front, replacing prep-phase accrual
-const GAME_VERSION='1.23.0';
+const GAME_VERSION='1.24.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.24.0',notes:[
+    '\ud83c\udf10 GLOBAL LEADERBOARD \u2014 opt-IN, and OFF until you switch it on from the Leaderboard screen. While it is on, finishing a ranked battle posts that battle\u2019s result and the display name you pick. Your save is never sent: not your rank, not your unlocks, not your career history. There is no account, no email and no password \u2014 just an anonymous identifier generated in your browser. Turning it off stops all further submissions immediately.',
+    'THE RANKING NUMBER IS CALCULATED ON THE SERVER. This is the whole design, not a detail. The game is a file you can download and read, so anything it sends is a CLAIM, not a fact \u2014 the question is never how to stop someone lying, it is how much a lie buys. The board sorts by a figure the game never sends: the server re-derives it from the raw score and difficulty. It also refuses the physically impossible (5,000,000 points in twenty seconds, 5,000 kills in thirty) and rate-limits submissions. A determined faker can still post a plausible run; they cannot choose their own place in the ordering.',
+    'The board keeps ONE ROW PER PLAYER PER MODE \u2014 your best, not every run you have ever played \u2014 so a single player cannot occupy the whole first page and the table cannot grow without bound.',
+    'BALANCE/BUGFIX \u2014 LEGENDARY+ WAS SCORING LOWEST. The board weighting table never had an entry for it, so it fell through to the default of 1.0 while Legendary scored 1.8: a win on the hardest difficulty in the game was worth LESS on the leaderboard than a win on an easier one. Legendary+ is now 2.1, above Legendary, where it always should have been.',
+    'The privacy policy, the terms and the in-game privacy panel were all updated in the same change, because this is the first feature in the game that ever sends anything a player would recognise as their own.',
+  ]},
   {v:'1.23.0',notes:[
     '\ud83d\udd0a ONE AUDIO BUTTON. Narrator, Voice, Sound and Music were four separate mute switches in the topbar. They are now a single \ud83d\udd0a AUDIO button that opens a mixer with a real level for Master, Music, Effects, Narrator and Ambience \u2014 four on/off toggles replaced by five sliders, and less clutter than before. Mute All remembers your levels so unmuting restores the mix instead of resetting everything to full. Settings now points here rather than keeping a second, competing copy of the same controls.',
     '\u2620 LEGENDARY+ HAS ITS OWN FACE. It was sharing Legendary\u2019s cackling skull. Going further by adding more fire would only have been the same idea louder, so the ASCENDED skull changes what you are looking at instead: the bone is charred through, something has split the cranium open from the inside, and what burns in the sockets is not fire. Horns, fangs, a halo of static and a jitter that never settles. It is the only tier with no cigar \u2014 the cigar says a person is enjoying this, and that is the wrong idea entirely.',
@@ -8584,6 +8755,15 @@ function endGame(winner,reason){
     if(G.kind!=='indoc'){
       const rank=boardRecord(G,won,score);
       G.boardResult=(rank>=0)?{rank:rank+1,rated:ratedScore(score,G.diff),total:SAVE.board.length}:null;
+      /* 🌐 Global board. Fire-and-forget on purpose: this must never block, slow or
+         throw into the results screen. The player finished a battle; a network error
+         is not their problem, and the local board has already recorded the run.
+         Indoctrination is excluded above because those fights are stacked to be won. */
+      if(LEADERBOARD_BACKEND&&SAVE.lbOptIn){
+        try{ Promise.resolve(LEADERBOARD_BACKEND.submit(boardEntry(G,won,score)))
+          .then(r=>{ if(r&&r.improved&&typeof gcEvent==='function')gcEvent('lb-submit'); })
+          .catch(()=>{}); }catch(e){}
+      }
     }
     G.streakNow=streakRecord(won);
     beatTodayRecord(G,won,score);
@@ -11129,6 +11309,13 @@ function renderPrivacySection(){
     row('Crash reports','If the game hits an internal error it reports <i>where</i> in the code it happened (file &amp; line), capped at five per session. Never the error text, never any of your data — this is how a broken release becomes visible instead of silently ruining everyone\'s game.')+
     row('Live Twitch Chat (opt-in)','If you connect a channel, the game reads that channel\'s public chat over an anonymous, read-only connection — no login, no token, and nothing is sent back to Twitch beyond the standard anonymous connection.')+
     row('Feedback button (you choose)','Nothing is sent when you press 🧪 Feedback. You see the full report — including the attached technical context — and decide whether to copy it or open the form. The form is a <b>Google Form</b>, so anything you submit there goes to Google under their privacy policy, not ours.')+
+    /* The global board is the FIRST feature in this game that ever sends anything a player
+       would recognise as theirs. It gets a row whether or not a backend is configured: on a
+       build with LB_URL unset the row says so, which is more useful than silence. */
+    row('🌐 Global leaderboard'+(LEADERBOARD_BACKEND?(SAVE.lbOptIn?' (ON)':' (opt-in — currently off)'):' (not enabled in this build)'),
+      LEADERBOARD_BACKEND
+        ? 'Off until you switch it on from the Leaderboard screen. While on, finishing a ranked battle sends <b>that battle\'s result</b> — score, kills, duration, win/loss, difficulty, mode, doctrine — plus the display name you chose and an anonymous identifier generated in this browser. <b>Your save is never sent</b>: not your rank, not your unlocks, not your career. The board and your chosen name are public, so pick a name that is not your real one. Turning it off stops all further submissions. To have entries deleted, use the contact address in the Privacy Policy.'
+        : 'This build has no leaderboard server configured, so nothing is sent and the Global tab does not appear.')+
     `<div style="font-size:11px;color:var(--faint);padding:2px 4px">No account, no email, no payment processing, no third-party ad or tracking SDKs exist in this build.</div>`+
     `<div style="display:flex;gap:10px;flex-wrap:wrap;padding:4px 4px 2px">
       <a href="privacy.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--blue);text-decoration:underline">Full Privacy Policy ↗</a>
@@ -11470,7 +11657,10 @@ function renderIndoc(){
 }
 
 /* ═══ LEADERBOARD SCREEN ═══ */
-const LB_TABS=[['runs','🏆 Best Runs'],['streaks','🔥 Streaks'],['today','✔ Beaten Today']];
+/* The GLOBAL tab only exists when a backend is actually configured. Showing an empty
+   "Global" tab on a build with no server would be a promise the game cannot keep. */
+const LB_TABS=[['runs','🏆 Best Runs'],['streaks','🔥 Streaks'],['today','✔ Beaten Today']]
+  .concat(LEADERBOARD_BACKEND?[['global','🌐 Global']]:[]);
 let lbTab='runs';
 function openLeaderboard(){
   hideAllScreens('leaderboard'); document.getElementById('hud').classList.add('hidden');
@@ -11488,9 +11678,82 @@ function buildLbTabs(active){
   });
   renderLeaderboard(active);
 }
+let lbGlobalMode='skirmish';
 function renderLeaderboard(tab){
   const el=document.getElementById('lb-body'); if(!el)return;
   let h='';
+  if(tab==='global'){
+    /* Three states, and they must be distinguishable: not opted in, loading, and
+       loaded-but-empty. Collapsing them into one "no scores" message is how a board
+       that is merely switched off looks identical to a board that is broken. */
+    if(!SAVE.lbOptIn){
+      h+=`<div class="lb-note"><b>Your runs stay on this device until you say otherwise.</b>
+        Turning the global board on sends the score, kills, duration, difficulty, mode and doctrine
+        of finished battles — and the name you choose — to the leaderboard server. It never sends
+        your save, and there is no account, no email and no password. You can turn it off again at
+        any time, and doing so stops all further submissions.</div>`;
+      h+=`<div class="lb-optin">
+        <label class="lb-lbl" for="lb-name">Name on the board</label>
+        <input id="lb-name" maxlength="20" placeholder="Commander" value="${escapeHTML(SAVE.lbName||'')}">
+        <button class="sbtn prim" id="lb-join">🌐 Turn on the global board</button>
+        <div class="lb-fine">Pick any name. Don't use your real one — this is public.</div></div>`;
+      el.innerHTML=h;
+      const go=document.getElementById('lb-join');
+      if(go)go.onclick=()=>{
+        const n=(document.getElementById('lb-name').value||'').trim();
+        SAVE.lbName=n.slice(0,20); SAVE.lbOptIn=true; SAVE.lbAsked=true; persist();
+        if(typeof gcEvent==='function')gcEvent('lb-optin');
+        renderLeaderboard('global');
+      };
+      return;
+    }
+    h+=`<div class="lb-note">Best run per player, per mode. <b>The ranking number is calculated on the
+      server</b> from the raw score and difficulty — the game never sends it, which is what stops the
+      board being whatever anyone types into a console. It is still a browser game, so treat the top of
+      the board as entertainment rather than as a record.
+      <button class="lb-leave" id="lb-leave">Turn off &amp; stop submitting</button></div>`;
+    h+=`<div class="lb-modes">${LB_MODES.map(m=>`<button class="man-tab${m===lbGlobalMode?' on':''}" data-lbm="${m}">${escapeHTML(MODES[m]?MODES[m].name:m)}</button>`).join('')}</div>`;
+    h+=`<div id="lb-global-rows"><p style="color:var(--dim)">Loading the board…</p></div>`;
+    el.innerHTML=h;
+
+    const leave=document.getElementById('lb-leave');
+    if(leave)leave.onclick=()=>{ SAVE.lbOptIn=false; persist();
+      if(typeof gcEvent==='function')gcEvent('lb-optout'); renderLeaderboard('global'); };
+    el.querySelectorAll('[data-lbm]').forEach(b=>{
+      b.onclick=()=>{ lbGlobalMode=b.dataset.lbm; renderLeaderboard('global'); };
+    });
+
+    const rows=document.getElementById('lb-global-rows');
+    const mode=lbGlobalMode;
+    LEADERBOARD_BACKEND.top(mode,25).then(list=>{
+      if(lbGlobalMode!==mode)return;                  // the player switched tabs mid-flight
+      if(!list||!list.length){
+        rows.innerHTML=`<p style="color:var(--dim)">Nobody has posted a ${escapeHTML(MODES[mode]?MODES[mode].name:mode)} run yet. Be first.</p>`;
+        return;
+      }
+      let r='';
+      list.forEach((e,i)=>{
+        const d=DIFFS[e.difficulty]||{}, doc=DOCTRINES[e.doctrine]||{};
+        /* display_name is the one field another human controls. It is stripped and
+           capped server-side and escaped again here — both, because either alone is
+           one refactor away from being the only defence. */
+        r+=`<div class="lb-row${i<3?' top':''}">`+
+          `<span class="lb-rank">${i+1}</span>`+
+          `<span class="lb-main"><b>${escapeHTML(e.display_name)}</b> · `+
+          `<span style="color:${d.col||'var(--dim)'}">${escapeHTML(d.name||e.difficulty)}</span>`+
+          `${doc.name?` · <span style="color:var(--faint)">${escapeHTML(doc.name)}</span>`:''}`+
+          `<br><span class="lb-sub">${(e.score||0).toLocaleString()} pts · ${e.kills|0} kills · ${Math.round((e.duration_s||0)/6)/10}m · ${e.won?'win':'loss'}</span></span>`+
+          `<span class="lb-score">${(e.rated_score||0).toLocaleString()}</span></div>`;
+      });
+      rows.innerHTML=r;
+    }).catch(err=>{
+      /* Say which failure it was. "Could not load" with no reason is the message that
+         makes a player assume the game is broken rather than their network. */
+      rows.innerHTML=`<p style="color:var(--warn)">The board could not be reached (${escapeHTML(err.message||'network error')}).
+        Your runs are still recorded on this device — check the other tabs.</p>`;
+    });
+    return;
+  }
   if(tab==='runs'){
     /* The local-only disclaimer is not boilerplate — it is the single most important
        sentence on this screen, and it stays until a real backend exists. */

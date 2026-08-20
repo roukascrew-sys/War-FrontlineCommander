@@ -2202,13 +2202,21 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
       spawn('B', 'drone', 1, 300); spawn('R', 'rifle', 1, 340);
       step(0.05);
       out.bomberPick = nearestEnemy(G.units.find(u => u.side === 'B')).tgt;
-      // straightforward drones never leave their lane
+      /* Straightforward drones never leave their lane.
+
+         Measured AFTER letting it settle. spawn() scatters every unit by rnd(-10,10) off
+         the lane centre and the lane-lock EASES back rather than snapping (so it still
+         reads as flying), so sampling from frame zero measured the random spawn offset
+         rather than lane-holding — the check passed or failed on the spawn roll. */
       setup('drone', 'straight');
       spawn('B', 'drone', 0, 300); spawn('R', 'rifle', 2, 600);
       const sd = G.units.find(u => u.side === 'B');
+      out.straightSpawnOffset = Math.abs(sd.y - G.laneY[0] * H);
+      for (let i = 0; i < 20 && sd.alive; i++) step(0.05);   // let the lane-lock pull it in
       let drift = 0;
-      for (let i = 0; i < 200 && sd.alive; i++) { step(0.05); drift = Math.max(drift, Math.abs(sd.y - G.laneY[0] * H)); }
+      for (let i = 0; i < 180 && sd.alive; i++) { step(0.05); drift = Math.max(drift, Math.abs(sd.y - G.laneY[0] * H)); }
       out.straightDrift = drift;
+      out.straightLane = sd.lane;
       // a jammer disrupts a dug-in battery
       setup('arty', 'battery');
       spawn('B', 'arty', 1, 150); spawn('R', 'jammer', 1, 200);
@@ -2230,8 +2238,8 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
     ok(behave.hvtPick === 'tank' && behave.hvtEvasive,
       `[orders] HVT Hunter dives the toughest enemy rather than the nearest (picked ${behave.hvtPick}) and flies evasive`);
     ok(!behave.bomberPick, '[orders] Base Bomber engages no troops at all');
-    ok(behave.straightDrift < 2,
-      `[orders] Straightforward drones hold their lane (drift ${behave.straightDrift.toFixed(1)}px)`);
+    ok(behave.straightDrift < 2 && behave.straightLane === 0,
+      `[orders] Straightforward drones hold their lane once settled (drift ${behave.straightDrift.toFixed(1)}px from a ${behave.straightSpawnOffset.toFixed(1)}px spawn offset, still in lane ${behave.straightLane})`);
     ok(behave.jammed,
       '[orders] an enemy EW jammer disrupts a dug-in battery — the intended counter to stacking guns in one spot');
 
@@ -3087,6 +3095,43 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
       '[support] the support card ships with no URL and stays completely silent — a support button pointing nowhere is worse than none');
     ok(v123.bragNamesTier && v123.bragNamesWhatItLearned && v123.bragSpoilsNothing && v123.bragIsCopyOnly,
       '[brag] the share line is specific and true (it names what the Adjutant had hardened against), spoils no secret, and is clipboard-only with no network call');
+
+    /* ══ 28. v1.24.0 — GLOBAL LEADERBOARD ══
+       The deep validation of the submission rules lives in tests/backend.test.js, which
+       exercises the very module the Edge Function imports. What belongs HERE is the
+       client half: that the shipped build is inert, and that nothing leaks. */
+    const v124 = await gp.evaluate(async () => {
+      const o = {};
+      o.urlEmpty = LB_URL === '';
+      o.keyEmpty = LB_ANON_KEY === '';
+      o.configRefused = LB_OK === false;
+      o.backendNull = LEADERBOARD_BACKEND === null;
+      o.noGlobalTab = !LB_TABS.some(t => t[0] === 'global');
+      o.optInOff = DEFAULT_SAVE.lbOptIn === false;
+      o.nameBlank = DEFAULT_SAVE.lbName === '';
+      // the weight table must rank the hardest tier highest
+      o.lpWeight = DIFF_WEIGHT.legendaryplus;
+      o.legWeight = DIFF_WEIGHT.legendary;
+      o.lpRated = ratedScore(1000, 'legendaryplus');
+      // a finished battle on the shipped build must reach no network path at all
+      SAVE.lvl = 60; SAVE.debugUnlockAll = true; persist();
+      LAUNCH = null; sel.mode = 'skirmish'; start(); G.prep = 0; G.frozen = false;
+      G.hq.R = 0; checkWin();
+      o.battleEnded = !!G.over;
+      // and the privacy panel must SAY the board is unconfigured rather than stay silent
+      o.privacyMentionsBoard = /Global leaderboard/i.test(renderPrivacySection());
+      return o;
+    });
+    ok(v124.urlEmpty && v124.keyEmpty && v124.configRefused && v124.backendNull,
+      '[leaderboard] the shipped build has both backend constants empty and the config check refuses them, so the whole feature is inert');
+    ok(v124.noGlobalTab,
+      '[leaderboard] with no backend there is no Global tab — an empty tab would be a promise the build cannot keep');
+    ok(v124.optInOff && v124.nameBlank,
+      '[leaderboard] it is opt-IN: nothing leaves the device until the player says so, and the display name is never pre-filled');
+    ok(v124.lpWeight > v124.legWeight && v124.lpRated === 2100,
+      `[leaderboard] Legendary+ outweighs Legendary (${v124.legWeight} → ${v124.lpWeight}) — it was missing from the table and fell through to 1.0, so the hardest difficulty scored LOWEST`);
+    ok(v124.battleEnded && v124.privacyMentionsBoard,
+      '[leaderboard] a battle still finishes normally, and the in-game privacy panel names the board even when it is not configured');
 
     // the boot-guard check above throws ONE error on purpose to prove a mid-battle fault no
     // longer covers a live match; everything else must still be clean

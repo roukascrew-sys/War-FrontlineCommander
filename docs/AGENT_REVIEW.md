@@ -163,10 +163,19 @@ primitives. There is no third-party licence to comply with, no attribution to ca
 takedown surface. Very few games can say that. *Keep it that way* — the first `<img src>` or npm
 dependency changes this section entirely.
 
-**4.2 — The legal pages still have placeholders.** `build-itch.sh` already warns on any
-`[ALL-CAPS]` placeholder in `privacy.html` / `terms.html` and prints them. That warning is correct
-and should be treated as blocking **before charging money or launching publicly** — it is fine for
-an open playtest. *Action:* fill contact email and governing jurisdiction.
+**4.2 — CORRECTION: the legal pages were already complete.** This review originally listed
+unfilled placeholders as a High-severity blocker. That was **wrong**. Commit `6c4440c` ("Indiana
+governing law — both documents are now fully filled in") had already set the controller name,
+contact address and governing jurisdiction, and `build-itch.sh`'s placeholder guard does not fire.
+I asserted the finding from the *existence* of the guard rather than by running it. *No action;
+the item is closed.*
+
+**4.2b — What the legal pages DID need (v1.24.0).** The global leaderboard is the first feature in
+the game that ever sends anything a player would recognise as their own. `privacy.html` (a new row
+in "What the game sends", plus a rewritten retention section naming Supabase and the deletion
+route), `terms.html` (a leaderboard conduct rule and a new §7a) and the in-game privacy panel were
+all updated in the same commit as the feature — which is the rule the code comment already
+stated.
 
 **4.3 — Name clearance is unverified.** "Frontline" and "Commander" are both heavily used in games.
 I cannot run a trademark search from here. *Assumption stated:* none has been done. *Action:* a
@@ -301,8 +310,8 @@ second developer joins.
 | 1 | **Ko-fi + itch pay-what-you-want** | CFO | 1h | Revenue ceiling is $0 until this exists |
 | 2 | **Rebuild the itch page** (GIF first, "no download" opening line, mobile embed, tags) | Marketing | 4h | 75% leak; ~10× the return of promotion work |
 | 3 | **Re-measure the tutorial funnel** | Product | 0h | The fix shipped six versions ago and was never verified |
-| 4 | **Fill the legal placeholders** | Legal | 1h | Blocks any paid launch; already flagged by the build script |
-| 5 | **Decide the leaderboard rule before building it** — score computed server-side, never submitted | Security | — | Cheaper now than retrofitted |
+| 4 | ~~Fill the legal placeholders~~ **— already done (6c4440c); this review was wrong** | Legal | 0h | Closed. See 4.2 |
+| 5 | ~~Decide the leaderboard rule before building it~~ **— built to that rule in v1.24.0** | Security | 0h | `rated_score` is derived in the Edge Function; `runs` has no insert policy at all. 35 tests in `tests/backend.test.js` |
 | 6 | **Submit to Newgrounds + Internet Archive** (no SDK needed) | Marketing | 2h | Permanent placements; no CSP cost |
 | 7 | **Post-first-win nudge to the matching Field School lesson** | Product | 3h | Largest remaining onboarding gap |
 | 8 | **Trademark search on the name** | Legal | 1h | Cheap now, expensive after a store listing |

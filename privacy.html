@@ -109,7 +109,8 @@
   </div>
 
   <h2>3. What the game sends</h2>
-  <p>Three things reach the network, and only three. They are listed in full here.</p>
+  <p>Four things can reach the network, and only four. One of them &mdash; the global leaderboard
+  &mdash; is <strong>off unless you switch it on</strong>. They are listed in full here.</p>
 
   <div class="scroller">
   <table class="tbl">
@@ -132,6 +133,22 @@
         no password and no access token, and the game never posts or sends anything to Twitch. It
         reads the public messages of the channel you named so viewers can affect the battle.
         Those messages are shown on your screen and are not stored or forwarded anywhere.</td>
+      </tr>
+      <tr>
+        <td><strong>Global leaderboard</strong><br>(opt-in, off by default)</td>
+        <td>Only if you turn on the global board on the Leaderboard screen, and then only when you
+        finish a battle in one of the six ranked modes. Turning it off stops all further
+        submissions immediately.</td>
+        <td>The <strong>name you chose</strong> for the board, and the result of that battle: score,
+        kills, how long it lasted, whether you won, the difficulty, the mode and the doctrine. Plus
+        the game version, and an anonymous identifier created for your browser.
+        <strong>Your save file is never sent</strong> &mdash; not your rank, not your unlocks, not
+        your career history, not the rest of your board. There is no account, no email address and
+        no password: the identifier is a random value generated on your device, and clearing your
+        browser storage replaces it with a new one. The board and the name you pick are
+        <strong>public</strong>, which is why the game tells you to choose a name that is not your
+        real one. Data is stored by <a href="https://supabase.com/privacy" rel="noopener noreferrer"
+        target="_blank">Supabase</a>, who host it on our behalf.</td>
       </tr>
       <tr>
         <td><strong>Crash reports</strong></td>
@@ -157,7 +174,8 @@
 
   <h2>4. What we never do</h2>
   <ul>
-    <li>No user accounts, sign-ups, email addresses or passwords.</li>
+    <li>No user accounts, sign-ups, email addresses or passwords. (The global leaderboard uses an
+    anonymous identifier generated on your device &mdash; there is still nothing to log in to.)</li>
     <li>No advertising, ad networks, or advertising identifiers.</li>
     <li>No third-party tracking or analytics SDKs beyond the cookieless counter described above.</li>
     <li>No selling or sharing of personal information — there is nothing to sell.</li>
@@ -201,9 +219,17 @@
   us and we will delete it.</p>
 
   <h2>8. Data retention and security</h2>
-  <p>Your save data lives on your device for as long as you keep it. Analytics records are aggregate
-  counts held by GoatCounter and are not tied to you. Because we operate no user database and store
-  no personal information, there is no personal data store to breach.</p>
+  <p>Your saved progress lives on your device and is kept until you clear it. We have no copy of it
+  and cannot recover it for you.</p>
+  <p>If you have turned on the <strong>global leaderboard</strong>, your best run in each mode is
+  stored on our behalf by Supabase for as long as the board exists, together with the name you chose
+  and the anonymous identifier for your browser. It is kept as one row per player per mode &mdash;
+  your best &mdash; so a newer, better run replaces the previous one rather than adding to it. The
+  connection is encrypted in transit. To have your board entries removed, contact us at
+  <a href="mailto:Gideon.Roukas45@gmail.com">Gideon.Roukas45@gmail.com</a> with the name you used and
+  we will delete them.</p>
+  <p>Analytics and crash reports are held by GoatCounter under their own retention policy. Nothing
+  we hold anywhere identifies you by name unless you typed a name into the leaderboard yourself.</p>
 
   <h2>9. Changes</h2>
   <p>If this policy changes, the effective date at the top changes with it, and material changes will

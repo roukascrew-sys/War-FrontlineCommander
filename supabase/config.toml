@@ -1,0 +1,44 @@
+# FRONTLINE COMMANDER — Supabase project config
+#
+# This file is committed. It contains NO keys and never should: the anon key lives
+# in wargame.html (safe, because RLS restricts it), and the service_role key lives
+# only in the Edge Function's environment. If a key ever appears in this file,
+# rotate it — the commit history has already published it.
+
+project_id = "frontline-commander"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+# a leaderboard page asks for at most a few dozen rows; a low ceiling means a
+# scripted client cannot pull the entire table in one request
+max_rows = 200
+
+[db]
+port = 54322
+major_version = 15
+
+[auth]
+enabled = true
+# no site URL redirects are used — the game never leaves the page to sign in
+site_url = ""
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+
+# Identity without accounts. Each browser gets a persistent UUID with no signup
+# friction, which matches how the save already works: one career per device.
+#
+# Honest caveat, repeated from docs/SUPABASE_GUIDE.md: clearing browser storage
+# creates a NEW identity, so someone can farm fresh ones. That is acceptable for a
+# leaderboard and would not be acceptable for anything with real stakes.
+[auth.email]
+enable_signup = false
+
+[functions.submit-run]
+# The function verifies the caller's JWT itself (auth.getUser) and returns 401
+# without one, so it must stay verify_jwt = false only if anonymous users are
+# ever to reach it. They ARE — anonymous auth still issues a real JWT, so leave
+# this true and let the platform reject unauthenticated calls before our code runs.
+verify_jwt = true

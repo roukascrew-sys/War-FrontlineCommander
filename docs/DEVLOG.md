@@ -8,6 +8,59 @@ engineering detail lives in the patch notes inside the game and in the commit hi
 
 ---
 
+## v1.24.0 — The board goes global
+
+### 🌐 A real leaderboard, and it is opt-in
+
+There is now a **Global** tab on the Leaderboard screen. It is **off until you switch it on**,
+and switching it off again stops all further submissions immediately.
+
+While it is on, finishing a battle in a ranked mode posts that battle's result — score, kills,
+duration, win or loss, difficulty, mode and doctrine — along with a display name you choose.
+
+**Your save is never sent.** Not your rank, not your unlocks, not your career history, not the
+rest of your local board. There is no account, no email and no password: just an anonymous
+identifier generated in your browser. Clearing your browser storage gives you a new one.
+
+The name and the board are **public**, which is why the game tells you to pick something that
+isn't your real name.
+
+### Why the ranking number is calculated on the server
+
+This is the whole design, not an implementation detail.
+
+The game is a single file you can download, read and modify. Anything it sends is therefore a
+**claim, not a fact** — and the useful question was never "how do I stop people lying", which is
+impossible, but **"how much does a lie buy?"**
+
+So the board sorts by a number the game never sends. The server takes the raw score and the
+difficulty and works it out itself. It also refuses the physically impossible — 5,000,000 points
+in twenty seconds, 5,000 kills in thirty — and rate-limits how fast anyone can submit.
+
+Stated honestly: a determined faker can still post a *plausible* run. What they cannot do is
+submit 10¹², claim 400 kills in eight seconds, spam the table, or **choose their own place in the
+ordering**. For a browser game that is the realistic ceiling, and it's enough to keep a board
+worth reading.
+
+The board keeps **one row per player per mode** — your best, not every run you've ever played —
+so nobody can occupy the whole first page.
+
+### ⚠ Legendary+ was scoring lowest
+
+A real bug, found while building this. The board's difficulty weighting table never had an entry
+for Legendary+, so it fell through to the default of **1.0** while Legendary sat at **1.8**.
+
+A win on the hardest difficulty in the game was worth **less** on the leaderboard than a win on an
+easier one. It's now **2.1**, above Legendary, where it always should have been.
+
+### The paperwork
+
+The leaderboard is the first feature in this game that ever sends anything you'd recognise as
+yours, so the privacy policy, the terms and the in-game privacy panel were all updated in the same
+change — including how to have your board entries deleted.
+
+---
+
 ## v1.23.0 — Two commanders who were never on the roster
 
 ### 🔊 One audio button
