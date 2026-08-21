@@ -139,11 +139,33 @@ const good = (over = {}) => ({
 /* ── 8. THE SHIPPED GAME MUST CARRY NO SECRET ──────────────────────────── */
 {
   const html = readFileSync(join(ROOT, 'wargame.html'), 'utf8');
-  ok(!/service_role/.test(html.replace(/service_role key must NEVER|"service_role"|a "'\+claims\.role\+'" key/g, '')) ||
-     !/eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}/.test(html),
-    '[secrets] no JWT-shaped string is embedded in the game file');
-  ok(/const LB_URL='';/.test(html) && /const LB_ANON_KEY='';/.test(html),
-    '[secrets] the shipped build has BOTH backend constants empty, so it makes no network call and leaks nothing');
+  /* The build now legitimately embeds a JWT — the anon key is DESIGNED to be public and is
+     safe only because RLS restricts it. So "is there a JWT?" stopped being the question.
+     Decode every one and require role="anon": a service_role key sits in the very same slot,
+     is indistinguishable from an anon key by eye or by grep, and hands every player who
+     views source full read/write access to the database. */
+  const jwts = [...html.matchAll(/eyJ[A-Za-z0-9_-]{10,}\.(eyJ[A-Za-z0-9_-]{10,})\.[A-Za-z0-9_-]{10,}/g)];
+  const roles = jwts.map(m => {
+    try { return JSON.parse(Buffer.from(m[1], 'base64').toString()).role; } catch (e) { return '<undecodable>'; }
+  });
+  const badRoles = roles.filter(r => r !== 'anon');
+  ok(badRoles.length === 0,
+    `[secrets] every JWT embedded in the game file decodes to an ANON key (found ${roles.length}: ${roles.join(', ') || 'none'})${badRoles.length ? ' :: NON-ANON KEY PRESENT — ROTATE IT NOW, the zip may already be downloaded' : ''}`);
+
+  const lbUrl = (html.match(/const LB_URL='([^']*)'/) || [])[1] || '';
+  const lbKey = (html.match(/const LB_ANON_KEY='([^']*)'/) || [])[1] || '';
+  /* Set together or not at all. Half-configured is the state that fails only at runtime,
+     in a player's browser, rather than here. */
+  ok(!!lbUrl === !!lbKey,
+    `[secrets] the two backend constants are set together or not at all (url=${lbUrl ? 'set' : 'empty'}, key=${lbKey ? 'set' : 'empty'})`);
+  if (lbUrl && lbKey) {
+    let ref = null;
+    try { ref = JSON.parse(Buffer.from(lbKey.split('.')[1], 'base64').toString()).ref; } catch (e) {}
+    ok(/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(lbUrl) && !!ref && lbUrl.includes(ref),
+      `[secrets] the project URL is an https Supabase URL whose ref matches the key's (${ref || 'undecodable'}) — a URL and key from two different projects would fail only in a player's browser`);
+  } else {
+    ok(true, '[secrets] the build ships unconfigured, so the leaderboard makes no network call at all');
+  }
   const sqlPath = join(ROOT, 'supabase/migrations/0001_leaderboard.sql');
   const rawSql = readFileSync(sqlPath, 'utf8');
   /* Strip -- comments before asserting. The file DISCUSSES the insert policy it
