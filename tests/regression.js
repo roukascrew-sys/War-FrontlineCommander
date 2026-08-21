@@ -3133,6 +3133,103 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
     ok(v124.battleEnded && v124.privacyMentionsBoard,
       '[leaderboard] a battle still finishes normally, and the in-game privacy panel names the board even when it is not configured');
 
+    /* ══ 29. v1.25.0 — ENLISTMENT + SAVE COMPATIBILITY ══ */
+    /* Names chosen to break a normaliser: interior runs, tabs/newlines, zero-width joiners,
+       a bidi override, an overlong string, and one that is nothing BUT invisible characters. */
+    const NAME_CASES = [
+      '  Iron  Marshal  ', 'Rook', '\tGeneral\n\nDust ', 'Zero\u200bWidth',
+      'Bidi\u202eevil', 'A'.repeat(40), '\u200b\u200b\u200b', '   ', '\u00dcnit 7',
+    ];
+    const { cleanName } = await import(
+      require('url').pathToFileURL(path.join(__dirname, '..', 'supabase', 'functions', '_shared', 'validate.js')).href);
+    const v125 = await gp.evaluate(async (NAME_CASES) => {
+      const o = {};
+      o.defaultsUnEnlisted = DEFAULT_SAVE.enlisted === false;
+
+      /* An OLD save, as it exists on a returning player's device: written by a build that
+         had never heard of the leaderboard, the mixer, enlistment or the hidden rivals.
+         This is the check that answers "is it safe to upload a new zip to itch". */
+      const old = { xp: 4200, lvl: 31, wins: 22, best: 88000,
+        unlocked: ['blitzkrieg', 'mass', 'airpower'], seenTut: true, campaignDone: 4,
+        sound: true, music: true, musicVol: 0.4, narrator: true,
+        board: [{ ts: 1, score: 5000, rated: 5000, mode: 'skirmish', kind: 'skirmish',
+                  diff: 'veteran', doc: 'mass', won: true, kills: 10, dur: 100 }],
+        career: { battles: 31, wins: 22, losses: 9, kills: 400, deploys: 900, cpSpent: 9000,
+                  strikes: 20, units: {}, dmgDealt: 5000, timePlayed: 9000 },
+        rivals: { 'Gen. Korvinov "Steel Fist"': { w: 2, l: 1, defeated: true, dominant: 'armor' } },
+        gauntlet: { clears: 3, losses: 2, lifetime: 7, deepest: 4 } };
+      const up = sanitizeSave(old);
+      o.progressKept = up.lvl === 31 && up.xp === 4200 && up.best === 88000 &&
+                       up.unlocked.length === 3 && up.campaignDone === 4 &&
+                       up.board.length === 1 && up.gauntlet.lifetime === 7 &&
+                       !!up.rivals['Gen. Korvinov "Steel Fist"'].defeated;
+      o.newFieldsSafe = up.lbOptIn === false && up.lbName === '' && up.enlisted === false &&
+                        up.masterVol === 1 && up.sfxVol === 0.8 && up.experimental === false &&
+                        up.rivalPrestige === 0 && up.umbraDefeated === false;
+      o.oldAudioKept = up.music === true && up.musicVol === 0.4 && up.sound === true;
+
+      // the screen itself
+      SAVE = JSON.parse(JSON.stringify(DEFAULT_SAVE)); persist();
+      showTitle(); enlistShow();
+      o.shows = document.getElementById('enlist').classList.contains('show');
+      o.visible = getComputedStyle(document.getElementById('enlist')).display !== 'none';
+      o.noBoardBoxWithoutBackend = !document.getElementById('en-board');
+      o.newPlayerCopy = /state your name/i.test(document.querySelector('#enlist .fr-h').textContent);
+      // a returning player must be reassured, not alarmed
+      SAVE.career.battles = 31; SAVE.lvl = 31; persist(); enlistShow();
+      o.returningCopy = /progress is safe/i.test(document.querySelector('#enlist .fr-h').textContent);
+      // finishing it
+      document.getElementById('en-name').value = '  Iron  Marshal  ';
+      enlistFinish();
+      o.nameTrimmed = SAVE.lbName === 'Iron Marshal';
+      o.enlistedNow = SAVE.enlisted === true;
+      o.closed = !document.getElementById('enlist').classList.contains('show');
+      o.stillNotOptedIn = SAVE.lbOptIn === false;   // no backend = no silent opt-in
+      // blank is allowed and falls back
+      SAVE.enlisted = false; SAVE.lbName = ''; persist(); enlistShow();
+      document.getElementById('en-name').value = '';
+      enlistFinish();
+      o.blankOk = SAVE.enlisted === true && lbName() === 'Commander';
+      // and Settings can rename, as the screen promises
+      openSettings();
+      const nm = document.getElementById('set-name');
+      o.settingsField = !!nm;
+      if (nm) { nm.value = 'Rook'; nm.dispatchEvent(new Event('input')); }
+      o.settingsRenames = SAVE.lbName === 'Rook';
+      /* Whatever the client stores, the SERVER normalises before the board shows it. If the
+         two disagree the player sees their name mangled by the site. Collect the client's
+         answer here; the Node side compares it against the real cleanName(). */
+      o.normCases = NAME_CASES.map(s => normName(s));
+      SAVE = JSON.parse(JSON.stringify(DEFAULT_SAVE)); persist();
+      return o;
+    }, NAME_CASES);
+    ok(v125.progressKept,
+      '[save compat] a save written before the leaderboard, mixer, enlistment and hidden rivals loads with rank, unlocks, campaign, rivals, Gauntlet record and local board intact — this is what makes uploading a new zip safe');
+    ok(v125.newFieldsSafe && v125.oldAudioKept,
+      '[save compat] every field added since arrives at its safe default, and the old audio booleans survive the mixer migration');
+    ok(v125.shows && v125.visible,
+      '[enlist] the screen actually renders — it carries its own .show rule, which an earlier build was missing so the overlay reported shown and displayed nothing');
+    ok(v125.newPlayerCopy && v125.returningCopy,
+      '[enlist] a new player is asked their name; a RETURNING player is told their progress is safe first, because a first-run screen after an update reads as a wiped save');
+    ok(v125.noBoardBoxWithoutBackend && v125.stillNotOptedIn,
+      '[enlist] with no leaderboard configured it never offers to join one — and cannot silently opt anyone in');
+    ok(v125.nameTrimmed && v125.enlistedNow && v125.closed,
+      '[enlist] the name is trimmed, recorded, and the screen closes');
+    /* The client's normName() must agree with the server's cleanName() character for
+       character — the one exception being the empty result, where the server substitutes
+       'Commander' and the client defers that to lbName(). A mismatch means the board renders
+       a different name than the player typed. */
+    const nameParity = NAME_CASES.every((src, i) => {
+      const server = cleanName(src), client = v125.normCases[i];
+      return server === (client || 'Commander');
+    });
+    ok(nameParity,
+      '[enlist] the client normalises a display name EXACTLY as the Edge Function does — interior whitespace, tabs, zero-width and bidi characters and the 20-char cap all agree, so nobody sees their name silently rewritten by the board');
+    ok(v125.blankOk,
+      '[enlist] a blank name is allowed and falls back to "Commander" — nobody is blocked at the door');
+    ok(v125.settingsField && v125.settingsRenames,
+      '[enlist] Settings can rename you later, which is what the screen promises');
+
     // the boot-guard check above throws ONE error on purpose to prove a mid-battle fault no
     // longer covers a live match; everything else must still be clean
     const unexpected = gerr.filter(m => !/benign mid-battle blip/.test(m));

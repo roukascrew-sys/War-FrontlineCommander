@@ -51,6 +51,9 @@ function int(v, lo, hi) {
 function cleanName(v) {
   if (typeof v !== 'string') return 'Commander';
   const s = v
+    // Tabs and newlines ARE whitespace, so turn them into a space rather than deleting
+    // them — stripping first made a pasted two-line name collapse into "GeneralDust".
+    .replace(/[\t\n\v\f\r]/g, ' ')
     .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, '')
     .replace(/\s+/g, ' ')
     .trim()

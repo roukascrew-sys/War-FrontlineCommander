@@ -8,6 +8,75 @@ engineering detail lives in the patch notes inside the game and in the commit hi
 
 ---
 
+## v1.25.0 — Enlistment, and a promise about your save
+
+### 🎖 The game now asks your name once
+
+The first time you open Frontline Commander you get a short **enlistment screen**: type a
+callsign, press Enlist, and you're in. That's the whole thing. No account, no email, no
+password, no "sign in with" anything. The name lives in your browser and nowhere else until
+you personally switch the global board on.
+
+You can leave it blank — you'll be **Commander**, which is a perfectly good name for a
+commander — and you can change it any time in Settings.
+
+### If you already have a save, read this bit
+
+Anyone who's already been playing will see that screen too, and a first-run prompt appearing
+after an update is *exactly* what a wiped save looks like. So it doesn't ask returning players
+for their name first. It tells them their progress is safe, names their rank and their battle
+count back to them, and only then asks what to put on the board.
+
+That reassurance is tested, not asserted. There is a check in the suite that loads a save
+written **before** the leaderboard, the audio mixer, the enlistment screen and the hidden
+rivals all existed, and requires rank, unlocks, campaign progress, Rivals record, Gauntlet
+best and the local leaderboard to all come through intact, with every field added since
+arriving at a safe default. **Uploading a new build does not touch your save.**
+
+### Your name looks the same everywhere
+
+A small one, but the kind of small thing that reads as the site being broken.
+
+The server tidies display names before the board shows them: it collapses runs of spaces,
+drops invisible characters, and removes the right-to-left override characters people use to
+make text render deceptively. The game was doing a *simpler* tidy-up locally — which meant
+you could type a name, see it one way in Settings, and then find it rendered slightly
+differently on the leaderboard.
+
+Both sides now run **the same rule**, and there's a test that feeds nine deliberately awkward
+names (double spaces, pasted line breaks, zero-width characters, a bidi override, a name that
+is *nothing but* invisible characters, and one 40 characters long) through both and fails if
+they ever disagree by a single character.
+
+Pleasantly, writing that test found a genuine bug in the tidy-up itself: because invisible
+characters were removed *before* spaces were collapsed, a name pasted across two lines came
+out with the words jammed together — `General⏎Dust` became `GeneralDust`. Tabs and line
+breaks are now treated as the whitespace they are. It's `General Dust`.
+
+### Everything that talks to the internet, listed
+
+Since the leaderboard means the game can now make a network call at all, here is the complete
+list, measured by recording every request during a full session rather than written from
+memory:
+
+- **Analytics beacon** — page load and a few milestone events.
+- **Twitch chat** — only if you connect a channel yourself.
+- **The global leaderboard** — only if it's configured *and* you opted in.
+- **Crash reports** — only on an internal error, capped at five a session.
+
+That's it. On the current public build the leaderboard isn't configured yet, so a full
+session — title screen, every menu, a complete battle, results — contacts exactly one host.
+
+There's a written security audit in the repo covering how the keys work, why the public key
+can read the board but physically cannot write to it, and — just as importantly — a section
+listing the things that are deliberately **not** locked down, so nobody mistakes them for
+oversights. Your save file is editable. It's a single-player game in your browser; that's a
+sandbox, not a vulnerability. The leaderboard is precisely where that stops being fine, which
+is why the board's sort key is calculated on the server and the game is not permitted to
+write to the table at all.
+
+---
+
 ## v1.24.0 — The board goes global
 
 ### 🌐 A real leaderboard, and it is opt-in

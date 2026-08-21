@@ -1593,6 +1593,20 @@
   .rally-no{padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:none;
     color:var(--faint);font-weight:700;font-size:12px;cursor:pointer;}
   .rally-no:hover{color:var(--dim);border-color:var(--dim);}
+  /* 🎖 enlistment screen */
+  .en-lbl{display:block;font-size:12px;font-weight:800;color:var(--ink);letter-spacing:.3px;margin:14px 0 6px;}
+  #en-name{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;
+    padding:11px 13px;color:var(--ink);font-size:15px;font-family:inherit;}
+  #en-name:focus{outline:2px solid var(--gold);outline-offset:1px;}
+  .en-fine{font-size:11px;color:var(--faint);line-height:1.5;margin-top:6px;}
+  .en-box{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-top:14px;}
+  .en-box-h{font-size:12px;font-weight:800;color:var(--good);margin-bottom:4px;letter-spacing:.3px;}
+  .en-box-p{font-size:11.5px;color:var(--dim);line-height:1.55;}
+  .en-opt{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:11px 13px;margin-top:10px;cursor:pointer;}
+  .en-opt input{margin-top:2px;width:17px;height:17px;accent-color:var(--cyan);cursor:pointer;flex:none;}
+  .en-opt-h{font-size:12px;font-weight:800;color:var(--cyan);margin-bottom:3px;letter-spacing:.3px;}
+  .en-opt-p{font-size:11.5px;color:var(--dim);line-height:1.55;}
   /* 💛 support card — the same card in gold, so it reads as a different KIND of ask
      rather than the community prompt appearing a fourth time */
   .rally.support{background:linear-gradient(135deg,#2a2210,#171208);border-color:#5a4a1e;}
@@ -1642,8 +1656,8 @@
   .camp-btn.secret-btn:hover{border-color:#ff5ad6;box-shadow:0 0 14px #ff5ad655;}
   .camp-btn.secret-btn .cs{color:#ff5ad6;font-weight:800;}
   /* ── first-run prompt ── */
-  #firstrun,#voicemodal,#twitchmodal,#debugmodal,#feedbackmodal{position:absolute;inset:0;z-index:40;background:#080b11e0;display:none;align-items:center;justify-content:center;padding:24px;}
-  #firstrun.show,#voicemodal.show,#twitchmodal.show,#debugmodal.show,#feedbackmodal.show{display:flex;}
+  #enlist,#firstrun,#voicemodal,#twitchmodal,#debugmodal,#feedbackmodal{position:absolute;inset:0;z-index:40;background:#080b11e0;display:none;align-items:center;justify-content:center;padding:24px;}
+  #enlist.show,#firstrun.show,#voicemodal.show,#twitchmodal.show,#debugmodal.show,#feedbackmodal.show{display:flex;}
   .fb-lbl{font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;display:block;margin-bottom:5px;}
   .fb-kind{padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);
     font-size:12px;font-weight:700;color:var(--dim);transition:.1s;}
@@ -1919,7 +1933,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.24.0</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.25.0</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -2360,6 +2374,34 @@
   </div>
 
   <!-- FIRST-RUN PROMPT -->
+  <!-- ENLISTMENT — the one-time identity screen. Deliberately NOT a login: there is no
+       account to log into, and saying "sign in" would imply a password that does not exist.
+       See enlistShow(). -->
+  <div id="enlist">
+    <div class="fr-card" style="max-width:520px;text-align:left">
+      <div class="fr-h" style="text-align:center">🎖 Commander, state your name</div>
+      <div class="fr-p" style="text-align:center">One question, once. You can change it later in Settings.</div>
+
+      <label class="en-lbl" for="en-name">Your name</label>
+      <input id="en-name" maxlength="20" placeholder="Commander" autocomplete="off" spellcheck="false">
+      <div class="en-fine" id="en-hint">Anything you like, up to 20 characters. Leave it blank and you are simply “Commander”.</div>
+
+      <div class="en-box">
+        <div class="en-box-h">🔓 There is no account here</div>
+        <div class="en-box-p">No email. No password. Nothing to log into and nothing to lose.
+        Your name and your whole career are saved <b>in this browser only</b>. Clearing your
+        browser data or moving to another device starts you fresh — that is the trade for never
+        asking you to register.</div>
+      </div>
+
+      <div id="en-board-wrap"></div>
+
+      <div class="btn-row" style="justify-content:center;margin-top:14px">
+        <button class="sbtn prim" id="en-go">⚔ Take command</button>
+      </div>
+    </div>
+  </div>
+
   <div id="firstrun">
     <div class="fr-card">
       <div class="fr-h">🎙 New here, Commander?</div>
@@ -2622,6 +2664,7 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   lbOptIn:false,
   lbName:'',
   lbAsked:false,       // whether the one-time opt-in prompt has been shown
+  enlisted:false,      // 🎖 the one-time name screen has been completed
   lastPlayedDay:null,  // 'YYYY-MM-DD' of the previous session, drives the welcome-back line
   ambient:true,randomEvents:true,evSupply:true,evVoice:true,evCutscene:true,evBarrage:true,evDefector:true,evOrders:true,
   noLuck:false,          // 🎯 NO LUCK — one master override that silences every chance-driven event
@@ -3736,11 +3779,21 @@ async function lbAuth(){
     return LB.token;
   }catch(e){ console.warn('global board: sign-in failed —',e.message); return null; }
 }
+/* MIRROR OF cleanName() in supabase/functions/_shared/validate.js — keep the two in step.
+   The server normalises every submitted name whether we do or not; if the client skipped a
+   step the board would show a different string than the player typed (a double space became
+   one, an invisible character vanished), which reads as the site mangling their name. Same
+   order as the server: strip, collapse, trim, cap. */
+function normName(v){
+  if(typeof v!=='string')return '';
+  return v.replace(/[\t\n\v\f\r]/g,' ')          /* real whitespace stays whitespace */
+          .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g,'')
+          .replace(/\s+/g,' ').trim().slice(0,20);
+}
 /* The name shown on the board. Local, player-editable, and NEVER auto-filled from
    anything identifying — no device name, no account, no email. */
 function lbName(){
-  const n=(SAVE.lbName||'').trim();
-  return n?n.slice(0,20):'Commander';
+  return normName(SAVE.lbName||'')||'Commander';
 }
 /* Modes the global board accepts. Must match the CHECK constraint in the migration —
    submitting anything else is refused server-side, so filtering here just avoids a
@@ -3890,13 +3943,19 @@ const DIFFS={
        player starts with exactly what they used to have at the moment the fight began. */
 const PREP_MAX=180;        // hard cap, so an idle tab cannot sit frozen forever
 const PREP_GRANT_SECS=10;  // seconds of income granted up front, replacing prep-phase accrual
-const GAME_VERSION='1.24.0';
+const GAME_VERSION='1.25.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.25.0',notes:[
+    '\ud83c\udf96 ENLISTMENT \u2014 the game now asks your name once, on first launch, instead of calling you \u201cCommander\u201d forever. It is deliberately NOT a login: no email, no password, nothing to log into and nothing to lose. The name is optional, stored on your device with the rest of your progress, and changeable any time from Settings. If you were already playing, the screen says so and names your rank and battle count \u2014 a first-run screen appearing after an update is exactly what \u201cmy save got wiped\u201d feels like, and it did not.',
+    'If a leaderboard server is configured, the same screen offers the global board as an optional tick-box \u2014 the one moment you are already thinking about identity. It stays off unless you tick it.',
+    'A tools release otherwise: tests/verify-live.js proves a real deployment end to end \u2014 anonymous sign-in, public read, and above all that a DIRECT write with the public key is refused. It was itself tested against a deliberately mis-configured server to confirm it actually catches the failure rather than always passing.',
+    'Verified: an old save from before any of this loads intact \u2014 rank, unlocks, campaign stars, rivals, Gauntlet record and local board all survive, and every new field arrives at a safe default. Uploading a new build to itch.io does not touch anyone\u2019s progress.',
+  ]},
   {v:'1.24.0',notes:[
     '\ud83c\udf10 GLOBAL LEADERBOARD \u2014 opt-IN, and OFF until you switch it on from the Leaderboard screen. While it is on, finishing a ranked battle posts that battle\u2019s result and the display name you pick. Your save is never sent: not your rank, not your unlocks, not your career history. There is no account, no email and no password \u2014 just an anonymous identifier generated in your browser. Turning it off stops all further submissions immediately.',
     'THE RANKING NUMBER IS CALCULATED ON THE SERVER. This is the whole design, not a detail. The game is a file you can download and read, so anything it sends is a CLAIM, not a fact \u2014 the question is never how to stop someone lying, it is how much a lie buys. The board sorts by a figure the game never sends: the server re-derives it from the raw score and difficulty. It also refuses the physically impossible (5,000,000 points in twenty seconds, 5,000 kills in thirty) and rate-limits submissions. A determined faker can still post a plausible run; they cannot choose their own place in the ordering.',
@@ -11080,6 +11139,76 @@ document.getElementById('btn-play').onclick=()=>{LAUNCH=null;start();};
 document.getElementById('btn-daily').onclick=()=>launchDaily();
 document.getElementById('btn-tutorial').onclick=()=>launchTutorial();
 document.getElementById('tut-skip').onclick=()=>{ if(G&&G.tutorial)tutFinish(); };
+/* ═══ 🎖 ENLISTMENT ═══════════════════════════════════════════════════════════
+   Shown once, before anything else, on a brand-new save.
+
+   It is deliberately NOT called a login and does not behave like one. There is no
+   account, no email and no password — calling it "sign in" would imply a credential
+   that does not exist and a recovery path that cannot exist. What it actually does
+   is let a player name themselves once instead of being "Commander" forever, and
+   give them the global-board choice at the only moment they are already thinking
+   about identity.
+
+   The board checkbox appears ONLY when a backend is configured. Offering to put
+   someone on a leaderboard that does not exist is a promise the build cannot keep. */
+function enlistShow(){
+  const el=document.getElementById('enlist'); if(!el)return;
+  /* A RETURNING player sees this too — `enlisted` defaults to false, so anyone who was
+     already playing before this build gets asked once. That is deliberate (they would
+     otherwise never get a name and never hear about the board), but a first-run-looking
+     screen appearing after an update is exactly what "my save got wiped" feels like.
+     So when there is a career behind them, the copy says so first. */
+  const battles=(SAVE.career&&SAVE.career.battles)||0;
+  const h=el.querySelector('.fr-h'), sub=el.querySelector('.fr-p');
+  if(battles>0){
+    if(h)h.textContent='🎖 Your progress is safe, Commander';
+    if(sub)sub.innerHTML=`Rank <b>${SAVE.lvl}</b>, <b>${battles}</b> battles fought — all still here.
+      The game just never asked your name. One question, once.`;
+  } else {
+    if(h)h.textContent='🎖 Commander, state your name';
+    if(sub)sub.textContent='One question, once. You can change it later in Settings.';
+  }
+  const wrap=document.getElementById('en-board-wrap');
+  if(wrap){
+    wrap.innerHTML = LEADERBOARD_BACKEND ? `
+      <label class="en-opt" for="en-board">
+        <input type="checkbox" id="en-board">
+        <span><span class="en-opt-h">🌐 Join the global leaderboard (optional)</span>
+        <span class="en-opt-p">Posts the <b>result of ranked battles</b> — score, kills, time, difficulty —
+        under the name above. Your save is never sent. The board and your name are <b>public</b>, so pick
+        a name you are happy for strangers to see. You can turn this on or off any time from the
+        Leaderboard screen.</span></span>
+      </label>` : '';
+  }
+  const inp=document.getElementById('en-name');
+  if(inp)inp.value=SAVE.lbName||'';
+  el.classList.add('show');
+  // focus without yanking the viewport on mobile
+  setTimeout(()=>{ try{ if(inp)inp.focus({preventScroll:true}); }catch(e){} },120);
+  if(typeof gcEvent==='function')gcEvent('enlist-shown');
+}
+function enlistFinish(){
+  const inp=document.getElementById('en-name');
+  const box=document.getElementById('en-board');
+  SAVE.lbName=normName(inp&&inp.value||'');
+  SAVE.enlisted=true;
+  if(box&&box.checked){ SAVE.lbOptIn=true; SAVE.lbAsked=true;
+    if(typeof gcEvent==='function')gcEvent('lb-optin'); }
+  persist();
+  document.getElementById('enlist').classList.remove('show');
+  if(typeof gcEvent==='function')gcEvent('enlist-done');
+  refreshTopbar();
+  /* Hand straight over to the tutorial prompt rather than showing both at once —
+     two overlays stacked on a first launch is how a new player bounces. */
+  if(!SAVE.seenTut && !document.getElementById('title').classList.contains('hidden'))
+    document.getElementById('firstrun').classList.add('show');
+}
+document.getElementById('en-go').onclick=enlistFinish;
+document.getElementById('en-name').addEventListener('keydown',e=>{
+  e.stopPropagation();                              // never leak into the battle hotkeys
+  if(e.key==='Enter'){ e.preventDefault(); enlistFinish(); }
+});
+
 document.getElementById('fr-yes').onclick=()=>{document.getElementById('firstrun').classList.remove('show');document.getElementById('title').classList.add('hidden');launchTutorial();};
 document.getElementById('fr-no').onclick=()=>{document.getElementById('firstrun').classList.remove('show');SAVE.seenTut=true;persist();};
 /* ═══ FIELD MANUAL / WIKI — generated from the live data tables so it never drifts ═══ */
@@ -11332,6 +11461,10 @@ function renderSettings(){
        lone music slider used to live here as well, which meant two competing UIs over the
        same state and a music volume you could only find by opening Settings mid-battle.
        This row is a pointer, not a second copy. */
+    /* The enlistment screen promises "you can change it later in Settings", so this row
+       has to exist — a promise made at first run and not kept is worse than not asking. */
+    settingRow('🎖 Your name','Shown on your own records, and on the global leaderboard if you have joined it. Blank means “Commander”.',
+      `<input id="set-name" maxlength="20" placeholder="Commander" value="${escapeHTML(SAVE.lbName||'')}" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--ink);font-size:12px;font-family:inherit;width:150px">`)+
     settingRow('🔊 Audio','Music, effects, narrator and ambience each get their own level. Opens the mixer in the topbar — it is reachable from anywhere, including mid-battle.',
       `<button class="sbtn" id="set-audio" style="font-size:11px;padding:6px 11px">Open mixer</button>`)+
     settingRow('Visibility Modifiers','Fog & rain hide distant terrain around your own forces; storms briefly black out the whole field',`<button id="set-vismod" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.weatherVis)}</button>`)+
@@ -11392,6 +11525,15 @@ function renderSettings(){
     renderPrivacySection();
   const bind=(id,fn)=>{const b=document.getElementById(id); if(b)b.onclick=()=>{fn();renderSettings();};};
   bind('set-audio',()=>{ if(!document.getElementById('audiopop'))toggleAudioPop(); });
+  /* Bound directly rather than through bind(), which re-renders the whole panel on every
+     event — that would tear the field out from under the cursor on each keystroke. */
+  {
+    const nm=document.getElementById('set-name');
+    if(nm){
+      nm.addEventListener('keydown',e=>e.stopPropagation());   // never leak into hotkeys
+      nm.oninput=()=>{ SAVE.lbName=normName(nm.value||''); persist(); };
+    }
+  }
   bind('set-motion',()=>{ SAVE.reduceMotion=!SAVE.reduceMotion; persist(); });
   bind('set-vismod',()=>{ SAVE.weatherVis=!SAVE.weatherVis; persist(); });
   document.querySelectorAll('.cb-opt').forEach(b=>{ b.onclick=()=>{
@@ -11700,8 +11842,8 @@ function renderLeaderboard(tab){
       el.innerHTML=h;
       const go=document.getElementById('lb-join');
       if(go)go.onclick=()=>{
-        const n=(document.getElementById('lb-name').value||'').trim();
-        SAVE.lbName=n.slice(0,20); SAVE.lbOptIn=true; SAVE.lbAsked=true; persist();
+        SAVE.lbName=normName(document.getElementById('lb-name').value||'');
+        SAVE.lbOptIn=true; SAVE.lbAsked=true; persist();
         if(typeof gcEvent==='function')gcEvent('lb-optin');
         renderLeaderboard('global');
       };
@@ -12849,7 +12991,11 @@ function showTitle(){
       ind.textContent = d===0?'doctrines & field systems':(d>=INDOC_ALL.length?`all ${INDOC_ALL.length} lessons cleared`:`${d}/${INDOC_ALL.length} lessons cleared`); } }catch(e){}
   startAttract();
   musicStart('menu');
-  if(!SAVE.seenTut){ setTimeout(()=>{ if(!document.getElementById('title').classList.contains('hidden'))
+  /* Enlistment comes FIRST on a new save and the tutorial prompt waits its turn —
+     enlistFinish() opens it. On an existing save nothing changes. */
+  if(!SAVE.enlisted){ setTimeout(()=>{ if(!document.getElementById('title').classList.contains('hidden'))
+    enlistShow(); },600); }
+  else if(!SAVE.seenTut){ setTimeout(()=>{ if(!document.getElementById('title').classList.contains('hidden'))
     document.getElementById('firstrun').classList.add('show'); },600); }
 }
 function leaveTitle(){ document.getElementById('title').classList.add('hidden'); G=null; window.G=null; }
