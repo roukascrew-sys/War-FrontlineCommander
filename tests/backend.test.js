@@ -14,8 +14,10 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { DIFF_WEIGHT, LIMITS, int, cleanName, validateRun } from
-  '../supabase/functions/_shared/validate.js';
+import {
+  DIFF_WEIGHT, LIMITS, int, cleanName, cleanAar, validateRun,
+  AAR_UNITS, AAR_POWERS, AAR_STANCES, AAR_ORDERS,
+} from '../supabase/functions/_shared/validate.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
@@ -179,6 +181,91 @@ const good = (over = {}) => ({
     .map(m => m[1].toLowerCase());
   ok(policies.includes('select') && !policies.some(p => p !== 'select'),
     `[rls] the ONLY policy is SELECT (found: ${policies.join(', ') || 'none'}) — under RLS the absence of an insert policy is a denial, and that is what stops the anon key writing`);
+}
+
+/* ── 9. AFTER-ACTION REPORTS ────────────────────────────────────────────────
+   This is the first field one player submits that ANOTHER player's browser renders.
+   cleanAar() rebuilds the object from scratch against a whitelist rather than filtering
+   the submitted one, so the tests here are mostly "what did NOT survive". */
+{
+  const good = {
+    v: 1, units: [['rifle', 12], ['tank', 3]], powers: [['precision', 4]],
+    stance: 'defend', orders: { arty: 'bombard' },
+    cp: 1500, deploys: 20, dmg: 48000, hq: 71,
+  };
+  const c = cleanAar(good);
+  ok(c && c.units.length === 2 && c.units[0][0] === 'rifle' && c.stance === 'defend'
+       && c.orders.arty === 'bombard' && c.cp === 1500,
+    '[aar] a well-formed report survives intact');
+
+  // ── things that must NOT survive ──
+  ok(cleanAar({ units: [['<img src=x onerror=alert(1)>', 5]] }) === null,
+    '[aar] an unknown unit id is dropped, and a report with nothing left is discarded entirely');
+
+  const proto = cleanAar({ units: [['rifle', 1]], powers: [['__proto__', 1], ['constructor', 2]] });
+  ok(proto && proto.powers.length === 0,
+    '[aar] "__proto__" and "constructor" are refused as ids — an allowlist built on property lookup rather than array membership would let both through, because TABLE["__proto__"] is truthy');
+
+  const strNum = cleanAar({ units: [['rifle', '9']] });
+  ok(strNum === null,
+    '[aar] a STRING count is refused, not coerced — the client makes the same refusal, so the two agree on what a valid report is');
+
+  const dupe = cleanAar({ units: [['tank', 9], ['tank', 3], ['rifle', 2]] });
+  ok(dupe && dupe.units.length === 2,
+    '[aar] a repeated unit id is deduped — rendering "Tank" twice reads as a broken board');
+
+  const over = cleanAar({ units: AAR_UNITS.map((u, i) => [u, i + 1]) });
+  ok(over && over.units.length === 6,
+    `[aar] the unit list is capped at 6 (got ${over ? over.units.length : 'null'}) however many were sent`);
+
+  const junk = cleanAar({
+    units: [['rifle', 1]], stance: 'nonsense', orders: { arty: 'evil', armor: 'assault', bogus: 'x' },
+    cp: -50, deploys: Infinity, dmg: 'lots', hq: NaN, extraKey: 'x'.repeat(10000),
+  });
+  ok(junk && junk.stance === null && !('bogus' in (junk.orders || {})) && junk.orders.armor === 'assault'
+       && junk.cp === 0 && junk.deploys === 0 && junk.dmg === 0 && !('extraKey' in junk),
+    '[aar] an unknown stance, an unknown order, negative/Infinity/NaN/string numbers and an unexpected 10KB key are all discarded — the object is rebuilt, never filtered');
+
+  ok(cleanAar(null) === null && cleanAar([1, 2]) === null && cleanAar('x') === null,
+    '[aar] a null, an array and a string are all refused as reports');
+
+  // a bad report must never cost a player their SCORE
+  const withJunkAar = validateRun({
+    display_name: 'Rook', score: 5000, kills: 40, duration_s: 300, won: true,
+    difficulty: 'legendary', mode: 'skirmish', doctrine: 'combined', game_version: '1.26.0',
+    aar: { units: [['not-a-unit', 3]] },
+  }, UID);
+  ok(withJunkAar.ok && withJunkAar.row.aar === null,
+    '[aar] a run with an unusable report is still ACCEPTED, with the report dropped — a malformed AAR must cost the player their report, never their score');
+
+  // ── the whitelists must match the game ──
+  const html = readFileSync(join(ROOT, 'wargame.html'), 'utf8');
+  const blockOf = (decl) => {
+    const i = html.indexOf(decl); if (i < 0) return '';
+    let d = 0; const j = html.indexOf('{', i);
+    for (let k = j; k < html.length; k++) {
+      if (html[k] === '{') d++;
+      else if (html[k] === '}') { d--; if (!d) return html.slice(j, k + 1); }
+    }
+    return '';
+  };
+  const topKeys = (decl) => [...blockOf(decl).matchAll(/\n {2}([a-z][a-z0-9]*)\s*:\s*\{/g)].map(m => m[1]);
+  const cmp = (a, b) => a.length === b.length && a.every(x => b.includes(x));
+  const gameUnits = topKeys('const UNITS=');
+  const gamePowers = topKeys('const STRIKES=');
+  const gameStances = topKeys('const STANCES=');
+  const gameOrders = [...new Set([...blockOf('const GROUP_DOCTRINES=').matchAll(/id:'([a-z0-9]+)'/g)].map(m => m[1]))];
+  ok(gameUnits.length > 10 && cmp(gameUnits, AAR_UNITS),
+    `[aar parity] the server's unit whitelist matches UNITS in the game (${gameUnits.length} keys)${cmp(gameUnits, AAR_UNITS) ? '' : ' :: DRIFTED — ' + gameUnits.filter(u => !AAR_UNITS.includes(u)).join(', ')}`);
+  ok(cmp(gamePowers, AAR_POWERS) && cmp(gameStances, AAR_STANCES) && cmp(gameOrders, AAR_ORDERS),
+    '[aar parity] the power, stance and standing-order whitelists match the game — a unit added to the game but not here would silently vanish from every report');
+
+  // the migration must bound the column rather than trusting the function alone
+  const aarSql = readFileSync(join(ROOT, 'supabase/migrations/0002_aar.sql'), 'utf8');
+  ok(/pg_column_size\(aar\)\s*<=\s*\d+/.test(aarSql) && /jsonb_typeof\(aar\)\s*=\s*'object'/.test(aarSql),
+    '[aar] the column itself is bounded in SQL (size + must-be-an-object), so the function is not the only thing standing between a player and this column');
+  ok(!/create policy/i.test(aarSql.split('\n').map(l => l.replace(/--.*$/, '')).join('\n')),
+    '[aar] the AAR migration grants no new policy — adding a column must not add a way to write one');
 }
 
 console.log('\n══════════ BACKEND VALIDATION TESTS ══════════');

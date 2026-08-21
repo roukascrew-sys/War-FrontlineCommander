@@ -8,6 +8,88 @@ engineering detail lives in the patch notes inside the game and in the commit hi
 
 ---
 
+## v1.26.0 — Standing orders reset, and the board starts teaching
+
+### 📋 Every standing order now starts OFF, every battle
+
+Standing orders used to carry over from one fight to the next. Set your artillery to
+Bombardment once and it stayed that way — for the next battle, and the one after that, and
+every one after that until you noticed.
+
+That was a mistake, and it was the quiet kind. An order **overrides your stance entirely**
+for a whole arm: a gun battery told to dig in does not care that the army is in Assault. A
+rule that strong should not be inherited invisibly from a decision you made four battles ago
+and have long since forgotten. You could genuinely spend a session wondering why your guns
+would not advance.
+
+So orders are now a decision you make **for this fight**, during prep. All three arms start
+off. The one exception is a Field School lesson that is *about* an order, which still arrives
+with it already given — demonstrating it is the entire point of that lesson.
+
+### 🌐 Runs that could not post are no longer lost
+
+If you had the global board on and finished a great run while your connection hiccuped, that
+run simply vanished. The submission was fire-and-forget with an empty catch: it failed, wrote
+a line to a console nobody has open, and that was the end of it.
+
+Three separate things were wrong, and all three are fixed.
+
+**A single failure disabled the whole session.** The sign-in step had a "we already tried"
+flag that was set on the first failure and never cleared. The game is one page that never
+reloads, so one blip — or a board that was not switched on yet when you first opened the tab —
+meant *every* battle for the rest of that session silently failed to post. It now backs off
+and retries instead of giving up forever.
+
+**Tokens expired and nothing noticed.** A sign-in lasts an hour. Longer sessions kept
+presenting the dead token and every submission quietly failed. It now refreshes, and a
+rejected token triggers one immediate retry with a fresh one.
+
+**Failures are queued instead of dropped.** A run that cannot be posted goes into an outbox
+in your save and is retried — when you next finish a battle, when you open the Leaderboard,
+and once shortly after launch. Nothing is lost to a bad ten seconds of wifi.
+
+And the results screen now **tells you what happened**: posted, queued and waiting, or not a
+ranked mode. Previously there was no way to find out at all.
+
+### 🎖 After-action reports on the top three
+
+This is the good part. A leaderboard that shows only a name and a number tells you that
+someone is better than you. It does not tell you *anything you can use*.
+
+The **top three runs in every mode** now carry an after-action report: which units they built
+and how many of each, which commander powers they leaned on, their stance, any standing
+orders they gave, and what it cost — CP spent, deployments made, damage dealt, and what their
+HQ was still standing at when it ended.
+
+Suddenly the board is readable. Someone took Legendary+ with eleven tanks, six IFVs and
+Armour Breaker; someone else won a longer, uglier fight with fourteen riflemen behind a
+bombarding gun line. Those are two strategies you can go and try.
+
+Your own top three get the same treatment on the local board, so this works whether or not
+you have ever touched the global one.
+
+### A note on how that report is handled
+
+It is worth saying plainly, because it is the first time this game takes structured data from
+one player and draws it on another player's screen.
+
+The report is transmitted as **ids only** — never text. The game looks every id up in its own
+unit and power tables and draws the name from there, so a hand-crafted report cannot put text
+on your screen at all; the worst it can do is name a real unit it did not actually use. The
+server independently rebuilds the object field by field against the same whitelist before
+storing it, so unknown ids never even reach the database, and the column itself is bounded in
+SQL as a third line of the same defence.
+
+Writing the tests for that found two live bugs in my own renderer, both worth naming. A
+report listing `__proto__` as a power passed the whitelist check — because in JavaScript
+`TABLE['__proto__']` is truthy even when no such entry exists — and rendered the words
+"undefined undefined" onto the board. And a count sent as the *string* `"9"` was being
+accepted by the game while the server refused it, so the two disagreed about what a valid
+report even was. Both fixed, both now covered by tests that feed a deliberately hostile
+report through and check what comes out the other side.
+
+---
+
 ## v1.25.0 — Enlistment, and a promise about your save
 
 ### 🎖 The game now asks your name once

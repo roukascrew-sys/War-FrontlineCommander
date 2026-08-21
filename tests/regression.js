@@ -3272,6 +3272,83 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
     ok(v125.settingsField && v125.settingsRenames,
       '[enlist] Settings can rename you later, which is what the screen promises');
 
+    /* ══ 30. v1.26.0 — ORDERS RESET, THE OUTBOX, AND AFTER-ACTION REPORTS ══ */
+    const v126 = await gp.evaluate(async () => {
+      const o = {};
+      SAVE = JSON.parse(JSON.stringify(DEFAULT_SAVE));
+      SAVE.seenTut = true; SAVE.enlisted = true; SAVE.lvl = 60; SAVE.debugUnlockAll = true;
+      /* An order set in a PREVIOUS build's save must not arm this battle. This is the whole
+         change: orders used to be inherited from SAVE.groups, so one choice governed every
+         fight afterwards and a player could be several battles into wondering why. */
+      SAVE.groups = { arty: 'bombard', armor: 'assault', drone: 'hvt' };
+      persist();
+      LAUNCH = null; sel.mode = 'skirmish'; start();
+      o.startOff = GROUP_KEYS.every(k => G.groups[k] === 'off');
+      setGroupDoctrine('arty', 'bombard');
+      o.canStillSet = G.groups.arty === 'bombard';
+      o.saveUntouched = JSON.stringify(SAVE.groups) === JSON.stringify({ arty: 'bombard', armor: 'assault', drone: 'hvt' });
+      start();
+      o.nextBattleOff = GROUP_KEYS.every(k => G.groups[k] === 'off');
+
+      // ── the AAR a run produces ──
+      G.built = { rifle: 9, tank: 4, arty: 2 }; G.strikeUse = { precision: 5, barrage: 1 };
+      G.stance = 'defend'; G.groups = { arty: 'bombard', armor: 'off', drone: 'off' };
+      G.spent = 1234; G.deploys = 15; G.dmgDealt = 48000; G.hq.B = 71;
+      const built = aarBuild(G, true, 9000);
+      o.aarOrdered = built.units.map(u => u[0]).join(',');     // most-built first
+      o.aarHasPowers = built.powers[0][0] === 'precision';
+      o.aarOrders = built.orders && built.orders.arty === 'bombard' && !('armor' in built.orders);
+      o.aarNoUnitsNull = aarBuild({ built: {}, groups: {} }, true, 0) === null;
+
+      // ── the renderer, against a payload built to break it ──
+      const evil = {
+        v: 1,
+        units: [['<img src=x onerror=alert(1)>', 5], ['tank', '9'], ['tank', 3], ['rifle', 7]],
+        powers: [['__proto__', 1], ['constructor', 2], ['precision', 2]],
+        stance: '<script>alert(1)</script>', orders: { arty: 'evil', armor: 'assault' },
+        cp: '999', deploys: Infinity, dmg: -5, hq: 1e99,
+      };
+      const html = aarHTML(evil, { won: true });
+      o.evilInert = !/<img|onerror|<script/i.test(html);
+      o.evilNoUndefined = !/undefined/.test(html);   // TABLE['__proto__'] is truthy
+      o.evilDeduped = (html.match(/Tank/g) || []).length === 1;
+      o.evilDroppedStringCount = !/9×/.test(html);   // '9' is a string; the server refuses it too
+      o.evilKeptReal = /Rifleman/.test(html) && /Precision/.test(html);
+      o.emptyIsEmpty = aarHTML(null, {}) === '' && aarHTML({ units: [] }, {}) === '';
+
+      // ── the outbox ──
+      SAVE.lbQueue = []; persist();
+      lbEnqueue({ mode: 'skirmish', score: 10 });
+      lbEnqueue({ mode: 'blitz', score: 20 });
+      o.queued = lbQueue().length === 2;
+      o.queuePersists = JSON.parse(localStorage.getItem(SAVE_KEY)).lbQueue.length === 2;
+      SAVE.lbQueue = new Array(200).fill({ mode: 'skirmish', score: 1 });
+      o.queueCapped = lbQueue().length === LB_QUEUE_MAX;
+      SAVE.lbQueue = []; persist();
+
+      // ── auth backoff: one failure must NOT disable the session ──
+      o.hasBackoff = typeof LB.nextTry === 'number' && !('tried' in LB);
+      return o;
+    });
+    ok(v126.startOff && v126.nextBattleOff,
+      '[orders] every standing order starts OFF in every battle, including one launched from a save that had them set — they used to carry over, so a single choice silently governed every later fight');
+    ok(v126.canStillSet && v126.saveUntouched,
+      '[orders] an order can still be set during a battle, and setting it no longer writes back to the save');
+    ok(v126.aarOrdered === 'rifle,tank,arty' && v126.aarHasPowers && v126.aarOrders,
+      '[aar] a finished run produces a report: units most-built first, powers used, and only the orders that were actually given');
+    ok(v126.aarNoUnitsNull,
+      '[aar] a run that deployed nothing produces no report rather than an empty one');
+    ok(v126.evilInert && v126.evilNoUndefined,
+      '[aar] a hostile report renders inert — and "__proto__" as a power id does not print "undefined undefined", which it did until the lookup was changed to an own-property check');
+    ok(v126.evilDeduped && v126.evilDroppedStringCount && v126.evilKeptReal,
+      '[aar] duplicate ids are deduped and a STRING count is refused (matching the server), while the legitimate entries in the same payload still render');
+    ok(v126.emptyIsEmpty,
+      '[aar] a missing or empty report renders nothing at all');
+    ok(v126.queued && v126.queuePersists && v126.queueCapped,
+      `[outbox] a run that could not be posted is queued in the SAVE and survives a reload, and the queue is capped both ways (an edited save with 200 entries comes back as ${25})`);
+    ok(v126.hasBackoff,
+      '[outbox] sign-in uses a backoff timestamp, not a one-shot "tried" flag — that flag was set on the FIRST failure and never cleared, so one blip silently stopped every submission for the rest of the session');
+
     // the boot-guard check above throws ONE error on purpose to prove a mid-battle fault no
     // longer covers a live match; everything else must still be clean
     const unexpected = gerr.filter(m => !/benign mid-battle blip/.test(m));

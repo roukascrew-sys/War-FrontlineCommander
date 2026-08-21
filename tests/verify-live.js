@@ -142,7 +142,16 @@ async function req(path, opts = {}) {
   // ── 4. THE FUNCTION REFUSES GARBAGE ─────────────────────────────────────
   const post = (b, hdrs = AUTH) => req('/functions/v1/submit-run', { method: 'POST', headers: hdrs, body: JSON.stringify(b) });
   const goodRun = { display_name: 'VERIFY BOT', score: 9000, kills: 40, duration_s: 180,
-    won: true, difficulty: 'legendary', mode: MODE, doctrine: 'blitzkrieg', game_version: '1.24.0' };
+    won: true, difficulty: 'legendary', mode: MODE, doctrine: 'blitzkrieg', game_version: '1.26.0',
+    /* The AAR is sent with a HOSTILE payload on purpose: a fake unit id, a '__proto__' power,
+       a string count, a duplicate, an unknown stance and a 10KB stray key. What comes back
+       out of the database is the proof that the server rebuilds this object rather than
+       storing what it was handed. */
+    aar: { v: 1,
+      units: [['rifle', 12], ['tank', 3], ['tank', 9], ['not-a-real-unit', 5], ['rifle', '7']],
+      powers: [['precision', 4], ['__proto__', 1]],
+      stance: 'defend', orders: { arty: 'bombard', armor: 'nonsense' },
+      cp: 1500, deploys: 20, dmg: 48000, hq: 71, junk: 'x'.repeat(10000) } };
 
   const noAuth = await post(goodRun, H);
   ok(noAuth.status === 401 || noAuth.status === 403,
@@ -178,7 +187,7 @@ async function req(path, opts = {}) {
     `expected 429, got ${again.status} — a scripted client can hammer the function`);
 
   // ── 7. THE ROW LANDED, AND LOOKS RIGHT ─────────────────────────────────
-  const back = await req(`/rest/v1/runs?select=display_name,rated_score,score,game_version&player_id=eq.${uid}`, { headers: H });
+  const back = await req(`/rest/v1/runs?select=display_name,rated_score,score,game_version,aar&player_id=eq.${uid}`, { headers: H });
   const row = Array.isArray(back.body) && back.body[0];
   ok(!!row, 'the run is readable back from the board');
   if (row) {
@@ -186,6 +195,28 @@ async function req(path, opts = {}) {
       `the stored rated_score is the server's (${row.rated_score})`,
       'the forged value was persisted');
     ok(row.display_name === 'VERIFY BOT', `the display name round-tripped (${short(row.display_name, 30)})`);
+
+    // ── 7b. THE AFTER-ACTION REPORT WAS REBUILT, NOT STORED ──────────────
+    const a = row.aar;
+    ok(a && typeof a === 'object',
+      'the after-action report was stored',
+      'aar is null or missing — if the column does not exist, apply supabase/migrations/0002_aar.sql');
+    if (a && typeof a === 'object') {
+      const ids = (a.units || []).map(u => u[0]);
+      ok(!ids.includes('not-a-real-unit'),
+        'an invented unit id did NOT survive into the column');
+      ok(ids.filter(x => x === 'tank').length <= 1 && ids.filter(x => x === 'rifle').length <= 1,
+        'duplicate unit ids were collapsed');
+      ok(!(a.powers || []).some(p => p[0] === '__proto__'),
+        '"__proto__" was refused as a power id');
+      ok(!('junk' in a),
+        'a 10KB unexpected key did not reach the column — the object is REBUILT, not filtered',
+        'the function is storing what it was handed');
+      ok(!a.orders || a.orders.armor === undefined,
+        'an unknown standing order was dropped while the valid one was kept');
+      ok(JSON.stringify(a).length < 4096,
+        `the stored report is inside the column's 4KB bound (${JSON.stringify(a).length} bytes)`);
+    }
   }
 
   // ── 8. CORS — the browser has to be able to call this at all ────────────

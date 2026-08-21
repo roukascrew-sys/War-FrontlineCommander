@@ -1,6 +1,6 @@
 # Security audit — keys, API calls and the shipped artefact
 
-**Build:** v1.25.0 · audited by inspection **and by measurement** — every claim below that
+**Build:** v1.26.0 · audited by inspection **and by measurement** — every claim below that
 could be tested was tested, and the command is given so you can re-run it.
 
 ---
@@ -11,12 +11,26 @@ could be tested was tested, and the command is given so you can re-run it.
 
 | Defence | Where | Verified by |
 |---|---|---|
-| Both credentials ship empty | `LB_URL=''`, `LB_ANON_KEY=''` | `tests/backend.test.js` §8 |
+| Only an **anon** key ever ships | every JWT in the build is decoded and required to be `role:"anon"` | `tests/backend.test.js` §8 |
+| The URL and key must be from the SAME project | the key's `ref` claim must appear in `LB_URL` | `tests/backend.test.js` §8 |
 | A `service_role` key is *refused at runtime* | `lbConfigOk()` decodes the JWT payload and disables the board if `role !== 'anon'`, logging a rotate-now error | `tests/verify-live.js` check 0 |
-| The build ships an allowlist, not a directory | `build-itch.sh` copies 3 named files and scans the output for credential-shaped strings | every build |
+| The build ships an allowlist, not a directory | `build-itch.sh` copies 3 named files | every build |
+| The build **aborts** on a non-anon key | it decodes every JWT in the output; a `service_role` key exits 1 and names the file | every build |
 
-```bash
-grep -cE 'eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}' dist/index.html   # → 0
+The build now legitimately carries a JWT, so counting them proves nothing — the role inside
+the payload is the whole question, and grep cannot see it. Verified by decoding instead:
+
+```
+▸ Checking every JWT in the build is an anon key
+  ✓ 1 JWT(s), all role="anon"
+```
+
+Proven to bite, by pasting a forged `service_role` key of identical shape into the build:
+
+```
+  ✖ index.html: JWT with role="service_role"
+  ✖ ABORT: a non-anon key is in the build. ROTATE IT NOW — the zip may already be downloaded.
+  exit=1
 ```
 
 > **The one rule.** The `anon` key is *designed* to be public — it is in the HTML of every
@@ -61,10 +75,17 @@ results) with a request log attached:
 
 ```
 localhost:8080            1 request    the page itself
-zeusrgr.goatcounter.com   5 requests   analytics beacon
+zeusrgr.goatcounter.com   4 requests   analytics beacon
 ```
 
-**Nothing else.** With no leaderboard configured, the Supabase paths never execute.
+**Nothing else.** That session was measured with the board **configured but not opted in**,
+which is the shipped default — so this is the shape of a real player's first session, not of
+an inert build. Opting in adds `*.supabase.co` and nothing else. A regression check asserts
+the zero separately, on the wire:
+
+```
+PASS  a full battle finishes with opt-in OFF and contacts Supabase ZERO times (saw 0)
+```
 
 | Call | When | Disclosed in privacy.html |
 |---|---|---|
@@ -132,6 +153,38 @@ it removed was real: 5 of those 9 names disagreed under the previous client rule
 the test exposed a genuine ordering bug in `cleanName()` itself (invisible characters were
 stripped *before* whitespace was collapsed, so a pasted two-line name became `GeneralDust`).
 
+**After-action reports (v1.26.0).** The first *structured* data one player submits that
+another player's browser renders, and handled accordingly:
+
+- *The payload carries ids, never words.* The renderer looks every id up in this build's own
+  `UNITS` / `STRIKES` / `STANCES` / `GROUP_DOCTRINES` tables and draws the name from there.
+  Nothing from the payload is ever printed. A hand-crafted report therefore cannot put text
+  on anyone's screen at all — at worst it names a real unit it did not use.
+- *The server rebuilds rather than filters.* `cleanAar()` copies field by field against a
+  whitelist, so an unexpected key, a nested object or a 10KB string does not survive to the
+  column. A malformed report is dropped and the run is still **accepted** — a bad report must
+  cost the player their report, never their score.
+- *The column is bounded in SQL.* `pg_column_size(aar) <= 4096` and `jsonb_typeof(aar) =
+  'object'`, so the Edge Function is not the only thing between a player and that column.
+
+Two real bugs surfaced while testing this, both worth recording because both would have
+shipped:
+
+```
+'__proto__' as a power id PASSED the whitelist and rendered "undefined undefined"
+   ↳ STRIKES['__proto__'] is Object.prototype — truthy. Every lookup now goes through
+     Object.prototype.hasOwnProperty.call(). The server was already safe (it tests array
+     membership, not property lookup), so only the client was affected.
+
+a count sent as the STRING "9" was accepted by the client and refused by the server
+   ↳ the two disagreed about what a valid report was. Both now refuse it.
+```
+
+Both are covered by tests that push a deliberately hostile report through and assert on what
+comes out — client-side in `tests/regression.js` §30, server-side in `tests/backend.test.js`
+§9, and end-to-end in `tests/verify-live.js`, which submits a hostile AAR to the real
+deployment and reads the row back to prove the stored object was rebuilt.
+
 ---
 
 ## 6. Things that are *not* secured, and should not be
@@ -164,7 +217,7 @@ Stated plainly so nobody mistakes them for oversights:
 ## Re-running the whole audit
 
 ```bash
-node tests/backend.test.js                    # 35 offline checks — rules, secrets, RLS shape
+node tests/backend.test.js                    # 49 offline checks — rules, secrets, RLS shape, AAR
 node tests/regression.js                      # full game suite
 node tests/verify-live.js                     # the live deployment, once keys are pasted
 ./build-itch.sh                               # allowlist + credential scan, 3 files

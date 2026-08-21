@@ -1,6 +1,19 @@
-const { chromium } = require('playwright');
+/* Same resolution dance as tests/regression.js — a bare require('playwright') fails on a
+   machine where it is installed globally rather than beside the repo, and this script is
+   the one that gets run rarely enough for that to be a surprise every time. */
+function resolvePlaywright() {
+  const path = require('path');
+  const candidates = ['playwright', '/opt/node22/lib/node_modules/playwright',
+    path.join(process.env.HOME || '', 'node_modules/playwright')];
+  for (const c of candidates) { try { return require(c); } catch (e) {} }
+  console.error('Playwright is not installed. Run: npm i -D playwright');
+  process.exit(1);
+}
+const { chromium } = resolvePlaywright();
+const EXE = ['/opt/pw-browsers/chromium-1194/chrome-linux/chrome']
+  .find(p => { try { return require('fs').existsSync(p); } catch (e) { return false; } });
 (async () => {
-  const b = await chromium.launch();
+  const b = await chromium.launch(EXE ? { executablePath: EXE, args: ['--no-sandbox'] } : { args: ['--no-sandbox'] });
   const p = await b.newPage({viewport:{width:1280,height:800}});
   const hosts = new Map();
   const record = u => { try{ const h=new URL(u).host; hosts.set(h,(hosts.get(h)||0)+1); }catch{} };

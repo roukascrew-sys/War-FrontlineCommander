@@ -1322,6 +1322,17 @@
     padding:9px 11px;color:var(--ink);font-size:13px;font-family:inherit;width:min(260px,100%);}
   .lb-optin input:focus{outline:2px solid var(--cyan);outline-offset:1px;}
   .lb-fine{font-size:11px;color:var(--faint);line-height:1.5;}
+  /* After-action report under a top-3 row. Hangs off the row above it — indented and
+     rule-joined — so it reads as belonging to that run rather than as its own entry. */
+  .lb-aar{margin:-4px 0 8px 26px;padding:8px 11px;background:var(--panel2);
+    border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;
+    font-size:11.5px;line-height:1.65;color:var(--ink);}
+  .lb-aar-h{display:block;font-size:9.5px;letter-spacing:.14em;color:var(--gold);
+    font-weight:800;margin-bottom:4px;}
+  .lb-aar-k{display:inline-block;min-width:62px;color:var(--faint);font-size:10px;
+    letter-spacing:.06em;text-transform:uppercase;}
+  .lb-aar-t{margin-top:3px;color:var(--faint);font-size:10.5px;}
+  @media(max-width:560px){ .lb-aar{margin-left:10px;} .lb-aar-k{min-width:0;display:block;} }
   .lb-modes{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;}
   .lb-leave{margin-left:8px;background:none;border:1px solid var(--line);border-radius:7px;
     padding:4px 9px;color:var(--faint);font-weight:700;font-size:10.5px;cursor:pointer;}
@@ -1933,7 +1944,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.25.0</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.26.0</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -2662,6 +2673,9 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
      is the wrong default in the other direction: nobody's score leaves their machine
      until they say so. lbName is what appears publicly and is never auto-filled. */
   lbOptIn:false,
+  /* Runs that failed to post. Retried automatically — see lbFlush(). Capped, and it
+     holds finished results only, never anything about the player. */
+  lbQueue:[],
   lbName:'',
   lbAsked:false,       // whether the one-time opt-in prompt has been shown
   enlisted:false,      // 🎖 the one-time name screen has been completed
@@ -3742,7 +3756,13 @@ const LB_OK=lbConfigOk();
 /* A tiny REST client rather than the Supabase JS SDK. The SDK is ~40KB minified and
    would have to be inlined into this file (no external scripts — see the CSP), growing
    the game by ~5% to reach three endpoints. These are those three. */
-const LB={ token:null, uid:null, tried:false, cache:null, cacheAt:0 };
+/* nextTry replaces a one-shot `tried` flag. That flag was set on the FIRST failure and
+   never cleared, so a single blip — or a project where anonymous sign-in had not been
+   switched on yet — silently disabled every submission for the rest of the session. The
+   game never reloads, so "the rest of the session" meant every battle until the tab was
+   closed. Backoff retries instead of giving up forever. */
+const LB={ token:null, refresh:null, exp:0, uid:null, nextTry:0, fails:0,
+           cache:null, cacheAt:0, lastErr:null, flushing:false };
 
 async function lbFetch(path,opts){
   const r=await fetch(LB_URL+path,opts);
@@ -3757,27 +3777,58 @@ async function lbFetch(path,opts){
 /* Anonymous auth: one persistent identity per browser, no signup, no email, no
    password. That matches how the save already works — one career per device. The
    token is cached so a reload keeps the same board entry. */
-async function lbAuth(){
+function lbSession(d){
+  if(!d||!d.access_token)return null;
+  LB.token=d.access_token;
+  LB.refresh=d.refresh_token||null;
+  LB.exp=Math.floor(Date.now()/1000)+(d.expires_in||3600);
+  LB.uid=(d.user&&d.user.id)||LB.uid||null;
+  LB.fails=0; LB.nextTry=0; LB.lastErr=null;
+  try{ localStorage.setItem('FC_LB_SESSION',JSON.stringify(
+    {token:LB.token,refresh:LB.refresh,uid:LB.uid,exp:LB.exp})); }catch(e){}
+  return LB.token;
+}
+function lbAuthFailed(e){
+  LB.fails++;
+  /* Exponential backoff capped at ten minutes. Long enough not to hammer a dead project,
+     short enough that a player who fixes their wifi mid-session starts posting again. */
+  LB.nextTry=Date.now()+Math.min(600000,5000*Math.pow(2,Math.min(7,LB.fails-1)));
+  LB.lastErr=(e&&e.message)||'network error';
+  console.warn('global board: sign-in failed —',LB.lastErr,'· next attempt in',
+    Math.round((LB.nextTry-Date.now())/1000)+'s');
+  return null;
+}
+/* Anonymous auth: one persistent identity per browser, no signup, no email, no
+   password. That matches how the save already works — one career per device. The
+   token is cached (with its refresh token) so a reload keeps the same board entry. */
+async function lbAuth(force){
   if(!LB_OK)return null;
-  if(LB.token)return LB.token;
-  try{
-    const cached=JSON.parse(localStorage.getItem('FC_LB_SESSION')||'null');
-    if(cached&&cached.token&&cached.exp&&cached.exp>Date.now()/1000+60){
-      LB.token=cached.token; LB.uid=cached.uid; return LB.token;
-    }
-  }catch(e){}
-  if(LB.tried)return null;      // one attempt per session — never hammer auth on a bad network
-  LB.tried=true;
+  const now=Math.floor(Date.now()/1000);
+  if(!force&&LB.token&&LB.exp>now+60)return LB.token;
+  if(!LB.token){
+    try{
+      const c=JSON.parse(localStorage.getItem('FC_LB_SESSION')||'null');
+      if(c&&c.token){ LB.token=c.token; LB.refresh=c.refresh||null; LB.exp=c.exp||0; LB.uid=c.uid||null; }
+    }catch(e){}
+    if(!force&&LB.token&&LB.exp>now+60)return LB.token;
+  }
+  if(!force&&LB.nextTry&&Date.now()<LB.nextTry)return null;   // still backing off
+  /* An expired token with a refresh token is a refresh, not a new identity — signing up
+     again would silently give this player a SECOND board entry and orphan their first. */
+  if(LB.refresh){
+    try{
+      const d=await lbFetch('/auth/v1/token?grant_type=refresh_token',{method:'POST',
+        headers:{'apikey':LB_ANON_KEY,'Content-Type':'application/json'},
+        body:JSON.stringify({refresh_token:LB.refresh})});
+      const t=lbSession(d); if(t)return t;
+    }catch(e){ LB.refresh=null; }   // refresh rejected — fall through to a fresh identity
+  }
   try{
     const d=await lbFetch('/auth/v1/signup',{method:'POST',
       headers:{'apikey':LB_ANON_KEY,'Content-Type':'application/json'},
       body:JSON.stringify({data:{}})});
-    if(!d||!d.access_token)return null;
-    LB.token=d.access_token; LB.uid=(d.user&&d.user.id)||null;
-    try{ localStorage.setItem('FC_LB_SESSION',JSON.stringify({token:LB.token,uid:LB.uid,
-      exp:Math.floor(Date.now()/1000)+(d.expires_in||3600)})); }catch(e){}
-    return LB.token;
-  }catch(e){ console.warn('global board: sign-in failed —',e.message); return null; }
+    return lbSession(d)||lbAuthFailed(new Error('no access token in the sign-in response'));
+  }catch(e){ return lbAuthFailed(e); }
 }
 /* MIRROR OF cleanName() in supabase/functions/_shared/validate.js — keep the two in step.
    The server normalises every submitted name whether we do or not; if the client skipped a
@@ -3806,32 +3857,41 @@ const LEADERBOARD_BACKEND = LB_OK ? {
      resolves; nothing here throws into the caller. */
   async submit(entry){
     if(!entry||!LB_MODES.includes(entry.mode))return {skipped:'mode'};
-    const tok=await lbAuth();
-    if(!tok)return {skipped:'auth'};
-    try{
-      const res=await lbFetch('/functions/v1/submit-run',{method:'POST',
-        headers:{'apikey':LB_ANON_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-        /* NOTE what is absent: `rated`. The server computes it. Sending it would hand
-           the client the one number the board is ordered by. */
-        body:JSON.stringify({
-          display_name:lbName(),
-          score:entry.score|0, kills:entry.kills|0, duration_s:entry.dur|0,
-          won:!!entry.won, difficulty:entry.diff, mode:entry.mode,
-          doctrine:entry.doc, game_version:GAME_VERSION })});
-      LB.cache=null;            // the board just changed; drop the read cache
-      return res||{ok:true};
-    }catch(e){
-      if(e.status===429)return {skipped:'ratelimit'};
-      console.warn('global board: submit failed —',e.message);
-      return {error:e.message};
+    /* Two attempts, and the second one FORCES a fresh token. An access token lives an
+       hour; a long session outlives it, and the old code returned the stale token forever
+       and let every submission 401 in silence. */
+    for(let attempt=0;attempt<2;attempt++){
+      const tok=await lbAuth(attempt===1);
+      if(!tok)return {retry:true,reason:'auth',error:LB.lastErr||'not signed in'};
+      try{
+        const res=await lbFetch('/functions/v1/submit-run',{method:'POST',
+          headers:{'apikey':LB_ANON_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+          /* NOTE what is absent: `rated`. The server computes it. Sending it would hand
+             the client the one number the board is ordered by. */
+          body:JSON.stringify({
+            display_name:lbName(),
+            score:entry.score|0, kills:entry.kills|0, duration_s:entry.dur|0,
+            won:!!entry.won, difficulty:entry.diff, mode:entry.mode,
+            doctrine:entry.doc, game_version:GAME_VERSION,
+            aar:entry.aar||null })});
+        LB.cache=null;            // the board just changed; drop the read cache
+        return res||{ok:true};
+      }catch(e){
+        if((e.status===401||e.status===403)&&attempt===0){ LB.token=null; continue; }  // token died — retry once, forced
+        if(e.status===429)return {retry:true,reason:'ratelimit',error:'rate limited'};
+        if(e.status>=400&&e.status<500&&e.status!==408)
+          return {rejected:true,reason:'invalid',error:e.message};  // the server said no; retrying cannot help
+        return {retry:true,reason:'network',error:e.message};
+      }
     }
+    return {retry:true,reason:'auth',error:'could not obtain a token'};
   },
   /* Read the board. Cached for 30s so opening and closing the screen does not issue a
      request per keystroke of curiosity. */
   async top(mode,limit){
     const key=mode+'|'+(limit||25);
     if(LB.cache&&LB.cache.key===key&&Date.now()-LB.cacheAt<30000)return LB.cache.rows;
-    const q='/rest/v1/runs?select=display_name,score,rated_score,kills,duration_s,won,difficulty,mode,doctrine,created_at'
+    const q='/rest/v1/runs?select=display_name,score,rated_score,kills,duration_s,won,difficulty,mode,doctrine,created_at,aar'
       +'&mode=eq.'+encodeURIComponent(mode)
       +'&order=rated_score.desc,created_at.asc&limit='+Math.max(1,Math.min(100,limit||25));
     const rows=await lbFetch(q,{headers:{'apikey':LB_ANON_KEY,'Accept':'application/json'}});
@@ -3839,12 +3899,161 @@ const LEADERBOARD_BACKEND = LB_OK ? {
     return LB.cache.rows;
   },
 } : null;
+/* ── AFTER-ACTION REPORT ───────────────────────────────────────────────────────
+   Attached to a global submission so the top runs can show OTHER players how they were
+   won, rather than just that they were.
+
+   The payload carries IDS ONLY — never display text. The renderer looks every id up in
+   this build's own UNITS / STANCES / STRIKES tables and draws the name from there, so a
+   hand-crafted payload can at worst name a real unit or be dropped. That is the whole
+   defence: one player's data becomes another player's screen here, and this is the first
+   place in the game where that is true. The server enforces the same whitelist again. */
+const AAR_UNIT_MAX=6, AAR_POWER_MAX=4;
+function aarBuild(g,won,score){
+  if(!g)return null;
+  const built=g.built||{};
+  const units=Object.keys(built).filter(k=>UNITS[k]&&built[k]>0)
+    .sort((a,b)=>built[b]-built[a]).slice(0,AAR_UNIT_MAX).map(k=>[k,built[k]|0]);
+  if(!units.length)return null;                       // a run with no deployments has nothing to teach
+  const use=g.strikeUse||{};
+  const powers=Object.keys(use).filter(k=>use[k]>0)
+    .sort((a,b)=>use[b]-use[a]).slice(0,AAR_POWER_MAX).map(k=>[k,use[k]|0]);
+  const orders={};
+  for(const gk of GROUP_KEYS)if(g.groups&&g.groups[gk]&&g.groups[gk]!=='off')orders[gk]=g.groups[gk];
+  return { v:1, units, powers, stance:g.stance||null,
+    orders:Object.keys(orders).length?orders:null,
+    cp:Math.round(g.spent||0), deploys:g.deploys|0,
+    dmg:Math.round(g.dmgDealt||0), hq:Math.round((g.hq&&g.hq.B)||0) };
+}
+/* ── THE OUTBOX ────────────────────────────────────────────────────────────────
+   A run that failed to post used to be gone: fire-and-forget with an empty catch. On a
+   flaky connection, or a free-tier project that had gone to sleep, the player's best game
+   of the night simply never reached the board and nothing said so.
+   Failed submissions are queued in the save and retried — on the next battle, when the
+   board is opened, and once at launch. */
+const LB_QUEUE_MAX=25;
+function lbQueue(){
+  if(!Array.isArray(SAVE.lbQueue))SAVE.lbQueue=[];
+  /* sanitizeSave() accepts any array for an array-typed field, so an edited save could
+     arrive with thousands of entries. Cap on the way out as well as on the way in. */
+  if(SAVE.lbQueue.length>LB_QUEUE_MAX)SAVE.lbQueue.splice(0,SAVE.lbQueue.length-LB_QUEUE_MAX);
+  return SAVE.lbQueue;
+}
+function lbEnqueue(entry){
+  const q=lbQueue();
+  q.push(entry);
+  if(q.length>LB_QUEUE_MAX)q.splice(0,q.length-LB_QUEUE_MAX);   // drop the OLDEST
+  persist();
+}
+/* Drain the outbox. Never throws, never runs twice at once, and stops at the first
+   retryable failure so a dead network does not burn the whole queue against it. */
+async function lbFlush(){
+  if(!LEADERBOARD_BACKEND||!SAVE.lbOptIn||LB.flushing)return {sent:0,left:lbQueue().length};
+  const q=lbQueue();
+  if(!q.length)return {sent:0,left:0};
+  LB.flushing=true;
+  let sent=0;
+  try{
+    while(q.length){
+      const r=await LEADERBOARD_BACKEND.submit(q[0]);
+      if(r&&r.retry)break;                 // still broken — keep it for next time
+      q.shift(); sent++;                   // sent, rejected or unrankable: either way it is done
+      if(r&&r.rejected)console.warn('global board: a queued run was refused —',r.error);
+      persist();
+    }
+  }catch(e){ /* lbFlush must never throw into a caller */ }
+  LB.flushing=false;
+  return {sent,left:q.length};
+}
+/* Render another player's after-action report.
+
+   ═══════════════════════════════════════════════════════════════════════════════
+   THIS IS THE ONLY PLACE ONE PLAYER'S STRUCTURED DATA BECOMES ANOTHER'S SCREEN.
+   Every string drawn here comes from THIS BUILD'S tables — UNITS, STANCES, STRIKES,
+   GROUP_DOCTRINES — looked up by id. Nothing from the payload is ever printed. An id
+   that is not in the table is dropped, not shown. That means a hand-crafted row cannot
+   put text on anyone's screen at all, let alone markup; the worst it can do is name a
+   real unit it did not use. Numbers are clamped and formatted, never interpolated raw.
+   Do not "simplify" this by printing a name from the payload.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+function aarHTML(aar,row){
+  if(!aar||typeof aar!=='object')return '';
+  /* own(): `STRIKES['__proto__']` is Object.prototype — TRUTHY — so a plain `TABLE[id]`
+     test lets '__proto__' and 'constructor' through the whitelist and then renders
+     `undefined undefined`. Every lookup here goes through an own-property check.
+     num(): strict, like the server's int(). Number('9') === 9 would have accepted a
+     STRING count, which the server rejects — and the two must agree. */
+  const own=(t,k)=>typeof k==='string'&&Object.prototype.hasOwnProperty.call(t,k)?t[k]:null;
+  const num=v=>(typeof v==='number'&&isFinite(v)&&v>0)?Math.min(999999,Math.round(v)):0;
+  /* Dedupe by id. The server dedupes too; without it here, a row listing 'tank' twice
+     renders "Tank" twice and reads as a rendering fault. */
+  const pick=(arr,table,cap)=>{
+    const seen=new Set(), out=[];
+    for(const p of (Array.isArray(arr)?arr:[])){
+      if(out.length>=cap)break;
+      if(!Array.isArray(p)||p.length!==2)continue;
+      const def=own(table,p[0]), n=num(p[1]);
+      if(!def||!n||seen.has(p[0]))continue;
+      seen.add(p[0]); out.push({def,n});
+    }
+    return out;
+  };
+  const units=pick(aar.units,UNITS,AAR_UNIT_MAX)
+    .map(u=>`<b style="color:${escapeHTML(String(u.def.col||''))}">${u.n}×</b> ${escapeHTML(String(u.def.name||''))}`);
+  if(!units.length)return '';                    // nothing verifiable to show
+  const powers=pick(aar.powers,STRIKES,AAR_POWER_MAX)
+    .map(p=>`${escapeHTML(String(p.def.glyph||''))} ${escapeHTML(String(p.def.name||''))}${p.n>1?' ×'+p.n:''}`);
+  const st=own(STANCES,aar.stance);
+  const orders=[];
+  if(aar.orders&&typeof aar.orders==='object'&&!Array.isArray(aar.orders))for(const gk of GROUP_KEYS){
+    const want=aar.orders[gk];
+    if(typeof want!=='string')continue;
+    const o=groupOpt(gk,want), gd=GROUP_DOCTRINES[gk];
+    if(o&&gd)orders.push(`${gd.glyph} ${escapeHTML(gd.name)}: ${escapeHTML(o.name)}`);
+  }
+  const bits=[];
+  if(st)bits.push(`<span style="color:${st.col}">${st.glyph} ${escapeHTML(st.name)}</span>`);
+  if(orders.length)bits.push(orders.join(' · '));
+  if(powers.length)bits.push(powers.join(' · '));
+  const tail=[], cp=num(aar.cp), dep=num(aar.deploys), dmg=num(aar.dmg), hq=num(aar.hq);
+  if(cp)tail.push(`${cp.toLocaleString()} CP spent`);
+  if(dep)tail.push(`${dep} deployments`);
+  if(dmg)tail.push(`${dmg.toLocaleString()} damage dealt`);
+  if(row&&row.won&&hq)tail.push(`finished on ${hq} HQ`);
+  return `<div class="lb-aar"><span class="lb-aar-h">AFTER-ACTION REPORT</span>`+
+    `<div><span class="lb-aar-k">Force</span>${units.join(' · ')}</div>`+
+    (bits.length?`<div><span class="lb-aar-k">Doctrine</span>${bits.join(' &nbsp;|&nbsp; ')}</div>`:'')+
+    (tail.length?`<div class="lb-aar-t">${tail.join(' · ')}</div>`:'')+
+    `</div>`;
+}
+/* One sentence saying what happened to this run's submission. Written to be read by
+   someone who does not care how any of it works: what became of my score. */
+function lbStatusHTML(st){
+  if(!st)return '';
+  const q=lbQueue().length;
+  const waiting=q?` <span style="color:var(--faint)">(${q} run${q===1?'':'s'} waiting)</span>`:'';
+  switch(st.state){
+    case 'sending':  return `<span style="color:var(--dim)">🌐 Posting to the global board…</span>`;
+    case 'posted':   return `<span style="color:var(--cyan)">🌐 Posted to the global board${st.improved?' — a new personal best up there':''}</span>`;
+    case 'unranked': return `<span style="color:var(--faint)">🌐 Not a ranked mode — the global board takes Skirmish, Evolution, Blitz, Survival, Domination and War</span>`;
+    case 'queued':   return `<span style="color:var(--warn)">🌐 Could not reach the board (${escapeHTML(st.why||'network')}) — saved, and it will post itself later${waiting}</span>`;
+    case 'rejected': return `<span style="color:var(--warn)">🌐 The board refused this run (${escapeHTML(st.why||'invalid')})</span>`;
+  }
+  return '';
+}
+function lbStatusPaint(){
+  const el=document.getElementById('res-lb');
+  if(el&&G&&G.lbStatus)el.innerHTML=lbStatusHTML(G.lbStatus);
+}
 function diffWeight(d){ return DIFF_WEIGHT[d]||1.0; }
 function ratedScore(score,diff){ return Math.round((score||0)*diffWeight(diff)); }
 function boardEntry(g,won,score){
   return { ts:Date.now(), score:Math.round(score||0), rated:ratedScore(score,g.diff),
     mode:g.mode, kind:g.kind, diff:g.diff, doc:g.doc, won:!!won,
-    kills:g.kills|0, dur:Math.round(g.t||0) };
+    kills:g.kills|0, dur:Math.round(g.t||0),
+    /* Carried on the local row too, so the after-action report works with no backend at
+       all — and so your own top three read the same way as the global ones. */
+    aar:aarBuild(g,won,score) };
 }
 /* Insert a finished run into the personal board. Losses are recorded too — a board of
    only wins hides the shape of how you actually play — but they can never out-rank a
@@ -3943,13 +4152,19 @@ const DIFFS={
        player starts with exactly what they used to have at the moment the fight began. */
 const PREP_MAX=180;        // hard cap, so an idle tab cannot sit frozen forever
 const PREP_GRANT_SECS=10;  // seconds of income granted up front, replacing prep-phase accrual
-const GAME_VERSION='1.25.0';
+const GAME_VERSION='1.26.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.26.0',notes:[
+    '\ud83d\udccb STANDING ORDERS NOW RESET EVERY BATTLE. They used to carry over from your last fight, which meant one choice silently governed every battle afterwards \u2014 and an order OVERRIDES your stance for that whole arm, so a gun battery told to dig in ignored an Assault army entirely. A rule that strong should not be inherited from a decision you made four fights ago and forgot. All three arms start off; set them during prep. Field School lessons that teach an order still arrive with it given.',
+    '\ud83c\udf96 AFTER-ACTION REPORTS \u2014 the top three runs in every mode now show HOW they were won: units built and how many, commander powers used, stance, standing orders, CP spent, deployments and damage dealt. Your own top three get the same on the local board, so it works with or without the global one. A board that shows only a number tells you someone is better than you; this tells you what to try.',
+    '\ud83c\udf10 GLOBAL SUBMISSIONS ARE NO LONGER SILENT OR LOSSY. Three real bugs: a single sign-in failure set a \u201calready tried\u201d flag that was never cleared, so one blip stopped EVERY submission for the rest of the session; an expired token was re-presented forever instead of refreshed; and any failure discarded the run entirely. Failed runs now queue in your save and retry after a battle, on opening the Leaderboard, and shortly after launch \u2014 and the results screen tells you whether your run posted, is waiting, or was in an unranked mode.',
+    'The after-action report is sent as IDS ONLY, never text \u2014 the game draws every name from its own tables, and the server rebuilds the whole object against the same whitelist before storing it. Writing those tests found two live bugs in the renderer: \u201c__proto__\u201d passed the whitelist (TABLE[\u2018__proto__\u2019] is truthy in JavaScript) and printed \u201cundefined undefined\u201d on the board, and a count sent as a string was accepted by the game while the server refused it.',
+  ]},
   {v:'1.25.0',notes:[
     '\ud83c\udf96 ENLISTMENT \u2014 the game now asks your name once, on first launch, instead of calling you \u201cCommander\u201d forever. It is deliberately NOT a login: no email, no password, nothing to log into and nothing to lose. The name is optional, stored on your device with the rest of your progress, and changeable any time from Settings. If you were already playing, the screen says so and names your rank and battle count \u2014 a first-run screen appearing after an update is exactly what \u201cmy save got wiped\u201d feels like, and it did not.',
     'If a leaderboard server is configured, the same screen offers the global board as an optional tick-box \u2014 the one moment you are already thinking about identity. It stays off unless you tick it.',
@@ -5260,15 +5475,16 @@ function newGame(){
   G.rivalTauntT=rnd(20,28);
   // troop stance (behaviour only) + game speed
   G.stance='assault';
-  /* GROUP DOCTRINES carry over from the player's saved preference rather than resetting each
-     battle — unlike stance, an order is a loadout decision, not an in-fight reaction. Any
-     order whose rank gate is not met is dropped back to off on the way in, so a save edited
-     at rank 50 cannot arm them at rank 5. */
+  /* EVERY ORDER STARTS OFF, EVERY BATTLE. These used to carry over from SAVE.groups as a
+     loadout preference, which meant an order set once silently governed every fight after
+     it — a player could be three battles into wondering why their guns would not advance.
+     An order overrides the stance for a whole arm, so it is too strong to be inherited
+     invisibly: it is a decision you make for THIS fight, during prep.
+     The one exception is a Field School lesson that is ABOUT an order, which arrives with
+     it already given because the lesson's whole purpose is to demonstrate it. */
   G.groups={};
   for(const gk of GROUP_KEYS){
-    // a lesson that is ABOUT an order arrives with it already given; otherwise the
-    // player's saved preference, dropped to off if its rank gate is not met
-    const want=(L&&L.groups&&L.groups[gk])||(SAVE.groups&&SAVE.groups[gk])||'off';
+    const want=(L&&L.groups&&L.groups[gk])||'off';
     const lessonSet=!!(L&&L.groups&&L.groups[gk]&&L.groups[gk]!=='off');
     G.groups[gk]=(want!=='off'&&(lessonSet||groupUnlocked(gk))&&groupOpt(gk,want))?want:'off';
   }
@@ -5779,7 +5995,9 @@ function tryStrike(type,lane,x){
   else if(type==='rods')ok=tryRods(); // hits all three lanes — the clicked lane is irrelevant
   else if(type==='rollback')ok=tryRollback(); // targets nothing at all — undoes time, not a place
   else ok=tryPrecision(lane,x);
-  if(ok){ G.strikeUsedCount=(G.strikeUsedCount||0)+1; gauntRecordStrike(type); } // ◈ Gauntlet dossier
+  if(ok){ G.strikeUsedCount=(G.strikeUsedCount||0)+1; gauntRecordStrike(type);   // ◈ Gauntlet dossier
+    if(!G.strikeUse)G.strikeUse={};                                             // per-power tally, for the AAR
+    G.strikeUse[type]=(G.strikeUse[type]||0)+1; }
   return ok;
 }
 /* ── COMMANDER POWERS: Recon Flare (free intel) & EMP Pulse (rank 3, jams a lane) ── */
@@ -8819,9 +9037,27 @@ function endGame(winner,reason){
          is not their problem, and the local board has already recorded the run.
          Indoctrination is excluded above because those fights are stacked to be won. */
       if(LEADERBOARD_BACKEND&&SAVE.lbOptIn){
-        try{ Promise.resolve(LEADERBOARD_BACKEND.submit(boardEntry(G,won,score)))
-          .then(r=>{ if(r&&r.improved&&typeof gcEvent==='function')gcEvent('lb-submit'); })
-          .catch(()=>{}); }catch(e){}
+        const entry=boardEntry(G,won,score);
+        entry.aar=aarBuild(G,won,score);
+        if(!LB_MODES.includes(entry.mode)){
+          G.lbStatus={state:'unranked'};      // campaign/rivals/gauntlet — not a ranked mode
+        }else{
+          G.lbStatus={state:'sending'};
+          const g=G;                          // the results screen may outlive this G
+          try{ Promise.resolve(LEADERBOARD_BACKEND.submit(entry))
+            .then(r=>{
+              if(r&&r.retry){ lbEnqueue(entry); g.lbStatus={state:'queued',why:r.reason}; }
+              else if(r&&r.rejected)g.lbStatus={state:'rejected',why:r.error};
+              else{ g.lbStatus={state:'posted',improved:!!(r&&r.improved)};
+                if(typeof gcEvent==='function')gcEvent('lb-submit'); }
+              lbStatusPaint();
+              /* Anything stranded by an earlier outage goes out on the back of this
+                 success, which is the moment we know the network is working. */
+              if(g.lbStatus.state==='posted')lbFlush().then(lbStatusPaint);
+            })
+            .catch(()=>{ lbEnqueue(entry); g.lbStatus={state:'queued',why:'network'}; lbStatusPaint(); });
+          }catch(e){ lbEnqueue(entry); G.lbStatus={state:'queued',why:'network'}; }
+        }
       }
     }
     G.streakNow=streakRecord(won);
@@ -8994,6 +9230,11 @@ function showResults(won,reason,score,xpGain,leveled){
   if(G.boardResult){ const b=G.boardResult;
     secretExtra+=`<div class="res-xp" style="color:var(--cyan)">🏆 PERSONAL BEST BOARD — #${b.rank} of ${b.total} · rated ${b.rated.toLocaleString()}</div>`;
   }
+  /* 🌐 Global submission status. This used to be entirely silent — a failed post logged a
+     console warning and nothing else, so a player whose runs were not reaching the board
+     had no way to find that out. An anchor the async handler can repaint into. */
+  if(LEADERBOARD_BACKEND&&SAVE.lbOptIn&&G.lbStatus)
+    secretExtra+=`<div class="res-xp" id="res-lb">${lbStatusHTML(G.lbStatus)}</div>`;
   if(won&&(G.streakNow||0)>=3){
     secretExtra+=`<div class="res-xp" style="color:var(--gold)">🔥 WIN STREAK: <b>${G.streakNow}</b>${G.streakNow===(SAVE.bestWinStreak||0)?' — your best yet':''}</div>`;
   }
@@ -10731,9 +10972,8 @@ function setGroupDoctrine(gk,id){
     G.groupChanges--;
   }
   G.groups[gk]=id;
-  // remember it for next battle — an order is a loadout choice, not an in-fight reaction
-  if(!SAVE.groups||typeof SAVE.groups!=='object')SAVE.groups={};
-  SAVE.groups[gk]=id; persist();
+  /* Deliberately NOT remembered across battles. Orders reset to off every fight — see
+     newGame(). Writing SAVE.groups here is what made them sticky. */
   const gd=GROUP_DOCTRINES[gk], o=groupOpt(gk,id);
   announce(gd.glyph+' '+gd.name.toUpperCase()+(o?' — '+o.name.toUpperCase():' — ORDERS CLEARED'),
     o?o.desc:'this arm follows the army stance again',gd.col);
@@ -11443,7 +11683,7 @@ function renderPrivacySection(){
        build with LB_URL unset the row says so, which is more useful than silence. */
     row('🌐 Global leaderboard'+(LEADERBOARD_BACKEND?(SAVE.lbOptIn?' (ON)':' (opt-in — currently off)'):' (not enabled in this build)'),
       LEADERBOARD_BACKEND
-        ? 'Off until you switch it on from the Leaderboard screen. While on, finishing a ranked battle sends <b>that battle\'s result</b> — score, kills, duration, win/loss, difficulty, mode, doctrine — plus the display name you chose and an anonymous identifier generated in this browser. <b>Your save is never sent</b>: not your rank, not your unlocks, not your career. The board and your chosen name are public, so pick a name that is not your real one. Turning it off stops all further submissions. To have entries deleted, use the contact address in the Privacy Policy.'
+        ? 'Off until you switch it on from the Leaderboard screen. While on, finishing a ranked battle sends <b>that battle\'s result</b> — score, kills, duration, win/loss, difficulty, mode, doctrine — plus an <b>after-action report</b> of that fight (units built, powers used, stance and orders, CP spent, damage dealt), the display name you chose, and an anonymous identifier generated in this browser. The report is shown publicly under the top three runs in each mode so others can see how a score was played; it is in-game choices and numbers only, with no text you typed. <b>Your save is never sent</b>: not your rank, not your unlocks, not your career. The board and your chosen name are public, so pick a name that is not your real one. Turning it off stops all further submissions. To have entries deleted, use the contact address in the Privacy Policy.'
         : 'This build has no leaderboard server configured, so nothing is sent and the Global tab does not appear.')+
     `<div style="font-size:11px;color:var(--faint);padding:2px 4px">No account, no email, no payment processing, no third-party ad or tracking SDKs exist in this build.</div>`+
     `<div style="display:flex;gap:10px;flex-wrap:wrap;padding:4px 4px 2px">
@@ -11805,6 +12045,9 @@ const LB_TABS=[['runs','🏆 Best Runs'],['streaks','🔥 Streaks'],['today','�
   .concat(LEADERBOARD_BACKEND?[['global','🌐 Global']]:[]);
 let lbTab='runs';
 function openLeaderboard(){
+  /* Opening the board is the moment a player most wants their runs to be ON it, so drain
+     the outbox first. Fire-and-forget: the screen never waits on the network. */
+  try{ lbFlush(); }catch(e){}
   hideAllScreens('leaderboard'); document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('leaderboard').classList.remove('hidden');
@@ -11886,6 +12129,10 @@ function renderLeaderboard(tab){
           `${doc.name?` · <span style="color:var(--faint)">${escapeHTML(doc.name)}</span>`:''}`+
           `<br><span class="lb-sub">${(e.score||0).toLocaleString()} pts · ${e.kills|0} kills · ${Math.round((e.duration_s||0)/6)/10}m · ${e.won?'win':'loss'}</span></span>`+
           `<span class="lb-score">${(e.rated_score||0).toLocaleString()}</span></div>`;
+        /* The point of a leaderboard is to learn from it. The top three of every mode
+           carry an after-action report — what they built, how they postured, what they
+           spent it on — so a name and a number becomes a strategy you can try. */
+        if(i<3){ const aar=aarHTML(e.aar,e); if(aar)r+=aar; }
       });
       rows.innerHTML=r;
     }).catch(err=>{
@@ -11923,6 +12170,8 @@ function renderLeaderboard(tab){
             ` · ${e.kills} kills · ${Math.floor(e.dur/60)}:${String(e.dur%60).padStart(2,'0')}`+
             ` · ${when.toLocaleDateString()}</span></span>`+
           `<span class="lb-score">${e.rated.toLocaleString()}<small>raw ${e.score.toLocaleString()}</small></span></div>`;
+        // your own top three get the same after-action treatment as the global board
+        if(i<3){ const a=aarHTML(e.aar,e); if(a)h+=a; }
       });
     }
   }
@@ -12918,6 +13167,10 @@ function runLoader(){
     if(p>=100){ clearInterval(iv); clearInterval(tipIv);
       setTimeout(()=>{ document.getElementById('loader').classList.add('gone');
         try{ showTitle(); }catch(e){ console.error('showTitle',e); }
+        /* Anything stranded by a previous session's outage goes out now, well after the
+           first frame so it cannot slow the loader. Silent by design: the player is not
+           waiting on it, and lbFlush() never throws. */
+        setTimeout(()=>{ try{ lbFlush(); }catch(e){} },4000);
         setTimeout(()=>{const l=document.getElementById('loader'); if(l)l.style.display='none';},600); },380);
     }
   },170);
