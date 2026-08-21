@@ -3709,8 +3709,8 @@ const DIFF_WEIGHT={recruit:0.7,veteran:1.0,elite:1.35,legendary:1.8,legendaryplu
    raw fields. Handing the client that number would make every other check decorative.
    Everything the browser sends is a claim, not a fact.
    ═══════════════════════════════════════════════════════════════════════════════ */
-const LB_URL='';        // e.g. 'https://abcdefgh.supabase.co'  — Project Settings → API
-const LB_ANON_KEY='';   // the ANON / publishable key. NEVER the service_role key.
+const LB_URL='https://mobjscjsovdxyqaxoxgl.supabase.co';   // Project Settings → API
+const LB_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vYmpzY2pzb3ZkeHlxYXhveGdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyNDIxODgsImV4cCI6MjEwMjgxODE4OH0.o20lujGgpKtpvSfhz6QnyJgmu265qx8tNjO4FmOee_A';   // ANON key only. NEVER the service_role key.
 
 /* Refuses anything that is not an https Supabase project URL. A typo guard rather
    than untrusted-input defence — these are constants in this file — but a mistyped
@@ -11898,9 +11898,13 @@ function renderLeaderboard(tab){
   }
   if(tab==='runs'){
     /* The local-only disclaimer is not boilerplate — it is the single most important
-       sentence on this screen, and it stays until a real backend exists. */
-    h+=`<div class="lb-note"><b>These are your runs, on this device.</b> Frontline Commander has no server yet, `+
-      `so there is nothing to compare against but yourself — and a board showing invented rival scores would be a lie. `+
+       sentence on this screen. It has to track the actual configuration: "no server yet" was
+       true for every build before v1.25.0 and became a LIE the moment one existed, so the
+       sentence is chosen from LEADERBOARD_BACKEND rather than written in. */
+    h+=`<div class="lb-note"><b>These are your runs, on this device.</b> `+
+      (LEADERBOARD_BACKEND
+        ? `Nothing here has been shared — the <b>Global</b> tab is the one that leaves your machine, and only if you switch it on. `
+        : `Frontline Commander has no server yet, so there is nothing to compare against but yourself — and a board showing invented rival scores would be a lie. `)+
       `Rows are ranked by <b>rated score</b>: raw score × difficulty weight `+
       `(${Object.keys(DIFF_WEIGHT).map(k=>`${DIFFS[k]?DIFFS[k].name:k} ×${DIFF_WEIGHT[k]}`).join(' · ')}), `+
       `so a hard-won Legendary win outranks a Recruit blowout. Indoctrination lessons are excluded — they're stacked to be won.</div>`;

@@ -74,6 +74,31 @@ if grep -rEIl "sk-ant-[A-Za-z0-9_-]{10,}|sk-[A-Za-z0-9]{32,}|AIza[A-Za-z0-9_-]{3
 fi
 echo "  ✓ no credential-shaped strings"
 
+# ── Guard: a Supabase JWT may ship ONLY if it is the anon key ────────────────
+# The build now legitimately carries a JWT — the anon key is designed to be public and is
+# safe because RLS restricts it. A service_role key in the same slot is catastrophic and
+# looks IDENTICAL to grep, because the role lives inside the base64 payload. So decode it.
+echo "▸ Checking every JWT in the build is an anon key"
+if ! node -e '
+const fs=require("fs"),path=require("path");
+const dist=process.argv[1]; let bad=0,seen=0;
+for(const f of fs.readdirSync(dist)){
+  const p=path.join(dist,f); if(!fs.statSync(p).isFile())continue;
+  const txt=fs.readFileSync(p,"utf8");
+  for(const m of txt.matchAll(/eyJ[A-Za-z0-9_-]{10,}\.(eyJ[A-Za-z0-9_-]{10,})\.[A-Za-z0-9_-]{10,}/g)){
+    seen++;
+    let role="<undecodable>";
+    try{ role=JSON.parse(Buffer.from(m[1],"base64").toString()).role; }catch(e){}
+    if(role!=="anon"){ bad++; console.error(`  ✖ ${f}: JWT with role="${role}"`); }
+  }
+}
+if(bad){
+  console.error("  ✖ ABORT: a non-anon key is in the build. ROTATE IT NOW — the zip may already be downloaded.");
+  process.exit(1);
+}
+console.log(`  ✓ ${seen} JWT(s), all role="anon"`);
+' "$DIST"; then exit 1; fi
+
 # ── Guard: the placeholder legal fields must be filled before a real launch ──
 # Matches ANY square-bracket ALL-CAPS placeholder rather than a fixed list of names — the
 # previous version hardcoded "[INSERT CONTACT EMAIL|JURISDICTION]" and silently stopped

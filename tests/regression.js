@@ -1111,14 +1111,26 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
     const disclaimer = await lp.evaluate(() => {
       showTitle(); openLeaderboard(); buildLbTabs('runs');
       const txt = document.getElementById('lb-body').textContent;
-      return { local: /your runs, on this device/i.test(txt), noServer: /no server/i.test(txt),
+      return { local: /your runs, on this device/i.test(txt),
+               /* Whichever claim it makes must match reality — and it must never make the
+                  OTHER one. "no server yet" was true until v1.25.0 and is now a lie. */
+               noServer: /no server/i.test(txt),
+               saysGlobalTabIsTheSharedOne: /Global.{0,40}leaves your machine/i.test(txt),
                visible: !document.getElementById('leaderboard').classList.contains('hidden'),
-               backendNull: LEADERBOARD_BACKEND === null };
+               live: LEADERBOARD_BACKEND !== null,
+               /* Anti-placeholder: the renderer must show EXACTLY the runs in the save and
+                  never invent a rival to fill the board out. Comparing counts holds however
+                  many runs the profile happens to have, so it does not depend on test order. */
+               rendered: document.querySelectorAll('#lb-body .lb-row').length,
+               saved: (Array.isArray(SAVE.board) ? SAVE.board : []).length };
     });
     ok(disclaimer.visible, '[leaderboard] the screen opens from the title');
-    ok(disclaimer.local && disclaimer.noServer,
-      '[leaderboard] the board states plainly that it is local and that there is no server — never silently implies a global ranking');
-    ok(disclaimer.backendNull, '[leaderboard] LEADERBOARD_BACKEND ships as null — no placeholder/fake global rows');
+    ok(disclaimer.local, '[leaderboard] the board states plainly that these rows are local to the device');
+    ok(disclaimer.live ? (disclaimer.saysGlobalTabIsTheSharedOne && !disclaimer.noServer)
+                       : (disclaimer.noServer && !disclaimer.saysGlobalTabIsTheSharedOne),
+      `[leaderboard] the disclaimer tracks the ACTUAL configuration (backend ${disclaimer.live ? 'live' : 'absent'}) — it claimed "no server yet" in every build, which stopped being true the moment one existed`);
+    ok(disclaimer.rendered === disclaimer.saved,
+      `[leaderboard] the board renders exactly the runs in the save (${disclaimer.rendered} rows for ${disclaimer.saved} runs) — no placeholder or invented rival scores padding it out`);
     ok(lerr.length === 0, `[leaderboard] zero page errors ${lerr.length ? ':: ' + lerr.join(' | ') : ''}`);
     await lctx.close();
   }
@@ -1565,6 +1577,11 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
     const gp = await gctx.newPage();
     const gerr = [];
     gp.on('pageerror', e => gerr.push(e.message));
+    /* Every URL this page requests, for the whole run. Section 28 uses it to prove that an
+       opted-OUT player contacts the leaderboard zero times — a claim that can only be made
+       on the wire, since a flag check would pass even if the request were fired anyway. */
+    const netLog = [];
+    gp.on('request', r => netLog.push(r.url()));
     await gp.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
     await gp.waitForTimeout(2600);
     await gp.evaluate(() => { const fr = document.getElementById('firstrun'); if (fr) fr.classList.remove('show'); SAVE.seenTut = true; SAVE.lvl = 40; persist(); });
@@ -3099,39 +3116,62 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
     /* ══ 28. v1.24.0 — GLOBAL LEADERBOARD ══
        The deep validation of the submission rules lives in tests/backend.test.js, which
        exercises the very module the Edge Function imports. What belongs HERE is the
-       client half: that the shipped build is inert, and that nothing leaks. */
+       client half: that whatever credential ships is the RIGHT KIND, and that nothing
+       leaves the device unasked.
+
+       This section used to assert the constants were empty. They are no longer empty — the
+       board is live — so the check that matters flipped from "is it off?" to "is the key
+       shipping the one that is SAFE to ship?". A service_role key in that slot is
+       indistinguishable from an anon key by eye and by grep; only the decoded payload
+       tells them apart, so that is what is asserted. */
     const v124 = await gp.evaluate(async () => {
       const o = {};
-      o.urlEmpty = LB_URL === '';
-      o.keyEmpty = LB_ANON_KEY === '';
-      o.configRefused = LB_OK === false;
-      o.backendNull = LEADERBOARD_BACKEND === null;
-      o.noGlobalTab = !LB_TABS.some(t => t[0] === 'global');
+      o.configured = LB_URL !== '' && LB_ANON_KEY !== '';
+      // the ONE thing that must never ship: a key with any role other than anon
+      o.keyRole = (() => {
+        if (!LB_ANON_KEY) return '<empty>';
+        try { return JSON.parse(atob(LB_ANON_KEY.split('.')[1])).role; } catch (e) { return '<undecodable>'; }
+      })();
+      o.urlIsHttpsSupabase = /^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(LB_URL);
+      // and the URL's project ref must match the key's, or they are from different projects
+      o.refsMatch = (() => {
+        try { return LB_URL.includes(JSON.parse(atob(LB_ANON_KEY.split('.')[1])).ref); } catch (e) { return false; }
+      })();
+      o.configAccepted = LB_OK === true;
+      o.backendLive = LEADERBOARD_BACKEND !== null;
+      o.globalTab = LB_TABS.some(t => t[0] === 'global');
       o.optInOff = DEFAULT_SAVE.lbOptIn === false;
       o.nameBlank = DEFAULT_SAVE.lbName === '';
       // the weight table must rank the hardest tier highest
       o.lpWeight = DIFF_WEIGHT.legendaryplus;
       o.legWeight = DIFF_WEIGHT.legendary;
       o.lpRated = ratedScore(1000, 'legendaryplus');
-      // a finished battle on the shipped build must reach no network path at all
-      SAVE.lvl = 60; SAVE.debugUnlockAll = true; persist();
+      // Opt-in is what stands between a live backend and a silent upload. Finish a real
+      // battle with it OFF; the Node side counts what actually hit the wire.
+      SAVE.lvl = 60; SAVE.debugUnlockAll = true; SAVE.lbOptIn = false; persist();
       LAUNCH = null; sel.mode = 'skirmish'; start(); G.prep = 0; G.frozen = false;
       G.hq.R = 0; checkWin();
       o.battleEnded = !!G.over;
-      // and the privacy panel must SAY the board is unconfigured rather than stay silent
       o.privacyMentionsBoard = /Global leaderboard/i.test(renderPrivacySection());
       return o;
     });
-    ok(v124.urlEmpty && v124.keyEmpty && v124.configRefused && v124.backendNull,
-      '[leaderboard] the shipped build has both backend constants empty and the config check refuses them, so the whole feature is inert');
-    ok(v124.noGlobalTab,
-      '[leaderboard] with no backend there is no Global tab — an empty tab would be a promise the build cannot keep');
+    // give any fire-and-forget submission a chance to actually leave before counting
+    await gp.waitForTimeout(500);
+    const supaHits = netLog.filter(u => /supabase\.co/.test(u));
+    ok(v124.configured && v124.urlIsHttpsSupabase && v124.refsMatch && v124.configAccepted && v124.backendLive,
+      '[leaderboard] the build is configured against a real https Supabase project whose ref matches the key\'s, and the client accepts it');
+    ok(v124.keyRole === 'anon',
+      `[leaderboard] the shipped key decodes to role="${v124.keyRole}" — this is THE check that matters: an anon key is meant to be public and is safe because RLS restricts it, while a service_role key in the same slot hands every player full database access and looks identical to grep`);
+    ok(v124.globalTab,
+      '[leaderboard] the Global tab exists now that there is a backend to back it');
     ok(v124.optInOff && v124.nameBlank,
       '[leaderboard] it is opt-IN: nothing leaves the device until the player says so, and the display name is never pre-filled');
     ok(v124.lpWeight > v124.legWeight && v124.lpRated === 2100,
       `[leaderboard] Legendary+ outweighs Legendary (${v124.legWeight} → ${v124.lpWeight}) — it was missing from the table and fell through to 1.0, so the hardest difficulty scored LOWEST`);
-    ok(v124.battleEnded && v124.privacyMentionsBoard,
-      '[leaderboard] a battle still finishes normally, and the in-game privacy panel names the board even when it is not configured');
+    ok(v124.battleEnded && supaHits.length === 0,
+      `[leaderboard] a full battle finishes with opt-in OFF and contacts Supabase ZERO times (saw ${supaHits.length}) — measured on the wire, not inferred from a flag, because a live backend makes this the difference between opt-in and a silent upload`);
+    ok(v124.privacyMentionsBoard,
+      '[leaderboard] the in-game privacy panel names the board');
 
     /* ══ 29. v1.25.0 — ENLISTMENT + SAVE COMPATIBILITY ══ */
     /* Names chosen to break a normaliser: interior runs, tabs/newlines, zero-width joiners,
@@ -3173,7 +3213,9 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
       showTitle(); enlistShow();
       o.shows = document.getElementById('enlist').classList.contains('show');
       o.visible = getComputedStyle(document.getElementById('enlist')).display !== 'none';
-      o.noBoardBoxWithoutBackend = !document.getElementById('en-board');
+      /* The opt-in box appears only when there is a board to join, and ticking it is the
+         ONLY thing that can opt a player in. */
+      o.boardBoxMatchesBackend = !!document.getElementById('en-board') === (LEADERBOARD_BACKEND !== null);
       o.newPlayerCopy = /state your name/i.test(document.querySelector('#enlist .fr-h').textContent);
       // a returning player must be reassured, not alarmed
       SAVE.career.battles = 31; SAVE.lvl = 31; persist(); enlistShow();
@@ -3184,7 +3226,7 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
       o.nameTrimmed = SAVE.lbName === 'Iron Marshal';
       o.enlistedNow = SAVE.enlisted === true;
       o.closed = !document.getElementById('enlist').classList.contains('show');
-      o.stillNotOptedIn = SAVE.lbOptIn === false;   // no backend = no silent opt-in
+      o.stillNotOptedIn = SAVE.lbOptIn === false;   // finished the screen WITHOUT ticking the box
       // blank is allowed and falls back
       SAVE.enlisted = false; SAVE.lbName = ''; persist(); enlistShow();
       document.getElementById('en-name').value = '';
@@ -3211,8 +3253,8 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
       '[enlist] the screen actually renders — it carries its own .show rule, which an earlier build was missing so the overlay reported shown and displayed nothing');
     ok(v125.newPlayerCopy && v125.returningCopy,
       '[enlist] a new player is asked their name; a RETURNING player is told their progress is safe first, because a first-run screen after an update reads as a wiped save');
-    ok(v125.noBoardBoxWithoutBackend && v125.stillNotOptedIn,
-      '[enlist] with no leaderboard configured it never offers to join one — and cannot silently opt anyone in');
+    ok(v125.boardBoxMatchesBackend && v125.stillNotOptedIn,
+      '[enlist] the join-the-board box appears exactly when a board exists to join, and enlisting WITHOUT ticking it leaves the player opted out — the screen cannot opt anyone in by default');
     ok(v125.nameTrimmed && v125.enlistedNow && v125.closed,
       '[enlist] the name is trimmed, recorded, and the screen closes');
     /* The client's normName() must agree with the server's cleanName() character for
