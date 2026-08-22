@@ -134,3 +134,18 @@ player per mode, the read is a single indexed query capped at 200 rows by `confi
 and writes are rate-limited to one per player per 30 seconds. The realistic first cost is
 not the database — it is the free tier pausing an inactive project, which the dashboard
 warns about and which a single query resumes.
+
+## Applying the hardening migration (0003)
+
+`0003_hardening.sql` closes audit findings HIGH-2/3/4 and LOW-1 (docs/SUPABASE_AUDIT.md).
+Apply it **before** redeploying the function — the new `submit-run` calls `public.submit_run()`
+and will fail without it.
+
+```bash
+supabase db push                      # or paste 0003_hardening.sql into the SQL editor
+supabase functions deploy submit-run  # now uses the atomic path
+node tests/verify-live.js             # confirms the board still works end to end
+./tests/db.test.sh                    # 19 checks against a throwaway local PostgreSQL
+```
+
+It is idempotent — re-running it is safe, and that is asserted by the test suite.

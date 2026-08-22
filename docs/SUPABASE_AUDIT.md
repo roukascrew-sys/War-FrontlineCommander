@@ -1,6 +1,6 @@
 # Frontline Commander — Supabase security & anti-cheat audit
 
-**Audited build:** v1.26.0 · **Date:** 21 August 2026
+**Audited build:** v1.26.0 · **Date:** 21 August 2026 · **Batch 1 remediation applied 22 August 2026**
 **Scope:** `wargame.html`, `supabase/**`, `tests/**`, `build-itch.sh`, and 123 commits of git history.
 
 > **One limitation stated up front.** This session's egress policy blocks `*.supabase.co`
@@ -9,6 +9,22 @@
 > is where all of them live. Findings marked **[UNVERIFIED-LIVE]** additionally depend on the
 > *deployed* state of the hosted project and can only be confirmed by running
 > `node tests/verify-live.js` from a machine with network access.
+
+
+## Remediation status
+
+| Finding | Severity | Status | Proof |
+|---|---|---|---|
+| HIGH-1 config.toml ≠ deployed state | High | **Detection added** | `verify-live.js` now probes email signup, the row ceiling, and direct RPC access — must be run against the live project |
+| HIGH-2 grants never revoked | High | **FIXED** | `db.test.sh`: reproduced on the unhardened schema, then anon cannot insert/update/delete/truncate **with RLS disabled** |
+| HIGH-3 rate-limit race | High | **FIXED** | `db.test.sh`: old pattern let **5/5** concurrent writers through; now **5/5** refused |
+| HIGH-4 worse run overwrites better | High | **FIXED** | `db.test.sh`: 8 concurrent races, better run survives every time |
+| LOW-1 needless SECURITY DEFINER | Low | **FIXED** | `db.test.sh`: `prosecdef = false`, no EXECUTE for anon |
+| MEDIUM-1..4, LOW-2 | Med/Low | **Deferred to Batch 2/3** | see §6 |
+
+All fixes are in `supabase/migrations/0003_hardening.sql` and the rewritten
+`submit-run`. They are verified by **executing the real migrations against a real
+PostgreSQL 16** (`tests/db.test.sh`, 19 checks) — not by reading the SQL.
 
 ---
 
@@ -20,9 +36,9 @@ as much as what is present, because absent subsystems cannot be vulnerable:
 | Subsystem | Status |
 |---|---|
 | Database tables | **One** — `public.runs` |
-| Migrations | Two — `0001_leaderboard.sql`, `0002_aar.sql` |
+| Migrations | Three — `0001_leaderboard.sql`, `0002_aar.sql`, `0003_hardening.sql` |
 | Views | **None** |
-| Database functions | **One** — `public.touch_updated_at()` (trigger) |
+| Database functions | **Two** — `public.touch_updated_at()` (trigger), `public.submit_run()` (service_role only, added by 0003) |
 | Edge Functions | **One** — `submit-run` |
 | Storage buckets | **None** — no bucket, no client storage call |
 | Realtime channels | **None** — no subscription anywhere |
@@ -318,22 +334,25 @@ only accepts a bounded, server-scored claim.
 
 Scored on **this implementation**, not on the fact that Supabase is used.
 
-| Area | Score | Reasoning |
-|---|---|---|
-| Supabase configuration | **5/10** | Sound intent; `config.toml` is not the deployed state and nothing verifies it (HIGH-1) |
-| RLS | **8/10** | Correct and minimal — SELECT only, writes denied by policy absence. Loses points as a single point of failure (HIGH-2) |
-| Edge Functions | **7/10** | Excellent validation and identity handling; the two races (HIGH-3, HIGH-4) are in the function |
-| Leaderboard integrity | **8/10** | Sort key server-derived, mass assignment structurally impossible, weights parity-tested |
-| Anonymous auth security | **6/10** | Correct token handling and refresh; unlimited identities is accepted-by-design but real |
-| Anti-cheat architecture | **6/10** | Right boundary in the right place; ceiling is inherent to a client-side simulation |
-| Input validation | **9/10** | Strict, whitelisted, rebuild-not-filter, adversarially tested. `game_version` is the gap |
-| Replay resistance | **4/10** | No idempotency key. Upsert limits the damage; cross-identity replay is open (MEDIUM-1) |
-| Rate limiting | **4/10** | Exists, and does not hold under concurrency — the one case it is for (HIGH-3) |
-| XSS / DOM security | **9/10** | No dangerous sinks anywhere; double-escaped untrusted text; strict CSP |
-| External integration security | **8/10** | Read-only, no credentials, no admin surface, throttled. LOW-2 is a correctness bug |
-| Secret management | **10/10** | No secret in 123 commits; the build *decodes* JWTs and aborts on non-anon — proven to bite |
-| Local-save security model | **10/10** | Explicitly not a boundary, and nothing competitive depends on it |
-| **Overall** | **7/10** | Structurally correct, with real hardening left in atomicity, grants and deployment verification |
+| Area | Before | After Batch 1 | Reasoning |
+|---|---|---|---|
+| Supabase configuration | 5 | **6** | Still not verifiable from the repo, but `verify-live.js` now *detects* the drift instead of assuming it away |
+| RLS | 8 | **9** | Unchanged and still correct — no longer the only control, so a single mistake no longer opens the table |
+| Edge Functions | 7 | **9** | Both races gone; the function no longer writes to the table at all, it calls one atomic operation |
+| Leaderboard integrity | 8 | **9** | The best run now survives concurrency; the writer is unreachable from a browser |
+| Anonymous auth security | 6 | **6** | Unchanged — unlimited identities is accepted-by-design (MEDIUM-2) |
+| Anti-cheat architecture | 6 | **6** | Unchanged. The ceiling is the client-side simulation, and Batch 1 does not move it |
+| Input validation | 9 | **9** | Already strong. `game_version` membership (MEDIUM-4) is Batch 2 |
+| Replay resistance | 4 | **4** | Unchanged — idempotency is MEDIUM-1, Batch 2 |
+| Rate limiting | 4 | **8** | Now holds under concurrency, measured 5/5 refused, and enforced by the database clock |
+| XSS / DOM security | 9 | **9** | No dangerous sinks; double-escaped untrusted text |
+| External integration security | 8 | **8** | LOW-2 (prototype-chain vote keys) is Batch 3 |
+| Secret management | 10 | **10** | No secret in 123 commits; the build decodes JWTs and aborts on non-anon |
+| Local-save security model | 10 | **10** | Explicitly not a boundary |
+| **Overall** | **7** | **8** | The three concurrency/permission findings are closed and proven against a real database. What remains is replay/idempotency and the inherent client-side ceiling |
+
+Scores are for **this implementation**, not for the fact that Supabase is used. Nothing here
+scores 10 for anti-cheat and nothing should: the simulation runs in a browser.
 
 ---
 

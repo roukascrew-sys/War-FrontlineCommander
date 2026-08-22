@@ -268,6 +268,45 @@ const good = (over = {}) => ({
     '[aar] the AAR migration grants no new policy — adding a column must not add a way to write one');
 }
 
+/* ── 10. HARDENING MIGRATION (0003) ────────────────────────────────────────
+   tests/db.test.sh proves these against a real PostgreSQL. These are the cheap
+   static counterparts, so a missing revoke is caught even where no database is
+   available to run the full suite. */
+{
+  const raw = readFileSync(join(ROOT, 'supabase/migrations/0003_hardening.sql'), 'utf8');
+  const sql = raw.split('\n').map(l => l.replace(/--.*$/, '')).join('\n').toLowerCase();
+
+  ok(/revoke\s+insert,\s*update,\s*delete[^;]*on\s+public\.runs\s+from\s+anon/.test(sql)
+     && /from\s+authenticated/.test(sql),
+    '[hardening] write grants are revoked from anon AND authenticated — without this, RLS is the only thing standing between the public key and the table');
+
+  ok(/grant\s+select\s+on\s+public\.runs\s+to\s+anon/.test(sql),
+    '[hardening] SELECT is explicitly re-granted, so the public board still reads');
+
+  ok(!/create\s+policy/.test(sql),
+    '[hardening] the migration adds NO policy — hardening must never widen access');
+
+  ok(/security\s+invoker/.test(sql) && !/security\s+definer/.test(sql),
+    '[hardening] nothing here is SECURITY DEFINER, and touch_updated_at is downgraded to INVOKER');
+
+  ok(/pg_advisory_xact_lock/.test(sql) && /on\s+conflict[\s\S]*do\s+update[\s\S]*where\s+excluded\.rated_score\s*>/.test(sql),
+    '[hardening] the submission is atomic: a per-player advisory lock plus the better-score rule inside the upsert\'s own WHERE clause, replacing a read-then-write that raced');
+
+  ok(/set\s+search_path\s*=\s*''/.test(sql),
+    '[hardening] every function pins search_path');
+
+  ok(/revoke\s+all\s+on\s+function\s+public\.submit_run[\s\S]*?from\s+public,\s*anon,\s*authenticated/.test(sql)
+     && /grant\s+execute\s+on\s+function\s+public\.submit_run[\s\S]*?to\s+service_role/.test(sql),
+    '[hardening] submit_run is executable by service_role ONLY — a browser cannot call the writer directly and hand it its own rated_score');
+
+  // The Edge Function must actually USE it, or the migration is decorative.
+  const fn = readFileSync(join(ROOT, 'supabase/functions/submit-run/index.ts'), 'utf8');
+  ok(/\.rpc\(\s*['"]submit_run['"]/.test(fn),
+    '[hardening] submit-run calls the atomic function rather than re-implementing check-then-write in TypeScript');
+  ok(!/\.from\(\s*['"]runs['"]\s*\)\s*\.\s*(insert|update)/.test(fn),
+    '[hardening] the Edge Function no longer writes to the table directly');
+}
+
 console.log('\n══════════ BACKEND VALIDATION TESTS ══════════');
 out.forEach(o => console.log(o));
 console.log('══════════════════════════════════════════════');

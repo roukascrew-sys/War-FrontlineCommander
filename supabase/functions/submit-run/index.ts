@@ -95,45 +95,49 @@ Deno.serve(async (req) => {
     auth: { persistSession: false },
   });
 
-  /* Rate limit on the player's most recent write in ANY mode. Cheap (one indexed
-     lookup) and it bounds how fast a scripted client can hammer the function. */
-  const { data: recent } = await admin
-    .from('runs')
-    .select('updated_at')
-    .eq('player_id', user.id)
-    .order('updated_at', { ascending: false })
-    .limit(1);
+  /* ── ONE ATOMIC CALL ──────────────────────────────────────────────────────
+     This used to be three round trips: read the last updated_at to enforce the
+     cooldown, read the existing row to keep only the best, then write. Nothing
+     held between them, so both checks raced (docs/SUPABASE_AUDIT.md HIGH-3 and
+     HIGH-4): N concurrent requests all read the same updated_at and all passed
+     the cooldown, and a worse concurrent run could overwrite a better one.
 
-  if (recent?.length) {
-    const age = Date.now() - new Date(recent[0].updated_at).getTime();
-    if (age < SUBMIT_COOLDOWN_MS) {
-      return json({ error: 'too fast', retry_in_ms: SUBMIT_COOLDOWN_MS - age }, 429);
-    }
-  }
-
-  /* Keep the player's BEST run in this mode. Read-then-write is not atomic, but
-     the unique constraint makes the failure mode a harmless duplicate-key error
-     rather than a corrupted row, and a player racing themselves is not a threat
-     worth a transaction for. */
-  const { data: existing } = await admin
-    .from('runs')
-    .select('id, rated_score')
-    .eq('player_id', user.id)
-    .eq('mode', mode)
-    .maybeSingle();
-
-  if (existing && existing.rated_score >= rated) {
-    return json({ ok: true, improved: false, rated, best: existing.rated_score });
-  }
-
-  const { error } = existing
-    ? await admin.from('runs').update(row).eq('id', existing.id)
-    : await admin.from('runs').insert(row);
+     public.submit_run() takes a per-player advisory lock for the length of its
+     transaction and carries the better-score rule inside the upsert's own WHERE
+     clause, so the check and the write cannot interleave. The cooldown is measured
+     against the DATABASE clock, so a client lying about its own clock changes
+     nothing. Reproduced and verified in tests/db.test.sh. */
+  const { data: result, error } = await admin.rpc('submit_run', {
+    p_player_id:    row.player_id,
+    p_display_name: row.display_name,
+    p_score:        row.score,
+    p_kills:        row.kills,
+    p_duration_s:   row.duration_s,
+    p_won:          row.won,
+    p_rated_score:  rated,
+    p_difficulty:   row.difficulty,
+    p_mode:         mode,
+    p_doctrine:     row.doctrine,
+    p_game_version: row.game_version,
+    p_aar:          row.aar,
+    p_cooldown_ms:  SUBMIT_COOLDOWN_MS,
+  });
 
   if (error) {
-    console.error('submit-run insert failed', error.message);
+    /* Detail to the logs, a fixed string to the player. An error body is the
+       classic place a database's shape leaks out to whoever is probing it. */
+    console.error('submit-run rpc failed', error.message);
     return json({ error: 'write failed' }, 400);
   }
 
-  return json({ ok: true, improved: true, rated });
+  const r = Array.isArray(result) ? result[0] : result;
+  if (!r) {
+    console.error('submit-run rpc returned no row');
+    return json({ error: 'write failed' }, 400);
+  }
+
+  if (r.outcome === 'rate_limited') {
+    return json({ error: 'too fast', retry_in_ms: r.retry_in_ms ?? SUBMIT_COOLDOWN_MS }, 429);
+  }
+  return json({ ok: true, improved: r.outcome === 'improved', rated, best: r.best });
 });

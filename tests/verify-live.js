@@ -228,6 +228,68 @@ async function req(path, opts = {}) {
     `CORS preflight passes from an itch.io origin (HTTP ${pre.status}, allow-origin: ${pre.headers.get('access-control-allow-origin') || 'none'})`,
     'the browser will block every submission with an opaque network error');
 
+  // ── 9. DEPLOYMENT SETTINGS config.toml CANNOT GUARANTEE ────────────────
+  //
+  // AUDIT FINDING HIGH-1. supabase/config.toml configures a LOCAL `supabase start`
+  // stack. On a hosted project these are dashboard settings, and we know they are not
+  // being applied: anonymous sign-in had to be switched on by hand. So the file states
+  // intent, and only the live project can state fact. These probe the live project.
+
+  // config.toml says `[auth.email] enable_signup = false`. The design has no accounts,
+  // so an open email signup is a free identity mint with an auth surface (password
+  // reset, email enumeration) that nothing in this repo defends.
+  const probeEmail = `verify-${Date.now()}@example.invalid`;
+  const emailSignup = await req('/auth/v1/signup', {
+    method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: probeEmail, password: 'x9F!' + Math.random().toString(36).slice(2) }),
+  });
+  ok(!emailSignup.ok,
+    `email/password signup is DISABLED on the live project (HTTP ${emailSignup.status})`,
+    'email signup is OPEN. config.toml says enable_signup = false, but that file configures a ' +
+    'LOCAL stack — turn it off in Authentication -> Providers -> Email on the dashboard.');
+
+  // config.toml claims max_rows = 200. Ask for far more and count what comes back.
+  const bulk = await req('/rest/v1/runs?select=id&limit=5000', { headers: H });
+  const got = Array.isArray(bulk.body) ? bulk.body.length : 0;
+  ok(got <= 200 || got < 5000,
+    `the row ceiling is enforced (asked for 5000, got ${got})`,
+    `${got} rows came back in one request — config.toml says 200, but that setting is local-only. ` +
+    'Set it in the dashboard (Settings -> API -> Max rows) if you want the ceiling it claims.');
+
+  // An unauthenticated caller must not reach the write path at all.
+  const noTok = await fetch(URL_ + '/functions/v1/submit-run', {
+    method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify(goodRun) });
+  ok(noTok.status === 401 || noTok.status === 403,
+    `submit-run refuses a call carrying only the anon key, no user token (HTTP ${noTok.status})`,
+    'the anon key alone can invoke the write path');
+
+  // ── 10. HARDENING FROM 0003 ────────────────────────────────────────────
+  // The atomic function must not be reachable from a browser at all.
+  const rpc = await req('/rest/v1/rpc/submit_run', {
+    method: 'POST', headers: { ...AUTH, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      p_player_id: uid, p_display_name: 'BYPASS', p_score: 5000000, p_kills: 1,
+      p_duration_s: 60, p_won: true, p_rated_score: 20000000,
+      p_difficulty: 'legendaryplus', p_mode: MODE, p_doctrine: 'x',
+      p_game_version: '1.26.0', p_aar: null }),
+  });
+  ok(!rpc.ok,
+    `submit_run cannot be called directly with a user token (HTTP ${rpc.status})`,
+    'a player can call the atomic writer straight from the browser and hand it their own ' +
+    'rated_score — apply supabase/migrations/0003_hardening.sql, which revokes EXECUTE from ' +
+    'anon and authenticated.');
+
+  // The cooldown must hold when requests arrive together, not merely in sequence.
+  // Fired against a DIFFERENT mode so it cannot disturb the row checked above.
+  const burst = await Promise.all([1, 2, 3, 4, 5].map(() =>
+    post({ ...goodRun, mode: MODE === 'blitz' ? 'survival' : 'blitz', score: 8000 })));
+  const accepted = burst.filter(r => r.ok).length;
+  ok(accepted <= 1,
+    `5 SIMULTANEOUS submissions: ${accepted} accepted, ${burst.length - accepted} refused`,
+    `${accepted} of 5 concurrent submissions were accepted — the cooldown is a read-then-write ` +
+    'race (audit HIGH-3). Apply 0003_hardening.sql and redeploy submit-run.');
+
   report(uid);
 })().catch(e => {
   console.error('\n💥 verification crashed:', e.message);
