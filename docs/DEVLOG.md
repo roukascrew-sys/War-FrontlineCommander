@@ -84,6 +84,8 @@ While in there: the title's three sections now have hairline rules either side o
 labels so they read as sections rather than floating captions, and Tutorial moved next to
 Indoctrination so LEARN is no longer a labelled section containing one lonely centred button.
 
+---
+
 ## v1.27.0 — Taking back a bad rule
 
 ### ⚑ Stance is free again. Always.
