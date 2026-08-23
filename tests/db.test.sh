@@ -90,12 +90,21 @@ bootstrap fc_h
 a1=$(apply fc_h supabase/migrations/0001_leaderboard.sql && echo 1 || echo 0)
 a2=$(apply fc_h supabase/migrations/0002_aar.sql && echo 1 || echo 0)
 a3=$(apply fc_h supabase/migrations/0003_hardening.sql && echo 1 || echo 0)
-ok "$([ "$a1$a2$a3" = "111" ] && echo 1 || echo 0)" "[migrations] all three apply cleanly to a fresh database, in order"
+a4=$(apply fc_h supabase/migrations/0004_idempotency.sql && echo 1 || echo 0)
+ok "$([ "$a1$a2$a3$a4" = "1111" ] && echo 1 || echo 0)" "[migrations] all four apply cleanly to a fresh database, in order"
 
 # applying twice must be a no-op, not an error — a migration you cannot re-run is
 # a migration you cannot safely re-deploy
 r=$(apply fc_h supabase/migrations/0003_hardening.sql && echo 1 || echo 0)
-ok "$r" "[migrations] 0003 is idempotent — re-applying it succeeds"
+r2=$(apply fc_h supabase/migrations/0004_idempotency.sql && echo 1 || echo 0)
+ok "$([ "$r$r2" = "11" ] && echo 1 || echo 0)" "[migrations] 0003 and 0004 are idempotent — re-applying them succeeds"
+
+# Exactly ONE submit_run must exist. 0003 creates a 13-argument version and 0004
+# supersedes it with a 14-argument one; if both survive, a 13-argument call resolves
+# to the version WITHOUT the replay check — a security control silently downgraded.
+n=$(q fc_h "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and proname='submit_run'")
+ok "$([ "$n" = "1" ] && echo 1 || echo 0)" \
+   "[migrations] exactly one submit_run exists after all four migrations (found $n) — two overloads would let a call bind to the version with no replay check"
 
 # ── HIGH-2 · reproduce on the UNHARDENED schema, then prove the fix ──
 bootstrap fc_u
@@ -118,7 +127,7 @@ for op in "$INS values ('$U','PWNED',1,1,60,true,1,'veteran','skirmish','x','1.0
   ok "$(echo "$r" | grep -qi 'permission denied' && echo 1 || echo 0)" \
      "[HIGH-2 fix] RLS DISABLED and anon still cannot ${op%% *} — two independent controls, not one"
 done
-r=$(q fc_h "set role anon; select * from public.submit_run('$U','X',1,1,60,true,999,'veteran','skirmish','x','1.0.0',null)")
+r=$(q fc_h "set role anon; select * from public.submit_run('$U','X',1,1,60,true,999,'veteran','skirmish','x','1.26.0',null,30000,null)")
 ok "$(echo "$r" | grep -qi 'permission denied' && echo 1 || echo 0)" \
    "[HIGH-2 fix] anon cannot call submit_run directly either"
 q fc_h "alter table public.runs enable row level security" >/dev/null
@@ -207,6 +216,49 @@ r=$(q fc_h "$INS values ('22222222-2222-2222-2222-222222222222','X',1,1,60,true,
     q fc_h "update public.runs set aar='$big'::jsonb where player_id='22222222-2222-2222-2222-222222222222'")
 ok "$(echo "$r" | grep -qi 'runs_aar_small\|violates' && echo 1 || echo 0)" \
    "[aar] an oversized report is refused by the COLUMN constraint, independently of the Edge Function"
+
+# ── MEDIUM-1 · replay must be a no-op, and only replay ──
+seed fc_h
+RID=3f2504e0-4f89-41d3-9a0c-0305e82c3301
+# first submission of this run
+o1=$(q fc_h "select outcome from public.submit_run('$U','Rook',3000,30,120,true,300,'veteran','skirmish','combined','1.26.0',null,0,'$RID')")
+# the identical request again — a captured-and-replayed submission
+o2=$(q fc_h "select outcome from public.submit_run('$U','Rook',3000,30,120,true,300,'veteran','skirmish','combined','1.26.0',null,0,'$RID')")
+n=$(q fc_h "select count(*) from public.runs where player_id='$U'")
+ok "$([ "$o1" = "improved" ] && [ "$o2" = "duplicate" ] && [ "$n" = "1" ] && echo 1 || echo 0)" \
+   "[MEDIUM-1] a replayed submission is refused as a duplicate (first='$o1', replay='$o2') and adds no row"
+
+# the SAME run replayed from a DIFFERENT identity — the abuse the ledger exists for,
+# because a fresh anonymous identity dodges the per-player rate limit entirely
+U2=22222222-2222-2222-2222-222222222222
+o3=$(q fc_h "select outcome from public.submit_run('$U2','Thief',3000,30,120,true,300,'veteran','skirmish','combined','1.26.0',null,0,'$RID')")
+n2=$(q fc_h "select count(*) from public.runs where player_id='$U2'")
+ok "$([ "$o3" = "duplicate" ] && [ "$n2" = "0" ] && echo 1 || echo 0)" \
+   "[MEDIUM-1] the same run replayed from a DIFFERENT anonymous identity is also refused (got '$o3') — run_id is unique across the whole table, not per player"
+
+# a genuinely new run must still post
+o4=$(q fc_h "select outcome from public.submit_run('$U','Rook',9000,40,180,true,900,'veteran','skirmish','combined','1.26.0',null,0,'4f89e0d1-2a3b-4c5d-8e9f-0a1b2c3d4e5f')")
+ok "$([ "$o4" = "improved" ] && echo 1 || echo 0)" \
+   "[MEDIUM-1] a NEW run with a fresh id still posts normally (got '$o4') — idempotency must not block legitimate play"
+
+# a client that sends no id at all keeps working
+seed fc_h
+o5=$(q fc_h "select outcome from public.submit_run('$U','Rook',3000,30,120,true,300,'veteran','skirmish','combined','1.26.0',null,0,null)")
+ok "$([ "$o5" = "improved" ] && echo 1 || echo 0)" \
+   "[MEDIUM-1] a submission with NO run_id is still accepted (got '$o5') — an older build must not silently stop being able to post"
+
+# a REFUSED submission must not burn its id: the retry has to be able to succeed
+seed fc_h
+RID2=aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee
+r1=$(q fc_h "select outcome from public.submit_run('$U','Rook',3000,30,120,true,300,'veteran','skirmish','combined','1.26.0',null,30000,'$RID2')")
+r2=$(q fc_h "select outcome from public.submit_run('$U','Rook',3000,30,120,true,300,'veteran','skirmish','combined','1.26.0',null,0,'$RID2')")
+ok "$([ "$r1" = "rate_limited" ] && [ "$r2" = "improved" ] && echo 1 || echo 0)" \
+   "[MEDIUM-1] a rate-limited submission releases its run_id so the retry can succeed (first='$r1', retry='$r2') — otherwise one refusal would permanently destroy that run"
+
+# the ledger is not readable by the public: it is bookkeeping, not a leaderboard
+r=$(q fc_h "set role anon; select count(*) from public.run_ids")
+ok "$(echo "$r" | grep -qi 'permission denied' && echo 1 || echo 0)" \
+   "[MEDIUM-1] anon cannot read public.run_ids — it carries no policy at all, and the grants are revoked underneath that"
 
 echo "═════════════════════════════════════════════"
 if [ "$FAIL" = "0" ]; then echo "✅ ALL $PASS DATABASE CHECKS PASSED"; else echo "❌ $FAIL of $((PASS+FAIL)) FAILED"; fi

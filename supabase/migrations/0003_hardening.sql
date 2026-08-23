@@ -166,7 +166,12 @@ grant execute on function public.submit_run(
   uuid, text, integer, integer, integer, boolean, integer,
   text, text, text, text, jsonb, integer) to service_role;
 
-comment on function public.submit_run is
+-- The argument list is REQUIRED here. Without it this statement is ambiguous the moment
+-- a second overload exists — which is exactly what 0004 creates — and re-running this
+-- migration then fails with "function name is not unique".
+comment on function public.submit_run(
+  uuid, text, integer, integer, integer, boolean, integer,
+  text, text, text, text, jsonb, integer) is
   'Atomic leaderboard submission: per-player advisory lock + upsert-if-better in one '
   'statement. Replaces a read-then-write sequence that raced under concurrency '
   '(see docs/SUPABASE_AUDIT.md, HIGH-3 and HIGH-4). service_role only.';

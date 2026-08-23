@@ -3,13 +3,40 @@
 **Audited build:** v1.26.0 · **Date:** 21 August 2026 · **Batch 1 remediation applied 22 August 2026**
 **Scope:** `wargame.html`, `supabase/**`, `tests/**`, `build-itch.sh`, and 123 commits of git history.
 
-> **One limitation stated up front.** This session's egress policy blocks `*.supabase.co`
-> (HTTP 403 from the proxy — `goatcounter.com` is blocked identically, so it is the sandbox,
-> not the project). Every finding below is derived from **code, SQL and git history**, which
-> is where all of them live. Findings marked **[UNVERIFIED-LIVE]** additionally depend on the
-> *deployed* state of the hosted project and can only be confirmed by running
-> `node tests/verify-live.js` from a machine with network access.
+> **UPDATE — the project is now reachable.** A Supabase connector was added, so the
+> findings below are no longer inferred from code alone: they were **confirmed against the
+> live project**, and Batches 1 and 2 have been applied to it. The earlier limitation
+> (this session's egress blocks `*.supabase.co`, so `tests/verify-live.js` cannot run from
+> here) still applies to HTTP-level checks — the Edge Function's own responses must still
+> be verified by running that script from a networked machine.
 
+## ⚠ The finding that explains everything
+
+**`submit-run` had never been deployed.** `list_edge_functions` returned `[]`.
+
+The table existed and the board could be *read*, but there was **no write path at all** —
+every submission got a 404. This is the actual root cause of "it wasn't posting to the
+global tab", and it sat underneath the three genuine client bugs fixed in v1.26.0 (the
+one-shot auth flag, the never-refreshed token, the discarded failures). Those were real,
+and they would have bitten later; this was the reason nothing worked *now*.
+
+It is deployed as of this update, version 1, `verify_jwt: true`.
+
+**HIGH-2 was confirmed live, not theorised.** Before hardening, the production database
+reported:
+
+```
+anon grants on runs           DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+authenticated grants on runs  DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+```
+
+Exactly the predicted single point of failure. After Batch 1: `REFERENCES, SELECT, TRIGGER`.
+
+**Supabase's own database linter independently flagged LOW-1** — and corrected me. I had
+assessed `touch_updated_at()` as unreachable because PostgREST does not expose
+`trigger`-returning functions. The linter reports it *was* callable at
+`/rest/v1/rpc/touch_updated_at` by both `anon` and `authenticated`. The migration fixed it
+either way, but the reasoning in my original write-up was wrong.
 
 ## Remediation status
 
@@ -20,11 +47,21 @@
 | HIGH-3 rate-limit race | High | **FIXED** | `db.test.sh`: old pattern let **5/5** concurrent writers through; now **5/5** refused |
 | HIGH-4 worse run overwrites better | High | **FIXED** | `db.test.sh`: 8 concurrent races, better run survives every time |
 | LOW-1 needless SECURITY DEFINER | Low | **FIXED** | `db.test.sh`: `prosecdef = false`, no EXECUTE for anon |
-| MEDIUM-1..4, LOW-2 | Med/Low | **Deferred to Batch 2/3** | see §6 |
+| MEDIUM-1 replay / no idempotency | Medium | **FIXED** | `db.test.sh`: a replayed run returns `duplicate` and adds no row, including from a **different identity**; confirmed on production PG17 |
+| MEDIUM-3 no request size cap | Medium | **FIXED** | Edge Function checks declared *and* actual body length against a 16 KB ceiling |
+| MEDIUM-4 `game_version` unbounded | Medium | **FIXED** | a floor (`1.24.0`), compared numerically; no upper bound, on purpose |
+| MEDIUM-2 identity farming | Medium | **Accepted by design** | no-signup is the product; mitigating needs accounts or edge rate limits |
+| LOW-2 prototype-chain vote keys | Low | **Deferred to Batch 3** | correctness bug, no trust boundary crossed |
 
-All fixes are in `supabase/migrations/0003_hardening.sql` and the rewritten
-`submit-run`. They are verified by **executing the real migrations against a real
-PostgreSQL 16** (`tests/db.test.sh`, 19 checks) — not by reading the SQL.
+All fixes are in `supabase/migrations/0003_hardening.sql`, `0004_idempotency.sql` and the
+rewritten `submit-run`. They are verified by **executing the real migrations against a real
+PostgreSQL** (`tests/db.test.sh`, 26 checks) — not by reading the SQL — and then
+**re-verified against the live project**, where a rolled-back transaction confirmed on
+Postgres 17:
+
+```
+first=improved  replay=duplicate  worse=not_improved  cooldown=rate_limited
+```
 
 ---
 

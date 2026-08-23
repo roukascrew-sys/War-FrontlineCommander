@@ -21,6 +21,30 @@ const DIFF_WEIGHT = {
 
 const MODES = ['skirmish', 'evolution', 'blitz', 'survival', 'domination', 'war'];
 
+/* The oldest build whose scores are comparable with today's. Raise this only when a
+   change makes older scores genuinely incomparable — raising it retires everyone still
+   on an older build, which is a product decision, not a cleanup. */
+const MIN_GAME_VERSION = '1.24.0';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/* Compare dotted versions numerically. '1.9.0' vs '1.10.0' is the reason this is not a
+   string comparison: lexically '1.9.0' sorts AFTER '1.10.0', which would retire a newer
+   build than the floor. */
+function cmpVersion(a, b) {
+  const pa = String(a).split('.').map(Number), pb = String(b).split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    const x = pa[i] || 0, y = pb[i] || 0;
+    if (x !== y) return x < y ? -1 : 1;
+  }
+  return 0;
+}
+
+/* MEDIUM-3. A ceiling on the request body, applied before parsing. The AAR column is
+   independently bounded at 4 KB in SQL, which is what stops storage abuse; this is about
+   not spending CPU parsing a megabyte of JSON that was never going to be accepted. */
+const MAX_BODY_BYTES = 16 * 1024;
+
 /* Derived from real measured runs, then given generous headroom. The gate rejects
    the physically impossible, it does not referee good play — tuned too tight it
    throws out a genuinely excellent run and the player never learns why. */
@@ -147,6 +171,20 @@ function validateRun(body, playerId) {
   if (!/^[0-9]{1,4}\.[0-9]{1,4}\.[0-9]{1,4}$/.test(gameVersion)) {
     return { ok: false, status: 400, error: 'bad version' };
   }
+  /* MEDIUM-4. A well-formed version used to be enough, so `0.0.1` or `9999.0.0` were
+     both accepted. Nothing scores by version today, which is exactly why this is cheap
+     to add now and awkward to add later.
+
+     A FLOOR only, deliberately — no upper bound. Capping at "the current version" would
+     mean that shipping a new build without redeploying this function rejects every
+     legitimate submission from it. That failure is silent, total, and arrives at the
+     worst moment. A floor cannot do that.
+
+     IF VERSION EVER AFFECTS SCORING, a floor stops being sufficient: at that point this
+     needs an explicit whitelist of versions whose scores are comparable. */
+  if (cmpVersion(gameVersion, MIN_GAME_VERSION) < 0) {
+    return { ok: false, status: 400, error: 'unsupported version' };
+  }
 
   const score = int(body.score, 0, LIMITS.MAX_SCORE);
   const kills = int(body.kills, 0, LIMITS.MAX_KILLS);
@@ -167,9 +205,22 @@ function validateRun(body, playerId) {
      all — not validated, not compared, ignored entirely. */
   const rated = Math.round(score * weight);
 
+  /* MEDIUM-1. The idempotency key. Optional: a client on an older build sends none and
+     must still be able to post. When present it must be a real uuid, because it becomes
+     a primary key in public.run_ids and a malformed one would be refused by the database
+     with an error the player cannot act on. */
+  let runId = null;
+  if (body.run_id !== undefined && body.run_id !== null) {
+    if (typeof body.run_id !== 'string' || !UUID_RE.test(body.run_id)) {
+      return { ok: false, status: 400, error: 'bad run id' };
+    }
+    runId = body.run_id.toLowerCase();
+  }
+
   return {
     ok: true,
     row: {
+      run_id: runId,
       player_id: playerId,
       display_name: cleanName(body.display_name),
       score, kills, duration_s: duration, won: body.won === true,
@@ -181,6 +232,7 @@ function validateRun(body, playerId) {
 }
 
 export {
-  DIFF_WEIGHT, MODES, LIMITS, int, cleanName, cleanAar, validateRun,
+  DIFF_WEIGHT, MODES, LIMITS, MIN_GAME_VERSION, MAX_BODY_BYTES, UUID_RE,
+  int, cmpVersion, cleanName, cleanAar, validateRun,
   AAR_UNITS, AAR_POWERS, AAR_STANCES, AAR_ARMS, AAR_ORDERS, AAR_LIMITS,
 };

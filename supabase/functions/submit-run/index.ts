@@ -28,7 +28,11 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
    rules that decide whether the board is worth reading are the SAME code in both
    places — anti-cheat logic that can only be exercised by deploying it is how these
    rules quietly rot. */
-import { validateRun } from '../_shared/validate.js';
+/* './_shared/…' and not '../_shared/…' on purpose. A deploy bundles this function's
+   directory, so the shared module has to live INSIDE it or the deployed import path
+   differs from the repo's — which is how a function deploys fine one way and 404s the
+   other. There is one function, so a sibling _shared/ bought nothing anyway. */
+import { validateRun, MAX_BODY_BYTES } from './_shared/validate.js';
 
 const SUBMIT_COOLDOWN_MS = 30_000;
 
@@ -74,9 +78,17 @@ Deno.serve(async (req) => {
   const user = userData?.user;
   if (userErr || !user) return json({ error: 'unauthorized' }, 401);
 
+  /* MEDIUM-3. Refuse an oversized body BEFORE parsing it. Content-Length can be absent
+     or lie, so the raw text is read and measured too — reading it is bounded work,
+     parsing megabytes of JSON into objects is not. */
+  const declared = Number(req.headers.get('content-length') || 0);
+  if (declared > MAX_BODY_BYTES) return json({ error: 'payload too large' }, 413);
+
   let body: Record<string, unknown>;
   try {
-    body = await req.json();
+    const raw = await req.text();
+    if (raw.length > MAX_BODY_BYTES) return json({ error: 'payload too large' }, 413);
+    body = JSON.parse(raw);
   } catch {
     return json({ error: 'bad json' }, 400);
   }
@@ -121,6 +133,9 @@ Deno.serve(async (req) => {
     p_game_version: row.game_version,
     p_aar:          row.aar,
     p_cooldown_ms:  SUBMIT_COOLDOWN_MS,
+    /* MEDIUM-1. Null when the client did not send one — an older build must still be
+       able to post. When present, replaying it is a no-op rather than a second row. */
+    p_run_id:       row.run_id,
   });
 
   if (error) {
@@ -139,5 +154,14 @@ Deno.serve(async (req) => {
   if (r.outcome === 'rate_limited') {
     return json({ error: 'too fast', retry_in_ms: r.retry_in_ms ?? SUBMIT_COOLDOWN_MS }, 429);
   }
-  return json({ ok: true, improved: r.outcome === 'improved', rated, best: r.best });
+  /* A duplicate is a SUCCESS, not an error: the caller asked for this run to be on the
+     board and it is. A retry after a lost response must land here and be told so, rather
+     than being handed a failure it would queue and retry forever. */
+  return json({
+    ok: true,
+    improved: r.outcome === 'improved',
+    duplicate: r.outcome === 'duplicate',
+    rated,
+    best: r.best,
+  });
 });

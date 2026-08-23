@@ -13,7 +13,7 @@ one byte leaves a player's device. That is verified by a regression check.
 |---|---|
 | `migrations/0001_leaderboard.sql` | The `runs` table, its CHECK constraints, and the RLS policies |
 | `functions/submit-run/index.ts` | The only thing allowed to write to `runs` |
-| `functions/_shared/validate.js` | The rules that decide what a false claim is worth |
+| `functions/submit-run/_shared/validate.js` | The rules that decide what a false claim is worth |
 | `config.toml` | Project config. Contains no keys and never should |
 
 `validate.js` is deliberately plain `.js` rather than `.ts`: Deno runs it as-is inside the

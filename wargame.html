@@ -3873,7 +3873,8 @@ const LEADERBOARD_BACKEND = LB_OK ? {
             score:entry.score|0, kills:entry.kills|0, duration_s:entry.dur|0,
             won:!!entry.won, difficulty:entry.diff, mode:entry.mode,
             doctrine:entry.doc, game_version:GAME_VERSION,
-            aar:entry.aar||null })});
+            aar:entry.aar||null,
+            run_id:entry.run_id||null })});
         LB.cache=null;            // the board just changed; drop the read cache
         return res||{ok:true};
       }catch(e){
@@ -4047,6 +4048,20 @@ function lbStatusPaint(){
 }
 function diffWeight(d){ return DIFF_WEIGHT[d]||1.0; }
 function ratedScore(score,diff){ return Math.round((score||0)*diffWeight(diff)); }
+/* A stable id for ONE finished battle. Generated once, carried through the outbox, so a
+   retry after a lost response resends the SAME id and the server treats it as the same run
+   rather than a second one. Fresh battles get fresh ids, so legitimate play is unaffected.
+   crypto.randomUUID is not available on every browser the game runs in, hence the fallback. */
+function newRunId(){
+  try{ if(crypto&&crypto.randomUUID)return crypto.randomUUID(); }catch(e){}
+  try{
+    const b=new Uint8Array(16); crypto.getRandomValues(b);
+    b[6]=(b[6]&0x0f)|0x40; b[8]=(b[8]&0x3f)|0x80;          // v4, RFC-4122 variant
+    const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join('');
+    return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
+  }catch(e){}
+  return null;   // no usable randomness: send nothing rather than a guessable id
+}
 function boardEntry(g,won,score){
   return { ts:Date.now(), score:Math.round(score||0), rated:ratedScore(score,g.diff),
     mode:g.mode, kind:g.kind, diff:g.diff, doc:g.doc, won:!!won,
@@ -9039,6 +9054,7 @@ function endGame(winner,reason){
       if(LEADERBOARD_BACKEND&&SAVE.lbOptIn){
         const entry=boardEntry(G,won,score);
         entry.aar=aarBuild(G,won,score);
+        entry.run_id=newRunId();     // one id per battle, reused by every retry
         if(!LB_MODES.includes(entry.mode)){
           G.lbStatus={state:'unranked'};      // campaign/rivals/gauntlet — not a ranked mode
         }else{
@@ -9047,6 +9063,8 @@ function endGame(winner,reason){
           try{ Promise.resolve(LEADERBOARD_BACKEND.submit(entry))
             .then(r=>{
               if(r&&r.retry){ lbEnqueue(entry); g.lbStatus={state:'queued',why:r.reason}; }
+              else if(r&&r.duplicate)g.lbStatus={state:'posted',improved:false};   // already banked; a retry landed
+
               else if(r&&r.rejected)g.lbStatus={state:'rejected',why:r.error};
               else{ g.lbStatus={state:'posted',improved:!!(r&&r.improved)};
                 if(typeof gcEvent==='function')gcEvent('lb-submit'); }

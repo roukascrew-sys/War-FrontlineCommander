@@ -3181,7 +3181,7 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
       'Bidi\u202eevil', 'A'.repeat(40), '\u200b\u200b\u200b', '   ', '\u00dcnit 7',
     ];
     const { cleanName } = await import(
-      require('url').pathToFileURL(path.join(__dirname, '..', 'supabase', 'functions', '_shared', 'validate.js')).href);
+      require('url').pathToFileURL(path.join(__dirname, '..', 'supabase', 'functions', 'submit-run', '_shared', 'validate.js')).href);
     const v125 = await gp.evaluate(async (NAME_CASES) => {
       const o = {};
       o.defaultsUnEnlisted = DEFAULT_SAVE.enlisted === false;

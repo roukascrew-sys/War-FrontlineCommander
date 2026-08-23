@@ -15,9 +15,10 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
-  DIFF_WEIGHT, LIMITS, int, cleanName, cleanAar, validateRun,
+  DIFF_WEIGHT, LIMITS, MIN_GAME_VERSION, MAX_BODY_BYTES,
+  int, cmpVersion, cleanName, cleanAar, validateRun,
   AAR_UNITS, AAR_POWERS, AAR_STANCES, AAR_ORDERS,
-} from '../supabase/functions/_shared/validate.js';
+} from '../supabase/functions/submit-run/_shared/validate.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
@@ -298,6 +299,51 @@ const good = (over = {}) => ({
   ok(/revoke\s+all\s+on\s+function\s+public\.submit_run[\s\S]*?from\s+public,\s*anon,\s*authenticated/.test(sql)
      && /grant\s+execute\s+on\s+function\s+public\.submit_run[\s\S]*?to\s+service_role/.test(sql),
     '[hardening] submit_run is executable by service_role ONLY — a browser cannot call the writer directly and hand it its own rated_score');
+
+  /* ── Batch 2 (0004) ── */
+  const raw4 = readFileSync(join(ROOT, 'supabase/migrations/0004_idempotency.sql'), 'utf8');
+  const sql4 = raw4.split('\n').map(l => l.replace(/--.*$/, '')).join('\n').toLowerCase();
+  ok(/create\s+table\s+if\s+not\s+exists\s+public\.run_ids/.test(sql4)
+     && /run_id\s+uuid\s+primary\s+key/.test(sql4),
+    '[idempotency] a ledger table keyed on a GLOBALLY unique run_id — not just a unique column on runs, whose rows are replaced by better ones and take their ids with them');
+  ok(/alter\s+table\s+public\.run_ids\s+enable\s+row\s+level\s+security/.test(sql4)
+     && !/create\s+policy/.test(sql4),
+    '[idempotency] the ledger has RLS on and NO policy at all — it is bookkeeping, not a leaderboard, so unlike runs it is not publicly readable either');
+  ok(/revoke\s+all\s+on\s+public\.run_ids\s+from\s+anon/.test(sql4)
+     && /revoke\s+all\s+on\s+public\.run_ids\s+from\s+authenticated/.test(sql4),
+    '[idempotency] grants on the ledger are revoked underneath RLS, same two-control posture as runs');
+  ok(/drop\s+function\s+if\s+exists\s+public\.submit_run\(/.test(sql4),
+    '[idempotency] the 13-argument submit_run from 0003 is DROPPED — leaving both overloads would let a 13-arg call resolve to the version with no replay check');
+  ok(/delete\s+from\s+public\.run_ids\s+where\s+run_id\s*=\s*p_run_id/.test(sql4),
+    '[idempotency] a rate-limited submission releases its run_id, so one refusal does not permanently destroy that run');
+}
+
+/* ── 11. BATCH 2 VALIDATION RULES ──────────────────────────────────────── */
+{
+  const g = (o = {}) => ({
+    display_name: 'Rook', score: 9000, kills: 40, duration_s: 180, won: true,
+    difficulty: 'legendary', mode: 'skirmish', doctrine: 'blitzkrieg',
+    game_version: '1.26.0', ...o,
+  });
+  ok(cmpVersion('1.9.0', '1.10.0') === -1 && cmpVersion('2.0.0', '1.99.99') === 1,
+    '[version] versions compare NUMERICALLY — lexically "1.9.0" sorts after "1.10.0", which would retire a build newer than the floor');
+  ok(validateRun(g({ game_version: '1.0.0' }), UID).error === 'unsupported version',
+    `[version] a build older than the floor (${MIN_GAME_VERSION}) is refused`);
+  ok(validateRun(g({ game_version: '9999.0.0' }), UID).ok,
+    '[version] a version ABOVE the floor is accepted — capping at "current" would reject every legitimate submission from a new build whenever the function was not redeployed with it');
+  ok(validateRun(g({ run_id: 'not-a-uuid' }), UID).error === 'bad run id'
+     && validateRun(g({ run_id: 12345 }), UID).error === 'bad run id',
+    '[idempotency] a malformed run_id is refused before it can reach a primary key');
+  ok(validateRun(g()).run_id === undefined || validateRun(g(), UID).row.run_id === null,
+    '[idempotency] a submission with no run_id is still valid — an older build must keep working');
+  ok(validateRun(g({ run_id: '3F2504E0-4F89-41D3-9A0C-0305E82C3301' }), UID).row.run_id
+       === '3f2504e0-4f89-41d3-9a0c-0305e82c3301',
+    '[idempotency] a run_id is lower-cased, so the same id in different cases cannot be replayed as two');
+  ok(MAX_BODY_BYTES > 0 && MAX_BODY_BYTES <= 64 * 1024,
+    `[limits] a request body ceiling exists (${MAX_BODY_BYTES} bytes)`);
+  const fn2 = readFileSync(join(ROOT, 'supabase/functions/submit-run/index.ts'), 'utf8');
+  ok(/content-length/i.test(fn2) && /raw\.length\s*>\s*MAX_BODY_BYTES/.test(fn2),
+    '[limits] the Edge Function checks BOTH the declared Content-Length and the actual body — a header can be absent or lie');
 
   // The Edge Function must actually USE it, or the migration is decorative.
   const fn = readFileSync(join(ROOT, 'supabase/functions/submit-run/index.ts'), 'utf8');
