@@ -44,7 +44,6 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT ||
 
 const GROUP_KEYS_LEN_CHECK = o => o && Object.keys(o).length === 3;
 const GROUP_FREE_CHANGES_MIRROR = 1;   // mirrors GROUP_FREE_CHANGES in the game file
-const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the game file
 (async () => {
   const launchOpts = { args: ['--no-sandbox'] };
   const exe = resolveExecutablePath();
@@ -2587,24 +2586,35 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
       REVENTS.orders.run();
       o.afterEvent = setGroupDoctrine('armor', 'support');
 
-      /* STANCE follows the same commitment model, and this is the check that matters most:
-         stance previously had no cost of ANY kind, so it was the one channel a player could
-         still micro freely. Free in prep, one change live, greyed out once spent. */
+      /* STANCE IS UNCONDITIONALLY FREE — including with the commitment experiment ON.
+         It carried a one-change budget, and that could strand a player in Defend with no
+         way left to reach the enemy HQ. This asserts there is no budget left anywhere:
+         many changes in a row, all accepted, even deep into a live fight. */
       fresh('veteran');
-      o.stanceBudget = G.stanceChanges; o.stanceCap = STANCE_FREE_CHANGES;
-      o.stancePrep = [setStance('defend'), setStance('skirmish'), setStance('assault')];
-      o.stanceBudgetAfterPrep = G.stanceChanges;
       G.prep = 0; G.frozen = false;
-      o.stanceLiveFirst = setStance('defend');
-      o.stanceLiveSecond = setStance('skirmish');
-      o.stanceStuck = G.stance;                       // the refused change must not have landed
+      o.stanceMany = [];
+      for (const st of ['defend','skirmish','assault','defend','skirmish','assault','defend'])
+        o.stanceMany.push(setStance(st));
+      o.stanceLanded = G.stance;
+      o.stanceNoBudgetField = G.stanceChanges === undefined;
       syncStanceUI();
-      o.stanceGreyed = ['assault', 'skirmish'].every(s =>
-        document.getElementById('stance-' + s).classList.contains('spent'));
-      o.stanceOnStillLit = document.getElementById('stance-defend').classList.contains('on') &&
-                           !document.getElementById('stance-defend').classList.contains('spent');
-      REVENTS.orders.run();
-      o.stanceAfterEvent = setStance('skirmish');
+      o.stanceNeverGreyed = ['assault','skirmish','defend'].every(s =>
+        !document.getElementById('stance-' + s).classList.contains('spent'));
+      o.stanceOnStillLit = document.getElementById('stance-defend').classList.contains('on');
+
+      /* STANDING DOWN AN ORDER IS FREE. With the live budget fully spent, going from an
+         active order back to 'off' must still work — otherwise an order could trap an arm
+         exactly the way the stance budget used to trap the army. */
+      fresh('veteran');
+      SAVE.lvl = 60; persist();
+      setGroupDoctrine('arty', 'bombard');            // free, still in prep
+      G.prep = 0; G.frozen = false;
+      o.sdSpend = setGroupDoctrine('arty', 'battery'); // spends the single live change
+      o.sdBudget = G.groupChanges;
+      o.sdBlockedNew = setGroupDoctrine('armor', 'assault');  // no budget: refused
+      o.sdStandDown = setGroupDoctrine('arty', 'off');        // ALWAYS allowed
+      o.sdNowOff = G.groups.arty;
+      o.sdBudgetUnchanged = G.groupChanges === o.sdBudget;     // standing down cost nothing
 
       // Medic / Engineer
       fresh('veteran'); G.prep = 0; G.frozen = false; G.aiHold = true; G.units.length = 0;
@@ -2672,15 +2682,13 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
     ok(v121.afterEvent === true,
       '[orders] the Field Reassessment event hands back another change');
 
-    ok(v121.stancePrep.every(Boolean) && v121.stanceBudgetAfterPrep === v121.stanceCap,
-      `[stance] settling a posture during prep is free and does not spend the live budget (${v121.stanceBudgetAfterPrep} left)`);
-    ok(v121.stanceLiveFirst === true && v121.stanceLiveSecond === false && v121.stanceStuck === 'defend',
-      '[stance] once the fight is live you get exactly ONE change — stance used to be a free toggle, which made it a micro channel rather than a posture');
-    ok(v121.stanceGreyed && v121.stanceOnStillLit,
-      '[stance] the postures you can no longer take grey out, so a spent commitment is visible rather than a surprise mid-fight');
-    ok(v121.stanceAfterEvent === true,
-      '[stance] Field Reassessment hands back a change of stance as well as of orders');
-
+    ok(v121.stanceMany.every(Boolean) && v121.stanceLanded === 'defend' && v121.stanceNoBudgetField,
+      `[stance] seven stance changes in a row all land in a LIVE fight — stance has no budget at all any more, because a spent one could leave a player locked in Defend with no way to reach the enemy HQ`);
+    ok(v121.stanceNeverGreyed && v121.stanceOnStillLit,
+      '[stance] no posture is ever greyed out as spent, and the active one stays lit');
+    ok(v121.sdSpend === true && v121.sdBlockedNew === false && v121.sdStandDown === true
+       && v121.sdNowOff === 'off' && v121.sdBudgetUnchanged,
+      '[orders] with the live change spent, a NEW order is refused but standing the arm DOWN still works and costs nothing — an order must never be able to trap an arm');
     ok(Math.abs(v121.medTrail - v121.trailTarget) < 6 && v121.rifHealed,
       `[medic] hangs back behind the troops it is treating (${v121.medTrail.toFixed(0)}px, target ${v121.trailTarget}) and heals them`);
     ok(v121.medicOnTank === 40 && v121.engOnInf === 10,
@@ -2719,33 +2727,37 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
          check looked for and why it read a working fall-through as a failure. */
       SAVE.evSupply = true; persist();
       G.units.length = 0;
-      const drops0 = (G.drops || []).length, budget0 = G.stanceChanges;
+      const drops0 = (G.drops || []).length, budget0 = G.groupChanges;
       REVENTS.orders.run();
-      o.offEventNoRefund = G.stanceChanges === budget0;
+      o.offEventNoRefund = G.groupChanges === budget0;
       o.offEventDidSomething = (G.drops || []).length > drops0;
 
       // ── ON: the rule binds ──
       SAVE.experimental = true; persist();
       LAUNCH = null; start(); G.prep = 0; G.frozen = false;
       o.onSnapshot = G.experimental;
-      o.onStance = [setStance('defend'), setStance('skirmish')];
+      o.onStance = [setStance('defend'), setStance('skirmish'), setStance('assault')];
       o.onOrders = [setGroupDoctrine('arty', 'battery'), setGroupDoctrine('armor', 'assault')];
       syncStanceUI();
       o.onLabel = document.querySelector('#stancebar .ctrl-lbl').textContent;
       o.onGreyed = document.getElementById('stance-assault').classList.contains('spent');
+      o.onStandDownFree = setGroupDoctrine('arty', 'off');   // always allowed, even with the budget spent
       // prep is still free with the rule on
       LAUNCH = null; start();
       o.onPrepFree = [setStance('defend'), setStance('skirmish'), setStance('assault')];
-      o.onPrepBudget = G.stanceChanges;
+      o.onPrepBudget = G.groupChanges;
 
       // ── the snapshot: flipping the switch mid-fight must not change THIS fight ──
       LAUNCH = null; start(); G.prep = 0; G.frozen = false;
       SAVE.experimental = false; persist();
-      o.snapFirst = setStance('defend'); o.snapSecond = setStance('skirmish');
+      /* The snapshot has to be demonstrated on ORDERS now: stance is free in both modes,
+         so it can no longer tell the two apart. */
       SAVE.experimental = true; persist();
       LAUNCH = null; start(); G.prep = 0; G.frozen = false;
-      SAVE.experimental = false; persist();   // battle began with it ON
-      o.snapStillBudgeted = setStance('defend') === true && setStance('skirmish') === false;
+      SAVE.experimental = false; persist();   // battle BEGAN with it on
+      o.snapFirst = setGroupDoctrine('arty', 'battery');    // spends the single live change
+      o.snapSecond = setGroupDoctrine('armor', 'assault');  // refused: the fight kept the rule
+      o.snapStillBudgeted = o.snapFirst === true && o.snapSecond === false;
       SAVE.experimental = false; persist();
       return o;
     });
@@ -2757,16 +2769,18 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
       `[experimental off] the battlefield UI says nothing about a budget that does not exist (label "${v122.offLabel}")`);
     ok(v122.offEventNoRefund && v122.offEventDidSomething,
       '[experimental off] Field Reassessment hands back nothing (there is nothing being withheld) and falls through to a real supply drop rather than firing a visible no-op');
-    ok(v122.onSnapshot === true && v122.onStance[0] === true && v122.onStance[1] === false,
-      '[experimental on] stance binds to exactly one change once the line is live');
+    ok(v122.onSnapshot === true && v122.onStance.every(Boolean) && !v122.onGreyed,
+      '[experimental on] STANCE is still completely free — the experiment covers orders only, because a stance budget could strand a player in Defend with no way to reach the enemy HQ');
+    ok(v122.onStandDownFree === true,
+      '[experimental on] standing an arm DOWN is free even with the live change spent, so an order can never trap an arm the way the stance budget could trap the army');
     ok(v122.onOrders[0] === true && v122.onOrders[1] === false,
       '[experimental on] standing orders bind to their own single change');
-    ok(v122.onLabel !== 'STANCE' && v122.onGreyed,
-      `[experimental on] the budget is on the row label BEFORE it runs out, so greyed chips are not the first time the rule is explained (label "${v122.onLabel}")`);
-    ok(v122.onPrepFree.every(Boolean) && v122.onPrepBudget === STANCE_FREE_CHANGES_MIRROR,
+    ok(v122.onLabel === 'STANCE',
+      `[experimental on] the stance row carries no budget label in either mode (label "${v122.onLabel}")`);
+    ok(v122.onPrepFree.every(Boolean) && v122.onPrepBudget === GROUP_FREE_CHANGES_MIRROR,
       '[experimental on] prep is still free and does not spend the live budget');
-    ok(v122.snapFirst === true && v122.snapSecond === false && v122.snapStillBudgeted,
-      '[experimental] a battle reads the switch ONCE at start — flipping it from the pause menu cannot change the rules of the fight in progress');
+    ok(v122.snapStillBudgeted,
+      '[experimental] a battle reads the switch ONCE at start — flipping it from the pause menu cannot change the rules of the fight in progress (shown on ORDERS, since stance is now free in both modes)');
 
     // 26b. FIELD SCHOOL — new lessons, and their exemptions must not leak
     const school = await gp.evaluate(() => {
@@ -3348,6 +3362,58 @@ const STANCE_FREE_CHANGES_MIRROR = 1;  // mirrors STANCE_FREE_CHANGES in the gam
       `[outbox] a run that could not be posted is queued in the SAVE and survives a reload, and the queue is capped both ways (an edited save with 200 entries comes back as ${25})`);
     ok(v126.hasBackoff,
       '[outbox] sign-in uses a backoff timestamp, not a one-shot "tried" flag — that flag was set on the FIRST failure and never cleared, so one blip silently stopped every submission for the rest of the session');
+
+    /* ══ 31. v1.27.0 — CONTROL BAR CLEARS THE BOTTOM LANE, CHAT VOTE KEYS ══ */
+    const v127 = await gp.evaluate(async () => {
+      const o = {};
+      SAVE.seenTut = true; SAVE.enlisted = true; SAVE.lvl = 60; SAVE.debugUnlockAll = true; persist();
+      LAUNCH = null; sel.mode = 'skirmish'; start(); G.prep = 0; G.frozen = false;
+      const cv = document.querySelector('canvas').getBoundingClientRect();
+      const bar = document.getElementById('ctrlbar').getBoundingClientRect();
+      const deck = document.getElementById('hbwrap').getBoundingClientRect();
+      /* The bottom lane's centre line in SCREEN space. The control cluster used to stack
+         vertically from bottom:112px, which put its top edge at ~580px against a lane centre
+         of ~574 — so the rear of the bottom lane, where your own units spawn, was behind it. */
+      const bottomLaneY = cv.y + LANE_Y[2] * cv.height;
+      o.laneClearance = Math.round(bar.top - bottomLaneY);
+      o.isRow = getComputedStyle(document.getElementById('ctrlbar')).flexDirection === 'row';
+      o.overlapsDeck = !(bar.bottom <= deck.top || bar.left >= deck.right || bar.right <= deck.left);
+      o.groupsVisible = ['groupbar','stancebar','speedbar']
+        .every(id => document.getElementById(id).getBoundingClientRect().height > 0);
+
+      /* A viewer whose name collides with Object.prototype must still be able to vote.
+         'constructor', 'toString' and 'valueOf' are all legal Twitch names and all read
+         TRUTHY on a plain {} — so the dedupe check treated them as having already voted. */
+      G.cvVotes = { 0: 0, 1: 0, 2: 0 };
+      const before = G.cvVotes[0];
+      for (const name of ['constructor', 'toString', 'valueOf', 'hasOwnProperty'])
+        onChatMsg(name, 'top');
+      o.protoVotesCounted = G.cvVotes[0] - before;
+
+      G.bossMeter = 0;
+      for (const name of ['constructor', 'toString', 'valueOf']) onChatMsg(name, 'boss');
+      o.protoBossCounted = G.bossMeter;
+
+      G.chatPowers = {};
+      for (const name of ['constructor', 'toString', 'valueOf']) onChatMsg(name, 'nuke');
+      o.protoPowerCounted = (G.chatPowers.nuke || {}).n || 0;
+
+      // and an ordinary viewer is unaffected, still deduped
+      G.cvVotes = { 0: 0, 1: 0, 2: 0 }; G.cvVoters = Object.create(null);
+      onChatMsg('rook', 'top'); onChatMsg('rook', 'top');
+      o.normalDeduped = G.cvVotes[0] === 1;
+      return o;
+    });
+    ok(v127.isRow && v127.groupsVisible,
+      '[layout] ORDERS, STANCE and SPEED sit in ONE ROW and all three are still on screen');
+    ok(v127.laneClearance > 20,
+      `[layout] the control cluster clears the bottom lane's centre line by ${v127.laneClearance}px — it used to start ABOVE it, hiding the rear of the bottom lane where your own units spawn`);
+    ok(!v127.overlapsDeck,
+      '[layout] and it does not overlap the deck, which is centre-anchored and can grow wide');
+    ok(v127.protoVotesCounted === 4 && v127.protoBossCounted === 3 && v127.protoPowerCounted === 3,
+      `[chat] viewers named "constructor"/"toString"/"valueOf" can vote (lane ${v127.protoVotesCounted}/4, boss ${v127.protoBossCounted}/3, power ${v127.protoPowerCounted}/3) — on a plain {} those names read truthy through the prototype chain, so those viewers could never vote for anything`);
+    ok(v127.normalDeduped,
+      '[chat] and an ordinary viewer is still deduped — one vote each, as before');
 
     // the boot-guard check above throws ONE error on purpose to prove a mid-battle fault no
     // longer covers a live match; everything else must still be clean

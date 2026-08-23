@@ -8,6 +8,64 @@ engineering detail lives in the patch notes inside the game and in the commit hi
 
 ---
 
+## v1.27.0 — Taking back a bad rule
+
+### ⚑ Stance is free again. Always.
+
+For a few versions, Doctrine Commitment budgeted your **stance**: settle it in prep, carry one
+change into the live fight, and that was it.
+
+It was a mistake, and it had a specific failure mode rather than a vague one. Set Defend,
+spend your change, and you were now holding the centre line **with no way left to reach the
+enemy HQ**. Not "in a difficult position" — in a position the rules would not let you leave.
+You could still lose the fight, but you could no longer win it.
+
+A commitment mechanic is only interesting if every branch can still be played out. One that
+strands you isn't tension, it's a dead end. So stance is now what it always should have been:
+switch posture as often as you like, in every mode, forever.
+
+### 📋 Standing down is free
+
+Commitment still applies to **standing orders**, and it should — an order overrides the stance
+for a whole arm, which makes it a genuine plan rather than a reaction, and committing to it is
+what makes prep matter.
+
+But the same trap was waiting there, so it's now closed from a different direction: **clearing
+an arm back to no standing order never costs anything.** Committing to Bombardment can still
+spend your one live change. Undoing it cannot. The budget is for choosing a *new* order, not
+for escaping one you regret — and that means no order can strand an arm the way the stance
+budget could strand the army.
+
+The popover says so directly when the budget is gone, rather than greying out the one row
+that's always available.
+
+### 🖥 You can see the bottom lane now
+
+The ORDERS / STANCE / SPEED cluster stacked upward from the bottom-left, and the top of that
+stack sat at almost exactly the bottom lane's centre line — so the rear of that lane, the very
+place your own units spawn, was behind the panel.
+
+It's now a single horizontal row, sitting low. It clears the lane by a comfortable margin and
+is still short enough that the deck — which is centre-anchored and grows as you unlock cards —
+can't reach it. Both of those are checked by a test that measures the actual rectangles on
+screen rather than trusting the CSS to mean what it says.
+
+### Fixed: some viewers could never vote
+
+If your Twitch name is **`constructor`**, **`toString`** or **`valueOf`**, the game has been
+quietly ignoring you.
+
+Vote dedupe uses viewer names as keys in a lookup object, and in JavaScript those particular
+names already exist on every plain object — so the "have they voted already?" check found an
+inherited value and decided yes, always. The boss, supply, chaos and chat-power meters all
+skipped those viewers entirely.
+
+It's the same class of bug as the `__proto__` one in the after-action renderer a version ago,
+and it's fixed the same way. Before the fix those viewers scored 0 out of 3 on the boss and
+power meters; after it, 3 out of 3.
+
+---
+
 ## v1.26.0 — Standing orders reset, and the board starts teaching
 
 ### 📋 Every standing order now starts OFF, every battle

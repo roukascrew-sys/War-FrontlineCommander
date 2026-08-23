@@ -383,7 +383,13 @@
   .card.locked .lockov{display:flex;}
   .card.locked .glyph,.card.locked .nm,.card.locked .cost{opacity:0.25;}
   /* stance + speed control cluster */
-  #ctrlbar{position:absolute;bottom:112px;left:14px;display:flex;flex-direction:column;gap:6px;pointer-events:auto;}
+  /* ORDERS / STANCE / SPEED used to stack VERTICALLY from bottom:112px, which put the top
+     of the cluster at roughly the same height as the bottom lane's centre line — so the rear
+     of the bottom lane, exactly where your own units spawn, was behind the panel. Laying the
+     three groups out in ONE ROW drops the cluster's top edge by ~75px and clears the lane.
+     It stays left-anchored and short enough that the centre-anchored deck cannot reach it. */
+  #ctrlbar{position:absolute;bottom:150px;left:14px;display:flex;flex-direction:row;
+    align-items:flex-end;flex-wrap:wrap;gap:6px;pointer-events:auto;max-width:calc(50vw - 30px);}
   .ctrl-grp{display:flex;align-items:center;gap:4px;background:#0b0f18cc;border:1px solid var(--line);border-radius:8px;padding:3px 6px;}
   .ctrl-lbl{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--faint);margin-right:2px;}
   .ctrl-b{min-width:26px;height:24px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);
@@ -414,6 +420,8 @@
   #grouppop .gp-h{font-size:10px;font-weight:800;letter-spacing:1px;margin-bottom:5px;display:flex;
     align-items:baseline;justify-content:space-between;gap:10px;white-space:nowrap;}
   #grouppop .gp-h span{letter-spacing:.3px;font-size:9px;flex:0 0 auto;}
+  #grouppop .gp-o.spent{opacity:.4;filter:grayscale(.6);}
+  #grouppop .gp-o.spent .gp-c{display:none;}
   #grouppop .gp-o{display:block;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);
     border-radius:7px;padding:6px 8px;margin-bottom:4px;cursor:pointer;transition:.1s;}
   #grouppop .gp-o:hover{border-color:var(--gc,var(--gold));}
@@ -1821,7 +1829,10 @@
     .card .dtdot{width:6px;height:6px;}
     .card .actag{font-size:6px;}
 
-    #ctrlbar{top:auto;left:6px;flex-direction:row;flex-wrap:wrap;
+    /* max-width is widened back out here: the desktop rule caps the row at half the
+       viewport so the centre-anchored deck can never be reached, but on a phone the row
+       already wraps and half a narrow screen is too tight to fit even one group. */
+    #ctrlbar{top:auto;left:6px;flex-direction:row;flex-wrap:wrap;max-width:calc(100vw - 12px);
       gap:5px;background:#0b0f18cc;border:1px solid var(--line);border-radius:8px;padding:4px 6px;}
     #ctrlbar .ctrl-grp{gap:3px;}
     #ctrlbar .ctrl-lbl{display:none;}
@@ -1944,7 +1955,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.26.0</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.27.0</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -2002,9 +2013,9 @@
       </div>
       <div class="ctrl-grp" id="stancebar">
         <span class="ctrl-lbl">STANCE</span>
-        <button class="ctrl-b on" id="stance-assault" title="Assault (Z) — push for the enemy HQ. Free during prep; one change once the line is live.">⚔</button>
-        <button class="ctrl-b" id="stance-defend" title="Defend (X) — hold the centre line, shields up (contests the Domination zone). Free during prep; one change once the line is live.">⛨</button>
-        <button class="ctrl-b" id="stance-skirmish" title="Skirmish (C) — poke from range, fall back. Free during prep; one change once the line is live.">➹</button>
+        <button class="ctrl-b on" id="stance-assault" title="Assault (Z) — push for the enemy HQ. Change as often as you like — always free.">⚔</button>
+        <button class="ctrl-b" id="stance-defend" title="Defend (X) — hold the centre line, shields up (contests the Domination zone). Change as often as you like — always free.">⛨</button>
+        <button class="ctrl-b" id="stance-skirmish" title="Skirmish (C) — poke from range, fall back. Change as often as you like — always free.">➹</button>
       </div>
       <div class="ctrl-grp" id="speedbar">
         <span class="ctrl-lbl">SPEED</span>
@@ -3282,7 +3293,6 @@ const GROUP_FREE_CHANGES=1;    // order changes available once the battle is liv
    cost of any kind, which made it a micro channel rather than a posture: cycle to Skirmish
    while they push, back to Assault the second they stop. You now settle on a posture during
    prep — free, as many times as you like — and carry ONE change into the fight. */
-const STANCE_FREE_CHANGES=1;   // stance changes available once the battle is live
 
 /* ═══ 🧪 EXPERIMENTAL MODE ═══════════════════════════════════════════════════════
    Both commitments above are OPT-IN. Measured across six full battles with a player
@@ -3301,8 +3311,8 @@ const STANCE_FREE_CHANGES=1;   // stance changes available once the battle is li
    the rules of a battle already under way. ═══════════════════════════════════════ */
 const EXPERIMENTS=[
   {id:'commit', name:'Doctrine Commitment', glyph:'⚑',
-   blurb:'Your stance and your standing orders are settled during prep — free, as many times as you like — and each carries exactly ONE change into the live fight. Postures you can no longer take grey out. The uncommon Field Reassessment event hands one of each back.',
-   why:'Without it, stance is a free toggle you flick every time the field shifts, which makes it a micro channel rather than a posture. With it, the plan you take in is the plan you fight.'},
+   blurb:'Your STANDING ORDERS are settled during prep — free, as many times as you like — and carry exactly ONE change into the live fight. Standing an arm DOWN is always free, so an order can never trap you. Stance is untouched: switch posture as often as you like. The uncommon Field Reassessment event hands another change back.',
+   why:'An order overrides the stance for a whole arm, so choosing one is a real plan rather than a reaction — and committing to it is what makes prep matter. It deliberately no longer covers STANCE: a spent stance budget could leave you locked in Defend with no way left to reach the enemy HQ, and a commitment that can strand you is a dead end, not tension.'},
 ];
 function experimentalOn(){ return !!SAVE.experimental; }
 /* Battles read the SNAPSHOT, menus read the live switch. G may be null (title screen,
@@ -4167,13 +4177,20 @@ const DIFFS={
        player starts with exactly what they used to have at the moment the fight began. */
 const PREP_MAX=180;        // hard cap, so an idle tab cannot sit frozen forever
 const PREP_GRANT_SECS=10;  // seconds of income granted up front, replacing prep-phase accrual
-const GAME_VERSION='1.26.0';
+const GAME_VERSION='1.27.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.27.0',notes:[
+    '\u26d1 STANCE IS FREE AGAIN \u2014 always, in every mode. It briefly carried a one-change budget under Doctrine Commitment, and that was a mistake with a specific failure: set Defend, spend the change, and you were holding the centre line with NO way left to reach the enemy HQ. A commitment is only interesting if every branch can still win. Switch posture as often as you like.',
+    '\ud83d\udccb STANDING DOWN AN ORDER IS FREE. Committing to Bombardment can still cost you your one live change, but clearing an arm back to no standing order never does \u2014 so an order can no longer trap an arm the way the stance budget could trap the army. The budget is for choosing a NEW order, not for escaping one.',
+    '\ud83d\udda5 The ORDERS / STANCE / SPEED cluster now sits in ONE ROW near the bottom of the screen instead of stacking upward. It used to start at almost exactly the bottom lane\u2019s centre line, hiding the rear of that lane \u2014 the very place your own units spawn. It now clears the lane by a comfortable margin and still cannot reach the deck.',
+    'Field Reassessment now hands back a change of ORDERS only, since stance no longer has anything to hand back.',
+    'Fixed: viewers whose Twitch name is \u201cconstructor\u201d, \u201ctoString\u201d or \u201cvalueOf\u201d could never vote for anything. Those names read as already-voted through JavaScript\u2019s prototype chain, so the boss, drop, chaos and chat-power meters silently ignored them. Same class of bug as the \u201c__proto__\u201d one in the after-action renderer.',
+  ]},
   {v:'1.26.0',notes:[
     '\ud83d\udccb STANDING ORDERS NOW RESET EVERY BATTLE. They used to carry over from your last fight, which meant one choice silently governed every battle afterwards \u2014 and an order OVERRIDES your stance for that whole arm, so a gun battery told to dig in ignored an Assault army entirely. A rule that strong should not be inherited from a decision you made four fights ago and forgot. All three arms start off; set them during prep. Field School lessons that teach an order still arrive with it given.',
     '\ud83c\udf96 AFTER-ACTION REPORTS \u2014 the top three runs in every mode now show HOW they were won: units built and how many, commander powers used, stance, standing orders, CP spent, deployments and damage dealt. Your own top three get the same on the local board, so it works with or without the global one. A board that shows only a number tells you someone is better than you; this tells you what to try.',
@@ -4734,8 +4751,8 @@ const INDOC_FIELD=[
   {id:'commit',doctrine:'bastion',name:'One Plan, One Fight',glyph:'⚑',col:'#ffce5a',
     weather:'clear',diff:'recruit',ecpMul:0.6,startCp:110,experimental:true,
     allow:['rifle','atgm','tank','medic'],enemyAllow:['rifle','tank'],enemyBias:'tank',
-    brief:"This one is about the plan, not the roster. Doctrine Commitment is on for this lesson: during prep you can try every posture as often as you like, and the moment the line goes live you have exactly ONE change of stance in hand. They open with infantry and follow with armour — so the posture that beats the opening is not the posture that beats what comes after it. Spend your change on the second half, not the first.",
-    lesson:"Under Commitment, prep is where the thinking happens. Read what the enemy is BUILDING toward and set the posture for that — your one live change is for the thing you could not have predicted."},
+    brief:"This one is about the plan, not the roster. Doctrine Commitment is on for this lesson: your STANDING ORDERS are free to set during prep, and once the line goes live you have exactly ONE change of orders in hand. Stance stays free the whole way through — switch posture as often as you like. They open with infantry and follow with armour, so the orders that beat the opening are not the orders that beat what comes after it. Spend your change on the second half, not the first. And remember you can always stand an arm DOWN for nothing.",
+    lesson:"Under Commitment, prep is where the thinking happens. Read what the enemy is BUILDING toward and give your arms orders for THAT — your one live change is for the thing you could not have predicted, and standing down is always free if an order stops earning its keep."},
   {id:'support',doctrine:'mass',name:'Two Kinds Of Repair',glyph:'🔧',col:'#ffd08a',
     weather:'overcast',diff:'recruit',ecpMul:0.6,startCp:120,
     allow:['rifle','tank','medic','engineer'],enemyAllow:['rifle','atgm'],enemyBias:'rifle',
@@ -5511,7 +5528,6 @@ function newGame(){
      it, and sending them to Settings first is the friction the opt-in exists to avoid. */
   G.experimental=experimentalOn()||!!(L&&L.experimental);
   G.groupChanges=GROUP_FREE_CHANGES;
-  G.stanceChanges=STANCE_FREE_CHANGES;
   G.enemyStance=null; G.enemyGroups=null; G.enemyFire=null;  // earned by the Gauntlet or by Legendary+
   G.speed=SAVE.speed||1;
   // country flavour — player's chosen nation, enemy gets a different one
@@ -5537,8 +5553,11 @@ function newGame(){
     else G.unlocked[key]=G.techMode?(unitTier(key)===1):true;
   }
   // chat-vote state (streamer Phase 2)
-  G.cvVotes={0:0,1:0,2:0}; G.cvVoters={}; G.cvT=CHATLINK.voteEvery; G.bossMeter=0; G.bossVoters={};
-  G.dropMeter=0; G.dropVoters={}; G.chaosMeter=0; G.chaosVoters={}; // Phase 2 chat command meters
+  G.cvVotes={0:0,1:0,2:0}; G.cvVoters=Object.create(null); G.cvT=CHATLINK.voteEvery; G.bossMeter=0; G.bossVoters=Object.create(null);
+  G.dropMeter=0; G.dropVoters=Object.create(null); G.chaosMeter=0; G.chaosVoters=Object.create(null); // Phase 2 chat command meters
+  /* Every map above is keyed by VIEWER NAME and must have a null prototype: 'constructor',
+     'toString' and 'valueOf' are all legal Twitch names that read truthy on a plain {}, so
+     anyone called that could never cast a vote. See chatPower(). */
   G.chatPowers={}; // Phase 2 big-vote chat powers (nuke / storm / fortify / blitz)
   G.info={grayT:0,tunnelT:0,gaslightT:0,fogT:0,fog:null,ping:null,jumbleT:0}; // 🧠 information-warfare effects
   /* 🤪 BETA CHAOS / MEME MODE — crank everything for maximum clippable mayhem.
@@ -6113,23 +6132,20 @@ const REVENTS={
     explode(u.x,u.y,34,'B',14);
     announce('🏳 DEFECTOR','an enemy '+ (UNITS[u.key]?UNITS[u.key].name:'unit') +' joins us','#5ff0e0');
     if(SAVE.evVoice)say("Well, well. A change of heart on the enemy line. Welcome aboard.",'mock',1); } },
-  /* FIELD REASSESSMENT — the release valve on the one-change-per-battle commitment. Both
-     stance and standing orders are settled in prep and carry a single change into the
-     fight; this hands back one of each. It is deliberately uncommon rather than rare: the
-     commitment has to be the normal experience for it to mean anything, but a fight that
-     turns completely against you should occasionally offer a way back in. */
+  /* FIELD REASSESSMENT — the release valve on the one-change-per-battle commitment.
+     ORDERS only now: stance is unconditionally free, so there is nothing to hand back
+     there. If no arm is even unlocked there is likewise nothing to give, and the event
+     falls through to a supply drop rather than firing a no-op the player reads as broken. */
   orders:{ flag:'evOrders', run(){
     if(!G)return;
     /* 🧪 Only meaningful while the commitment experiment is on — with it off nothing is
        being withheld, so handing a change back is a prize for nothing. Fall through to a
        supply drop instead of firing a no-op event the player will read as broken. */
-    if(!battleExperimental()){ REVENTS.supply.run(); return; }
-    G.stanceChanges=(G.stanceChanges||0)+1;
     const arms=!!(G.groups&&GROUP_KEYS.some(groupUnlocked));
-    if(arms)G.groupChanges=(G.groupChanges||0)+1;
-    announce('📋 FIELD REASSESSMENT',arms?'another change of stance and orders':'another change of stance','#ffce5a');
-    if(SAVE.evVoice)say(pick(["Staff have re-read the ground. You may change your posture once more.","New assessment from the map room — revise your plan if you want to.","Command authorises one more change of doctrine. Use it well."]),'grim',1);
-    try{syncStanceUI();}catch(e){}
+    if(!battleExperimental()||!arms){ REVENTS.supply.run(); return; }
+    G.groupChanges=(G.groupChanges||0)+1;
+    announce('📋 FIELD REASSESSMENT','another change of standing orders','#ffce5a');
+    if(SAVE.evVoice)say(pick(["Staff have re-read the ground. You may revise your orders once more.","New assessment from the map room — change an arm's orders if you want to.","Command authorises one more change of doctrine. Use it well."]),'grim',1);
     try{buildGroupBar();}catch(e){} } },
   golden:{ flag:'gagGolden', run(){
     /* The Golden Drone spawns an enemy DIRECTLY, so it bypassed G.enemyAllowed — the
@@ -8730,13 +8746,13 @@ function onChatMsg(user,text){
     return;
   }
   if(/^boss$/.test(t)){ if(!G.bossVoters[user]){ G.bossVoters[user]=1; G.bossMeter++;
-    if(G.bossMeter>=CHATLINK.bossThreshold){ spawnBoss((Math.random()*3)|0); G.bossMeter=0; G.bossVoters={}; } } return; }
+    if(G.bossMeter>=CHATLINK.bossThreshold){ spawnBoss((Math.random()*3)|0); G.bossMeter=0; G.bossVoters=Object.create(null); } } return; }
   // ── viewers HELP the streamer ──
   if(/^(drop|supply)$/.test(t)){ if(!G.dropVoters[user]){ G.dropVoters[user]=1; G.dropMeter++;
     if(G.dropMeter>=CHATLINK.dropThreshold){ airdrop((Math.random()*3)|0,'B'); announce('📦 CHAT SUPPLY DROP','viewers resupply your line','#3fd07a');
-      chatMsgRaw('FRONTLINE','Chat drops a crate on your line!','#3fd07a'); G.dropMeter=0; G.dropVoters={}; bumpHype(10); } } return; }
+      chatMsgRaw('FRONTLINE','Chat drops a crate on your line!','#3fd07a'); G.dropMeter=0; G.dropVoters=Object.create(null); bumpHype(10); } } return; }
   if(/^(chaos|event|roll)$/.test(t)){ if(!G.chaosVoters[user]){ G.chaosVoters[user]=1; G.chaosMeter++;
-    if(G.chaosMeter>=CHATLINK.chaosThreshold){ announce('🎲 CHAT ROLLS THE DICE','anything can happen','#c9a0ff'); fireRandomEvent(); G.chaosMeter=0; G.chaosVoters={}; } } return; }
+    if(G.chaosMeter>=CHATLINK.chaosThreshold){ announce('🎲 CHAT ROLLS THE DICE','anything can happen','#c9a0ff'); fireRandomEvent(); G.chaosMeter=0; G.chaosVoters=Object.create(null); } } return; }
   if(/^(hype|pog|lets ?go|w)$/.test(t)){ bumpHype(3); return; }
   // ── big-vote CHAT POWERS — many unique chatters must chant the same word ──
   if(/^nuke$/.test(t)){ chatPower(user,'nuke',CHAT_POWERS.nuke,'☢ NUKE',chatNuke); return; }
@@ -8759,12 +8775,18 @@ const CHAT_POWERS={ nuke:50, storm:22, fortify:16, blitz:26 };
 const IW_POWERS={ phantom:10, gaslight:12, fog:12, ping:8, gray:14, tunnel:12, jumble:16, dono:6 };
 function chatPower(user,key,threshold,label,fn){
   if(!G||G.over)return;
-  const p=G.chatPowers[key]||(G.chatPowers[key]={voters:{},n:0});
+  /* Object.create(null), not {}. Twitch names match \w+, so '__proto__' is impossible —
+     but 'constructor', 'toString' and 'valueOf' are all valid usernames and all resolve
+     TRUTHY through the prototype chain of a normal object. A viewer called `constructor`
+     could therefore never vote for anything: the dedupe check saw an inherited function
+     and treated them as having already voted. Same class of bug as the '__proto__' one in
+     the after-action renderer. A null-prototype map has no inherited keys to collide with. */
+  const p=G.chatPowers[key]||(G.chatPowers[key]={voters:Object.create(null),n:0});
   if(p.voters[user])return; p.voters[user]=1; p.n++;
   // progress pings at the quarters so a stream can rally toward it
   const q=Math.floor(p.n/threshold*4);
   if(q>(p.q||0)&&p.n<threshold){ p.q=q; chatMsgRaw('FRONTLINE',label+' charging… '+p.n+'/'+threshold,'#c9a0ff'); }
-  if(p.n>=threshold){ p.n=0; p.q=0; p.voters={}; try{fn();}catch(e){} }
+  if(p.n>=threshold){ p.n=0; p.q=0; p.voters=Object.create(null); try{fn();}catch(e){} }
 }
 // ☢ NUKE — chat glasses the entire field. Everything dies. Maximum clip.
 function chatNuke(){
@@ -8935,7 +8957,7 @@ function chatVoteTick(dt){
       announce('CHAT SENDS THE '+['TOP','MIDDLE','BOTTOM'][bl]+' LANE','+'+n+' enemy','#c9a0ff');
       chatMsgRaw('FRONTLINE','the '+['top','mid','bot'][bl]+' lane vote wins — incoming!','#c9a0ff');
     }
-    G.cvVotes={0:0,1:0,2:0}; G.cvVoters={};
+    G.cvVotes={0:0,1:0,2:0}; G.cvVoters=Object.create(null);
   }
 }
 
@@ -10853,50 +10875,30 @@ function syncAgeUI(){
   tb.querySelector('b').textContent=have+'/'+slots;
   tb.disabled=(have>=slots);
 }
+/* STANCE IS ALWAYS FREE, AND ALWAYS WILL BE.
+   It carried a one-change budget under Experimental Mode, and that was a design mistake
+   with a specific failure: a player who set Defend and spent the change was stuck holding
+   the centre line with NO WAY to ever reach the enemy HQ. A commitment mechanic is only
+   interesting if every branch can still win; this one could strand you in a fight you were
+   no longer able to finish, which is not tension, it is a dead end.
+   The commitment experiment now lives on ORDERS alone, where "off" is always reachable —
+   so no order can strand you either. See setGroupDoctrine(). */
 function setStance(s){
   if(!G||G.over||!STANCES[s])return false;
   if(G.stance===s)return false;
-  /* 🧪 The one-change budget is an EXPERIMENT (see EXPERIMENTS). With it off, stance is
-     the free toggle it has always been and none of the below runs at all.
-
-     Free while the fight has not started. Testing G.prep rather than G.frozen matters:
-     G.frozen is only raised by the first step(), so a stance chosen the instant the battle
-     screen opens would otherwise be billed against the live budget. The tutorial is exempt
-     outright — it runs with no prep phase at all and its whole job is letting you press the
-     buttons to see what they do. */
-  const budgeted=battleExperimental()&&!(G.prep>0||G.tutorial);
-  if(budgeted){
-    if((G.stanceChanges||0)<=0){
-      announce('⚑ POSTURE HOLDS','no change of stance left this battle — set it during prep','#ff5a4a');
-      return false;
-    }
-    G.stanceChanges--;
-  }
   G.stance=s;
-  announce(STANCES[s].glyph+' '+STANCES[s].name.toUpperCase()+' STANCE',
-    budgeted?(G.stanceChanges>0?G.stanceChanges+' change left':'no changes left'):'',STANCES[s].col);
+  announce(STANCES[s].glyph+' '+STANCES[s].name.toUpperCase()+' STANCE','',STANCES[s].col);
   syncStanceUI();
   return true;
 }
 function syncStanceUI(){
-  const budgeted=!!G&&battleExperimental();
-  const spent=budgeted&&!(G.prep>0||G.tutorial)&&(G.stanceChanges||0)<=0;
   for(const s in STANCES){
     const b=document.getElementById('stance-'+s); if(!b)continue;
-    const on=G&&G.stance===s;
-    b.classList.toggle('on',!!on);
-    // everything you can no longer pick reads as spent, so the commitment is visible
-    b.classList.toggle('spent',spent&&!on);
+    b.classList.toggle('on',!!(G&&G.stance===s));
+    b.classList.remove('spent');      // nothing about stance is ever spent any more
   }
-  /* The row label carries the budget. Without it the greyed-out chips are the FIRST time
-     a player learns the rule, which is the wrong moment — they have already spent it. */
   const lbl=document.querySelector('#stancebar .ctrl-lbl');
-  if(lbl){
-    if(!budgeted||!G){ lbl.textContent='STANCE'; lbl.removeAttribute('title'); }
-    else if(G.prep>0||G.tutorial){ lbl.textContent='STANCE · FREE'; lbl.title='Free to change during prep. One change once the line is live.'; }
-    else { const n=Math.max(0,G.stanceChanges||0);
-      lbl.textContent='STANCE · '+(n?n+' LEFT':'SET'); lbl.title=n?n+' change of stance left this battle':'No change of stance left this battle'; }
-  }
+  if(lbl){ lbl.textContent='STANCE'; lbl.title='Switch posture as often as you like — always free.'; }
 }
 
 /* ── GROUP-DOCTRINE UI ─────────────────────────────────────────────────────────
@@ -10946,16 +10948,25 @@ function toggleGroupPop(gk){
       return;
     }
     let h=`<div class="gp-h" style="color:${gd.col}">${gd.glyph} ${gd.name.toUpperCase()} ORDERS<span style="color:var(--faint);font-weight:600">overrides stance</span></div>`;
-    const row=(id,name,desc,cost)=>
-      `<button class="gp-o${mode===id?' on':''}" data-gid="${id}"><div class="gp-n">${name}</div>`+
+    const row=(id,name,desc,cost,locked)=>
+      `<button class="gp-o${mode===id?' on':''}${locked?' spent':''}" data-gid="${id}"><div class="gp-n">${name}</div>`+
       `<div class="gp-d">${desc}</div>${cost?`<div class="gp-c">⚠ ${cost}</div>`:''}</button>`;
-    h+=row('off','✕ No standing order','This arm follows the army stance like everything else.','');
-    for(const o of gd.opts)h+=row(o.id,o.glyph+' '+o.name,escapeHTML(o.desc),escapeHTML(o.cost));
+    /* Standing down is free even with the budget spent, so it is labelled that way. A
+       greyed-out "No standing order" would be the cruellest possible reading of this
+       screen: it is the one row that is ALWAYS available. */
+    const spent=budgeted&&!inPrep&&left<=0;
+    h+=row('off','✕ No standing order',
+      'This arm follows the army stance like everything else.'+
+      (spent&&mode!=='off'?' <b style="color:var(--good)">Standing down is free.</b>':''),'');
+    for(const o of gd.opts){
+      const locked=spent&&o.id!==mode;
+      h+=row(o.id,o.glyph+' '+o.name,escapeHTML(o.desc),escapeHTML(o.cost),locked);
+    }
     if(budgeted)h+=inPrep
       ? `<div class="gp-cd" style="color:var(--good)">Free to change during prep — set your whole plan before you begin.</div>`
       : (left>0
         ? `<div class="gp-cd" style="color:var(--warn)">${left} change${left===1?'':'s'} left this battle.</div>`
-        : `<div class="gp-cd">No changes left — these orders stand for the rest of the fight.</div>`);
+        : `<div class="gp-cd">No changes left — but you can always stand this arm <b>down</b> for free.</div>`);
     pop.innerHTML=h;
     pop.querySelectorAll('.gp-o').forEach(btn=>{
       btn.onclick=()=>{ if(setGroupDoctrine(gk,btn.dataset.gid))render(); };
@@ -10975,16 +10986,24 @@ function setGroupDoctrine(gk,id){
   if(id!=='off'&&!groupOpt(gk,id))return false;
   const cur=(G.groups&&G.groups[gk])||'off';
   if(cur===id)return false;
-  /* 🧪 Same experiment as stance (see EXPERIMENTS). Off, orders change freely.
+  /* 🧪 The commitment experiment now lives HERE alone (see EXPERIMENTS) — stance is
+     unconditionally free, because a spent stance budget could strand a player in Defend
+     with no way left to reach the enemy HQ.
 
      Free while the line is still being set; a real commitment once the shooting starts.
      Tested on G.prep ALONE — G.frozen is only raised by the first simulation tick, so a
      change made in the instant between the battle being created and that tick landing was
-     being charged against the player's one live change. */
+     being charged against the player's one live change.
+
+     STANDING DOWN IS ALWAYS FREE. Going from an active order back to 'off' costs nothing,
+     which is what keeps this a commitment rather than a trap: committing to Bombardment can
+     cost you, but it can never leave you unable to UNDO it and fall back on your stance.
+     The budget is for choosing a NEW order, not for escaping one. */
+  const standDown=(id==='off');
   const inPrep=G.prep>0||G.tutorial||!battleExperimental();
-  if(!inPrep){
+  if(!inPrep&&!standDown){
     if((G.groupChanges||0)<=0){
-      announce('📋 ORDERS STAND','no changes left this battle — set them during prep','#ff5a4a');
+      announce('📋 ORDERS STAND','no changes left this battle — you can still stand this arm DOWN for free','#ff5a4a');
       return false;
     }
     G.groupChanges--;
@@ -10994,7 +11013,7 @@ function setGroupDoctrine(gk,id){
      newGame(). Writing SAVE.groups here is what made them sticky. */
   const gd=GROUP_DOCTRINES[gk], o=groupOpt(gk,id);
   announce(gd.glyph+' '+gd.name.toUpperCase()+(o?' — '+o.name.toUpperCase():' — ORDERS CLEARED'),
-    o?o.desc:'this arm follows the army stance again',gd.col);
+    o?o.desc:'this arm follows the army stance again — standing down is always free',gd.col);
   buildGroupBar();
   return true;
 }
@@ -11766,7 +11785,7 @@ function renderSettings(){
     settingRow('· Crazy Voicelines','Off-the-rails narrator outbursts',`<button id="set-ev-voice" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evVoice)}</button>`)+
     settingRow('· Artillery Barrage','A surprise shelling rakes a lane',`<button id="set-ev-barr" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evBarrage)}</button>`)+
     settingRow('· Defectors','An enemy unit switches sides mid-battle',`<button id="set-ev-def" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evDefector)}</button>`)+
-    settingRow('· Field Reassessment','Staff hand you another change of stance and standing orders mid-battle',`<button id="set-ev-ord" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evOrders)}</button>`)+
+    settingRow('· Field Reassessment','Staff hand you another change of standing orders mid-battle',`<button id="set-ev-ord" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.evOrders)}</button>`)+
     `</div>`+
     `<div style="font-size:13px;font-weight:800;color:var(--cyan);letter-spacing:.5px;margin:6px 2px -2px">😄 FUN &amp; GAGS</div>`+
     settingRow('Unit Chatter','Troops quip when deployed & after kills',`<button id="set-gag-chat" style="background:none;border:none;padding:0;cursor:pointer">${toggle(SAVE.gagChatter)}</button>`)+

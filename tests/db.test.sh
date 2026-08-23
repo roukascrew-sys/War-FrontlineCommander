@@ -91,13 +91,15 @@ a1=$(apply fc_h supabase/migrations/0001_leaderboard.sql && echo 1 || echo 0)
 a2=$(apply fc_h supabase/migrations/0002_aar.sql && echo 1 || echo 0)
 a3=$(apply fc_h supabase/migrations/0003_hardening.sql && echo 1 || echo 0)
 a4=$(apply fc_h supabase/migrations/0004_idempotency.sql && echo 1 || echo 0)
-ok "$([ "$a1$a2$a3$a4" = "1111" ] && echo 1 || echo 0)" "[migrations] all four apply cleanly to a fresh database, in order"
+a5=$(apply fc_h supabase/migrations/0005_clock_timestamp.sql && echo 1 || echo 0)
+ok "$([ "$a1$a2$a3$a4$a5" = "11111" ] && echo 1 || echo 0)" "[migrations] all five apply cleanly to a fresh database, in order"
 
 # applying twice must be a no-op, not an error — a migration you cannot re-run is
 # a migration you cannot safely re-deploy
 r=$(apply fc_h supabase/migrations/0003_hardening.sql && echo 1 || echo 0)
 r2=$(apply fc_h supabase/migrations/0004_idempotency.sql && echo 1 || echo 0)
-ok "$([ "$r$r2" = "11" ] && echo 1 || echo 0)" "[migrations] 0003 and 0004 are idempotent — re-applying them succeeds"
+r3=$(apply fc_h supabase/migrations/0005_clock_timestamp.sql && echo 1 || echo 0)
+ok "$([ "$r$r2$r3" = "111" ] && echo 1 || echo 0)" "[migrations] 0003, 0004 and 0005 are idempotent — re-applying them succeeds"
 
 # Exactly ONE submit_run must exist. 0003 creates a 13-argument version and 0004
 # supersedes it with a 14-argument one; if both survive, a 13-argument call resolves
@@ -157,7 +159,7 @@ rm -f /var/tmp/fc-c*.txt
 
 # ── HIGH-4 · a worse concurrent run must never overwrite a better one ──
 lost=0
-for trial in 1 2 3 4 5 6 7 8; do
+for trial in $(seq 1 20); do
   seed fc_h
   q fc_h "select outcome from public.submit_run('$U','A',2000,20,120,true,200,'veteran','skirmish','combined','1.26.0',null,0)" >/var/tmp/fc-a.txt 2>&1 & pa=$!
   q fc_h "select outcome from public.submit_run('$U','B',1500,15,120,true,150,'veteran','skirmish','combined','1.26.0',null,0)" >/var/tmp/fc-b.txt 2>&1 & pb=$!
@@ -170,7 +172,7 @@ for trial in 1 2 3 4 5 6 7 8; do
   fi
 done
 ok "$([ "$lost" = "0" ] && echo 1 || echo 0)" \
-   "[HIGH-4 fix] across 8 concurrent races the BETTER run always survives and stays one row ($lost losses) — order of arrival no longer decides"
+   "[HIGH-4 fix] across 20 concurrent races the BETTER run always survives and stays one row ($lost losses) — order of arrival no longer decides"
 
 # ── the cooldown uses the DATABASE clock, not the caller's ──
 seed fc_h
@@ -216,6 +218,17 @@ r=$(q fc_h "$INS values ('22222222-2222-2222-2222-222222222222','X',1,1,60,true,
     q fc_h "update public.runs set aar='$big'::jsonb where player_id='22222222-2222-2222-2222-222222222222'")
 ok "$(echo "$r" | grep -qi 'runs_aar_small\|violates' && echo 1 || echo 0)" \
    "[aar] an oversized report is refused by the COLUMN constraint, independently of the Edge Function"
+
+# ── the cooldown must be measured on the WALL clock, not transaction start ──
+# now() is fixed at transaction start and does not advance, so a call that queued on
+# the advisory lock compared itself against a row committed while it waited and saw a
+# NEGATIVE age — rate-limiting itself with the cooldown set to zero. See 0005.
+src=$(q fc_h "select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and proname='submit_run'")
+ok "$(echo "$src" | grep -q 'clock_timestamp' && echo 1 || echo 0)" \
+   "[clock] submit_run reads clock_timestamp(), not now() — now() is TRANSACTION START time and cannot be used to measure a cooldown across a lock wait"
+tsrc=$(q fc_h "select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and proname='touch_updated_at'")
+ok "$(echo "$tsrc" | grep -q 'clock_timestamp' && echo 1 || echo 0)" \
+   "[clock] the updated_at trigger uses the same wall clock, or the check compares against a transaction-start stamp again"
 
 # ── MEDIUM-1 · replay must be a no-op, and only replay ──
 seed fc_h

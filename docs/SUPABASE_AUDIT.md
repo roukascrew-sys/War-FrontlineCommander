@@ -38,6 +38,42 @@ assessed `touch_updated_at()` as unreachable because PostgREST does not expose
 `/rest/v1/rpc/touch_updated_at` by both `anon` and `authenticated`. The migration fixed it
 either way, but the reasoning in my original write-up was wrong.
 
+## ⚠ ACTION REQUIRED — migration 0005 is not yet applied to production
+
+`0003` and `0004` are live. **`0005_clock_timestamp.sql` is not**, and it fixes a real bug
+that `0003` introduced:
+
+```
+trial 5 LOST: stored=150  200-call=rate_limited  150-call=improved
+```
+
+with the cooldown set to **zero**, which should make rate limiting impossible.
+
+`now()` in PostgreSQL is the **transaction start** time and does not advance while the
+transaction runs. The advisory lock from 0003 serialises *execution*, but both transactions
+had already fixed their `now()` before either acquired the lock — so a call that queued on
+the lock compared itself against a row committed while it was waiting, computed a **negative**
+age, and rate-limited itself. On production that means a player submitting twice concurrently
+can have their **better** run refused as "too fast" while the worse one lands: precisely the
+failure HIGH-4 was supposed to have closed.
+
+`0005` switches the comparison, the `updated_at` trigger, and the row's own timestamps to
+`clock_timestamp()`, read *after* the lock is taken. Verified over **100 concurrent races
+across 5 full runs, 0 losses** (it previously failed 1–2 times in 8).
+
+```bash
+supabase db push        # or paste 0005_clock_timestamp.sql into the SQL editor
+```
+
+No Edge Function redeploy is needed — the function signature is unchanged.
+
+> Worth recording how this was found: the failure looked exactly like the harness flakiness
+> I had diagnosed and fixed earlier in the same test, and I nearly wrote it off again. It was
+> not flaky. Printing what each concurrent call actually returned, rather than just counting
+> losses, is what separated the two.
+
+---
+
 ## Remediation status
 
 | Finding | Severity | Status | Proof |
@@ -51,7 +87,7 @@ either way, but the reasoning in my original write-up was wrong.
 | MEDIUM-3 no request size cap | Medium | **FIXED** | Edge Function checks declared *and* actual body length against a 16 KB ceiling |
 | MEDIUM-4 `game_version` unbounded | Medium | **FIXED** | a floor (`1.24.0`), compared numerically; no upper bound, on purpose |
 | MEDIUM-2 identity farming | Medium | **Accepted by design** | no-signup is the product; mitigating needs accounts or edge rate limits |
-| LOW-2 prototype-chain vote keys | Low | **Deferred to Batch 3** | correctness bug, no trust boundary crossed |
+| LOW-2 prototype-chain vote keys | Low | **FIXED** | every viewer-keyed map is now `Object.create(null)`. Proven non-vacuous: with a plain `{}` those viewers score **0/3** on the boss and power meters; after the fix, **3/3** |
 
 All fixes are in `supabase/migrations/0003_hardening.sql`, `0004_idempotency.sql` and the
 rewritten `submit-run`. They are verified by **executing the real migrations against a real

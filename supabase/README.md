@@ -142,10 +142,14 @@ Apply it **before** redeploying the function — the new `submit-run` calls `pub
 and will fail without it.
 
 ```bash
-supabase db push                      # or paste 0003_hardening.sql into the SQL editor
-supabase functions deploy submit-run  # now uses the atomic path
+supabase db push                      # applies 0003, 0004 and 0005
+supabase functions deploy submit-run  # uses the atomic, idempotent path
 node tests/verify-live.js             # confirms the board still works end to end
-./tests/db.test.sh                    # 19 checks against a throwaway local PostgreSQL
+./tests/db.test.sh                    # 28 checks against a throwaway local PostgreSQL
 ```
+
+**0005 is required.** It fixes a cooldown that compared against `now()` — transaction START
+time — which could rate-limit a submission that had merely queued on the advisory lock, and
+in doing so refuse the BETTER of two concurrent runs. See docs/SUPABASE_AUDIT.md.
 
 It is idempotent — re-running it is safe, and that is asserted by the test suite.
