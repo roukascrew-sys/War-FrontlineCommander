@@ -8,6 +8,82 @@ engineering detail lives in the patch notes inside the game and in the commit hi
 
 ---
 
+## v1.28.0 — Three things that were quietly wrong
+
+### 🏆 Evolution and War runs were being filed as Skirmish runs
+
+If you played Evolution or War Mode and wondered why your score never appeared where you
+expected it: it was going onto the **Skirmish** board.
+
+Internally a battle has a *wrapper* (what you chose to play) and a *ruleset* (the win
+condition and clock it runs on). Only Blitz, Survival and Domination have their own ruleset —
+everything else runs on the skirmish one, and the board was recording the ruleset. So
+Evolution, War, Rivals and campaign runs were all being stamped "skirmish".
+
+That hurt in both directions. The board keeps exactly one best run per mode, so an Evolution
+score could be **silently displaced by a skirmish score**. And a Rivals run could take the top
+of the global Skirmish board — a board it had never played on.
+
+Every run now records the mode you actually chose. Rivals, campaign and daily runs get their
+own local bucket and are correctly refused by the global board, which is what the "not a
+ranked mode" line on the results screen was always meant to be telling you.
+
+### 💥 IFVs were shooting AT Teams for zero damage
+
+This is the "occasional errors with damage" you may have noticed, and it was real.
+
+A round counts as *connecting* when it gets within the target's radius plus a few pixels. But
+for a weapon with splash, the damage was then applied purely by distance from where the
+projectile stopped — with no guarantee those two circles overlapped.
+
+An IFV has a splash radius of **6**. An AT Team has a radius of **7**, so a hit registers at up
+to **10px** away. And a projectile moves 26px in a single tick, so where it stops is coarse.
+The result: an IFV would shoot an AT Team, the round would register as a hit, and the AT Team
+would take **nothing**. Measured directly — an IFV sat inside its own range and lost the duel
+having dealt zero damage. Tanks were whiffing for the same reason, just less often.
+
+Now the round always damages what it was aimed at, and splash is a bonus against everything
+*else* nearby — which is what splash was always supposed to be.
+
+### 🛰 Rods from God now actually clears the field
+
+It's the once-per-battle card. It should feel final. Three things stopped it:
+
+- The curtain started at 28% across the map, so **everything that had pushed into your own
+  half was outside the strike entirely** — the enemies actually threatening your HQ, which is
+  the reason you'd press the button at all.
+- Seven impacts at radius 50 left **45px gaps** between craters. Units survived by standing in
+  them.
+- Aircraft that loiter off the lane bands — gunships, interceptors — were never in a crater.
+
+Now: full width, overlapping craters, and aircraft caught on the way down. Measured on a field
+stacked with every enemy unit in the game: **255 to 0**.
+
+### 🎖 Service marks — the recruit remembers
+
+The recruit on the title screen has always hardened with your rank. Rank is just time served,
+though. Now he wears what you actually **did**.
+
+Beat the Glitch Front and he carries a cyan scar that never quite settles. Beat a rival and
+the staff stencil a tally on his helmet. Beat every rival on the board and they put a wreath
+on it.
+
+Each one is earned the moment you earn it and **cashed in when you click him** — he gets a NEW
+badge, and clicking plays a short scene about that beat before the mark appears. One per
+click, oldest first. He's only clickable when he has something to hand over, so he never eats
+a click meant for the menu behind him.
+
+### And the grey boxes are gone
+
+Those faint grey rectangles that appeared behind the recruit and the skull were a film-grain
+layer: a square overlay of white noise in "overlay" blend mode. Over a dark title screen that
+averages out to a flat lighten — a visible box. It read as a rendering fault rather than
+texture, which is the opposite of what texture is for.
+
+While in there: the title's three sections now have hairline rules either side of their
+labels so they read as sections rather than floating captions, and Tutorial moved next to
+Indoctrination so LEARN is no longer a labelled section containing one lonely centred button.
+
 ## v1.27.0 — Taking back a bad rule
 
 ### ⚑ Stance is free again. Always.

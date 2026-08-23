@@ -685,13 +685,14 @@
      so the same markup scales from the 78px title figures to the 46px menu skull. */
   .tf-art{position:relative;font-size:78px;line-height:1;width:1.05em;height:1.15em;}
   .tf-art>*{position:absolute;}
-  /* Film-grain pass over the whole figure — the same technique used in the concept-art mockups,
-     here at a much lighter touch since it has to read at 78px, not poster size. mix-blend-mode
-     lets it read as texture on the gradients underneath rather than a flat grey layer on top. */
-  .tf-art::after{content:'';position:absolute;inset:-4%;z-index:7;pointer-events:none;opacity:.16;
-    mix-blend-mode:overlay;border-radius:inherit;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
-  #title-figs.reduce .tf-art::after,#menu-skull.reduce .tf-art::after{opacity:.08;}
+  /* NO FILM-GRAIN PASS. There was one here: a ::after covering inset:-4% of .tf-art with a
+     white noise texture at mix-blend-mode:overlay. .tf-art has no border-radius, so
+     `border-radius:inherit` gave it square corners, and white noise in overlay mode over a
+     dark title screen averages out to a flat lighten — a visible GREY BOX sitting around
+     each figure. It read as a rendering fault rather than texture. Confirmed by capturing
+     the recruit with the layer on and off: the box appears and disappears with it.
+     The figures keep their depth from gradients, the ambient side glow and the drop shadow,
+     none of which need a rectangle to work. */
 
   /* ── SKULL ───────────────────────────────────────────────────────────── */
   /* Deepened from the original flat bone gradient: a darker ambient-occlusion core, a hotter
@@ -883,6 +884,68 @@
   .tf-art.sway{animation:tfSway 6.5s ease-in-out infinite;transform-origin:50% 92%;}
   @keyframes tfSway{0%,100%{transform:rotate(-1.6deg);}50%{transform:rotate(1.6deg);}}
 
+  /* ── 🎖 SERVICE MARKS on the recruit ─────────────────────────────────────
+     Earned decorations, drawn in the same em-based layered style as the rest of the figure
+     so they scale with it and sit correctly at both the 78px title size and the cutscene
+     portrait. */
+  /* Glitch-touched: a cyan tear across the face that never quite settles. */
+  .rc-wrap .rc-glitch{left:24%;top:34%;width:0.52em;height:0.045em;z-index:6;
+    background:linear-gradient(90deg,transparent,#6affc8,#6affc8,transparent);
+    box-shadow:0 0 0.09em #6affc8cc;opacity:.85;animation:rcGlitch 3.4s steps(1,end) infinite;}
+  .rc-wrap .rc-glitch.b{top:47%;left:30%;width:0.34em;background:linear-gradient(90deg,transparent,#a0f0ff,transparent);
+    animation-delay:-1.7s;opacity:.6;}
+  @keyframes rcGlitch{
+    0%,72%,100%{transform:translateX(0);opacity:.8;}
+    74%{transform:translateX(0.05em);opacity:1;}
+    76%{transform:translateX(-0.04em);opacity:.35;}
+    78%{transform:translateX(0.02em);opacity:.95;}
+  }
+  /* One stencilled tally per rival put down, painted on the helmet. */
+  .rc-wrap .rc-tallies{left:20%;top:11.5%;width:0.62em;height:0.1em;z-index:7;
+    display:flex;gap:0.035em;align-items:flex-end;}
+  .rc-wrap .rc-tallies i{flex:0 0 0.035em;height:0.085em;background:#ffce5a;opacity:.92;
+    box-shadow:0 0.01em 0 #0008;transform:skewX(-12deg);}
+  /* Beat the whole board and the staff put a wreath on the helmet. */
+  .rc-wrap .rc-laurel{left:12%;top:6%;width:0.78em;height:0.30em;z-index:5;border-radius:50% 50% 0 0;
+    border:0.035em solid #ffce5a;border-bottom:none;opacity:.9;
+    box-shadow:0 0 0.14em #ffce5a55,inset 0 0 0.1em #ffce5a33;}
+  /* An unread mark makes him worth clicking. Without this the whole feature is invisible. */
+  /* #title-figs is pointer-events:none so the decorative figures never steal a click from
+     the menu behind them. The recruit re-enables it ONLY while he has a mark to hand over,
+     which is also the only time he does anything. */
+  .tfig.has-new{cursor:pointer;pointer-events:auto;}
+  .tfig.has-new::after{content:'NEW';position:absolute;left:50%;top:-14px;transform:translateX(-50%);
+    font-size:8.5px;font-weight:900;letter-spacing:1.6px;color:#0a0e14;background:var(--gold);
+    padding:2px 7px;border-radius:99px;box-shadow:0 0 12px -2px var(--gold);
+    animation:tfNew 1.9s ease-in-out infinite;}
+  @keyframes tfNew{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(-3px);}}
+  #title-figs.reduce .tfig.has-new::after{animation:none;}
+
+  /* ── the service-mark cutscene ───────────────────────────────────────────
+     Its own overlay rather than the in-battle #cutscene, which letterboxes a LIVE fight and
+     auto-dismisses in 2.6s. A story beat you deliberately clicked on should wait for you. */
+  #storycut{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;
+    gap:min(6vw,60px);background:radial-gradient(ellipse at 50% 45%,#0d1522f2,#050709fa 70%,#030508fd);
+    backdrop-filter:blur(3px);cursor:pointer;padding:24px;}
+  #storycut.show{display:flex;animation:mcIn .5s ease-out;}
+  @keyframes mcIn{from{opacity:0}to{opacity:1}}
+  #storycut .mc-face{flex:0 0 auto;filter:drop-shadow(0 10px 30px #000);}
+  #storycut .mc-face .tf-art{font-size:clamp(90px,13vw,150px);}
+  #storycut .mc-body{max-width:min(520px,52vw);}
+  #storycut .mc-cap{font-size:10px;font-weight:900;letter-spacing:3px;color:var(--mc,#ffce5a);
+    text-transform:uppercase;margin-bottom:6px;}
+  #storycut .mc-title{font-size:clamp(20px,3.2vw,32px);font-weight:900;letter-spacing:1px;
+    color:#fff;line-height:1.1;margin-bottom:14px;text-wrap:balance;
+    text-shadow:0 0 26px var(--mc,#ffce5a);}
+  #storycut .mc-lines p{font-size:clamp(12.5px,1.5vw,15px);color:var(--dim);line-height:1.65;
+    margin-bottom:9px;opacity:0;animation:mcLine .7s ease-out forwards;}
+  @keyframes mcLine{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  #storycut .mc-hint{margin-top:16px;font-size:10.5px;letter-spacing:2px;color:var(--faint);
+    text-transform:uppercase;opacity:0;animation:mcLine .6s ease-out 3.4s forwards;}
+  #storycut .mc-bar{position:absolute;left:0;right:0;height:8vh;background:#04060b;}
+  #storycut .mc-bar.top{top:0;border-bottom:1px solid #ffce5a33;}
+  #storycut .mc-bar.bot{bottom:0;border-top:1px solid #ffce5a33;}
+  @media(max-width:760px){ #storycut{flex-direction:column;gap:18px;} #storycut .mc-body{max-width:90vw;text-align:center;} }
   .tfig .tf-cap{font-size:11px;font-weight:800;letter-spacing:2px;color:var(--gold);text-transform:uppercase;text-shadow:0 2px 6px #000;opacity:.9;}
   .tfig .tf-sub{font-size:8.5px;font-weight:700;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-top:-4px;}
   .tfig-idle{animation:tfIdle 4.6s ease-in-out infinite;}
@@ -996,8 +1059,15 @@
     .title-grp-lbl{margin-bottom:3px;}
   }
   .title-grp{margin-top:14px;}
-  .title-grp-lbl{font-size:10px;font-weight:800;letter-spacing:2px;color:var(--faint);
-    text-align:center;margin-bottom:7px;text-transform:uppercase;}
+  /* A hairline rule either side of the label turns three floating captions into three real
+     SECTIONS. Without it the eye reads one long column of buttons and the grouping does no
+     work; with it the page has structure you can scan rather than read. */
+  .title-grp-lbl{display:flex;align-items:center;gap:12px;
+    font-size:10px;font-weight:800;letter-spacing:2px;color:var(--faint);
+    justify-content:center;margin-bottom:9px;text-transform:uppercase;}
+  .title-grp-lbl::before,.title-grp-lbl::after{content:'';height:1px;flex:0 1 82px;
+    background:linear-gradient(90deg,transparent,var(--line));}
+  .title-grp-lbl::after{background:linear-gradient(90deg,var(--line),transparent);}
   .title-btns2{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;}
   /* daily challenge card on the home screen — today's twist + the live streak, one tap to play */
   .daily-card{display:flex;align-items:center;gap:13px;margin-top:14px;padding:11px 18px;
@@ -1955,7 +2025,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.27.0</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.28.0</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -2060,6 +2130,18 @@
     <div id="clipbanner">★ CLIP THAT! ★</div>
   </div>
   <!-- combat cutscene overlay (random event) -->
+  <!-- 🎖 service-mark cutscene: click the recruit on the title to collect a story beat -->
+  <div id="storycut" aria-hidden="true">
+    <div class="mc-bar top"></div>
+    <div class="mc-face"></div>
+    <div class="mc-body">
+      <div class="mc-cap"></div>
+      <div class="mc-title"></div>
+      <div class="mc-lines"></div>
+      <div class="mc-hint">click to continue</div>
+    </div>
+    <div class="mc-bar bot"></div>
+  </div>
   <div id="cutscene"><div class="cs-bar top"></div><div class="cs-inner"><div class="cs-sub"></div><div class="cs-cap"></div></div><div class="cs-bar bot"></div></div>
   <!-- 🧠 information-warfare overlays (streamer gaslighting) -->
   <div id="iw-tunnel"></div>
@@ -2163,12 +2245,15 @@
           <button class="t-btn chaos" id="t-chaos"><b>🤪 Chaos Mode</b><small>flip it on in Settings</small></button>
           <button class="t-btn rivals" id="t-rivals"><b>⚔ Rivals</b><small>a roster that learns you</small></button>
           <button class="t-btn gauntlet" id="t-gauntlet"><b>◈ The Gauntlet</b><small id="t-gauntlet-sub">one foe that studies you</small></button>
-          <button class="t-btn tut" id="t-tut"><b>🎓 Tutorial</b><small>learn the ropes</small></button>
         </div>
       </div>
+      <!-- Tutorial moved here from More Modes, which left Learn holding ONE centred button —
+           a labelled section for a single item reads as an accident. The two teaching screens
+           belong together anyway, and the rows now balance 4 / 2 / 4. -->
       <div class="title-grp">
         <div class="title-grp-lbl">Learn</div>
         <div class="title-btns2">
+          <button class="t-btn tut" id="t-tut"><b>🎓 Tutorial</b><small>learn the ropes</small></button>
           <button class="t-btn indoc" id="t-indoc"><b>🎓 Indoctrination</b><small id="t-indoc-sub">doctrines &amp; field systems</small></button>
         </div>
       </div>
@@ -2706,6 +2791,12 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
   gagChatter:true,gagGolden:true,gagVictory:true,
   history:[],career:{battles:0,wins:0,losses:0,kills:0,deploys:0,cpSpent:0,strikes:0,units:{},dmgDealt:0,timePlayed:0},
   rivalry:{}, equippedBadge:null, equippedTitle:null, rivals:{}, rivalsBadgeEarned:false,
+  /* 🎖 SERVICE MARKS — story beats written onto the recruit on the title screen. `marks`
+     is what he has EARNED; `marksSeen` is which of those he has been shown collecting.
+     Two lists rather than one because the earning and the telling happen at different
+     moments: you beat a rival mid-session, and you meet the man wearing that rival's
+     mark the next time you look at him. */
+  marks:[], marksSeen:[],
   /* ── the two hidden rivals. Kept as top-level flags rather than nested inside
      SAVE.rivals so sanitizeSave() validates them, and so clearing the roster for a
      prestige run can never accidentally revoke an unlock the player earned. ── */
@@ -4072,9 +4163,36 @@ function newRunId(){
   }catch(e){}
   return null;   // no usable randomness: send nothing rather than a guessable id
 }
+/* ── WHICH BOARD BUCKET A RUN BELONGS TO ──────────────────────────────────────
+   G.mode is the underlying RULESET — the win condition and clock the simulation runs
+   on — and newGame() collapses it to 'skirmish' for anything that is not blitz,
+   survival or domination. So Evolution, War Mode, Rivals, campaign missions and
+   dailies were ALL being filed as skirmish runs.
+
+   Two things went wrong because of that. Evolution and War scores never reached their
+   own board at all, and since the board keeps exactly one best run per mode, an
+   Evolution run could be silently displaced by a skirmish one. And in the other
+   direction, a campaign or Rivals run could take the top of the Skirmish board — a
+   board it never played on.
+
+   The bucket is the WRAPPER: what the player chose to play. Anything that is not a
+   ranked mode gets its own local bucket and is refused by the global board, which is
+   what the "not a ranked mode" message on the results screen was always meant to say. */
+function boardMode(g){
+  if(!g)return 'skirmish';
+  if(LB_MODES.indexOf(g.kind)>=0)return g.kind;
+  return g.kind||g.mode||'skirmish';
+}
+/* Display names for buckets MODES does not carry — MODES is the mode PICKER, so it has
+   no entry for War, Rivals, campaign or the daily. */
+const BOARD_MODE_NAMES={war:'War Mode',rival:'Rivals',campaign:'Campaign',daily:'Daily Challenge',
+  gauntlet:'The Gauntlet',secret:'The Glitch Front',tutorial:'Tutorial',indoc:'Indoctrination'};
+function boardModeName(m){
+  return (MODES[m]&&MODES[m].name)||BOARD_MODE_NAMES[m]||m;
+}
 function boardEntry(g,won,score){
   return { ts:Date.now(), score:Math.round(score||0), rated:ratedScore(score,g.diff),
-    mode:g.mode, kind:g.kind, diff:g.diff, doc:g.doc, won:!!won,
+    mode:boardMode(g), kind:g.kind, diff:g.diff, doc:g.doc, won:!!won,
     kills:g.kills|0, dur:Math.round(g.t||0),
     /* Carried on the local row too, so the after-action report works with no backend at
        all — and so your own top three read the same way as the global ones. */
@@ -4130,7 +4248,7 @@ function beatTodayRecord(g,won,score){
   else if(g.kind==='secret')beatTodayAdd('secret','The Glitch Front','☢',score);
   else if(g.kind==='rival'&&g.general)beatTodayAdd('rival-'+g.general.name,'Rival · '+g.general.name,'⚔',score);
   else if(g.kind==='war')beatTodayAdd('war-'+(g.warName||'node'),'War Mode · '+(g.warName||'node'),'🗺',score);
-  else beatTodayAdd('mode-'+g.mode,(MODES[g.mode]?MODES[g.mode].name:g.mode)+' win','🏅',score);
+  else { const bm=boardMode(g); beatTodayAdd('mode-'+bm,boardModeName(bm)+' win','🏅',score); }
 }
 function rivalBiasFor(name){ // their own signature weapon the first time; a counter to your last loadout after that
   const gen=GENERALS.find(g=>g.name===name);
@@ -4177,13 +4295,20 @@ const DIFFS={
        player starts with exactly what they used to have at the moment the fight began. */
 const PREP_MAX=180;        // hard cap, so an idle tab cannot sit frozen forever
 const PREP_GRANT_SECS=10;  // seconds of income granted up front, replacing prep-phase accrual
-const GAME_VERSION='1.27.0';
+const GAME_VERSION='1.28.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.28.0',notes:[
+    '\ud83c\udfc6 EVOLUTION AND WAR RUNS FINALLY REACH THEIR OWN BOARDS. Both were being filed as SKIRMISH runs \u2014 the board keeps one best run per mode, so an Evolution score could be silently displaced by a skirmish one. Rivals runs were doing the reverse: posting to the global Skirmish board, a board they never played on. Every mode now records the wrapper you chose, not the underlying ruleset.',
+    '\ud83d\udca5 SPLASH WEAPONS NOW ALWAYS DAMAGE WHAT THEY AIMED AT. A round counts as connecting at the target\u2019s radius +3px, but damage was applied purely by splash radius from where the projectile stopped \u2014 so an IFV (splash 6) shooting an AT Team (radius 7) frequently dealt ZERO and lost a fight it should win. Tanks were whiffing for the same reason. Direct hit first, splash to neighbours second.',
+    '\ud83d\udef0 RODS FROM GOD ACTUALLY CLEARS THE FIELD. It started its curtain at 28% of the map, so everything that had pushed into YOUR half \u2014 the reason you would press it \u2014 was outside the strike entirely; craters left 45px gaps; and aircraft that loiter off the lane bands were never hit. Now full width, overlapping craters, and aircraft caught on the way down. Measured: 255 enemies to 0.',
+    '\ud83c\udf96 SERVICE MARKS. Beat the Glitch Front or a rival and the recruit on the title screen wears it \u2014 a glitch scar, a stencilled tally per rival, a gold wreath for the whole board. Click him when he has something new and he tells you about it.',
+    'Removed the grey box behind the recruit and the skull: a film-grain layer with square corners and an overlay blend mode, which over a dark title screen averaged out to a flat lighten. The title\u2019s three sections now have rules either side of their labels, and Tutorial moved next to Indoctrination so LEARN is no longer one lonely centred button.',
+  ]},
   {v:'1.27.0',notes:[
     '\u26d1 STANCE IS FREE AGAIN \u2014 always, in every mode. It briefly carried a one-change budget under Doctrine Commitment, and that was a mistake with a specific failure: set Defend, spend the change, and you were holding the centre line with NO way left to reach the enemy HQ. A commitment is only interesting if every branch can still win. Switch posture as often as you like.',
     '\ud83d\udccb STANDING DOWN AN ORDER IS FREE. Committing to Bombardment can still cost you your one live change, but clearing an arm back to no standing order never does \u2014 so an order can no longer trap an arm the way the stance budget could trap the army. The budget is for choosing a NEW order, not for escaping one.',
@@ -5814,21 +5939,40 @@ function tryRods(){
   if(!strikeReady('rods'))return false;
   if(G.rodsUsed)return false;              // once per battle
   G.rodsUsed=true; G.strikeCds.rods=9999;  // spent — the card greys out for the rest of the fight
+  /* THIS IS THE ONCE-PER-BATTLE CARD. It has to actually clear the field, and it did not:
+       · the curtain started at 0.28W, so every enemy that had pushed into YOUR half — the
+         ones actually threatening your HQ, the reason you would press this — was outside it
+         entirely and took nothing;
+       · 7 impacts across 0.68W at radius 50 left ~45px GAPS between craters, so units could
+         and did survive by standing between them;
+       · 105 damage as `ap` is 63 against infantry (ap is the WEAKEST type vs inf), which a
+         healthy unit could walk away from.
+     Now: the full width from just outside your own HQ to theirs, craters that overlap, and
+     enough damage that even the sturdiest thing on the field dies through the worst
+     multiplier. Verified by clearing a field stacked with every enemy unit in the game. */
   const sup=(G.ages?AGES[G.age].sup:1);
-  const rad=50*Math.sqrt(sup), dmg=105*sup;
-  const perLane=7;
+  const rad=78*Math.sqrt(sup), dmg=340*sup;
+  const perLane=11;
   for(let ln=0;ln<3;ln++){
     for(let i=0;i<perLane;i++){
       // stagger lanes slightly so it reads as a rolling curtain down the whole map, not one flash
       const delay=i*90+ln*40+rnd(0,50);
       setTimeout(()=>{ if(!G||G.over)return;
         const ty=G.laneY[ln]*H;
-        const ix=W*0.28+(W*0.68)*(i/(perLane-1))+rnd(-18,18), iy=ty+rnd(-18,18);
+        /* Span 0.06W → 0.98W. The jitter is deliberately small relative to the crater
+           radius: a big scatter would re-open the gaps this spacing exists to close. */
+        const ix=W*0.06+(W*0.92)*(i/(perLane-1))+rnd(-9,9), iy=ty+rnd(-12,12);
         // white-hot vertical streak in, then the impact
         for(let p=0;p<4;p++)G.parts.push({x:ix+rnd(-3,3),y:iy-260,vx:rnd(-6,6),vy:900,life:0.16,age:0,col:'#cfe8ff',sz:3.2});
         explode(ix,iy,rad,'B',40); G.flash=Math.max(G.flash||0,0.30);
         try{SND.boom(true);}catch(e){}
-        for(const u of G.units){ if(u.side==='R'&&u.alive&&dist(u.x,u.y,ix,iy)<rad){ damage(u,dmg,{side:'B',dmgType:'ap'}); } }
+        /* Aircraft are caught on HORIZONTAL proximity alone. A gunship loiters mid-field and
+           an interceptor flies a wide patrol, so neither sits in a lane band — a circular
+           crater centred on the lane missed them vertically every time, and "ALL THREE
+           LANES" quietly meant "all three lanes, on the ground". The rod passes through
+           their altitude on the way down. */
+        const caught=o=>o.flies?Math.abs(o.x-ix)<rad:dist(o.x,o.y,ix,iy)<rad;
+        for(const u of G.units){ if(u.side==='R'&&u.alive&&caught(u)){ damage(u,dmg,{side:'B',dmgType:'ap'}); } }
         if(G.spawners)for(const s of G.spawners){ if(s.side==='R'&&s.alive&&dist(s.x,s.y,ix,iy)<rad){ damage(s,dmg,{side:'B',dmgType:'ap'}); } }
         G.shake=Math.max(G.shake,SAVE.reduceMotion?5:15);
       },delay);
@@ -7344,10 +7488,26 @@ function updateProjs(dt){
     else if(p.age>=p.life){ hit=true; }
     if(hit){
       p.dead=true;
+      /* THE ROUND THAT CONNECTS ALWAYS HURTS WHAT IT WAS AIMED AT.
+         This used to resolve a splash weapon purely by radius: every unit within
+         p.splash of where the projectile stopped took damage, INCLUDING the target,
+         which meant the target often took none at all.
+
+         A round counts as connecting at `p.tgt.r + 3` px from the target's centre, and a
+         projectile advances 520*dt — 26px in a single 0.05s tick — so where it stops is
+         coarse. An IFV has splash 6 and an AT Team has r 7, so the hit fired at up to 10px
+         while the damage circle only reached 6: the IFV shot the AT team and dealt NOTHING,
+         intermittently, depending on where the tick happened to land. Measured: an IFV lost
+         a duel to an AT team inside its own range having done 0 damage.
+
+         Direct hit first, then splash to everyone ELSE nearby. Splash is a bonus against
+         neighbours, never the mechanism by which a weapon hits the thing it aimed at. */
+      const direct=(p.tgt&&p.tgt.alive)?p.tgt:null;
+      if(direct)damage(direct,p.dmg,p.src);
       if(p.splash>0){ explode(p.x,p.y,p.splash,p.side,10);
-        for(const o of G.units)if(o.alive&&o.side!==p.side&&dist(o.x,o.y,p.x,p.y)<p.splash)damage(o,p.dmg*(o===p.tgt?1:0.6),p.src);
-        if(G.spawners)for(const s of G.spawners)if(s.alive&&s.side!==p.side&&dist(s.x,s.y,p.x,p.y)<p.splash)damage(s,p.dmg*(s===p.tgt?1:0.6),p.src);
-      } else if(p.tgt&&p.tgt.alive){ damage(p.tgt,p.dmg,p.src); }
+        for(const o of G.units)if(o!==direct&&o.alive&&o.side!==p.side&&dist(o.x,o.y,p.x,p.y)<p.splash)damage(o,p.dmg*0.6,p.src);
+        if(G.spawners)for(const s of G.spawners)if(s!==direct&&s.alive&&s.side!==p.side&&dist(s.x,s.y,p.x,p.y)<p.splash)damage(s,p.dmg*0.6,p.src);
+      }
     }
   }
   G.projs=G.projs.filter(p=>!p.dead);
@@ -12134,7 +12294,7 @@ function renderLeaderboard(tab){
       board being whatever anyone types into a console. It is still a browser game, so treat the top of
       the board as entertainment rather than as a record.
       <button class="lb-leave" id="lb-leave">Turn off &amp; stop submitting</button></div>`;
-    h+=`<div class="lb-modes">${LB_MODES.map(m=>`<button class="man-tab${m===lbGlobalMode?' on':''}" data-lbm="${m}">${escapeHTML(MODES[m]?MODES[m].name:m)}</button>`).join('')}</div>`;
+    h+=`<div class="lb-modes">${LB_MODES.map(m=>`<button class="man-tab${m===lbGlobalMode?' on':''}" data-lbm="${m}">${escapeHTML(boardModeName(m))}</button>`).join('')}</div>`;
     h+=`<div id="lb-global-rows"><p style="color:var(--dim)">Loading the board…</p></div>`;
     el.innerHTML=h;
 
@@ -12150,7 +12310,7 @@ function renderLeaderboard(tab){
     LEADERBOARD_BACKEND.top(mode,25).then(list=>{
       if(lbGlobalMode!==mode)return;                  // the player switched tabs mid-flight
       if(!list||!list.length){
-        rows.innerHTML=`<p style="color:var(--dim)">Nobody has posted a ${escapeHTML(MODES[mode]?MODES[mode].name:mode)} run yet. Be first.</p>`;
+        rows.innerHTML=`<p style="color:var(--dim)">Nobody has posted a ${escapeHTML(boardModeName(mode))} run yet. Be first.</p>`;
         return;
       }
       let r='';
@@ -12201,7 +12361,7 @@ function renderLeaderboard(tab){
         const when=new Date(e.ts);
         h+=`<div class="lb-row${i<3?' top':''}">`+
           `<span class="lb-rank">#${i+1}</span>`+
-          `<span class="lb-main"><b>${escapeHTML(MODES[e.mode]?MODES[e.mode].name:e.mode)}</b> · `+
+          `<span class="lb-main"><b>${escapeHTML(boardModeName(e.mode))}</b> · `+
             `<span style="color:${doc.col||'var(--dim)'}">${escapeHTML(doc.name||e.doc)}</span>`+
             `<span class="lb-meta">${e.won?'✔ Win':'✘ Loss'} · <span style="color:${d.col||'var(--faint)'}">${escapeHTML(d.name||e.diff)}</span>`+
             ` · ${e.kills} kills · ${Math.floor(e.dur/60)}:${String(e.dur%60).padStart(2,'0')}`+
@@ -13375,6 +13535,11 @@ function skullMarkup(menace){
 // drops, stubble comes in, he picks up a scar and eventually a cigar, and he breathes throughout.
 function recruitMarkup(tier){
   const scar=tier>=2, cigar=tier>=3, stubble=tier>=2;
+  /* 🎖 SERVICE MARKS sit ON TOP of the rank tiers and are earned, not accrued: a glitch-scar
+     from the front that isn't there, one stencilled tally per rival put down, and a gold
+     helmet wreath once the whole board has lost to you. */
+  const glitch=hasMark('glitch'), laurel=hasMark('laurel');
+  const tallies=Math.min(8,rivalMarkCount());
   const browAng=[8,4,-2,-7,-10][tier];      // friendly → hardened glare
   const mouthW=[0.19,0.17,0.15,0.14,0.16][tier];
   return `<div class="tf-art rc-wrap breathe">`
@@ -13390,8 +13555,119 @@ function recruitMarkup(tier){
     + `<div class="rc-helm"></div><div class="rc-helmbrim"></div><div class="rc-strap"></div><div class="rc-buckle"></div>`
     + (scar?`<div class="tf-scar"></div>`:'')
     + (cigar?`<div class="tf-cigar"></div><div class="tf-smoke"></div><div class="tf-smoke s2"></div><div class="tf-smoke s3"></div>`:'')
+    + (glitch?`<div class="rc-glitch"></div><div class="rc-glitch b"></div>`:'')
+    + (laurel?`<div class="rc-laurel"></div>`:'')
+    + (tallies?`<div class="rc-tallies">${'<i></i>'.repeat(tallies)}</div>`:'')
     + `</div>`;
 }
+/* ═══════════════════════════════════════════════════════════════════════════
+   🎖 SERVICE MARKS — the recruit's story, worn on his face and helmet.
+
+   Rank already hardens him (titleHardenTier), but rank is just time served. These are
+   the things he actually DID: the front nobody believes happened, and every rival he
+   put down. Each one is granted the moment it is earned and CASHED IN the next time
+   the player clicks him, which is when the cutscene plays and the mark appears.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function markList(){ return Array.isArray(SAVE.marks)?SAVE.marks:(SAVE.marks=[]); }
+function markSeen(){ return Array.isArray(SAVE.marksSeen)?SAVE.marksSeen:(SAVE.marksSeen=[]); }
+function hasMark(id){ return markList().indexOf(id)>=0; }
+function grantMark(id){ const m=markList(); if(m.indexOf(id)<0){ m.push(id); persist(); } }
+
+/* Derive every mark the save has earned. Called on the title screen and after a battle, so
+   a player who beat a rival in an older build still collects the mark retroactively rather
+   than being told they missed it. */
+function syncMarks(){
+  if(SAVE.secretDone)grantMark('glitch');
+  if(SAVE.rivals)for(const g of GENERALS)
+    if(SAVE.rivals[g.name]&&SAVE.rivals[g.name].defeated)grantMark('rival:'+g.name);
+  if(SAVE.glitchKingDefeated)grantMark('rival:⌬ THE GLITCH KING');
+  if(SAVE.umbraDefeated)grantMark('rival:⬤ UMBRA "The Long Dark"');
+  if(SAVE.rivalsBadgeEarned)grantMark('laurel');
+}
+function rivalMarkCount(){ return markList().filter(m=>m.indexOf('rival:')===0).length; }
+function pendingMark(){ const seen=markSeen(); return markList().find(m=>seen.indexOf(m)<0)||null; }
+
+/* What each mark says when it is earned. The rival scenes are generated from the rival's own
+   name so a new general needs no new copy — but the two hidden ones get written lines,
+   because "you beat the thing that was editing your interface" deserves better than a
+   template. */
+const MARK_SCENES={
+  glitch:{ title:'THE FRONT THAT ISN\'T THERE', col:'#6affc8',
+    lines:["You went somewhere the map does not admit exists.",
+           "Something in there looked back, and it knew your name.",
+           "You came out. Not everyone does. Not everyone did."],
+    caption:'GLITCH-TOUCHED' },
+  laurel:{ title:'THE WHOLE ROSTER', col:'#ffce5a',
+    lines:["Every general who ever had your measure has been beaten.",
+           "There is nobody left on that board who has not lost to you.",
+           "They will find someone new. They always do."],
+    caption:'CHAMPION OF THE FRONT' },
+  'rival:⌬ THE GLITCH KING':{ title:'THE KING IN THE CODE', col:'#c9a0ff',
+    lines:["He rewrote your cooldowns and lied to your eyes.",
+           "You beat him anyway, playing a game he was editing as you played it.",
+           "He left something behind. Press Y."],
+    caption:'ROLLBACK AUTHORISED' },
+  'rival:⬤ UMBRA "The Long Dark"':{ title:'THE LONG DARK', col:'#8f7fd0',
+    lines:["Nothing you could see was ever the thing that was killing you.",
+           "You learned to fight the shape of an absence, and you won.",
+           "Now the dark answers to you as well."],
+    caption:'THE DARK ANSWERS' },
+};
+function markScene(id){
+  if(MARK_SCENES[id])return MARK_SCENES[id];
+  const name=id.indexOf('rival:')===0?id.slice(6):id;
+  const n=rivalMarkCount();
+  return { title:'ONE MORE OFF THE BOARD', col:'#ff9f40',
+    lines:[name.toUpperCase()+' does not get a rematch.',
+           "The staff stencil another mark on your helmet without being asked.",
+           n>=2?("That is "+n+" of them now. Somebody is keeping count."):"The first of them. There will be others."],
+    caption:'RIVAL DOWN' };
+}
+
+/* The overlay itself. Deliberately NOT the in-battle #cutscene: that one is a letterbox over
+   a live fight and auto-dismisses in 2.6s, which is exactly wrong for a story beat you chose
+   to look at. This one waits for a click. Respects the same evCutscene switch — a player who
+   turned cutscenes off still gets the MARK, just not the scene. */
+let _markCutOpen=false;
+function playMarkCutscene(id,after){
+  const el=document.getElementById('storycut');
+  const sc=markScene(id);
+  if(!el||!SAVE.evCutscene){ if(after)after(); return; }
+  _markCutOpen=true;
+  el.style.setProperty('--mc',sc.col);
+  el.querySelector('.mc-title').textContent=sc.title;
+  el.querySelector('.mc-cap').textContent=sc.caption;
+  const body=el.querySelector('.mc-lines');
+  body.innerHTML=sc.lines.map((l,i)=>`<p style="animation-delay:${0.45+i*0.85}s">${escapeHTML(l)}</p>`).join('');
+  /* The portrait shows him WITH the new mark already on — the point of the scene is the
+     change, so the change has to be visible while you are being told about it. */
+  el.querySelector('.mc-face').innerHTML=recruitMarkup(titleHardenTier());
+  el.classList.add('show');
+  try{SND.combo(4);}catch(e){}
+  const close=()=>{ el.classList.remove('show'); el.onclick=null; _markCutOpen=false; if(after)after(); };
+  el.onclick=close;
+  clearTimeout(el._t); el._t=setTimeout(close,11000);
+}
+/* Click the recruit → collect the oldest mark he has not been shown collecting. */
+function recruitClicked(){
+  if(_markCutOpen)return;
+  syncMarks();
+  const id=pendingMark();
+  if(!id){
+    // nothing pending: a small acknowledgement rather than a dead click
+    const n=rivalMarkCount();
+    announceTitle(n?`${n} rival${n===1?'':'s'} down`:'Nothing to report, Commander');
+    return;
+  }
+  markSeen().push(id); persist();
+  playMarkCutscene(id,()=>{ renderTitleFigures(); });
+}
+function announceTitle(msg){
+  const cap=document.querySelector('#tfig-recruit .tf-cap'); if(!cap)return;
+  const old=cap.textContent; cap.textContent=msg;
+  clearTimeout(announceTitle._t); announceTitle._t=setTimeout(()=>{ cap.textContent=old; },1800);
+}
+
 // the small skull tucked under the skirmish-menu difficulty picker (replaces the old diff "gunfire")
 function renderMenuSkull(){
   const host=document.getElementById('menu-skull'); if(!host)return;
@@ -13409,9 +13685,19 @@ function renderTitleFigures(){
   figs.classList.toggle('reduce',!!SAVE.reduceMotion);
   const tier=titleHardenTier();
   const recCap  =['RAW RECRUIT','BLOODED','HARDENED','GRIZZLED','WAR LEGEND'];
-  // recruit (YOU) — hardens with your Commander Rank
+  // recruit (YOU) — hardens with your Commander Rank, and wears what you have DONE
+  syncMarks();
+  const n=rivalMarkCount();
+  const sub=hasMark('laurel')?'Champion'
+    : n?`Rank ${SAVE.lvl} · ${n} rival${n===1?'':'s'} down`
+       :`Rank ${SAVE.lvl}`;
   rec.innerHTML = recruitMarkup(tier)
-    + `<div class="tf-cap">${recCap[tier]}</div><div class="tf-sub">Rank ${SAVE.lvl}</div>`;
+    + `<div class="tf-cap">${recCap[tier]}</div><div class="tf-sub">${sub}</div>`;
+  /* Only clickable when there is something to collect. A figure that responds to a click
+     sometimes and not others is worse than one that never does, so the NEW badge is the
+     thing that makes it clickable and it appears and disappears together with it. */
+  rec.classList.toggle('has-new',!!pendingMark());
+  rec.onclick=recruitClicked;
   // skull (THE ENEMY) — by chosen difficulty
   const d=DIFFS[sel.diff]||DIFFS.veteran, m=diffMenace();
   sk.innerHTML = skullMarkup(m) + `<div class="tf-cap" style="color:${d.col}">${d.name}</div><div class="tf-sub">${SKULL_CAPS[m]}</div>`;

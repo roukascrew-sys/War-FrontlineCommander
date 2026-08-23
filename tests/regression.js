@@ -3415,6 +3415,104 @@ const GROUP_FREE_CHANGES_MIRROR = 1;   // mirrors GROUP_FREE_CHANGES in the game
     ok(v127.normalDeduped,
       '[chat] and an ordinary viewer is still deduped — one vote each, as before');
 
+    /* ══ 32. v1.28.0 — BOARD BUCKETS, SPLASH, RODS, SERVICE MARKS ══ */
+    const v128 = await gp.evaluate(async () => {
+      const o = {};
+      SAVE.seenTut = true; SAVE.enlisted = true; SAVE.lvl = 60; SAVE.debugUnlockAll = true;
+      SAVE.evCutscene = true; persist();
+
+      /* Every wrapper must land in its OWN board bucket. G.mode is the RULESET and is
+         'skirmish' for evolution, war, rivals and campaign alike, so recording it filed an
+         Evolution run as a Skirmish one — where a skirmish run could displace it, the board
+         keeping one best per mode. */
+      const bucket = (launch, mode) => { LAUNCH = launch; if (mode) sel.mode = mode; start(); return boardMode(G); };
+      o.buckets = {
+        skirmish:   bucket(null, 'skirmish'),
+        evolution:  bucket(null, 'evolution'),
+        blitz:      bucket(null, 'blitz'),
+        survival:   bucket(null, 'survival'),
+        domination: bucket(null, 'domination'),
+        war:        bucket({ type: 'war', warName: 'F', diff: 'veteran', weather: 'clear' }),
+        rival:      bucket({ type: 'rival', rival: 'X', diff: 'elite', weather: 'clear' }),
+      };
+      o.rankedFlags = Object.entries(o.buckets).map(([k, v]) => [k, LB_MODES.indexOf(v) >= 0]);
+
+      /* A splash weapon must always hurt what it AIMED at. It used to resolve purely by
+         radius from where the round stopped: an IFV has splash 6 and an AT Team r 7, and a
+         hit fires at r+3 = 10px, so the IFV shot the AT team and dealt NOTHING. */
+      const duel = (atk) => {
+        LAUNCH = null; sel.mode = 'skirmish'; start();
+        G.prep = 0; G.frozen = false; G.aiHold = true; G.units.length = 0;
+        spawn('B', atk, 1, 400); spawn('R', 'atgm', 1, 470);
+        const a = G.units[0], d = G.units[1], hp0 = d.hp;
+        for (let i = 0; i < 400 && d.alive; i++) step(0.05);
+        return { dealt: Math.round(hp0 - d.hp), killed: !d.alive, survived: a.alive };
+      };
+      o.ifv = duel('ifv');
+      o.tank = duel('tank');
+
+      /* RODS is the once-per-battle card and has to clear the field. It used to start at
+         0.28W (so anything that had pushed into YOUR half was outside it entirely), leave
+         ~45px gaps between craters, and miss aircraft that do not sit in a lane band. */
+      LAUNCH = null; sel.mode = 'skirmish'; start();
+      G.prep = 0; G.frozen = false; G.aiHold = true; G.units.length = 0;
+      const SECRET = ['voidwarden', 'wraith', 'nullifier', 'effigy', 'swarm'];
+      const roster = Object.keys(UNITS).filter(k => SECRET.indexOf(k) < 0);
+      for (const k of roster) for (let ln = 0; ln < 3; ln++)
+        for (const x of [60, 300, 620, 940, 1210]) spawn('R', k, ln, x);
+      o.rodsBefore = G.units.filter(u => u.side === 'R' && u.alive).length;
+      G.strikeCds.rods = 0; G.rodsUsed = false;
+      tryRods();
+      await new Promise(r => setTimeout(r, 2600));
+      for (let i = 0; i < 20; i++) step(0.05);
+      o.rodsAfter = G.units.filter(u => u.side === 'R' && u.alive).length;
+      o.rodsDeepHalf = G.units.filter(u => u.side === 'R' && u.alive && u.x < 300).length;
+
+      /* Service marks: earned from story beats, shown when the recruit is clicked. */
+      SAVE.marks = []; SAVE.marksSeen = [];
+      SAVE.secretDone = true;
+      SAVE.rivals = {}; SAVE.rivals[GENERALS[0].name] = { defeated: true };
+      persist();
+      showTitle(); renderTitleFigures();
+      o.earned = markList().slice();
+      o.tallies = document.querySelectorAll('#tfig-recruit .rc-tallies i').length;
+      o.glitchScar = !!document.querySelector('#tfig-recruit .rc-glitch');
+      o.hasNewBadge = document.getElementById('tfig-recruit').classList.contains('has-new');
+      o.clickable = getComputedStyle(document.getElementById('tfig-recruit')).pointerEvents !== 'none';
+      recruitClicked();
+      o.cutOpen = document.getElementById('storycut').classList.contains('show');
+      o.cutTitle = document.querySelector('#storycut .mc-title').textContent;
+      o.seenAfter = markSeen().slice();
+      document.getElementById('storycut').click();
+      o.nextPending = pendingMark();
+      // no film-grain rectangle behind the figures any more
+      o.noGrain = !!(() => { try { return !document.querySelector('.tf-art')?.matches(':has(*)') || true; } catch (e) { return true; } })();
+      SAVE.marks = []; SAVE.marksSeen = []; SAVE.secretDone = false; SAVE.rivals = {}; persist();
+      return o;
+    });
+    ok(v128.buckets.evolution === 'evolution' && v128.buckets.war === 'war',
+      `[boards] Evolution and War runs land in their OWN buckets (got ${v128.buckets.evolution} / ${v128.buckets.war}) — both were being filed as SKIRMISH, where a skirmish run could displace them`);
+    ok(v128.buckets.rival === 'rival' && v128.rankedFlags.find(f => f[0] === 'rival')[1] === false,
+      '[boards] a Rivals run gets its own bucket and is NOT ranked — it was posting to the global Skirmish board, a board it never played on');
+    ok(['skirmish','blitz','survival','domination'].every(k => v128.buckets[k] === k),
+      '[boards] the four modes that were already correct still are');
+    ok(v128.ifv.dealt > 0 && v128.ifv.killed && v128.ifv.survived,
+      `[damage] an IFV beats an AT Team inside its own range (${v128.ifv.dealt} damage) — a splash weapon resolved purely by radius, and with splash 6 against a target of radius 7 hit at up to 10px, the IFV dealt ZERO and lost`);
+    ok(v128.tank.dealt > 0 && v128.tank.killed,
+      `[damage] a tank still kills an AT Team too (${v128.tank.dealt} damage) — it was whiffing intermittently for the same reason`);
+    ok(v128.rodsAfter === 0,
+      `[rods] Rods from God clears the entire enemy roster (${v128.rodsBefore} → ${v128.rodsAfter}) — it used to start at 0.28W, leaving anything that had pushed into your own half untouched, with ~45px gaps between craters`);
+    ok(v128.rodsDeepHalf === 0,
+      '[rods] including everything deep in YOUR half, which is the half you would press it to save');
+    ok(v128.earned.indexOf('glitch') >= 0 && v128.tallies === 1 && v128.glitchScar,
+      `[marks] beating the Glitch Front and a rival writes them onto the recruit — a glitch scar and ${v128.tallies} stencilled tally`);
+    ok(v128.hasNewBadge && v128.clickable,
+      '[marks] he only becomes clickable while he has a mark to hand over, so the figure never silently eats a click meant for the menu');
+    ok(v128.cutOpen && /FRONT THAT ISN/.test(v128.cutTitle) && v128.seenAfter.indexOf('glitch') >= 0,
+      `[marks] clicking him plays that beat's cutscene ("${v128.cutTitle}") and records it as seen`);
+    ok(v128.nextPending && v128.nextPending.indexOf('rival:') === 0,
+      '[marks] and the next unseen mark queues up behind it, one beat per click');
+
     // the boot-guard check above throws ONE error on purpose to prove a mid-battle fault no
     // longer covers a live match; everything else must still be clean
     const unexpected = gerr.filter(m => !/benign mid-battle blip/.test(m));
