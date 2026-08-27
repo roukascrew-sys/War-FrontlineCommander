@@ -50,7 +50,12 @@ def run(order, trials=3000):
                 name, hrs, p, dv = inv[0]
                 if spent + hrs > res_share:
                     break
-                inv.pop(0); spent += hrs
+                work = min(hrs, res_share - spent)
+                spent += work
+                if work < hrs:
+                    inv[0] = (name, hrs - work, p, dv)
+                    break
+                inv.pop(0)
                 if random.random() < p:
                     for d in range(day0, DAYS + 1):
                         daily[d] += dv * random.lognormvariate(0, 0.5)
