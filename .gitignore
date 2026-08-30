@@ -27,3 +27,7 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+
+# Paste-ready copy of a migration, generated for hand-application when the Supabase
+# connector is unavailable. The migration itself lives in supabase/migrations/.
+/APPLY_*.sql
