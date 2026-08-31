@@ -3513,6 +3513,228 @@ const GROUP_FREE_CHANGES_MIRROR = 1;   // mirrors GROUP_FREE_CHANGES in the game
     ok(v128.nextPending && v128.nextPending.indexOf('rival:') === 0,
       '[marks] and the next unseen mark queues up behind it, one beat per click');
 
+    /* ─────────────────────────────────────────────────────────────────────────
+       33. v1.29.0 — 🎬 CREATOR MODE.
+           The checks that matter here are the INTEGRITY ones. A sandbox that can
+           arrange ten tanks, triple income and a paper enemy HQ is a scoring
+           exploit the moment any of it reaches a save file or a board, so this
+           section proves three separate things:
+             · a creator battle changes ZERO save keys and submits nothing;
+             · a NORMAL battle still banks everything (or the check above is
+               vacuous — it would pass just as well if progression were broken);
+             · the submit function refuses a creator entry on its own, without
+               relying on endGame's gate.
+           Plus: the AI really is the real AI on both sides, imported scenarios
+           cannot pollute or execute, and the documented limits hold.
+       ───────────────────────────────────────────────────────────────────────── */
+
+    // 33a. every picker reads a LIVE registry — no duplicated lists to drift
+    const crReg = await gp.evaluate(() => ({
+      docs: creatorDoctrineKeys(), realDocs: Object.keys(DOCTRINES),
+      diffs: creatorDiffKeys(), realDiffs: Object.keys(DIFFS),
+      stances: creatorStanceKeys(), realStances: Object.keys(STANCES),
+      units: creatorUnitKeys(), realUnits: visibleRoster().filter(k => UNITS[k]),
+      groups: GROUP_KEYS,
+    }));
+    ok(crReg.docs.length === 9 && crReg.docs.join() === crReg.realDocs.join(),
+      `[creator] the doctrine picker enumerates all ${crReg.docs.length} real doctrines from DOCTRINES — not a copy that can drift`);
+    ok(crReg.diffs.join() === crReg.realDiffs.join() && crReg.diffs.indexOf('legendaryplus') >= 0,
+      '[creator] the difficulty picker enumerates DIFFS itself, Legendary+ included');
+    ok(crReg.units.join() === crReg.realUnits.join() && crReg.stances.join() === crReg.realStances.join(),
+      `[creator] units (${crReg.units.length}) and stances come from UNITS/STANCES, filtered through unitRevealed so a secret unlock is not spoiled`);
+
+    // 33b. IMPORT IS UNTRUSTED INPUT. Structural whitelisting, prototype-safe, no execution.
+    const crImp = await gp.evaluate(() => {
+      const hostile = JSON.stringify({
+        v: 99, name: '<img src=x onerror="window.__pwn=1">', notes: 'x\u0007 \u202ey',
+        __proto__: { polluted: true }, constructor: { prototype: { polluted: true } },
+        field: { ruleset: 'evil', weather: '__proto__', terrain: ['constructor', 'toString', 'open'], prep: 1e9, speed: 99 },
+        sides: {
+          B: { control: 'ai', doctrine: 'constructor', diff: '__proto__', stance: 'toString',
+               groups: { arty: '__proto__', armor: 'valueOf' }, allowed: ['nope', 'rifle'], bias: 'toString',
+               opening: [{ key: 'rifle', lane: 99, count: 1e6 }, { key: '__proto__', lane: 0, count: 1 }],
+               cpMul: 1e9, startCp: -5, hqMul: 0 },
+          R: { control: 'ai' } },
+        rules: { banned: ['__proto__', 'tank'], timeLimit: 1e9 },
+      });
+      const r = creatorImportText(hostile);
+      const s = r.scenario;
+      return {
+        ok: r.ok, warned: r.warnings.length,
+        proto: ({}).polluted === undefined && Object.prototype.polluted === undefined,
+        ruleset: s.field.ruleset, terrainReal: s.field.terrain.every(t => TERRAIN_KEYS.indexOf(t) >= 0),
+        doc: s.sides.B.doctrine, diff: s.sides.B.diff, stance: s.sides.B.stance,
+        arty: s.sides.B.groups.arty, allowed: s.sides.B.allowed,
+        openReal: s.sides.B.opening.every(e => !!UNITS[e.key]),
+        count: s.sides.B.opening[0].count, lane: s.sides.B.opening[0].lane,
+        cpMul: s.sides.B.cpMul, banned: s.rules.banned, timeLimit: s.rules.timeLimit,
+        notesClean: !/[\u0000-\u001F\u202A-\u202E]/.test(s.notes),
+        tooBig: creatorImportText('x'.repeat(70000)).errors[0],
+        notJson: creatorImportText('{nope').errors[0],
+        bothHuman: creatorValidate({ v: 1, sides: { B: { control: 'human' }, R: { control: 'human' } } }, true).errors.length,
+      };
+    });
+    ok(crImp.proto,
+      '[creator] a scenario carrying __proto__ / constructor payloads pollutes nothing — every read is an own-property read, and unknown keys are dropped rather than merged');
+    ok(crImp.ruleset === 'skirmish' && crImp.terrainReal && !!crReg.docs.length &&
+       crImp.doc === 'blitzkrieg' && crImp.diff === 'veteran' && crImp.stance === 'assault' && crImp.arty === 'off',
+      '[creator] every id that is not in this build\'s registries falls back to the default instead of reaching the game');
+    ok(JSON.stringify(crImp.allowed) === '["rifle"]' && crImp.openReal && JSON.stringify(crImp.banned) === '["tank"]',
+      '[creator] unit lists keep only ids this build actually has');
+    ok(crImp.count === 40 && crImp.lane === 2 && crImp.cpMul === 6 && crImp.timeLimit === 1800,
+      `[creator] every documented limit clamps on import (1,000,000 riflemen → ${crImp.count}, lane 99 → ${crImp.lane}, ×1e9 income → ×${crImp.cpMul})`);
+    ok(crImp.notesClean && crImp.warned > 0,
+      '[creator] author notes are stripped of control and bidi characters, and the clamps are reported as warnings rather than applied silently');
+    ok(/too large/.test(crImp.tooBig) && /not valid JSON/.test(crImp.notJson) && crImp.bothHuman > 0,
+      '[creator] oversized files, malformed JSON and contradictory scenarios (two human commanders) are all refused');
+
+    // 33c. the generator is deterministic — the only thing that makes a seed worth sharing
+    const crGen = await gp.evaluate(() => {
+      const a = creatorGenerate('frontline'), b = creatorGenerate('frontline'), c = creatorGenerate('frontline2');
+      return { same: JSON.stringify(a) === JSON.stringify(b), diff: JSON.stringify(a) !== JSON.stringify(c),
+               valid: creatorValidate(a, true).errors.length === 0, seed: a.seed,
+               numeric: creatorGenerate('12345').seed === 12345 };
+    });
+    ok(crGen.same && crGen.diff && crGen.valid && crGen.numeric,
+      `[creator] the generator is seeded and deterministic (seed "frontline" → ${crGen.seed}, twice), and what it builds always validates`);
+
+    // 33d. THE INTEGRITY GATE — a whole creator battle, start to finish
+    const crRun = await gp.evaluate(async () => {
+      showTitle(); await new Promise(r => setTimeout(r, 250));
+      SAVE.lbOptIn = true; SAVE.lbName = 'Tester'; SAVE.xp = 300; SAVE.lvl = 12;
+      SAVE.wins = 5; SAVE.losses = 2; SAVE.best = 9000; SAVE.winStreak = 3;
+      SAVE.board = []; SAVE.lbQueue = []; SAVE.career.battles = 9; persist();
+      const before = JSON.stringify(SAVE);
+      let submits = 0;
+      const orig = LEADERBOARD_BACKEND.submit;
+      LEADERBOARD_BACKEND.submit = function (e) { submits++; return orig.call(this, e); };
+      const sc = creatorDefaultScenario();
+      sc.name = 'Integrity Run';
+      sc.sides.B.control = 'ai'; sc.sides.R.control = 'ai';
+      sc.sides.B.diff = 'legendaryplus'; sc.sides.R.diff = 'recruit';
+      sc.sides.B.cpMul = 4; sc.sides.R.cpMul = 4;
+      sc.sides.B.hqMul = 0.1; sc.sides.R.hqMul = 0.1;
+      sc.sides.B.opening = [{ key: 'tank', lane: 0, count: 4 }, { key: 'rifle', lane: 1, count: 6 }];
+      sc.sides.R.opening = [{ key: 'rifle', lane: 2, count: 5 }];
+      const launched = creatorLaunch(sc);
+      const atStart = {
+        creator: G.creator, spectate: G.creatorSpectate, aiB: !!G.aiB,
+        hudHidden: document.getElementById('hud').classList.contains('hidden'),
+        blue: G.units.filter(u => u.side === 'B').length,
+        red: G.units.filter(u => u.side === 'R').length,
+      };
+      G.speed = 2;
+      for (let i = 0; i < 250 && !G.over; i++) await new Promise(r => setTimeout(r, 60));
+      const a = JSON.parse(before), changed = [];
+      for (const k in SAVE) if (JSON.stringify(SAVE[k]) !== JSON.stringify(a[k])) changed.push(k);
+      const res = {
+        launched: launched.ok, atStart, over: G.over, changed, submits,
+        blueDecisions: G.aiB.thoughts.length, redDecisions: (G.aiThoughts || []).length,
+        blueDeployed: G.crStats.B.spawned, redDeployed: G.crStats.R.spawned,
+        events: (G.creatorEvents || []).length,
+        reportUp: !document.getElementById('creatorreport').classList.contains('hidden'),
+        reportText: document.getElementById('creatorreport').textContent || '',
+        obsHidden: document.getElementById('crobs').classList.contains('hidden'),
+      };
+      LEADERBOARD_BACKEND.submit = orig;
+      return res;
+    });
+    ok(crRun.launched && crRun.atStart.creator && crRun.atStart.spectate && crRun.over,
+      '[creator] an AI-vs-AI scenario launches through the ordinary LAUNCH seam and fights to a result');
+    ok(crRun.changed.length === 0,
+      `[creator] a whole creator battle changes ZERO save keys${crRun.changed.length ? ' (changed: ' + crRun.changed.join(', ') + ')' : ''} — no XP, no rank, no wins, no local board, no career, no streak`);
+    ok(crRun.submits === 0,
+      '[creator] and submits nothing to the global board — endGame returns before the submit call is ever reached');
+    ok(crRun.atStart.blue === 10 && crRun.atStart.red === 5,
+      `[creator] the opening forces are EXACTLY what the scenario said (${crRun.atStart.blue} blue / ${crRun.atStart.red} red) — the difficulty's usual opening skirmishers are suppressed, or the field would never match what was typed`);
+
+    // 33e. THE SAME ASSERTION, INVERTED. Without this the check above is vacuous:
+    //      it would pass just as happily if progression were broken for everyone.
+    const crNorm = await gp.evaluate(async () => {
+      showTitle(); await new Promise(r => setTimeout(r, 250));
+      SAVE.board = []; SAVE.winStreak = 0; SAVE.wins = 0; SAVE.career.battles = 0; persist();
+      const before = JSON.stringify(SAVE);
+      let submits = 0;
+      const orig = LEADERBOARD_BACKEND.submit;
+      LEADERBOARD_BACKEND.submit = function (e) { submits++; return { ok: true }; };
+      LAUNCH = null; sel.mode = 'skirmish'; sel.diff = 'veteran'; start();
+      G.prep = 0; G.frozen = false; G.kills = 4; G.dmgDealt = 900;
+      endGame('B', 'test');
+      await new Promise(r => setTimeout(r, 200));
+      const a = JSON.parse(before), changed = [];
+      for (const k in SAVE) if (JSON.stringify(SAVE[k]) !== JSON.stringify(a[k])) changed.push(k);
+      const res = { changed, submits, wins: SAVE.wins, board: SAVE.board.length,
+                    career: SAVE.career.battles, streak: SAVE.winStreak };
+      LEADERBOARD_BACKEND.submit = orig;
+      return res;
+    });
+    ok(crNorm.wins === 1 && crNorm.board === 1 && crNorm.career === 1 && crNorm.streak === 1 && crNorm.submits === 1,
+      `[creator] …while an ORDINARY battle in the same session still banks all of it — win, local board place, career row, streak and one global submit (changed: ${crNorm.changed.length} save keys)`);
+
+    // 33f. the submit function refuses a creator entry ON ITS OWN, independently of endGame
+    const crGate = await gp.evaluate(async () => {
+      showTitle(); await new Promise(r => setTimeout(r, 200));
+      const base = { mode: 'skirmish', score: 999999, kills: 99, dur: 60, won: true,
+                     diff: 'legendaryplus', doc: 'mass', run_id: 'test' };
+      const flagged = await LEADERBOARD_BACKEND.submit(Object.assign({ creator: true }, base));
+      const sc = creatorDefaultScenario();
+      sc.sides.B.control = 'ai'; sc.sides.R.control = 'ai';
+      creatorLaunch(sc);
+      const ambient = await LEADERBOARD_BACKEND.submit(base);   // a clean entry, during a creator battle
+      return { flagged: flagged && flagged.skipped, ambient: ambient && ambient.skipped };
+    });
+    ok(crGate.flagged === 'creator' && crGate.ambient === 'creator',
+      '[creator] the submit function refuses a creator entry by itself — both a flagged entry and a clean one offered during a creator battle — so the endGame gate is not the only thing between a hand-built score and the public board');
+
+    // 33g. AI vs AI runs the REAL AI on both sides, not the attract demo's random deploys
+    ok(crRun.atStart.aiB && crRun.blueDecisions > 0 && crRun.blueDeployed > crRun.atStart.blue,
+      `[creator] BLUE is driven by the same aiStepSide() red uses — ${crRun.blueDecisions} decisions, ${crRun.blueDeployed} units deployed — not by attract mode's random spawner`);
+    ok(crRun.redDecisions > 0 && crRun.redDeployed > crRun.atStart.red,
+      `[creator] RED still runs it too (${crRun.redDecisions} decisions), through a context that writes straight through to the same G.ecp / G.aiT fields it always used`);
+
+    // 33h. the observer view and the report
+    ok(crRun.atStart.hudHidden,
+      '[creator] a spectated battle hides the commander\'s interface — hotbar, powers, stance rail and CP are controls for something the viewer is not doing');
+    ok(crRun.reportUp && crRun.obsHidden && /BATTLE REPORT/.test(crRun.reportText) && /Integrity Run/.test(crRun.reportText),
+      '[creator] it ends on a battle report naming the scenario, not on the career results screen');
+    ok(crRun.events > 0 && /Timeline/.test(crRun.reportText),
+      `[creator] with a timeline built from the game's own announce() calls (${crRun.events} events), rather than a second account of the fight that could drift from it`);
+
+    // 33i. the editor renders author text inert
+    const crXss = await gp.evaluate(async () => {
+      showTitle(); await new Promise(r => setTimeout(r, 200));
+      creatorOpen();
+      CREATOR.sc = creatorDefaultScenario();
+      CREATOR.sc.name = '<img src=x onerror="window.__crPwn=1">';
+      CREATOR.sc.notes = '</div><script>window.__crPwn2=1<\/script>';
+      renderCreator();
+      await new Promise(r => setTimeout(r, 150));
+      const body = document.getElementById('creator-body');
+      return { pwn: !!window.__crPwn || !!window.__crPwn2,
+               img: !!body.querySelector('img'), script: !!body.querySelector('script'),
+               rendered: body.innerHTML.length > 2000 };
+    });
+    ok(!crXss.pwn && !crXss.img && !crXss.script && crXss.rendered,
+      '[creator] a scenario name or note containing markup is drawn as text — the editor renders every author-supplied string through escapeHTML');
+
+    // 33j. the live-unit ceiling actually holds
+    const crCap = await gp.evaluate(async () => {
+      showTitle(); await new Promise(r => setTimeout(r, 200));
+      const sc = creatorDefaultScenario();
+      sc.sides.B.control = 'ai'; sc.sides.R.control = 'ai';
+      sc.sides.B.opening = []; sc.sides.R.opening = [];
+      for (let i = 0; i < CREATOR_LIMITS.orders; i++) {
+        sc.sides.B.opening.push({ key: 'rifle', lane: i % 3, count: CREATOR_LIMITS.perOrder });
+        sc.sides.R.opening.push({ key: 'rifle', lane: i % 3, count: CREATOR_LIMITS.perOrder });
+      }
+      const v = creatorValidate(sc, false);
+      creatorLaunch(v.scenario);
+      return { perSideB: creatorOpeningTotal(v.scenario.sides.B), expected: CREATOR_LIMITS.perSide,
+               live: G.units.length, cap: CREATOR_LIMITS.liveUnits };
+    });
+    ok(crCap.perSideB === crCap.expected && crCap.live <= crCap.cap,
+      `[creator] the per-side opening cap holds at ${crCap.perSideB} and the field never exceeds the documented ${crCap.cap}-unit ceiling (started with ${crCap.live})`);
+
     // the boot-guard check above throws ONE error on purpose to prove a mid-battle fault no
     // longer covers a live match; everything else must still be clean
     const unexpected = gerr.filter(m => !/benign mid-battle blip/.test(m));

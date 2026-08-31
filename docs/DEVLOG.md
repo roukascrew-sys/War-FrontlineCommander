@@ -8,6 +8,96 @@ engineering detail lives in the patch notes inside the game and in the commit hi
 
 ---
 
+## v1.29.0 — Creator Mode
+
+You can now build a battle instead of only playing one.
+
+### 🎬 What it is
+
+**Title → Creator Mode.** You get an editor for the whole matchup, both sides at once:
+
+- **Commander** — human or AI, per side.
+- **Doctrine, difficulty, stance and all three standing orders** — per side.
+- **Roster** — restrict a side to whatever units you want it to have.
+- **Economy, starting CP and HQ health** — per side.
+- **Exact opening forces** — "four tanks in the top lane, six riflemen in the middle",
+  spelled out as orders rather than left to chance.
+- **The field** — ruleset (Skirmish, Blitz, Survival, Domination or Evolution), weather,
+  terrain per lane, prep length, starting speed, an optional time limit, and toggles for
+  random events and fog.
+
+Everything in those pickers is read out of the game's own tables. The nine doctrines are
+the nine real doctrines. The five difficulties are the five real difficulties, Legendary+
+included. There is no separate "creator unit list" that could quietly fall out of step
+with the real one.
+
+### 🧠 AI versus AI
+
+Set **both** commanders to AI and sit back.
+
+This is the part I most wanted to get right, and the part that was easiest to get wrong.
+The game already had an attract-mode demo running behind the title, and it would have been
+trivial to point Creator Mode at that — but attract mode is not an AI. It drops a random
+unit into a random lane every three quarters of a second. A spectator mode built on it
+would never once show you the game.
+
+So instead the actual enemy AI was **parameterised** rather than copied. The function that
+has always decided what the enemy builds now takes a commander as an argument, and the
+version it hands the red side writes straight through to exactly the same variables it
+always used — so red plays identically to before, byte for byte. Blue gets the same
+function with its own budget.
+
+Which means when you set BLUE to **Legendary+** and watch, you are watching the real
+Legendary+: its real budget discipline, its real surge, its real habit of reading your
+weakest lane and punching through it, and its real unit quality. Not an aggression slider
+wearing the name.
+
+One honest limitation: **off-map fire support is still red-only.** The strike layer aims
+at the blue half of the map and leads its targets in one direction throughout, and
+mirroring that properly is its own piece of work — a half-mirrored version would put a
+blue commander's shells in the wrong half of the field. A blue AI fights with the whole
+decision layer and no strikes, and the editor says so where you would set it.
+
+### 🎲 Seeds
+
+Type any word or number and press Generate. You get a complete matchup: doctrines,
+difficulties, restricted rosters, standing orders, opening forces, weather, terrain.
+
+The same seed always builds the same scenario, on any machine, in any session. That is the
+only thing that makes a seed worth posting.
+
+### 📜 Sharing, and the battle report
+
+Save up to 20 scenarios. Copy one out as plain text and paste somebody else's in.
+
+Every creator fight ends on a **battle report** rather than the career results screen: both
+orders of battle, what each side deployed and lost, how much HQ each had left, and a
+timeline of the fight built from the game's own announcements — so what the report says
+happened is exactly what appeared on screen.
+
+### 🔒 The important bit: none of this touches your career
+
+A scenario can hand a side ten tanks, quadruple income and a paper enemy HQ. A score from
+that fight is not a score.
+
+So creator battles award **no XP, no rank, no medals, no streak and no career record**, and
+they never reach any leaderboard — local or global. That is not enforced by hiding a
+button. It is enforced in three independent places: the end-of-battle routine returns
+before it reaches any of the scoring code, the leaderboard submit function refuses a
+creator entry on its own, and every individual writer checks the flag again.
+
+The test suite asserts both halves of that, deliberately: that a full creator battle
+changes **zero** save keys and issues **zero** submissions, *and* that an ordinary skirmish
+in the same session still banks a win, a board place, a career row, a streak and one
+submit. Without the second half the first would be meaningless — it would pass just as
+happily if progression were broken for everybody.
+
+Imported scenarios are treated as untrusted input, because they are: every field is checked
+against this build's own tables, every number is clamped to a documented limit, unknown
+keys are dropped rather than merged, and nothing in a scenario file is ever executed.
+
+---
+
 ## v1.28.0 — Three things that were quietly wrong
 
 ### 🏆 Evolution and War runs were being filed as Skirmish runs

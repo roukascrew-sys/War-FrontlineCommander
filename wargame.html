@@ -1489,6 +1489,129 @@
   .rp-tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:5px;
     font-size:8.5px;font-weight:800;letter-spacing:.5px;white-space:nowrap;color:var(--gold);}
 
+
+  /* ── 🎬 CREATOR MODE ── */
+  #creator{justify-content:flex-start;padding-top:52px;}
+  #creator h1{font-size:26px;margin-bottom:2px;}
+  #creatorreport{justify-content:flex-start;padding-top:52px;}
+  #creatorreport h1{font-size:26px;margin-bottom:2px;}
+  .cr-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px;}
+  .cr-name{flex:1;min-width:180px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    color:var(--ink);font-family:var(--font);font-size:14px;font-weight:800;padding:8px 11px;}
+  .cr-seed{width:120px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    color:var(--purple);font-family:var(--mono);font-size:12px;padding:8px 10px;}
+  .cr-notes{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    color:var(--dim);font-family:var(--font);font-size:12px;padding:7px 11px;margin-bottom:8px;}
+  .cr-btn{padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);
+    color:var(--ink);font-size:12px;font-weight:700;white-space:nowrap;transition:.12s;}
+  .cr-btn:hover{border-color:var(--purple);color:var(--purple);}
+  .cr-msg{font-size:12px;font-weight:700;margin-bottom:8px;line-height:1.4;}
+  .cr-lib{display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin-bottom:8px;
+    padding:7px 9px;background:var(--panel);border:1px solid var(--line);border-radius:9px;}
+  .cr-lib>span{font-size:10px;font-weight:800;letter-spacing:.6px;color:var(--faint);text-transform:uppercase;}
+  .cr-lib small{margin-left:auto;font-size:10px;color:var(--faint);font-family:var(--mono);}
+  .cr-io{margin-bottom:10px;padding:9px;background:var(--panel);border:1px solid var(--line);border-radius:9px;}
+  .cr-io textarea{width:100%;height:110px;background:var(--bg);border:1px solid var(--line);border-radius:7px;
+    color:var(--dim);font-family:var(--mono);font-size:10.5px;padding:7px;resize:vertical;}
+  .cr-io small{display:block;margin-top:6px;font-size:10.5px;color:var(--faint);line-height:1.45;}
+  .cr-panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px 11px;margin-bottom:10px;}
+  .cr-row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .cr-row:last-child{border-bottom:none;}
+  .cr-row>label{flex:0 0 104px;font-size:11px;font-weight:800;letter-spacing:.4px;color:var(--faint);
+    text-transform:uppercase;padding-top:5px;}
+  .cr-ctl{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;}
+  .cr-ctl>small{font-size:10.5px;color:var(--faint);line-height:1.45;}
+  .cr-ctl>.cr-tog,.cr-ctl>.cr-num{align-self:flex-start;}
+  .cr-chips{display:flex;gap:4px;flex-wrap:wrap;align-items:center;}
+  .cr-chip{padding:5px 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);
+    color:var(--dim);font-size:11px;font-weight:700;transition:.1s;--cc:var(--purple);}
+  .cr-chip:hover{color:var(--ink);border-color:var(--cc);}
+  .cr-chip.on{background:var(--cc);border-color:var(--cc);color:#0a0e14;}
+  .cr-tog{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--line);
+    border-radius:7px;background:var(--panel2);color:var(--dim);font-size:11px;font-weight:700;}
+  .cr-tog .cr-box{width:13px;height:13px;border:1px solid var(--line);border-radius:3px;display:inline-flex;
+    align-items:center;justify-content:center;font-size:9px;line-height:1;}
+  .cr-tog.on{color:var(--good);border-color:var(--good);}
+  .cr-tog.on .cr-box{background:var(--good);border-color:var(--good);color:#0a0e14;}
+  .cr-num{display:inline-flex;align-items:center;gap:5px;margin-right:8px;}
+  .cr-num input{width:74px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;
+    color:var(--ink);font-family:var(--mono);font-size:12px;padding:5px 7px;}
+  .cr-num i{font-style:normal;font-size:10.5px;color:var(--faint);}
+  .cr-ord{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:3px;}
+  .cr-ord>span{flex:0 0 96px;font-size:11px;font-weight:700;}
+  .cr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:3px;}
+  .cr-u{display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 2px;border:1px solid var(--line);
+    border-radius:6px;background:var(--panel2);color:var(--faint);font-size:14px;line-height:1;transition:.1s;opacity:.45;}
+  .cr-u i{font-style:normal;font-size:8px;font-weight:700;letter-spacing:.2px;text-align:center;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+  .cr-u.on{opacity:1;color:var(--ink);border-color:var(--cyan);}
+  .cr-u.ban{opacity:1;color:var(--red);border-color:var(--red);text-decoration:line-through;}
+  .cr-ops{display:flex;flex-direction:column;gap:4px;}
+  .cr-op{display:flex;gap:4px;align-items:center;}
+  .cr-op select,.cr-op input{background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+    color:var(--ink);font-family:var(--font);font-size:11px;padding:5px 6px;}
+  .cr-op select:first-child{flex:1;min-width:0;}
+  .cr-op input{width:58px;font-family:var(--mono);}
+  .cr-x{padding:4px 7px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);
+    color:var(--faint);font-size:10px;}
+  .cr-x:hover{color:var(--red);border-color:var(--red);}
+  .cr-forces{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  .cr-force{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--tc);
+    border-radius:10px;padding:2px 11px 6px;}
+  .cr-fh{display:flex;align-items:baseline;gap:8px;padding:9px 0 4px;}
+  .cr-fh b{font-size:14px;color:var(--tc);letter-spacing:.6px;}
+  .cr-fh span{font-size:10px;color:var(--faint);}
+  .cr-launch{display:flex;flex-direction:column;gap:8px;align-items:stretch;padding-bottom:20px;}
+  .cr-err{background:#2a1116;border:1px solid var(--red);border-radius:9px;padding:9px 11px;
+    font-size:12px;font-weight:700;color:#ff9a90;line-height:1.5;}
+  .cr-warn{background:#2a2411;border:1px solid var(--warn);border-radius:9px;padding:9px 11px;
+    font-size:11.5px;color:#ffd79a;line-height:1.5;}
+  .cr-note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--cyan);
+    border-radius:8px;padding:8px 11px;font-size:11px;color:var(--dim);line-height:1.5;}
+  .cr-go{padding:14px;border:1px solid var(--good);border-radius:11px;background:var(--good);color:#0a0e14;
+    font-size:16px;font-weight:900;letter-spacing:1px;transition:.12s;}
+  .cr-go:hover{filter:brightness(1.12);}
+  .cr-go.off{background:var(--panel2);border-color:var(--line);color:var(--faint);cursor:not-allowed;}
+  /* observer strip */
+  #crobs{position:absolute;left:0;right:0;bottom:0;z-index:16;display:flex;align-items:stretch;gap:1px;
+    pointer-events:none;font-family:var(--font);}
+  #crobs .co-side{flex:1;display:flex;flex-direction:column;gap:1px;padding:7px 14px;background:#0a0e14e8;
+    border-top:2px solid var(--line);}
+  #crobs .co-side.b{border-top-color:var(--blue);align-items:flex-start;}
+  #crobs .co-side.r{border-top-color:var(--red);align-items:flex-end;text-align:right;}
+  #crobs .co-side b{font-size:14px;letter-spacing:.5px;}
+  #crobs .co-side.b b{color:var(--blue);} #crobs .co-side.r b{color:var(--red);}
+  #crobs .co-side span{font-size:10.5px;color:var(--dim);font-weight:700;}
+  #crobs .co-side i{font-style:normal;font-size:10px;color:var(--faint);font-family:var(--mono);}
+  #crobs .co-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    padding:7px 18px;background:#0a0e14e8;border-top:2px solid var(--line);font-size:11px;font-weight:800;
+    letter-spacing:.6px;color:var(--dim);}
+  #crobs .co-mid small{font-family:var(--mono);font-size:14px;color:var(--ink);letter-spacing:1px;}
+  /* report */
+  .crr-out{padding:14px;border-radius:11px;text-align:center;font-size:22px;font-weight:900;letter-spacing:1.5px;
+    margin-bottom:12px;background:var(--panel);border:1px solid var(--line);}
+  .crr-out.b{border-color:var(--blue);color:var(--blue);} .crr-out.r{border-color:var(--red);color:var(--red);}
+  .crr-out small{display:block;margin-top:4px;font-size:11px;font-weight:700;letter-spacing:.4px;color:var(--dim);}
+  .crr-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;}
+  .crr-col{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px;}
+  .crr-col.b{border-top:3px solid var(--blue);} .crr-col.r{border-top:3px solid var(--red);}
+  .crr-col>b{display:block;font-size:13px;letter-spacing:.6px;margin-bottom:5px;}
+  .crr-col.b>b{color:var(--blue);} .crr-col.r>b{color:var(--red);}
+  .crr-k{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;padding:2px 0;}
+  .crr-k span{color:var(--faint);} .crr-k i{font-style:normal;color:var(--ink);font-weight:700;text-align:right;}
+  .crr-tl{display:flex;flex-direction:column;gap:2px;max-height:300px;overflow-y:auto;
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 11px;}
+  .crr-ev{display:flex;gap:9px;align-items:baseline;font-size:11.5px;}
+  .crr-ev span{flex:0 0 42px;font-family:var(--mono);font-size:10px;color:var(--faint);}
+  .crr-ev b{font-weight:800;letter-spacing:.3px;}
+  .crr-ev i{font-style:normal;color:var(--dim);font-size:10.5px;}
+  @media(max-width:820px){
+    .cr-forces,.crr-cols{grid-template-columns:1fr;}
+    .cr-row{flex-direction:column;gap:4px;}
+    .cr-row>label{flex:none;padding-top:0;}
+    #crobs .co-side b{font-size:12px;}
+  }
+
   /* ── FIELD MANUAL / WIKI ── */
   #manual{justify-content:flex-start;padding-top:52px;}
   #manual h1{font-size:28px;margin-bottom:2px;}
@@ -2245,6 +2368,7 @@
           <button class="t-btn chaos" id="t-chaos"><b>🤪 Chaos Mode</b><small>flip it on in Settings</small></button>
           <button class="t-btn rivals" id="t-rivals"><b>⚔ Rivals</b><small>a roster that learns you</small></button>
           <button class="t-btn gauntlet" id="t-gauntlet"><b>◈ The Gauntlet</b><small id="t-gauntlet-sub">one foe that studies you</small></button>
+          <button class="t-btn creator" id="t-creator"><b>🎬 Creator Mode</b><small>build a battle · watch AI fight AI</small></button>
         </div>
       </div>
       <!-- Tutorial moved here from More Modes, which left Learn holding ONE centred button —
@@ -2415,6 +2539,18 @@
     <div class="man-wrap"><div class="man-body" id="st-body"></div></div>
   </div>
 
+  <!-- 🎬 CREATOR MODE — the scenario editor. Everything in it is a form over one plain
+       data object; nothing an author or an imported file supplies is ever executed. -->
+  <div class="screen hidden" id="creator">
+    <button class="back-btn" id="cr-back">◀ Title</button>
+    <h1>🎬 <b>CREATOR MODE</b></h1>
+    <div class="tag" style="margin-bottom:6px">Build a battle worth watching. Real units, real doctrines, the real AI — arranged how you like. Sandbox only: nothing here touches your career or any leaderboard.</div>
+    <div class="man-wrap"><div class="man-body" id="creator-body"></div></div>
+  </div>
+
+  <!-- 🎬 CREATOR BATTLE REPORT -->
+  <div class="screen hidden" id="creatorreport"></div>
+
   <!-- PATCH NOTES -->
   <div class="screen hidden" id="patchnotes">
     <button class="back-btn" id="pn-back">◀ Title</button>
@@ -2432,6 +2568,8 @@
   </div>
 
   <!-- RESULTS -->
+  <!-- 🎬 the observer strip: what replaces the commander's interface when nobody is commanding -->
+  <div id="crobs" class="hidden"></div>
   <div class="screen hidden" id="results"></div>
 <!-- MODE BRIEFING — fires once when a mode unlocks; re-readable from the Field Manual. -->
 <div id="modebrief"><div class="mb-in">
@@ -2797,6 +2935,10 @@ const DEFAULT_SAVE={xp:0,lvl:1,wins:0,losses:0,best:0,bestBlitz:0,bestSurvival:0
      moments: you beat a rival mid-session, and you meet the man wearing that rival's
      mark the next time you look at him. */
   marks:[], marksSeen:[],
+  /* 🎬 CREATOR MODE — the ONLY save key it writes. `lib` is the scenario library,
+     `seed` the last generator seed typed. Nothing in here can affect a career:
+     scenarios are data, and a creator battle never reaches a progression writer. */
+  creator:{lib:[],seed:''},
   /* ── the two hidden rivals. Kept as top-level flags rather than nested inside
      SAVE.rivals so sanitizeSave() validates them, and so clearing the roster for a
      prestige run can never accidentally revoke an unlock the player earned. ── */
@@ -2999,6 +3141,7 @@ function storageWarn(){
 const MAX_LVL=100;
 function xpForLevel(l){return 100+l*80;}
 function addXP(n){
+  if(typeof G!=='undefined'&&G&&G.creator)return false;   // 🎬 a creator battle awards no rank
   if(SAVE.lvl>=MAX_LVL){ SAVE.xp=0; persist(); return false; } // rank is maxed — nothing left to grind for
   SAVE.xp+=n; let up=false;
   while(SAVE.lvl<MAX_LVL && SAVE.xp>=xpForLevel(SAVE.lvl)){ SAVE.xp-=xpForLevel(SAVE.lvl); SAVE.lvl++; up=true; }
@@ -3958,6 +4101,13 @@ const LEADERBOARD_BACKEND = LB_OK ? {
      resolves; nothing here throws into the caller. */
   async submit(entry){
     if(!entry||!LB_MODES.includes(entry.mode))return {skipped:'mode'};
+    /* 🎬 CREATOR MODE, gated a second time and independently of endGame().
+       A scenario can hand a side ten tanks, triple income and a 0.1x enemy HQ; a
+       score from that fight is not a score. endGame() already returns before this
+       function is ever called, and this check exists precisely because relying on
+       one gate is how the second one gets forgotten when the outbox, a retry path,
+       or some future share feature learns to call submit() on its own. */
+    if(entry.creator||(typeof G!=='undefined'&&G&&G.creator))return {skipped:'creator'};
     /* Two attempts, and the second one FORCES a fresh token. An access token lives an
        hour; a long session outlives it, and the old code returned the stale token forever
        and let every submission 401 in silence. */
@@ -4202,6 +4352,7 @@ function boardEntry(g,won,score){
    only wins hides the shape of how you actually play — but they can never out-rank a
    win of equal rated score, so the top of the board stays meaningful. */
 function boardRecord(g,won,score){
+  if(g&&g.creator)return -1;   // 🎬 a sandbox fight has no place on any board
   if(!Array.isArray(SAVE.board))SAVE.board=[];
   const e=boardEntry(g,won,score);
   SAVE.board.push(e);
@@ -4212,6 +4363,7 @@ function boardRecord(g,won,score){
 /* Win streak — consecutive won battles, broken by any real loss. The tutorial and
    attract-mode battles never touch it (they never reach here). */
 function streakRecord(won){
+  if(typeof G!=='undefined'&&G&&G.creator)return SAVE.winStreak||0;   // 🎬 unreachable from endGame; belt and braces
   if(won){ SAVE.winStreak=(SAVE.winStreak||0)+1;
     if(SAVE.winStreak>(SAVE.bestWinStreak||0))SAVE.bestWinStreak=SAVE.winStreak; }
   else SAVE.winStreak=0;
@@ -4295,13 +4447,21 @@ const DIFFS={
        player starts with exactly what they used to have at the moment the fight began. */
 const PREP_MAX=180;        // hard cap, so an idle tab cannot sit frozen forever
 const PREP_GRANT_SECS=10;  // seconds of income granted up front, replacing prep-phase accrual
-const GAME_VERSION='1.28.0';
+const GAME_VERSION='1.29.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.29.0',notes:[
+    '\ud83c\udfac CREATOR MODE. Build a battle and watch it happen: pick both sides\u2019 doctrine, difficulty, stance, standing orders, roster, economy, HQ strength and exact opening forces, then fight it or sit back and watch. Real units, the nine real doctrines, the real difficulty profiles \u2014 the editor reads the game\u2019s own tables, so it can never offer you something that is not in the game.',
+    '\ud83e\udde0 AI VERSUS AI. Set both commanders to AI and the SAME decision code that has always run the enemy runs both sides \u2014 including Legendary+, with its real budget discipline, its surge, its lane reads and its unit quality. It is not an aggression slider wearing the name. (Off-map fire support stays red-only for now: the strike layer aims at the blue half of the map and mirroring it properly is its own job.)',
+    '\ud83c\udfb2 SEEDED SCENARIOS. Type any word or number and get a complete matchup back. The same seed always builds the same scenario, on any machine \u2014 so a seed is a thing you can post.',
+    '\ud83d\udcdc SHAREABLE SCENARIOS AND A BATTLE REPORT. Save up to 20 scenarios, copy one out as plain text, paste somebody else\u2019s in. Every fight ends on a report: both orders of battle, what each side lost, and a timeline built from the game\u2019s own announcements.',
+    '\ud83d\udd12 CREATOR BATTLES ARE SANDBOX FIGHTS AND ALWAYS WILL BE. No XP, no rank, no medals, no streak, no career record, and nothing reaches any leaderboard \u2014 local or global. That is enforced in three independent places rather than by hiding a button, and the test suite proves both halves: that a creator battle banks nothing, and that an ordinary battle still banks everything.',
+    'Imported scenarios are validated field by field against this build\u2019s own tables and clamped to documented limits. Nothing in a scenario file is ever executed.',
+  ]},
   {v:'1.28.0',notes:[
     '\ud83c\udfc6 EVOLUTION AND WAR RUNS FINALLY REACH THEIR OWN BOARDS. Both were being filed as SKIRMISH runs \u2014 the board keeps one best run per mode, so an Evolution score could be silently displaced by a skirmish one. Rivals runs were doing the reverse: posting to the global Skirmish board, a board they never played on. Every mode now records the wrapper you chose, not the underlying ruleset.',
     '\ud83d\udca5 SPLASH WEAPONS NOW ALWAYS DAMAGE WHAT THEY AIMED AT. A round counts as connecting at the target\u2019s radius +3px, but damage was applied purely by splash radius from where the projectile stopped \u2014 so an IFV (splash 6) shooting an AT Team (radius 7) frequently dealt ZERO and lost a fight it should win. Tanks were whiffing for the same reason. Direct hit first, splash to neighbours second.',
@@ -5534,6 +5694,432 @@ function narr(ev,data){
   say(pick(b.lines), b.mood, b.prio||0);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CREATOR MODE — scenario authoring, AI-vs-AI spectating, and the integrity gate
+   ═══════════════════════════════════════════════════════════════════════════════
+   This is a CONTROLLED SCENARIO AUTHORING LAYER, not a cheat menu. It can arrange a
+   battle; it cannot change what a unit does, invent a stat, or bank anything into a
+   career. Everything it offers is drawn from the same registries the real game plays
+   with — DOCTRINES, UNITS, DIFFS, STANCES, GROUP_DOCTRINES, WEATHERS, TERRAINS — read
+   live, never copied, so a unit added to UNITS tomorrow simply appears in the pickers
+   and a unit removed cannot leave a dangling id behind.
+
+   THE INTEGRITY RULE, stated once and enforced in three independent places:
+     a creator battle is worth nothing and costs nothing.
+   It cannot award XP, medals, a rank, a streak, a local board place, a career record
+   or a global leaderboard row — and not because the UI hides those buttons, but
+   because control flow never reaches them (endGame's early return), the submit
+   function refuses the entry on its own (LEADERBOARD_BACKEND.submit), and every
+   durable writer re-checks the flag. Any one of those alone would be enough; all
+   three exist because this is the boundary that has to hold as the file grows.
+
+   The ONE save key Creator Mode writes is SAVE.creator. Nothing else. */
+const CREATOR_SCHEMA_VERSION=1;
+/* Documented limits. These are stability numbers, not taste: past roughly 300 live
+   units the frame budget on a mid-range laptop stops holding 60fps, and a lane reads
+   as visually saturated around 25. Exceeding one is a validation ERROR in the editor
+   (so the author knows), and a CLAMP on import (so a stranger's file cannot brick a
+   session it was never tested against). */
+const CREATOR_LIMITS={
+  perOrder:40,        // units in a single opening order
+  perSide:80,         // total opening units, one side
+  liveUnits:260,      // hard ceiling on simultaneous units in a creator battle
+  orders:12,          // opening orders per side
+  scenarios:20,       // saved scenarios (localStorage is shared with the career save)
+  importBytes:65536,  // 64 KB — a scenario is a few hundred bytes; 100x headroom
+  nameChars:40,
+  notesChars:240,
+  timeLimit:1800,     // seconds; 0 = none
+  cpMul:[0,6],        // economy multiplier range, per side
+  startCp:[0,2000],
+  hqMul:[0.1,10],
+  prep:[0,PREP_MAX],
+};
+const CREATOR_CONTROL=['human','ai'];
+/* ── the pickable id sets, enumerated from the LIVE registries on every call ──
+   Secret units stay filtered through unitRevealed(): a sandbox is not a reason to
+   spoil a discovery the player has not made yet. */
+function creatorUnitKeys(){ return visibleRoster().filter(k=>UNITS[k]); }
+function creatorDoctrineKeys(){ return Object.keys(DOCTRINES); }
+function creatorDiffKeys(){ return Object.keys(DIFFS); }
+function creatorStanceKeys(){ return Object.keys(STANCES); }
+function creatorWeatherKeys(){ return WEATHER_KEYS.slice(); }
+function creatorTerrainKeys(){ return TERRAIN_KEYS.slice(); }
+function creatorCountryKeys(){ return COUNTRY_KEYS.slice(); }
+/* Rulesets a creator battle may run under. Each one maps onto rules that already
+   exist; Creator Mode invents no new ones. */
+const CREATOR_RULESETS=['skirmish','blitz','survival','domination','evolution'];
+function creatorRulesetName(r){ return (MODES[r]&&MODES[r].name)||r; }
+
+/* ── deterministic RNG ────────────────────────────────────────────────────────
+   xorshift32. Deliberately NOT Math.random: a generated scenario has to be
+   reproducible from its seed alone, on any machine, in any build — that is what
+   makes a seed shareable. */
+function creatorRng(seed){
+  let s=(seed>>>0)||0x9e3779b9;
+  return function(){ s^=s<<13; s>>>=0; s^=s>>>17; s^=s<<5; s>>>=0; return s/4294967296; };
+}
+function creatorSeedFromText(txt){
+  const s=String(txt==null?'':txt).trim();
+  if(/^\d+$/.test(s))return (parseInt(s,10)>>>0)||1;
+  return s?hashStr(s):((Math.random()*4294967295)>>>0);
+}
+
+/* ── the schema ───────────────────────────────────────────────────────────────
+   Data only. There is no field here that holds a function, an expression, or
+   anything that could be executed; that is a property of the schema itself rather
+   than of the importer, which is why an imported scenario can never run code. */
+function creatorDefaultForce(side){
+  return {
+    control: side==='B'?'human':'ai',
+    doctrine: 'blitzkrieg',
+    diff: 'veteran',
+    country: side==='B'?'generic':'russia',
+    stance: 'assault',
+    groups: {arty:'off',armor:'off',drone:'off'},
+    allowed: null,        // null = the whole roster
+    bias: null,           // a unit key the AI leans toward, or null
+    opening: side==='B'
+      ? [{key:'rifle',lane:0,count:3},{key:'tank',lane:1,count:1}]
+      : [{key:'rifle',lane:2,count:3},{key:'ifv',lane:1,count:1}],
+    cpMul: 1,
+    startCp: 0,
+    hqMul: 1,
+    strikes: side!=='B',  // whether an AI side calls in off-map fire (Legendary+ behaviour)
+  };
+}
+function creatorDefaultScenario(){
+  return {
+    v: CREATOR_SCHEMA_VERSION,
+    name: 'Untitled Scenario',
+    notes: '',
+    seed: 0,
+    field: { ruleset:'skirmish', weather:'clear', terrain:['open','open','open'], prep:PREP_MAX, speed:1 },
+    /* A blank scenario still has to be a BATTLE. Opening the editor and pressing Fight
+       with two empty orders of battle drops you onto a silent field, which reads as
+       broken rather than as a starting point — so the default is a small, symmetric
+       opening that anybody can then take apart. */
+    sides: { B: creatorDefaultForce('B'), R: creatorDefaultForce('R') },
+    rules: { banned: [], timeLimit: 0, randomEvents:false, fog:true },
+    meta: { created: 0, gameVersion: GAME_VERSION },
+  };
+}
+
+/* ── validation ───────────────────────────────────────────────────────────────
+   STRUCTURAL WHITELISTING, not merging. A fresh default object is built and each
+   known field is copied across after being checked against the live registry or
+   clamped to a documented range. Unknown keys are DROPPED — which is what stops a
+   payload smuggling `__proto__`, a prototype-chain trick, or a field some future
+   version of this file will read before anyone remembers to validate it.
+
+   `strict` is the editor's mode: a violated limit is an error the author sees.
+   Import runs non-strict, where the same violation clamps and reports a warning —
+   rejecting somebody's whole file because one order asked for 41 riflemen is worse
+   for them than quietly giving them 40 and saying so. */
+function creatorValidate(raw,strict){
+  const errors=[], warnings=[];
+  const out=creatorDefaultScenario();
+  const bad=m=>{ if(strict)errors.push(m); else warnings.push(m); };
+  if(!raw||typeof raw!=='object'||Array.isArray(raw)){
+    errors.push('not a scenario object');
+    return {ok:false,scenario:out,errors,warnings};
+  }
+  /* Own-property reads throughout. TABLE[k] on an attacker-supplied k answers
+     truthy for '__proto__', 'constructor' and 'toString' on any plain object, and
+     this file has been bitten by exactly that before. */
+  const has=(o,k)=>o&&typeof o==='object'&&typeof k==='string'&&Object.prototype.hasOwnProperty.call(o,k);
+  const get=(o,k)=>has(o,k)?o[k]:undefined;
+  const inList=(v,list,dflt,what)=>{
+    if(v===undefined||v===null)return dflt;
+    if(typeof v==='string'&&list.indexOf(v)>=0)return v;
+    bad('unknown '+what+': '+String(v).slice(0,24)); return dflt;
+  };
+  const num=(v,lo,hi,dflt,what)=>{
+    if(v===undefined||v===null)return dflt;
+    if(typeof v!=='number'||!isFinite(v)){ bad(what+' is not a number'); return dflt; }
+    if(v<lo||v>hi){ bad(what+' out of range ('+lo+'–'+hi+')'); return clamp(v,lo,hi); }
+    return v;
+  };
+  const ver=get(raw,'v');
+  if(typeof ver==='number'&&ver>CREATOR_SCHEMA_VERSION)
+    warnings.push('scenario was made in a newer version (v'+ver+'); unknown settings ignored');
+  out.name=normName(get(raw,'name')||'')||'Untitled Scenario';
+  if(out.name.length>CREATOR_LIMITS.nameChars)out.name=out.name.slice(0,CREATOR_LIMITS.nameChars);
+  const notes=get(raw,'notes');
+  /* Same treatment normName gives a display name: real whitespace survives, every
+     invisible/bidi control character is removed. Written with \u escapes on purpose —
+     pasting the literal characters into a source file is how you get a diff nobody can
+     read and behaviour that depends on an editor's byte handling. */
+  out.notes=(typeof notes==='string')
+    ? notes.replace(/[\t\n\v\f\r]/g,' ')
+           .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g,'')
+           .replace(/ {2,}/g,' ').trim()
+           .slice(0,CREATOR_LIMITS.notesChars)
+    : '';
+  out.seed=num(get(raw,'seed'),0,4294967295,0,'seed')>>>0;
+  // ── field ──
+  const f=get(raw,'field');
+  if(f&&typeof f==='object'){
+    out.field.ruleset=inList(get(f,'ruleset'),CREATOR_RULESETS,'skirmish','ruleset');
+    out.field.weather=inList(get(f,'weather'),creatorWeatherKeys(),'clear','weather');
+    const t=get(f,'terrain');
+    if(Array.isArray(t)){
+      const tk=creatorTerrainKeys();
+      out.field.terrain=[0,1,2].map(i=>inList(t[i],tk,'open','terrain'));
+    }
+    out.field.prep=Math.round(num(get(f,'prep'),CREATOR_LIMITS.prep[0],CREATOR_LIMITS.prep[1],PREP_MAX,'prep'));
+    const sp=get(f,'speed');
+    out.field.speed=(typeof sp==='number'&&SPEEDS.indexOf(sp)>=0)?sp:1;
+  }
+  // ── rules ──
+  const r=get(raw,'rules');
+  if(r&&typeof r==='object'){
+    const bl=get(r,'banned');
+    if(Array.isArray(bl)){
+      const keys=creatorUnitKeys();
+      out.rules.banned=bl.filter(k=>typeof k==='string'&&keys.indexOf(k)>=0).slice(0,keys.length);
+    }
+    out.rules.timeLimit=Math.round(num(get(r,'timeLimit'),0,CREATOR_LIMITS.timeLimit,0,'time limit'));
+    out.rules.randomEvents=!!get(r,'randomEvents');
+    out.rules.fog=get(r,'fog')===undefined?true:!!get(r,'fog');
+  }
+  // ── sides ──
+  const sides=get(raw,'sides');
+  for(const side of ['B','R']){
+    const dst=out.sides[side], src=sides?get(sides,side):null;
+    if(!src||typeof src!=='object')continue;
+    dst.control=inList(get(src,'control'),CREATOR_CONTROL,dst.control,'control');
+    dst.doctrine=inList(get(src,'doctrine'),creatorDoctrineKeys(),dst.doctrine,'doctrine');
+    dst.diff=inList(get(src,'diff'),creatorDiffKeys(),dst.diff,'difficulty');
+    dst.country=inList(get(src,'country'),creatorCountryKeys(),dst.country,'country');
+    dst.stance=inList(get(src,'stance'),creatorStanceKeys(),dst.stance,'stance');
+    const g=get(src,'groups');
+    if(g&&typeof g==='object'){
+      for(const gk of GROUP_KEYS){
+        const want=get(g,gk);
+        if(want===undefined||want===null||want==='off'){ dst.groups[gk]='off'; continue; }
+        if(typeof want==='string'&&groupOpt(gk,want))dst.groups[gk]=want;
+        else { bad('unknown order for '+gk+': '+String(want).slice(0,24)); dst.groups[gk]='off'; }
+      }
+    }
+    const al=get(src,'allowed');
+    if(Array.isArray(al)){
+      const keys=creatorUnitKeys();
+      const ok=al.filter(k=>typeof k==='string'&&keys.indexOf(k)>=0);
+      dst.allowed=ok.length?ok:null;
+      if(al.length&&!ok.length)bad(side+' roster whitelist named no unit this build knows');
+    }
+    const bi=get(src,'bias');
+    dst.bias=(typeof bi==='string'&&creatorUnitKeys().indexOf(bi)>=0)?bi:null;
+    dst.cpMul=num(get(src,'cpMul'),CREATOR_LIMITS.cpMul[0],CREATOR_LIMITS.cpMul[1],1,side+' economy');
+    dst.startCp=Math.round(num(get(src,'startCp'),CREATOR_LIMITS.startCp[0],CREATOR_LIMITS.startCp[1],0,side+' starting CP'));
+    dst.hqMul=num(get(src,'hqMul'),CREATOR_LIMITS.hqMul[0],CREATOR_LIMITS.hqMul[1],1,side+' HQ health');
+    dst.strikes=get(src,'strikes')===undefined?dst.strikes:!!get(src,'strikes');
+    // ── opening forces ──
+    const op=get(src,'opening');
+    if(Array.isArray(op)){
+      const keys=creatorUnitKeys(); const list=[]; let total=0;
+      if(op.length>CREATOR_LIMITS.orders)bad(side+' has more than '+CREATOR_LIMITS.orders+' opening orders');
+      for(const e of op.slice(0,CREATOR_LIMITS.orders)){
+        if(!e||typeof e!=='object')continue;
+        const key=get(e,'key');
+        if(typeof key!=='string'||keys.indexOf(key)<0){ bad('unknown unit: '+String(key).slice(0,24)); continue; }
+        const lane=Math.round(num(get(e,'lane'),0,2,0,'lane'));
+        let count=Math.round(num(get(e,'count'),1,CREATOR_LIMITS.perOrder,1,'unit count'));
+        if(total+count>CREATOR_LIMITS.perSide){
+          bad(side+' opening exceeds '+CREATOR_LIMITS.perSide+' units');
+          count=Math.max(0,CREATOR_LIMITS.perSide-total);
+        }
+        if(count<=0)continue;
+        total+=count; list.push({key,lane,count});
+      }
+      dst.opening=list;
+    }
+  }
+  out.meta.created=num(get(get(raw,'meta'),'created'),0,4102444800000,Date.now(),'created')||Date.now();
+  const gv=get(get(raw,'meta'),'gameVersion');
+  out.meta.gameVersion=(typeof gv==='string')?gv.replace(/[^0-9A-Za-z.\-]/g,'').slice(0,16):GAME_VERSION;
+  /* Cross-field checks the per-field pass cannot see. */
+  /* The whole interface — hotbar, fog, the HQ bars, the camera's read of the field — is
+     drawn from BLUE's side. RED by hand is not a setting that is switched off; it is a
+     thing this game does not have, and pretending otherwise would hand somebody a battle
+     they cannot see. Stated as an error rather than silently rewritten. */
+  if(out.sides.R.control==='human')
+    errors.push('RED cannot be played by hand — the whole interface is drawn from BLUE\u2019s side of the field');
+  if(out.field.ruleset==='survival'&&out.sides.R.control==='human')
+    errors.push('Survival has no enemy HQ to command; RED must be AI');
+  return {ok:errors.length===0,scenario:out,errors,warnings};
+}
+function creatorOpeningTotal(force){
+  return (force&&force.opening||[]).reduce((n,e)=>n+(e.count|0),0);
+}
+
+/* ── serialisation ────────────────────────────────────────────────────────────
+   Export is plain JSON of a validated object. Import parses, size-caps, and runs the
+   SAME validator. Nothing between the file and the game evaluates its contents:
+   there is no Function(), no eval, no new Function, no setTimeout(string), and the
+   editor renders every field through escapeHTML or textContent. */
+function creatorExportText(sc){
+  const v=creatorValidate(sc,false);
+  return JSON.stringify(v.scenario,null,1);
+}
+function creatorImportText(text){
+  const errors=[], warnings=[];
+  if(typeof text!=='string'||!text.trim())
+    return {ok:false,scenario:null,errors:['nothing to import'],warnings};
+  if(text.length>CREATOR_LIMITS.importBytes)
+    return {ok:false,scenario:null,errors:['file too large (limit '+Math.round(CREATOR_LIMITS.importBytes/1024)+' KB)'],warnings};
+  let raw;
+  try{ raw=JSON.parse(text); }
+  catch(e){ return {ok:false,scenario:null,errors:['not valid JSON'],warnings}; }
+  const v=creatorValidate(raw,false);
+  /* Non-strict validation clamps rather than rejects, so `ok` here means "the
+     cross-field rules hold" — a file with contradictory sides is still refused. */
+  return {ok:v.ok,scenario:v.scenario,errors:v.errors,warnings:v.warnings};
+}
+
+/* ── the scenario library (the ONLY SAVE key Creator Mode writes) ── */
+function creatorSave(){
+  if(!SAVE.creator||typeof SAVE.creator!=='object'||Array.isArray(SAVE.creator))
+    SAVE.creator={lib:[],seed:''};
+  if(!Array.isArray(SAVE.creator.lib))SAVE.creator.lib=[];
+  if(SAVE.creator.lib.length>CREATOR_LIMITS.scenarios)
+    SAVE.creator.lib.length=CREATOR_LIMITS.scenarios;
+  return SAVE.creator;
+}
+function creatorLibrary(){
+  /* Everything comes back through the validator. A save file edited by hand is the
+     same untrusted input as a downloaded scenario, and gets the same treatment. */
+  return creatorSave().lib.map(e=>creatorValidate(e,false).scenario);
+}
+function creatorLibrarySave(sc){
+  const cs=creatorSave();
+  const v=creatorValidate(sc,false);
+  const clean=v.scenario;
+  clean.meta.created=Date.now();
+  const at=cs.lib.findIndex(e=>e&&typeof e==='object'&&normName(e.name||'')===clean.name);
+  if(at>=0)cs.lib[at]=clean;
+  else{
+    if(cs.lib.length>=CREATOR_LIMITS.scenarios)return {ok:false,error:'library full ('+CREATOR_LIMITS.scenarios+' scenarios) — delete one first'};
+    cs.lib.push(clean);
+  }
+  persist();
+  return {ok:true,scenario:clean,replaced:at>=0};
+}
+function creatorLibraryDelete(name){
+  const cs=creatorSave(); const n=normName(name||'');
+  const at=cs.lib.findIndex(e=>e&&typeof e==='object'&&normName(e.name||'')===n);
+  if(at<0)return false;
+  cs.lib.splice(at,1); persist(); return true;
+}
+
+/* ── launching ───────────────────────────────────────────────────────────────
+   Creator Mode adds no entry path. It builds a LAUNCH object — the same seam the
+   campaign, dailies, Rivals, the Gauntlet, Indoctrination and War Mode all use — and
+   calls start(). `creator:true` on that object is what newGame() turns into
+   G.creator, and G.creator is what every integrity gate downstream reads. */
+function creatorLaunch(sc){
+  const v=creatorValidate(sc,true);
+  if(!v.ok)return {ok:false,errors:v.errors};
+  const s=v.scenario;
+  LAUNCH={
+    type:'creator', creator:true, scenario:s,
+    ruleset:s.field.ruleset,
+    diff:s.sides.R.diff,
+    doctrine:s.sides.B.doctrine,
+    weather:s.field.weather,
+    groups:s.sides.B.groups,
+    allowed:s.sides.B.allowed,
+    enemyAllowed:s.sides.R.allowed,
+    enemyBias:s.sides.R.bias,
+    banned:s.rules.banned,
+    startCp:s.sides.B.startCp,
+    ecpMul:s.sides.R.cpMul,
+    rankFree:true,      // a sandbox that hides half the roster behind a rank teaches nothing
+  };
+  start();
+  return {ok:true};
+}
+/* Applied at the tail of newGame(), after G exists and before the first frame.
+   Everything here writes to G only — no SAVE field is touched on this path. */
+function creatorApply(L){
+  const s=L&&L.scenario; if(!s)return;
+  G.creatorScenario=s;
+  G.creatorEvents=[];
+  G.creatorSpectate=(s.sides.B.control==='ai'&&s.sides.R.control==='ai');
+  /* The per-side tally the battle report reads. G.kills counts only what BLUE killed,
+     which describes a player's fight and not a fight between two AIs. */
+  G.crStats={B:{spawned:0,lost:0,kills:0},R:{spawned:0,lost:0,kills:0}};
+  G.laneTerrain=s.field.terrain.slice();
+  /* Prep is the player's setup window. With nobody setting up it is a frozen field
+     with a countdown on it, which is the opposite of watchable. */
+  G.prep=G.creatorSpectate?0:Math.round(s.field.prep);
+  G.frozen=G.prep>0;
+  G.speed=s.field.speed||1;
+  G.creatorTimeLimit=s.rules.timeLimit|0;
+  G.noEvents=!s.rules.randomEvents;
+  /* Fog is written from the player's eyes. With nobody playing, leaving it on hides
+     most of the battle from the only person watching, so a spectated fight defaults
+     it off unless the author deliberately asked for it. */
+  G.creatorFog=G.creatorSpectate?false:!!s.rules.fog;
+  // per-side economy and HQ, applied on top of the doctrine/difficulty numbers
+  G.cpRate*=s.sides.B.cpMul; G.cp+=s.sides.B.startCp;
+  G.hq.B=Math.round(G.hqMax.B*s.sides.B.hqMul); G.hqMax.B=G.hq.B;
+  if(G.mode!=='survival'){ G.hq.R=Math.round(G.hqMax.R*s.sides.R.hqMul); G.hqMax.R=G.hq.R; }
+  // the player's stance is the scenario's, not the hard-coded default
+  G.stance=s.sides.B.stance;
+  G.enemyStance=s.sides.R.stance;
+  G.enemyGroups={};
+  for(const gk of GROUP_KEYS)G.enemyGroups[gk]=s.sides.R.groups[gk]||'off';
+  /* BLUE AI. G.aiB is the blue commander's state bag; its absence is what makes a
+     normal battle a normal battle. See aiStepSide() — both sides then run the very
+     same decision code, so a spectated Legendary+ is the real Legendary+. */
+  if(s.sides.B.control==='ai'){
+    const d=DIFFS[s.sides.B.diff]||DIFFS.veteran;
+    G.aiB={ cp:70, rate:11*d.cpMul*s.sides.B.cpMul, t:0.8, think:1.15*(d.think||1),
+            smart:!!d.smart, diff:s.sides.B.diff, diffMul:d, qual:d.qualMul,
+            bias:s.sides.B.bias, allowed:s.sides.B.allowed, thoughts:[] };
+    /* Blue's stance and standing orders come from the scenario and are read by the SAME
+       code that reads the player's — G.stance and G.groups are per-side already (see
+       unitGroup / the stance lookup in updateUnits), so an AI blue commander fights under
+       genuinely the same posture rules a human does.
+       KNOWN LIMIT, stated rather than faked: OFF-MAP FIRE SUPPORT IS RED-ONLY. The strike
+       layer (gauntStrikeTick and friends) aims at side 'B' and clamps its reticle to the
+       left third of the map throughout; mirroring it is a real piece of work and a
+       half-mirrored version would put a blue Legendary+'s shells in the wrong half of the
+       field. So a blue AI fights with deployment, stance and orders — the whole of the
+       decision layer — and without strikes. The editor says so where it is configured. */
+  }
+  /* Blue's standing orders come from the scenario whether a human or an AI is holding
+     them. newGame() builds G.groups a hundred lines before it sets G.rankFree, so a
+     low-rank player's scenario would otherwise arrive with its orders quietly stripped
+     by a rank gate that Creator Mode has already lifted. */
+  G.groups={};
+  for(const gk of GROUP_KEYS){ const want=s.sides.B.groups[gk]||'off';
+    G.groups[gk]=(want!=='off'&&groupOpt(gk,want))?want:'off'; }
+  if(!s.sides.R.strikes){ G.enemyFire=null; G.gauntStrikeT=1e9; }
+  // ── opening forces. spawn() is the real one; nothing here bypasses it. ──
+  for(const side of ['B','R']){
+    for(const e of s.sides[side].opening){
+      for(let i=0;i<e.count;i++){
+        if(G.units.length>=CREATOR_LIMITS.liveUnits)break;
+        spawn(side,e.key,clamp(e.lane|0,0,2));
+      }
+    }
+  }
+}
+/* The battle timeline. Fed by announce() — 82 call sites already describe every
+   moment the game thinks is worth telling the player about — so the timeline is the
+   game's own account of the fight rather than a second, divergent one. */
+const CREATOR_EVENT_MAX=200;
+function creatorEvent(txt,sub,col){
+  if(!G||!G.creator||!G.creatorEvents)return;
+  const e={t:Math.round((G.t||0)*10)/10,txt:String(txt||'').slice(0,60),
+           sub:String(sub||'').slice(0,90),col:col||'#9fb0c8'};
+  G.creatorEvents.push(e);
+  if(G.creatorEvents.length>CREATOR_EVENT_MAX)G.creatorEvents.shift();
+}
+
 /* ═══ GAME STATE ═══ */
 let G=null;
 let LAUNCH=null; // set by campaign/daily/tutorial launchers; null = plain skirmish/blitz/survival
@@ -5546,7 +6132,13 @@ function newGame(){
   // random picks over the player's real ones).
   if(!L && !ATTRACT_STARTING){ try{ SAVE.lastSel={doctrine:sel.doctrine,mode:sel.mode,diff:sel.diff,country:sel.country}; persist(); }catch(e){} }
   const kind = L? L.type : sel.mode;                 // wrapper: skirmish/blitz/survival/domination/campaign/daily/tutorial
-  const mode = (kind==='blitz'||kind==='survival'||kind==='domination')? kind : 'skirmish'; // underlying ruleset
+  /* A Creator Mode battle is a WRAPPER (kind) that picks an EXISTING ruleset rather
+     than inventing one — the sandbox has to run the same rules the real game does or
+     it is useless for the balance testing it exists for. `evolution` resolves to the
+     skirmish ruleset plus G.ages, exactly as the Evolution launcher does. */
+  const mode = (kind==='blitz'||kind==='survival'||kind==='domination')? kind
+             : (kind==='creator'&&L&&L.ruleset&&L.ruleset!=='evolution'&&CREATOR_RULESETS.indexOf(L.ruleset)>=0)? L.ruleset
+             : 'skirmish'; // underlying ruleset
   const diffKey = L&&L.diff ? L.diff : sel.diff;
   /* Doctrine is normally the player's menu pick, but a launcher may FORCE one — that's the
      whole mechanism behind Indoctrination, which hands you a doctrine you may not have
@@ -5573,6 +6165,9 @@ function newGame(){
     timeTrial:(L&&L.timeTrial)||false, parTime:(L&&L.parTime)||0,       // ⏱ campaign time trial
     secret:(L&&L.secret)||false, nukeDone:false, wasteland:false, swapT:14, glitchT:0, secVoiceT:8, // ☢ secret level
     tutorial:kind==='tutorial', tutStep:0, tutDone:false,
+    /* 🎬 THE INTEGRITY FLAG. Set once, here, and read by every durable writer in the
+       file. A creator battle is worth nothing and costs nothing — see endGame(). */
+    creator:!!(L&&L.creator), creatorScenario:null, creatorEvents:null,
     wxKey, wx, wxRng:wx.rngMul, wxSpd:wx.spdMul, wxSpot:spotMul,
     spotBase:230, // px; scaled by weather+doctrine
     banned:(L&&L.banned)?L.banned:[],
@@ -5659,7 +6254,7 @@ function newGame(){
   G.country=sel.country||'generic';
   G.enemyCountry=pick(COUNTRY_KEYS.filter(c=>c!=='generic'&&c!==G.country))||'russia';
   // Age-of-War evolution state
-  G.ages=(kind==='evolution');
+  G.ages=(kind==='evolution')||!!(L&&L.type==='creator'&&L.ruleset==='evolution');
   G.age=0; G.evo=0; G.enemyAge=0; G.enemyAgeT=28; G.turrets=[]; G.spawners=[]; G.scorches=[]; G.decals=[]; G.chaosRareT=null;
   // in-battle tech unlocks — normal modes make you buy the tree; Evolution gates by age
   /* Skirmish is the game's DEFAULT fight — the one a new player meets first and the one every
@@ -5738,11 +6333,15 @@ function newGame(){
      stacking an ambush on top of it put 14 enemies on the field against 60 CP before the
      player could act. Owning the number outright makes the opening climb as smoothly as
      everything else on the ladder. */
-  if(mode!=='survival'&&kind!=='tutorial'){
+  /* A creator scenario states its order of battle exactly. Adding the difficulty's
+     usual opening skirmishers on top would mean the field never matched what the
+     author typed, which is the one promise a scenario editor has to keep. */
+  if(mode!=='survival'&&kind!=='tutorial'&&kind!=='creator'){
     const oc=(G.gaunt&&G.gaunt.open!=null)?G.gaunt.open:(diff.open||3);
     for(let i=0;i<oc;i++){ spawn('R',enemyPick(['rifle','ifv','rifle']),i%3); } }
   // campaign "start outnumbered" openers
   if(L&&L.openEnemy){ for(let i=0;i<L.openEnemy;i++){ spawn('R',enemyPick(['tank','ifv','rifle','atgm']),(Math.random()*3)|0); } }
+  if(G.creator){ try{ creatorApply(L); }catch(e){ _logErr('creator',e&&e.message,'apply'); } }
   buildHotbar();
 }
 
@@ -5784,6 +6383,11 @@ function spawn(side,key,lane,xOverride){
     if(u.cat==='arty'&&p.artyDmgMul)dmg*=p.artyDmgMul;
     if(u.cat==='veh'&&p.vehSpdMul)spd*=p.vehSpdMul;
     if(p.toughMul)hp*=p.toughMul;
+    /* 🎬 In an AI-vs-AI creator battle BLUE is a commander, not a player, so it takes
+       its own difficulty's quality multiplier the same way RED always has. Without
+       this a spectated Legendary+ vs Recruit would field two identical armies and the
+       matchup being watched would not be the matchup that was configured. */
+    if(G.creator&&G.aiB&&G.aiB.qual){ hp*=G.aiB.qual; dmg*=G.aiB.qual; }
     if(G.ages&&G.age>0){ const a=AGES[G.age]; hp*=a.unit; dmg*=a.unit; } // your army evolves each age
   } else {
     // enemy quality scales with difficulty
@@ -5820,6 +6424,7 @@ function spawn(side,key,lane,xOverride){
     stealth:(side==='B'&&p.stealth)||false,spotted:(side==='B'),
     burnDps:u.burnDps||0,burnDur:u.burnDur||0,burnT:0,
     muzzle:0,hitFlash:0,vx:0,bob:rnd(0,6.28),alive:true});
+  if(G.creator&&G.crStats&&G.crStats[side])G.crStats[side].spawned++;   // 🎬 the report's order-of-battle tally
   // ◇ EFFIGY takes its disguise on arrival, from whatever the enemy actually has on the field
   if(u.nullDecoy){ try{ effigyDisguise(G.units[G.units.length-1]); }catch(e){} }
   // daily "Veteran Cadre" boon: your fresh deployments arrive already blooded
@@ -6315,7 +6920,7 @@ function randomEventTick(dt){
      wandering in mid-lesson is noise at best, and at worst puts a unit on the field that the
      lesson's roster has no answer to. Surprises are for the real game. */
   if(SAVE.noLuck)return;   // 🎯 NO LUCK — see the master override in Settings
-  if(!SAVE.randomEvents||!G||G.over||G.paused||G.tutorial||G.attract||G.kind==='indoc')return;
+  if(!SAVE.randomEvents||!G||G.over||G.paused||G.tutorial||G.attract||G.kind==='indoc'||G.noEvents)return;
   G.revT-=dt;
   if(G.revT<=0){ G.revT=rnd(30,55); fireRandomEvent(); }
 }
@@ -6743,6 +7348,12 @@ function killUnit(u,src){
     G.ecp=Math.min(G.cpMax,G.ecp+bnt);
     if(G.ages)G.enemyEvo=(G.enemyEvo||0)+6;
   }
+  /* 🎬 A spectated battle has no "player", so G.kills — which counts only what BLUE
+     killed — cannot describe it. This is the symmetric tally the battle report reads. */
+  if(G.creator&&G.crStats){
+    if(G.crStats[u.side])G.crStats[u.side].lost++;
+    if(G.crStats[killer])G.crStats[killer].kills++;
+  }
   killfeed(src,u);
 }
 function addCombo(){
@@ -6805,17 +7416,62 @@ function fire(u,tgt){
 }
 
 /* ═══ AI (enemy) ═══ */
+/* ═══ THE COMMANDER AI ═════════════════════════════════════════════════════════
+   One decision function, run once per side that has an AI.
+
+   It used to be hard-coded to RED: it scanned `u.side==='B'` for its threat picture,
+   spent G.ecp, timed itself off G.aiT/G.aiThink and finished on spawn('R',…). Every
+   behaviour that makes the difficulties feel different lives in here — the Legendary
+   surge, the aggression-scaled commit fraction, the weak-lane punch, the smart unit
+   cap — so AI-vs-AI could not be built by writing a second, simpler AI without
+   shipping a spectator mode that never shows the real game. (attractTick() is exactly
+   that simpler thing: a random unit every ~0.7s. It is decoration, not an opponent.)
+
+   So the function is PARAMETERISED rather than duplicated. `A` is a view of one
+   commander's state. aiCtxR() writes straight through to the same G.ecp / G.aiT /
+   G.aiThink fields the rest of the file reads (the debug overlay, chaos mode, the
+   HUD), so red's behaviour and red's storage are both unchanged; aiCtxB() reads and
+   writes the parallel G.aiB bag, which only a creator scenario ever creates. Both
+   sides therefore run the identical code, which is what makes a spectated Legendary+
+   the real Legendary+ rather than an aggression slider wearing its name. ═══════════ */
+function aiCtxR(){
+  return { side:'R', foe:'B',
+    get cp(){return G.ecp;}, set cp(v){G.ecp=v;},
+    get rate(){return G.ecpRate;},
+    get t(){return G.aiT;}, set t(v){G.aiT=v;},
+    get think(){return G.aiThink;},
+    get log(){ if(!G.aiThoughts)G.aiThoughts=[]; return G.aiThoughts; },
+    smart:G.aiSmart, diff:G.diff, diffMul:G.diffMul,
+    bias:G.enemyBias, allowed:G.enemyAllowed,
+    gaunt:G.gaunt, hold:G.aiHold, voice:true };
+}
+function aiCtxB(){
+  const b=G.aiB;
+  return { side:'B', foe:'R',
+    get cp(){return b.cp;}, set cp(v){b.cp=v;},
+    get rate(){return b.rate;},
+    get t(){return b.t;}, set t(v){b.t=v;},
+    get think(){return b.think;},
+    get log(){ if(!b.thoughts)b.thoughts=[]; return b.thoughts; },
+    smart:b.smart, diff:b.diff, diffMul:b.diffMul,
+    bias:b.bias, allowed:b.allowed,
+    gaunt:null, hold:false, voice:false };
+}
 function aiStep(dt){
-  if(G.aiHold)return; // tutorial: enemy frozen until released
-  G.ecp=Math.min(G.cpMax,G.ecp+G.ecpRate*dt);
-  G.aiT-=dt;
-  if(G.aiT>0)return;
-  G.aiT=rnd(G.aiThink*0.6,G.aiThink*1.3);
+  aiStepSide(dt,aiCtxR());
+  if(G.aiB)aiStepSide(dt,aiCtxB());   // 🎬 creator scenarios only — see creatorApply()
+}
+function aiStepSide(dt,A){
+  if(A.hold)return; // tutorial: enemy frozen until released
+  A.cp=Math.min(G.cpMax,A.cp+A.rate*dt);
+  A.t-=dt;
+  if(A.t>0)return;
+  A.t=rnd(A.think*0.6,A.think*1.3);
   // survival: pump waves, ignore economy caps
-  const budget=G.mode==='survival'? 40+G.wave*22 : G.ecp;
-  // count player composition to counter (and per-lane strength for smart targeting)
+  const budget=G.mode==='survival'? 40+G.wave*22 : A.cp;
+  // count the OPPOSING composition to counter (and per-lane strength for smart targeting)
   let pArmor=0,pAir=0,pInf=0,pDrone=0,pGun=0; const laneStr=[0,0,0];
-  for(const u of G.units)if(u.side==='B'&&u.alive){
+  for(const u of G.units)if(u.side===A.foe&&u.alive){
     if(u.armor)pArmor++; else if(u.flies)pAir++; else pInf++;
     if(u.key==='drone')pDrone++; if(u.gunship)pGun++;
     laneStr[u.lane]=(laneStr[u.lane]||0)+(u.maxHp*0.02+u.dmg*0.1);
@@ -6826,57 +7482,71 @@ function aiStep(dt){
     ['rifle',3],['atgm',pArmor>1?4:1],['tank',2],['ifv',pDrone>2?3:2],
     ['arty',1.5],['mlrs',pInf>4?1.4:0.3],['aa',airThreat>0?4:0.4],
     ['heli',pArmor>2?3:1],['drone',pArmor>1?2.6:1.3],
-    ['interceptor',airThreat>1?4:0.3],['gunship',(G.aiSmart&&budget>240)?1.4:0.15]];
-  // campaign / daily enemy bias — lean the enemy toward a theme
-  if(G.enemyBias){ for(const c of choices){ if(c[0]===G.enemyBias)c[1]*=3.2; } }
+    ['interceptor',airThreat>1?4:0.3],['gunship',(A.smart&&budget>240)?1.4:0.15]];
+  // campaign / daily enemy bias — lean the commander toward a theme
+  if(A.bias){ for(const c of choices){ if(c[0]===A.bias)c[1]*=3.2; } }
   /* THE GAUNTLET — the dossier's counter-weights, read from the FROZEN snapshot only.
      This is additive on top of the normal reactive weights rather than replacing them, so
      the Adjutant still answers what is actually on the field right now; the memory tilts
      what it reaches for first, it does not blind it to the present. */
-  if(G.gaunt&&G.gaunt.counterW){ for(const c of choices){ const w=G.gaunt.counterW[c[0]]; if(w)c[1]+=w; } }
+  if(A.gaunt&&A.gaunt.counterW){ for(const c of choices){ const w=A.gaunt.counterW[c[0]]; if(w)c[1]+=w; } }
   // banned units (daily mutators) never appear
   if(G.banned&&G.banned.length)choices=choices.filter(c=>G.banned.indexOf(c[0])<0);
-  // Indoctrination: the enemy is restricted to the roster this lesson wants them to lose with
-  if(G.enemyAllowed)choices=choices.filter(c=>G.enemyAllowed.indexOf(c[0])>=0);
-  if(!choices.length)choices=[[(G.enemyAllowed&&G.enemyAllowed[0])||'rifle',1]];
+  // a per-side roster whitelist (Indoctrination lessons, creator scenarios) restricts the pick
+  if(A.allowed)choices=choices.filter(c=>A.allowed.indexOf(c[0])>=0);
+  if(!choices.length)choices=[[(A.allowed&&A.allowed[0])||'rifle',1]];
   // what's the AI most worried about? (drives the readout)
   const threat = (airThreat>=pArmor&&airThreat>=pInf&&airThreat>0)?'AIR' : (pArmor>=pInf&&pArmor>0)?'ARMOR' : (pInf>0)?'INFANTRY':'nothing yet';
   // smart AI (elite+) commits more of its budget and picks lanes deliberately, scaling with
   // the tier's aggr knob; the low tiers spend loosely and scatter — easier to read and to beat.
-  const aggr=(G.diffMul&&G.diffMul.aggr)||0;
+  const aggr=(A.diffMul&&A.diffMul.aggr)||0;
   // legendary occasionally banks discipline and dumps an oversized coordinated push instead of
   // its usual spend — the spike a good player has to actually react to, not just out-DPS.
-  const surging=G.diff==='legendary'&&budget>110&&Math.random()<0.14;
-  const commit = G.aiSmart? (surging?1:rnd(0.75+0.2*aggr,1.0)) : rnd(0.45,0.9);
+  const surging=A.diff==='legendary'&&budget>110&&Math.random()<0.14;
+  const commit = A.smart? (surging?1:rnd(0.75+0.2*aggr,1.0)) : rnd(0.45,0.9);
   let spend=Math.min(budget, G.mode==='survival'?budget: commit*budget);
-  // smart lane choice: pile onto the player's WEAKEST lane (punch through) more often the higher
+  // smart lane choice: pile onto the opponent's WEAKEST lane (punch through) more often the higher
   // the aggression, otherwise contest their strongest. Dumb AI just scatters at random.
   const weakLane=laneStr.indexOf(Math.min(...laneStr)), strongLane=laneStr.indexOf(Math.max(...laneStr));
   /* Gauntlet lane read: it masses on the lane you historically favour — but only ~55% of
      the time. A perfectly predictable counter-lane is its own exploit (just play the other
      two), so the read has to bias its choices, not replace them. */
-  const gLane=(G.gaunt&&G.gaunt.lane>=0)?G.gaunt.lane:-1;
+  const gLane=(A.gaunt&&A.gaunt.lane>=0)?A.gaunt.lane:-1;
   const pickLane=()=> (gLane>=0&&Math.random()<0.55) ? gLane
-    : surging ? weakLane : (G.aiSmart ? (Math.random()<(0.5+0.3*aggr)?weakLane:strongLane) : ((Math.random()*3)|0));
-  let guard=0, built=[]; const maxUnits=G.aiSmart?Math.round(7+aggr*5+(surging?4:0)):6;
-  if(surging&&!G.tutorial&&!G.attract)announce('⚠ ENEMY SURGE','they\'re throwing everything at '+['top','mid','bottom'][weakLane]+' — brace','#ff5a4a');
+    : surging ? weakLane : (A.smart ? (Math.random()<(0.5+0.3*aggr)?weakLane:strongLane) : ((Math.random()*3)|0));
+  let guard=0, built=[]; const maxUnits=A.smart?Math.round(7+aggr*5+(surging?4:0)):6;
+  /* The surge warning is addressed to the PLAYER — "brace" only means something to
+     somebody who can react. So it comes from the commander they are facing (A.voice), and
+     only when there IS a player: in a spectated AI-vs-AI both sides are opponents, neither
+     is "them", and nobody is bracing. A creator battle the player is FIGHTING still gets
+     it, because there they are exactly the person the warning is for. */
+  if(surging&&A.voice&&!G.tutorial&&!G.attract&&!G.creatorSpectate)
+    announce('⚠ ENEMY SURGE','they\'re throwing everything at '+['top','mid','bottom'][weakLane]+' — brace','#ff5a4a');
   while(spend>14&&guard++<maxUnits){
     const key=weightedPick(choices);
     const c=UNITS[key].cost*0.9;
     if(c>spend)break;
-    spend-=c; G.ecp-=Math.min(G.ecp,UNITS[key].cost*0.9);
-    spawn('R',key,pickLane()); built.push(key);
+    /* 🎬 The only cap the simulation has ever had on unit count. Normally unreachable —
+       the AI self-limits to ~12 a decision and the player is limited by CP — but a creator
+       scenario can start 160 units on the field, and an uncapped fight from there is a
+       slideshow rather than a battle worth watching. */
+    if(G.creator&&G.units.length>=CREATOR_LIMITS.liveUnits)break;
+    spend-=c; A.cp-=Math.min(A.cp,UNITS[key].cost*0.9);
+    spawn(A.side,key,pickLane()); built.push(key);
   }
-  recordAIThought({budget,pArmor,pAir:Math.round(airThreat),pInf,threat,built,choices});
+  recordAIThought({budget,pArmor,pAir:Math.round(airThreat),pInf,threat,built,choices},A);
 }
 /* ── AI DEBUG: record what the enemy commander is thinking each decision ── */
-function recordAIThought(o){
-  if(!G.aiThoughts)G.aiThoughts=[];
-  G.aiThreat=o.threat;
+function recordAIThought(o,A){
   const top=o.choices.slice().sort((a,b)=>b[1]-a[1]).slice(0,3).map(c=>c[0]+'·'+c[1].toFixed(1)).join(' ');
   const line=`${Math.round(G.t)}s  £${Math.round(o.budget)}  saw ${o.pArmor}▣/${o.pAir}✈/${o.pInf}i  → vs ${o.threat}  ⇒ ${o.built.length?o.built.join('+'):'save CP'}`;
-  G.aiThoughts.push(line); while(G.aiThoughts.length>7)G.aiThoughts.shift();
-  G.aiTopWeights=top;
+  const log=A?A.log:(G.aiThoughts||(G.aiThoughts=[]));
+  log.push(line); while(log.length>7)log.shift();
+  /* The debug overlay reads a single pair of fields, and it describes the ENEMY. Only the
+     side the player is facing may write them, or a blue AI would overwrite red's readout
+     every half second and the overlay would describe the wrong commander. */
+  if(!A||A.side==='R'){ G.aiThreat=o.threat; G.aiTopWeights=top; }
+  else { G.aiThreatB=o.threat; G.aiTopWeightsB=top; }
 }
 function syncAIDebug(){
   const el=document.getElementById('aidebug'); if(!el)return;
@@ -6937,6 +7607,10 @@ function step(dt){
   const bf=G.hq.B/G.hqMax.B; if(bf<G.hqFloor)G.hqFloor=bf;
   // mode clocks
   if(G.mode==='blitz'){ G.clock-=dt; if(G.clock<=0){G.clock=0; endGame(G.dmgDealt>=G.dmgTaken?'B':'R','time'); } }
+  /* 🎬 A creator scenario may run its own clock, independent of the ruleset's. Same
+     resolution Blitz uses: whoever has done more damage to the other's HQ takes it. */
+  if(G.creatorTimeLimit>0&&G.t>=G.creatorTimeLimit&&!G.over)
+    endGame(G.dmgDealt>=G.dmgTaken?'B':'R','time limit');
   if(G.mode==='survival'){ G.waveT+=dt; if(G.waveT>=G.waveInterval){G.waveT=0;G.wave++;G.aiThink=Math.max(0.5,G.aiThink*0.9);announce('WAVE '+(G.wave+1),'incoming','#ff5a4a');chatReact('wave',G.wave+1);narr('wave');} }
   if(G.mode==='domination')dominationTick(dt);
   if(G.secret)secretTick(dt);   // ☢ Glitch Front: 30s → nuke → glitchy wasteland
@@ -7053,6 +7727,10 @@ function groupBombardShot(u){
 /* fog of war (cosmetic): which enemy units the player can actually see */
 function computeSpotting(){
   const sr=G.spotBase*(G.wxSpot||1);
+  /* 🎬 A creator scenario may switch fog off. For a spectated battle that is not a
+     convenience, it is the difference between a watchable clip and half the field
+     being invisible: a viewer has no units of their own to see with. */
+  if(G.creator&&G.creatorFog===false){ for(const u of G.units)u.spotted=true; return; }
   for(const u of G.units){ if(!u.alive)continue;
     if(u.side==='B'){u.spotted=true;continue;}
     /* ⬤ NULL STEALTH — beats every ordinary reveal, INCLUDING walking into your own half
@@ -8496,6 +9174,7 @@ window.addEventListener('pointermove',e=>{ if(G&&G.info&&G.info.tunnelT>0){ cons
 { const pbEl=document.getElementById('prepbanner'); if(pbEl)pbEl.addEventListener('pointerdown',()=>{ if(G&&G.prep>0)G.prep=0.001; }); }
 cv.addEventListener('pointerdown',e=>{
   if(!G||G.over||G.paused)return;
+  if(G.creatorSpectate)return;   // 🎬 AI vs AI — the viewer watches, they do not deploy
   actx(); if(SAVE.music&&!MUSIC.running)musicStart(musicContextTheme());
   const r=cv.getBoundingClientRect();
   const x=e.clientX-r.left, y=e.clientY-r.top;
@@ -8510,6 +9189,11 @@ cv.addEventListener('pointerdown',e=>{
 /* ═══ ANNOUNCER / COMBO / KILLFEED / STREAM ═══ */
 let announceTimer=null;
 function announce(txt,sub,col){
+  /* 🎬 The creator timeline is fed from HERE rather than from a second set of hooks.
+     announce() already fires at every moment the game itself considers worth telling
+     the player about, so the timeline is the game's own account of the battle and
+     cannot drift away from what actually appeared on screen. */
+  try{ if(typeof creatorEvent==='function')creatorEvent(txt,sub,col); }catch(e){}
   const a=document.getElementById('announce'),t=a.querySelector('.txt'),s=a.querySelector('.sub');
   t.textContent=txt; s.textContent=sub||''; t.style.color=col||'#fff';
   t.animate([{opacity:0,transform:'scale(1.5)'},{opacity:1,transform:'scale(1)'},{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(0.9)'}],{duration:1600});
@@ -9134,6 +9818,16 @@ function endGame(winner,reason){
   if(won&&G.general&&!G.tutorial)showRival(pick(G.general.lose));
   // tutorial never counts toward progression
   if(G.tutorial){ SAVE.seenTut=true; persist(); showResults(won,reason,0,0,false); return; }
+  /* 🎬 CREATOR MODE — THE INTEGRITY GATE.
+     Everything below this line is progression: XP, rank, medals, the career record,
+     the local board, the win streak, the beaten-today list and the GLOBAL LEADERBOARD
+     submission. A creator battle reaches none of it, and the reason it reaches none of
+     it is that control flow stops here — not that a button is hidden somewhere.
+     Nothing on this path writes to SAVE at all, so a sandbox fight cannot even nudge
+     a counter. The submit function refuses creator entries independently (see
+     LEADERBOARD_BACKEND.submit) so this gate is not the only thing standing between a
+     hand-built 900k scenario and the public board. */
+  if(G.creator){ creatorShowReport(won,reason); return; }
   // scoring
   let score=Math.round(G.dmgDealt*0.4+G.kills*12+G.bestCombo*20+(won?400:0));
   if(G.mode==='survival')score=Math.round(G.t*10+G.kills*12+G.wave*80);
@@ -9270,6 +9964,7 @@ function endGame(winner,reason){
 }
 /* ── SERVICE RECORD backend — every real battle feeds a persistent career ── */
 function recordBattle(won,score){
+  if(G&&G.creator)return;   // 🎬 the career is a record of real fights
   if(!SAVE.career)SAVE.career=JSON.parse(JSON.stringify(DEFAULT_SAVE.career));
   if(!SAVE.history)SAVE.history=[]; if(!SAVE.rivalry)SAVE.rivalry={};
   const c=SAVE.career;
@@ -10768,6 +11463,7 @@ function openMenu(){
   narrStop(); hideTut();
   document.getElementById('rivalbox').classList.remove('show');
   G=null; window.G=null; LAUNCH=null;
+  { const ob=document.getElementById('crobs'); if(ob)ob.classList.add('hidden'); }
   musicStart('menu'); musicSetTheme('menu');
   buildMenu(); refreshTopbar();
 }
@@ -10907,10 +11603,25 @@ function start(){
   musicStart('battle');
   if(!G.attract)ambientStart();
   syncStanceUI(); syncSpeedUI();
+  /* 🎬 OBSERVER VIEW. The hotbar, power bar, stance rail and CP counter are all
+     controls for something a spectator is not doing, so they go — the same move
+     attract mode makes behind the title, reused rather than reinvented. What is
+     left is the field itself, which is the thing being recorded. */
+  if(G.creatorSpectate){ document.getElementById('hud').classList.add('hidden'); }
   const hqLbl=document.getElementById('hqB-lbl'); if(hqLbl)hqLbl.textContent=equippedBadge().glyph+' YOUR HQ';
   const big=(G.kind==='campaign'&&G.mission)?G.mission.name:
             (G.kind==='indoc'&&G.indoc)?G.indoc.name:((MODES[G.mode]&&MODES[G.mode].name)||G.kind);
-  if(G.prep>0)announce('⏳ PREP · '+String(big).toUpperCase(),'set your opening — start when you are ready','#5ff0e0');
+  /* 🎬 A creator battle opens on the MATCHUP. "Blitzkrieg · Elite · Clear" describes a
+     fight against an enemy, and in a spectated battle there is no "enemy" — there are two
+     commanders, and which two is the whole reason somebody pressed play. */
+  if(G.creator&&G.creatorScenario){
+    const cs=G.creatorScenario;
+    const nm=k=>DOCTRINES[cs.sides[k].doctrine].name+' ('+((DIFFS[cs.sides[k].diff]||DIFFS.veteran).name)+')';
+    const card=(G.creatorSpectate?nm('B')+'  vs  '+nm('R'):DOCTRINES[G.doc].name+'  vs  '+nm('R'))+' · '+G.wx.name;
+    if(G.prep>0)announce('⏳ PREP · '+String(cs.name).toUpperCase(),'set your opening — start when you are ready · '+card,'#5ff0e0');
+    else announce(String(cs.name).toUpperCase(),card,'#5ff0e0');
+  }
+  else if(G.prep>0)announce('⏳ PREP · '+String(big).toUpperCase(),'set your opening — start when you are ready','#5ff0e0');
   else announce(String(big).toUpperCase(),DOCTRINES[G.doc].name+' · '+DIFFS[G.diff].name+' · '+G.wx.name,DOCTRINES[G.doc].col);
   if(!G.tutorial){
     if(G.wxKey!=='clear')say(G.wx.line,'grim',1);
@@ -10967,6 +11678,7 @@ function loop(now){
   if(laneHintT>0){laneHintT-=raw;if(laneHintT<=0)document.getElementById('lanehint').style.opacity='0';}
   draw();
   syncHUD();
+  try{ creatorObserverSync(); }catch(e){}
   requestAnimationFrame(loop);
 }
 
@@ -10982,6 +11694,10 @@ window.addEventListener('keydown',e=>{
   if(openScr && openScr.id!=='pauseScreen')return;
   const k=e.key.toLowerCase();
   if(k===' '){e.preventDefault();togglePause();return;}
+  /* 🎬 A spectated battle keeps the time controls (pause above, speed below) and
+     nothing else — every other hotkey commands an army the viewer does not have. */
+  if(G.creatorSpectate){ if(k==='['||k===']'){ const i=SPEEDS.indexOf(G.speed||1);
+      setSpeed(SPEEDS[clamp(i+(k===']'?1:-1),0,SPEEDS.length-1)]); e.preventDefault(); } return; }
   if(G.over||G.paused)return;
   // number keys select card: 1–9 = first nine cards, 0 = missile strike
   const n=parseInt(e.key,10);
@@ -13122,6 +13838,8 @@ document.getElementById('t-rivals').onclick=()=>openRivals();
 document.getElementById('rivals-back').onclick=()=>showTitle();
 document.getElementById('t-gauntlet').onclick=()=>openGauntlet();
 document.getElementById('gaunt-back').onclick=()=>showTitle();
+document.getElementById('t-creator').onclick=()=>creatorOpen();
+try{ wireCreator(); }catch(e){}
 document.getElementById('gf-back').onclick=()=>{ if(_gfFrom==='gauntlet')openGauntlet(); else showTitle(); };
 document.getElementById('st-back').onclick=()=>showTitle();
 document.getElementById('dl-back').onclick=()=>{ if(_dlFrom==='settings')openSettings(); else showTitle(); };
@@ -13383,6 +14101,519 @@ function runLoader(){
 // future reordering a hard ReferenceError that kills the boot. `var` hoists, so the worst case
 // degrades to a harmless no-op instead of a dead game.
 var ATTRACT_STARTING=false;
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CREATOR MODE — the authoring screen, the generator, the observer and the report
+   ═══════════════════════════════════════════════════════════════════════════════
+   Every picker below enumerates a LIVE registry. Nothing here holds its own copy of
+   the unit list, the doctrine list or the difficulty list, so the editor cannot drift
+   out of step with the game it configures.
+
+   All author-supplied text (scenario name, notes, an imported file's fields) reaches
+   the DOM through escapeHTML or textContent, never as raw markup, and nothing from a
+   scenario is ever passed to Function, eval, setTimeout(string) or an inline handler.
+   The editor is a form over a plain data object; that is the whole of its threat
+   surface. ═══════════════════════════════════════════════════════════════════════ */
+let CREATOR={ sc:null, errors:[], warnings:[], msg:'', msgCol:'', io:'', showIO:false };
+
+function creatorDraft(){
+  if(!CREATOR.sc)CREATOR.sc=creatorDefaultScenario();
+  return CREATOR.sc;
+}
+function creatorOpen(){
+  hideAllScreens('creator');
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('btn-pause').classList.add('hidden');
+  document.getElementById('creator').classList.remove('hidden');
+  hideDiffAmbient();
+  creatorDraft();
+  creatorRevalidate();
+  renderCreator();
+}
+function creatorRevalidate(){
+  const v=creatorValidate(CREATOR.sc,true);
+  CREATOR.errors=v.errors; CREATOR.warnings=v.warnings;
+  return v;
+}
+function creatorSay(msg,col){ CREATOR.msg=msg||''; CREATOR.msgCol=col||'var(--cyan)'; }
+
+/* ── a tiny, deliberately dumb setter ────────────────────────────────────────
+   Paths arrive from data- attributes, so they are untrusted even though this file
+   writes them. Each segment must be an OWN property of the object it walks into,
+   which is what stops '__proto__' / 'constructor' walking off the scenario and into
+   Object.prototype — the exact trick this file has had to be patched for before. */
+function creatorSet(path,val){
+  const sc=creatorDraft();
+  const parts=String(path||'').split('.');
+  if(!parts.length||parts.length>4)return;
+  let o=sc;
+  for(let i=0;i<parts.length-1;i++){
+    const k=parts[i];
+    if(!Object.prototype.hasOwnProperty.call(o,k))return;
+    o=o[k];
+    if(!o||typeof o!=='object')return;
+  }
+  const last=parts[parts.length-1];
+  if(!Object.prototype.hasOwnProperty.call(o,last))return;
+  o[last]=val;
+}
+function creatorGet(path){
+  let o=creatorDraft();
+  for(const k of String(path||'').split('.')){
+    if(!o||typeof o!=='object'||!Object.prototype.hasOwnProperty.call(o,k))return undefined;
+    o=o[k];
+  }
+  return o;
+}
+
+/* ── render helpers ── */
+function crChips(path,list,cur,nameFn,colFn){
+  return '<div class="cr-chips">'+list.map(k=>{
+    const on=(k===cur);
+    const col=colFn?colFn(k):'';
+    return `<button class="cr-chip${on?' on':''}" data-set="${escapeHTML(path)}" data-val="${escapeHTML(k)}" data-type="s"`+
+           (col?` style="--cc:${escapeHTML(col)}"`:'')+`>${escapeHTML(nameFn?nameFn(k):k)}</button>`;
+  }).join('')+'</div>';
+}
+function crNum(path,val,min,max,step,suffix){
+  return `<span class="cr-num"><input type="number" data-set="${escapeHTML(path)}" data-type="n" `+
+    `min="${min}" max="${max}" step="${step}" value="${val}">`+(suffix?`<i>${escapeHTML(suffix)}</i>`:'')+'</span>';
+}
+function crToggle(path,on,label){
+  return `<button class="cr-tog${on?' on':''}" data-set="${escapeHTML(path)}" data-type="b" data-val="${on?'0':'1'}">`+
+    `<span class="cr-box">${on?'✓':''}</span>${escapeHTML(label)}</button>`;
+}
+function crRow(label,body,hint){
+  return `<div class="cr-row"><label>${escapeHTML(label)}</label><div class="cr-ctl">${body}`+
+    (hint?`<small>${escapeHTML(hint)}</small>`:'')+'</div></div>';
+}
+
+/* ── the force column ─────────────────────────────────────────────────────── */
+function crForce(side){
+  const sc=creatorDraft(), f=sc.sides[side];
+  const p='sides.'+side;
+  const isB=side==='B';
+  const teamCol=isB?'var(--blue)':'var(--red)';
+  const units=creatorUnitKeys();
+  let h=`<div class="cr-force" style="--tc:${teamCol}">`;
+  h+=`<div class="cr-fh"><b>${isB?'◧ BLUE':'◨ RED'}</b><span>${isB?'left of the map':'right of the map'}</span></div>`;
+  if(isB)h+=crRow('Commander',crChips(p+'.control',CREATOR_CONTROL,f.control,
+      k=>k==='human'?'🎮 You':'🧠 AI'),
+      f.control==='ai'?'runs the real deployment AI at the skill below — set this to watch instead of play':'you deploy from the hotbar');
+  else h+=crRow('Commander','<span class="cr-note">🧠 AI. Red cannot be played by hand: the hotbar, the fog and the whole camera are drawn from Blue’s side of the field.</span>');
+  h+=crRow('Doctrine',crChips(p+'.doctrine',creatorDoctrineKeys(),f.doctrine,
+      k=>DOCTRINES[k].name,k=>DOCTRINES[k].col));
+  /* A human side has no "difficulty" of its own — difficulty IS the opposing commander.
+     Offering the picker there would be a control that does nothing. */
+  if(f.control==='ai')
+    h+=crRow('AI skill',crChips(p+'.diff',creatorDiffKeys(),f.diff,
+      k=>DIFFS[k].glyph+' '+DIFFS[k].name,k=>DIFFS[k].col),
+      'the real difficulty profile — income, decision speed, aggression, unit quality, and at Legendary+ a stance and off-map fire of its own');
+  h+=crRow('Stance',crChips(p+'.stance',creatorStanceKeys(),f.stance,
+      k=>STANCES[k].glyph+' '+STANCES[k].name,k=>STANCES[k].col));
+  // standing orders, from the real GROUP_DOCTRINES table
+  let ord='';
+  for(const gk of GROUP_KEYS){
+    const g=GROUP_DOCTRINES[gk];
+    const opts=['off'].concat(g.opts.map(o=>o.id));
+    ord+=`<div class="cr-ord"><span style="color:${escapeHTML(g.col)}">${escapeHTML(g.glyph+' '+g.name)}</span>`+
+      crChips(p+'.groups.'+gk,opts,f.groups[gk],
+        k=>k==='off'?'— off':(groupOpt(gk,k)?groupOpt(gk,k).glyph+' '+groupOpt(gk,k).name:k))+'</div>';
+  }
+  h+=crRow('Standing orders',ord);
+  h+=crRow('Economy','<div class="cr-chips">'+crNum(p+'.cpMul',f.cpMul,CREATOR_LIMITS.cpMul[0],CREATOR_LIMITS.cpMul[1],0.1,'× income')+
+      crNum(p+'.startCp',f.startCp,CREATOR_LIMITS.startCp[0],CREATOR_LIMITS.startCp[1],10,'CP head start')+'</div>');
+  h+=crRow('HQ health',crNum(p+'.hqMul',f.hqMul,CREATOR_LIMITS.hqMul[0],CREATOR_LIMITS.hqMul[1],0.1,'×'),
+      f.hqMul<1?'a glass HQ makes for a short, decisive fight':'');
+  if(!isB)h+=crRow('Off-map fire',crToggle(p+'.strikes',!!f.strikes,'AI calls in strikes'),
+      'Legendary+ behaviour: telegraphed precision, gunship and barrage fire');
+  else if(f.control==='ai')h+=crRow('Off-map fire','<span class="cr-note">not available for a BLUE AI — the strike layer aims at the blue half of the map and is not mirrored. A blue AI fights with deployment, stance and orders.</span>');
+  // roster whitelist
+  const all=f.allowed===null;
+  h+=`<div class="cr-row"><label>Roster</label><div class="cr-ctl">`+
+     `<div class="cr-chips"><button class="cr-chip${all?' on':''}" data-act="roster-all" data-side="${side}">everything</button></div>`+
+     `<div class="cr-grid">`+units.map(k=>{
+        const on=all||f.allowed.indexOf(k)>=0;
+        return `<button class="cr-u${on?' on':''}" data-act="roster" data-side="${side}" data-key="${escapeHTML(k)}" title="${escapeHTML(UNITS[k].name+' · '+UNITS[k].cost+' CP')}">${escapeHTML(UNITS[k].glyph)}<i>${escapeHTML(UNITS[k].name)}</i></button>`;
+     }).join('')+`</div>`+
+     (f.control==='ai'?`<small>the AI picks only from this list</small>`:`<small>only these cards appear in your hotbar</small>`)+
+     `</div></div>`;
+  if(f.control==='ai'){
+    const biasList=['—'].concat(units);
+    h+=crRow('AI lean',crChips(p+'.bias',biasList,f.bias===null?'—':f.bias,
+        k=>k==='—'?'balanced':UNITS[k].name),'weights this unit ×3.2 in the AI’s pick, on top of its normal reactions');
+  }
+  // opening forces
+  const total=creatorOpeningTotal(f);
+  h+=`<div class="cr-row"><label>Opening forces</label><div class="cr-ctl">`;
+  h+=`<div class="cr-ops">`;
+  f.opening.forEach((e,i)=>{
+    h+=`<div class="cr-op">`+
+      `<select data-act="op-key" data-side="${side}" data-i="${i}">`+
+      units.map(k=>`<option value="${escapeHTML(k)}"${k===e.key?' selected':''}>${escapeHTML(UNITS[k].glyph+' '+UNITS[k].name)}</option>`).join('')+
+      `</select>`+
+      `<select data-act="op-lane" data-side="${side}" data-i="${i}">`+
+      ['top','mid','bottom'].map((n,li)=>`<option value="${li}"${li===e.lane?' selected':''}>${n}</option>`).join('')+
+      `</select>`+
+      `<input type="number" min="1" max="${CREATOR_LIMITS.perOrder}" value="${e.count|0}" data-act="op-count" data-side="${side}" data-i="${i}">`+
+      `<button class="cr-x" data-act="op-del" data-side="${side}" data-i="${i}" title="remove">✕</button>`+
+      `</div>`;
+  });
+  h+=`</div>`;
+  h+=`<div class="cr-chips"><button class="cr-chip" data-act="op-add" data-side="${side}">+ add order</button>`+
+     (f.opening.length?`<button class="cr-chip" data-act="op-clear" data-side="${side}">clear</button>`:'')+`</div>`;
+  h+=`<small>${total} of ${CREATOR_LIMITS.perSide} units · max ${CREATOR_LIMITS.perOrder} per order</small>`;
+  h+=`</div></div>`;
+  h+='</div>';
+  return h;
+}
+
+/* ── the whole screen ─────────────────────────────────────────────────────── */
+function renderCreator(){
+  const el=document.getElementById('creator-body'); if(!el)return;
+  const sc=creatorDraft();
+  const v=creatorRevalidate();
+  const lib=creatorLibrary();
+  const spectate=(sc.sides.B.control==='ai'&&sc.sides.R.control==='ai');
+  let h='';
+  // ── identity + library ──
+  h+=`<div class="cr-bar">`+
+     `<input class="cr-name" data-act="name" maxlength="${CREATOR_LIMITS.nameChars}" value="${escapeHTML(sc.name)}" placeholder="Scenario name">`+
+     `<button class="cr-btn" data-act="save">💾 Save</button>`+
+     `<button class="cr-btn" data-act="io">📤 Share</button>`+
+     `<input class="cr-seed" id="cr-seed" data-act="seed" maxlength="40" value="${escapeHTML(creatorSave().seed||'')}" placeholder="seed" title="any word or number — the same seed always builds the same scenario">`+
+     `<button class="cr-btn" data-act="rand">🎲 Generate</button>`+
+     `<button class="cr-btn" data-act="reset">↺ Reset</button>`+
+     `</div>`;
+  h+=`<input class="cr-notes" data-act="notes" maxlength="${CREATOR_LIMITS.notesChars}" value="${escapeHTML(sc.notes)}" placeholder="Notes for whoever plays it (optional)">`;
+  if(CREATOR.msg)h+=`<div class="cr-msg" style="color:${escapeHTML(CREATOR.msgCol)}">${escapeHTML(CREATOR.msg)}</div>`;
+  if(lib.length){
+    h+=`<div class="cr-lib"><span>Library</span>`+lib.map(e=>
+      `<button class="cr-chip" data-act="load" data-name="${escapeHTML(e.name)}">${escapeHTML(e.name)}</button>`+
+      `<button class="cr-x" data-act="del" data-name="${escapeHTML(e.name)}" title="delete">✕</button>`).join('')+
+      `<small>${lib.length}/${CREATOR_LIMITS.scenarios}</small></div>`;
+  }
+  if(CREATOR.showIO){
+    h+=`<div class="cr-io"><textarea id="cr-io" spellcheck="false" placeholder="Paste a scenario here, then press Import">${escapeHTML(CREATOR.io)}</textarea>`+
+       `<div class="cr-chips"><button class="cr-chip" data-act="export">⬇ Fill with this scenario</button>`+
+       `<button class="cr-chip" data-act="import">⬆ Import what's in the box</button>`+
+       `<button class="cr-chip" data-act="copy">📋 Copy</button>`+
+       `<button class="cr-chip" data-act="io-close">close</button></div>`+
+       `<small>Scenarios are plain data — a name, a list of ids and some numbers. Nothing in a scenario file is ever executed, and anything this build does not recognise is dropped on import.</small></div>`;
+  }
+  // ── field & rules ──
+  h+=`<h2>The field</h2><div class="cr-panel">`;
+  h+=crRow('Ruleset',crChips('field.ruleset',CREATOR_RULESETS,sc.field.ruleset,creatorRulesetName),
+      (MODES[sc.field.ruleset]&&MODES[sc.field.ruleset].desc)||'');
+  h+=crRow('Weather',crChips('field.weather',creatorWeatherKeys(),sc.field.weather,k=>WEATHERS[k].name));
+  let ter='';
+  ['top','mid','bottom'].forEach((n,i)=>{
+    ter+=`<div class="cr-ord"><span>${n}</span>`+crChips('field.terrain.'+i,creatorTerrainKeys(),sc.field.terrain[i],k=>TERRAINS[k].name)+`</div>`;
+  });
+  h+=crRow('Lane terrain',ter);
+  h+=crRow('Prep phase',crNum('field.prep',sc.field.prep,0,PREP_MAX,5,'seconds max'),
+      spectate?'a spectated battle skips straight past prep':'0 starts the fight immediately');
+  h+=crRow('Speed',crChips('field.speed',SPEEDS.map(String),String(sc.field.speed),k=>k+'×'),'the starting speed; still changeable mid-battle');
+  h+=crRow('Time limit',crNum('rules.timeLimit',sc.rules.timeLimit,0,CREATOR_LIMITS.timeLimit,15,'seconds'),
+      sc.rules.timeLimit?'whoever has dealt more HQ damage when it expires takes it':'0 = no limit');
+  h+=crRow('Surprises','<div class="cr-chips">'+crToggle('rules.randomEvents',sc.rules.randomEvents,'random battlefield events')+
+      crToggle('rules.fog',sc.rules.fog,'fog of war')+'</div>',
+      'both off by default — a scenario meant to be compared twice should run the same twice. Fog is always off in a spectated battle: it is drawn from the player\u2019s eyes, and a viewer has none.');
+  const bannedAll=creatorUnitKeys();
+  h+=`<div class="cr-row"><label>Banned</label><div class="cr-ctl"><div class="cr-grid">`+
+     bannedAll.map(k=>{
+       const on=sc.rules.banned.indexOf(k)>=0;
+       return `<button class="cr-u${on?' ban':''}" data-act="ban" data-key="${escapeHTML(k)}" title="${escapeHTML(UNITS[k].name)}">${escapeHTML(UNITS[k].glyph)}<i>${escapeHTML(UNITS[k].name)}</i></button>`;
+     }).join('')+`</div><small>banned for BOTH sides, whatever their rosters say</small></div></div>`;
+  h+=`</div>`;
+  // ── forces ──
+  h+=`<h2>The forces</h2><div class="cr-forces">`+crForce('B')+crForce('R')+`</div>`;
+  // ── launch ──
+  h+=`<div class="cr-launch">`;
+  if(v.errors.length)h+=`<div class="cr-err">${v.errors.map(e=>'⚠ '+escapeHTML(e)).join('<br>')}</div>`;
+  if(v.warnings.length)h+=`<div class="cr-warn">${v.warnings.slice(0,6).map(e=>'· '+escapeHTML(e)).join('<br>')}</div>`;
+  h+=`<div class="cr-note">🎬 Creator battles are sandbox fights. They award no XP, no rank, no medals, no streak and never reach any leaderboard — local or global. Nothing you do here can affect your career.</div>`;
+  h+=`<button class="cr-go${v.errors.length?' off':''}" data-act="launch">${spectate?'▶ WATCH THE BATTLE':'▶ FIGHT IT'}</button>`;
+  h+=`</div>`;
+  el.innerHTML=h;
+}
+
+/* ── the generator ────────────────────────────────────────────────────────────
+   Seeded and deterministic: the same seed produces the same scenario on any
+   machine, in any session, which is the only thing that makes a seed worth
+   sharing. It generates through creatorValidate() like everything else, so it
+   cannot produce a scenario the editor would refuse. */
+function creatorGenerate(seedText){
+  const seed=creatorSeedFromText(seedText);
+  const rng=creatorRng(seed);
+  const pickR=a=>a[Math.floor(rng()*a.length)%a.length];
+  const intR=(lo,hi)=>lo+Math.floor(rng()*(hi-lo+1));
+  const units=creatorUnitKeys(), docs=creatorDoctrineKeys(), diffs=creatorDiffKeys();
+  const sc=creatorDefaultScenario();
+  sc.seed=seed;
+  sc.name='Seed '+seed.toString(36).toUpperCase();
+  sc.field.ruleset=pickR(['skirmish','skirmish','skirmish','blitz','domination','evolution']);
+  sc.field.weather=pickR(creatorWeatherKeys());
+  sc.field.terrain=[0,1,2].map(()=>pickR(creatorTerrainKeys()));
+  sc.field.prep=pickR([0,10,20,30]);
+  /* A generated scenario is for WATCHING by default. That is the whole point of the
+     seed: a fight you can post, and that anybody with the seed can reproduce. */
+  sc.sides.B.control='ai'; sc.sides.R.control='ai';
+  for(const side of ['B','R']){
+    const f=sc.sides[side];
+    f.doctrine=pickR(docs);
+    f.diff=pickR(diffs);
+    f.stance=pickR(creatorStanceKeys());
+    f.cpMul=Math.round((0.7+rng()*1.6)*10)/10;
+    f.startCp=intR(0,3)*60;
+    f.hqMul=Math.round((0.6+rng()*1.0)*10)/10;
+    for(const gk of GROUP_KEYS){
+      const g=GROUP_DOCTRINES[gk];
+      f.groups[gk]=rng()<0.45?pickR(g.opts.map(o=>o.id)):'off';
+    }
+    /* A restricted roster is what makes a generated matchup READ as something —
+       "drones versus AA" rather than "two piles of everything". */
+    if(rng()<0.55){
+      const n=intR(3,6); const pool=units.slice(); const take=[];
+      for(let i=0;i<n&&pool.length;i++)take.push(pool.splice(Math.floor(rng()*pool.length),1)[0]);
+      f.allowed=take;
+    } else f.allowed=null;
+    f.bias=rng()<0.4?pickR(f.allowed||units):null;
+    const orders=intR(1,3), from=f.allowed||units;
+    f.opening=[];
+    for(let i=0;i<orders;i++)
+      f.opening.push({key:pickR(from),lane:intR(0,2),count:intR(1,6)});
+    f.strikes=rng()<0.5;
+  }
+  const v=creatorValidate(sc,false);
+  return v.scenario;
+}
+
+/* ── screen wiring ────────────────────────────────────────────────────────── */
+function creatorAction(act,ds,elt){
+  const sc=creatorDraft();
+  const side=ds.side, i=ds.i|0;
+  if(act==='roster-all'){ sc.sides[side].allowed=null; }
+  else if(act==='roster'){
+    const f=sc.sides[side], k=ds.key;
+    if(creatorUnitKeys().indexOf(k)<0)return;
+    if(f.allowed===null){ f.allowed=creatorUnitKeys().filter(u=>u!==k); }
+    else{
+      const at=f.allowed.indexOf(k);
+      if(at>=0)f.allowed.splice(at,1); else f.allowed.push(k);
+      if(!f.allowed.length)f.allowed=null;   // an empty roster is "everything", not "nothing"
+    }
+  }
+  else if(act==='ban'){
+    const k=ds.key; if(creatorUnitKeys().indexOf(k)<0)return;
+    const at=sc.rules.banned.indexOf(k);
+    if(at>=0)sc.rules.banned.splice(at,1); else sc.rules.banned.push(k);
+  }
+  else if(act==='op-add'){
+    const f=sc.sides[side];
+    if(f.opening.length>=CREATOR_LIMITS.orders){ creatorSay('That side already has '+CREATOR_LIMITS.orders+' opening orders.','var(--warn)'); }
+    else f.opening.push({key:creatorUnitKeys()[0],lane:0,count:1});
+  }
+  else if(act==='op-del'){ sc.sides[side].opening.splice(i,1); }
+  else if(act==='op-clear'){ sc.sides[side].opening=[]; }
+  else if(act==='save'){
+    const r=creatorLibrarySave(sc);
+    creatorSay(r.ok?(r.replaced?'Updated “'+r.scenario.name+'”.':'Saved “'+r.scenario.name+'”.'):r.error, r.ok?'var(--good)':'var(--warn)');
+  }
+  else if(act==='load'){
+    const found=creatorLibrary().find(e=>e.name===ds.name);
+    if(found){ CREATOR.sc=found; creatorSay('Loaded “'+found.name+'”.','var(--good)'); }
+  }
+  else if(act==='del'){
+    if(creatorLibraryDelete(ds.name))creatorSay('Deleted “'+ds.name+'”.','var(--dim)');
+  }
+  else if(act==='io'){ CREATOR.showIO=!CREATOR.showIO; if(CREATOR.showIO&&!CREATOR.io)CREATOR.io=creatorExportText(sc); }
+  else if(act==='io-close'){ CREATOR.showIO=false; }
+  else if(act==='export'){ CREATOR.io=creatorExportText(sc); creatorSay('Scenario written into the box — copy it out and send it on.','var(--cyan)'); }
+  else if(act==='copy'){
+    const ta=document.getElementById('cr-io');
+    if(ta){ try{ ta.select(); document.execCommand('copy'); creatorSay('Copied.','var(--good)'); }
+            catch(e){ creatorSay('Copy blocked — select the text and copy it yourself.','var(--warn)'); } }
+    return; // no re-render: it would drop the selection
+  }
+  else if(act==='import'){
+    const ta=document.getElementById('cr-io');
+    const r=creatorImportText(ta?ta.value:CREATOR.io);
+    if(!r.ok){ creatorSay('Import failed: '+r.errors.join('; '),'var(--red)'); }
+    else{
+      CREATOR.sc=r.scenario;
+      creatorSay(r.warnings.length
+        ? 'Imported “'+r.scenario.name+'” with '+r.warnings.length+' adjustment'+(r.warnings.length>1?'s':'')+': '+r.warnings.slice(0,3).join('; ')
+        : 'Imported “'+r.scenario.name+'”.', r.warnings.length?'var(--warn)':'var(--good)');
+    }
+  }
+  else if(act==='rand'){
+    /* The seed lives in a text field rather than behind a prompt(): the game runs inside
+       an itch.io iframe, where a modal dialog is at best jarring and at worst suppressed
+       by the sandbox, and a seed you can see is a seed you can copy to a friend. */
+    const el=document.getElementById('cr-seed');
+    const txt=el?el.value:'';
+    creatorSave().seed=String(txt).slice(0,40); persist();
+    CREATOR.sc=creatorGenerate(txt);
+    if(el&&!txt){ creatorSave().seed=String(CREATOR.sc.seed); persist(); }
+    creatorSay('Generated from seed '+CREATOR.sc.seed+' — type that seed anywhere to rebuild this exact scenario.','var(--purple)');
+  }
+  else if(act==='reset'){ CREATOR.sc=creatorDefaultScenario(); creatorSay('Back to a blank scenario.','var(--dim)'); }
+  else if(act==='launch'){
+    const r=creatorLaunch(sc);
+    if(!r.ok)creatorSay('Cannot start: '+r.errors.join('; '),'var(--red)');
+    else return; // the battle owns the screen now
+  }
+  renderCreator();
+}
+function wireCreator(){
+  const body=document.getElementById('creator-body'); if(!body)return;
+  body.addEventListener('click',ev=>{
+    const b=ev.target.closest('[data-set],[data-act]'); if(!b||b.tagName==='INPUT'||b.tagName==='SELECT'||b.tagName==='TEXTAREA')return;
+    if(b.dataset.set!==undefined){
+      const t=b.dataset.type;
+      let val=b.dataset.val;
+      if(t==='b')val=(val==='1');
+      else if(t==='n')val=parseFloat(val)||0;
+      else if(val==='—')val=null;
+      else if(b.dataset.set==='field.speed')val=parseFloat(val);
+      creatorSet(b.dataset.set,val);
+      CREATOR.msg='';
+      renderCreator();
+      return;
+    }
+    creatorAction(b.dataset.act,b.dataset,b);
+  });
+  // number/select/text edits
+  const onEdit=ev=>{
+    const t=ev.target; if(!t)return;
+    const sc=creatorDraft();
+    if(t.dataset.set!==undefined&&t.dataset.type==='n'){
+      const val=parseFloat(t.value);
+      creatorSet(t.dataset.set,isFinite(val)?val:0);
+      creatorRevalidate();
+      return;
+    }
+    const act=t.dataset.act;
+    if(act==='name'){ sc.name=t.value; return; }
+    if(act==='notes'){ sc.notes=t.value; return; }
+    if(act==='seed'){ creatorSave().seed=String(t.value).slice(0,40); return; }
+    if(act==='op-key'){ sc.sides[t.dataset.side].opening[t.dataset.i|0].key=t.value; return; }
+    if(act==='op-lane'){ sc.sides[t.dataset.side].opening[t.dataset.i|0].lane=clamp(parseInt(t.value,10)||0,0,2); return; }
+    if(act==='op-count'){ sc.sides[t.dataset.side].opening[t.dataset.i|0].count=clamp(parseInt(t.value,10)||1,1,CREATOR_LIMITS.perOrder); return; }
+  };
+  body.addEventListener('input',onEdit);
+  /* Re-render on BLUR rather than on every keystroke: re-rendering on input would
+     rebuild the field the author is typing into and throw the caret to the end. */
+  const noRerender={name:1,notes:1,seed:1};
+  body.addEventListener('change',ev=>{ onEdit(ev); const a=ev.target&&ev.target.dataset&&ev.target.dataset.act; if(!a||!noRerender[a])renderCreator(); });
+  const back=document.getElementById('cr-back');
+  if(back)back.onclick=()=>{ CREATOR.msg=''; showTitle(); };
+}
+
+/* ── the observer view ────────────────────────────────────────────────────────
+   A spectated battle has no commander to serve, so the commander's interface goes:
+   the hotbar, the power bar, the stance rail and the CP readout are all controls for
+   something the viewer is not doing. What replaces them is a single strip naming the
+   two sides and what each is spending — the information a viewer actually wants, and
+   the information a clip needs on screen to be legible without commentary. */
+let _crObsAt=0, _crObsKey='';
+function creatorObserverSync(){
+  const bar=document.getElementById('crobs'); if(!bar)return;
+  if(!G||!G.creator||!G.creatorSpectate||G.over){ bar.classList.add('hidden'); _crObsKey=''; return; }
+  const s=G.creatorScenario; if(!s)return;
+  bar.classList.remove('hidden');
+  /* Repaint at 5Hz, and only when something on it actually changed. This runs from the
+     render loop, so rebuilding its innerHTML every frame would be sixty DOM teardowns a
+     second running alongside a battle that may have 260 units in it — and nothing on the
+     strip changes faster than the clock's one-second tick anyway. */
+  const now=performance.now();
+  if(now-_crObsAt<200)return;
+  _crObsAt=now;
+  const bd=DIFFS[s.sides.B.diff]||DIFFS.veteran, rd=DIFFS[s.sides.R.diff]||DIFFS.veteran;
+  const st=G.crStats||{B:{lost:0},R:{lost:0}};
+  const pct=(v,m)=>Math.max(0,Math.round(100*v/Math.max(1,m)));
+  const html=
+    `<div class="co-side b"><b>${escapeHTML(DOCTRINES[s.sides.B.doctrine].name)}</b>`+
+    `<span>${escapeHTML(bd.glyph+' '+bd.name)}</span>`+
+    `<i>HQ ${pct(G.hq.B,G.hqMax.B)}% · ${(G.aiB?Math.round(G.aiB.cp):Math.round(G.cp))} CP · ${st.B.lost|0} lost</i></div>`+
+    `<div class="co-mid">${escapeHTML(s.name)}<small>${Math.floor(G.t/60)}:${String(Math.floor(G.t%60)).padStart(2,'0')}</small></div>`+
+    `<div class="co-side r"><b>${escapeHTML(DOCTRINES[s.sides.R.doctrine].name)}</b>`+
+    `<span>${escapeHTML(rd.glyph+' '+rd.name)}</span>`+
+    `<i>HQ ${pct(G.hq.R,G.hqMax.R)}% · ${Math.round(G.ecp)} CP · ${st.R.lost|0} lost</i></div>`;
+  if(html===_crObsKey)return;
+  _crObsKey=html; bar.innerHTML=html;
+}
+
+/* ── the battle report ────────────────────────────────────────────────────────
+   Built from what the battle already recorded: the per-side tally kept during a
+   creator fight, and the timeline fed by announce(). Nothing here is a second
+   simulation of the fight — it is the game's own account of it. */
+function creatorShowReport(won,reason){
+  const s=G.creatorScenario||creatorDefaultScenario();
+  const st=G.crStats||{B:{spawned:0,lost:0,kills:0},R:{spawned:0,lost:0,kills:0}};
+  const spec=!!G.creatorSpectate;
+  const winner=G.result==='B'?'B':'R';
+  const wname=side=>DOCTRINES[s.sides[side].doctrine].name+' ('+(DIFFS[s.sides[side].diff]||DIFFS.veteran).name+')';
+  const el=document.getElementById('creatorreport'); if(!el){ showTitle(); return; }
+  const dur=Math.round(G.t);
+  const evs=(G.creatorEvents||[]).slice(-60);
+  let h=`<button class="back-btn" id="crr-back">◀ Title</button>`;
+  h+=`<h1>🎬 <b>BATTLE REPORT</b></h1>`;
+  h+=`<div class="tag" style="margin-bottom:6px">${escapeHTML(s.name)}${s.notes?' — '+escapeHTML(s.notes):''}</div>`;
+  h+=`<div class="man-wrap"><div class="man-body">`;
+  h+=`<div class="crr-out ${winner==='B'?'b':'r'}">${spec?(winner==='B'?'◧ BLUE TAKES IT':'◨ RED TAKES IT'):(won?'VICTORY':'DEFEAT')}`+
+     `<small>${escapeHTML(wname(winner))} · ${Math.floor(dur/60)}m ${dur%60}s · ${escapeHTML(String(reason||'hq destroyed'))}</small></div>`;
+  h+=`<div class="crr-cols">`;
+  for(const side of ['B','R']){
+    const f=s.sides[side], d=DIFFS[f.diff]||DIFFS.veteran;
+    h+=`<div class="crr-col ${side==='B'?'b':'r'}">`+
+      `<b>${side==='B'?'◧ BLUE':'◨ RED'}</b>`+
+      `<div class="crr-k"><span>Commander</span><i>${f.control==='ai'?'🧠 AI':'🎮 human'}</i></div>`+
+      `<div class="crr-k"><span>Doctrine</span><i>${escapeHTML(DOCTRINES[f.doctrine].name)}</i></div>`+
+      `<div class="crr-k"><span>Skill</span><i>${escapeHTML(d.glyph+' '+d.name)}</i></div>`+
+      `<div class="crr-k"><span>Stance</span><i>${escapeHTML(STANCES[f.stance].name)}</i></div>`+
+      `<div class="crr-k"><span>Deployed</span><i>${st[side].spawned|0}</i></div>`+
+      `<div class="crr-k"><span>Lost</span><i>${st[side].lost|0}</i></div>`+
+      `<div class="crr-k"><span>Kills</span><i>${st[side].kills|0}</i></div>`+
+      `<div class="crr-k"><span>HQ left</span><i>${Math.max(0,Math.round(100*G.hq[side]/Math.max(1,G.hqMax[side])))}%</i></div>`+
+      `<div class="crr-k"><span>Economy</span><i>${f.cpMul}× · +${f.startCp} CP</i></div>`+
+      (Object.keys(f.groups).filter(k=>f.groups[k]!=='off').length
+        ? `<div class="crr-k"><span>Orders</span><i>${GROUP_KEYS.filter(k=>f.groups[k]!=='off').map(k=>escapeHTML((groupOpt(k,f.groups[k])||{name:f.groups[k]}).name)).join(', ')}</i></div>`
+        : '')+
+      `</div>`;
+  }
+  h+=`</div>`;
+  h+=`<h2>Timeline</h2>`;
+  h+=evs.length
+    ? `<div class="crr-tl">`+evs.map(e=>
+        `<div class="crr-ev"><span>${Math.floor(e.t/60)}:${String(Math.floor(e.t%60)).padStart(2,'0')}</span>`+
+        `<b style="color:${escapeHTML(e.col)}">${escapeHTML(e.txt)}</b>`+
+        (e.sub?`<i>${escapeHTML(e.sub)}</i>`:'')+`</div>`).join('')+`</div>`
+    : `<p>Nothing the game thought worth announcing — a very quiet fight.</p>`;
+  h+=`<div class="cr-note" style="margin-top:14px">🎬 Sandbox battle. No XP, no rank, no medals, no streak, and nothing submitted to any leaderboard.</div>`;
+  h+=`<div class="cr-chips" style="margin-top:12px">`+
+     `<button class="cr-btn" id="crr-again">↻ Run it again</button>`+
+     `<button class="cr-btn" id="crr-edit">✎ Edit the scenario</button>`+
+     `<button class="cr-btn" id="crr-copy">📋 Copy the scenario</button>`+
+     `</div>`;
+  h+=`</div></div>`;
+  el.innerHTML=h;
+  hideAllScreens('creatorreport');
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('btn-pause').classList.add('hidden');
+  const obs=document.getElementById('crobs'); if(obs)obs.classList.add('hidden');
+  el.classList.remove('hidden');
+  ambientStop();
+  const scCopy=JSON.parse(JSON.stringify(s));
+  document.getElementById('crr-back').onclick=()=>{ CREATOR.sc=scCopy; showTitle(); };
+  document.getElementById('crr-again').onclick=()=>{ CREATOR.sc=scCopy; creatorLaunch(scCopy); };
+  document.getElementById('crr-edit').onclick=()=>{ CREATOR.sc=scCopy; creatorOpen(); };
+  document.getElementById('crr-copy').onclick=()=>{
+    CREATOR.sc=scCopy; CREATOR.io=creatorExportText(scCopy); CREATOR.showIO=true;
+    creatorSay('Scenario is in the share box below.','var(--cyan)'); creatorOpen();
+  };
+}
+
 function startAttract(){
   narrStop();
   LAUNCH=null;
@@ -13422,6 +14653,7 @@ function showTitle(){
   if(!STORAGE_OK)storageWarn();
   if(!_comebackShown){ _comebackShown=true; showComeback(); }
   ambientStop(); infoClear();
+  { const ob=document.getElementById('crobs'); if(ob)ob.classList.add('hidden'); }
   hideAllScreens('title'); document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('title').classList.remove('hidden');
@@ -14088,7 +15320,7 @@ try{
   start = function(){
     _origStart.apply(this, arguments);
     try{ if(G && !G.attract && !G.tutorial && !G._gcTracked){ G._gcTracked=true;
-      gcEvent('battle-'+(G.kind||G.mode||'skirmish'));
+      gcEvent('battle-'+(G.kind||G.mode||'skirmish'));   // 🎬 'battle-creator' for a sandbox fight
       if(G.kind==='daily')gcEvent('daily-played');
     } }catch(e){}
   };
@@ -14097,7 +15329,13 @@ try{
     const wasOver = !!(G&&G.over);
     const r=_origEnd.apply(this, arguments);
     try{
-      if(G && !wasOver && !G.attract && !G.tutorial){
+      /* 🎬 A creator battle sits alongside attract and the tutorial here. The funnel
+         measures where real players fall out of the real game; a sandbox fight banked as
+         somebody's "first battle done" or "first win" makes that number a lie — and
+         funnelOnce() writes to SAVE, which is the one thing a creator battle must not do.
+         (Its mode counter above still fires: knowing Creator Mode gets used is useful, and
+         gcEvent touches nothing on disk.) */
+      if(G && !wasOver && !G.attract && !G.tutorial && !G.creator){
         funnelOnce('first-battle-done');
         if(winner==='B')funnelOnce('first-win');
         if(G.kind==='daily'&&winner==='B')gcEvent('daily-cleared');
