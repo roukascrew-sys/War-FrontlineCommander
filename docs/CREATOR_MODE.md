@@ -247,22 +247,54 @@ still banks a win, a local board place, a career row, a streak and one global su
   (`#crobs`), canvas and hotkeys inert except pause and speed.
 - A battle report (`#creatorreport`) with both orders of battle, per-side deployed/lost/
   kills/HQ, and a timeline fed by `announce()`.
+- Replay of the battle just fought, with a transport bar (`#replaybar`) — play/pause,
+  scrub, 0.5×/1×/2×, space, arrow keys, Escape. See §10.
 
-## 10. Deliberately not built, and why
+## 10. Replay
 
-**Battle replay.** The brief asked for replay *only if cheap*. It is not cheap here, and
-the reason is specific: the simulation calls `Math.random()` directly at dozens of sites —
-weapon jitter, lane picks, spawn scatter, the AI's own dice — so a replay would have to be
-either (a) a full per-frame state recording, which for 260 units at 60fps is megabytes a
-minute in a game whose entire storage is one localStorage key, or (b) a deterministic
-re-simulation, which means threading a seeded RNG through every one of those call sites and
-would change the *live* game's behaviour in the process. Both are larger and riskier than
-the feature they serve.
+Replay ships as a **recording**, not a re-simulation, and the reasoning is the whole design.
 
-What Creator Mode ships instead delivers most of the value at none of the risk: the
-**scenario** is reproducible. Anyone with the seed or the exported JSON gets the same setup,
-the same forces and the same commanders. The fight that plays out on top of it differs, and
-for balance testing that is arguably the point — one run of a matchup was never evidence.
+Re-simulating from a seed is the elegant version: a handful of bytes, perfectly shareable.
+It is unavailable here because the simulation calls `Math.random()` directly at dozens of
+sites — weapon spread, lane picks, spawn scatter, the AI's own dice. Making it reproducible
+means threading a seeded RNG through every one of them, which changes how the **live game**
+plays in order to add a feature to the sandbox. That is the wrong way round, so it was not
+done.
+
+What makes recording cheap instead is splitting the constant from the changing:
+
+| | stored | when |
+|---|---|---|
+| **roster** | one shallow clone of the unit — colour, sprite key, radius, category, name, every static field `drawUnit()` reads | once, the first time that unit is seen |
+| **frame** | five `Int16`s per living unit: roster index, x, y, hp as 0–255, and a bit field (muzzle / hit flash / shield / suppression), plus both HQ values | 10× per second of battle time |
+
+Measured: a 13-second fight recorded 124 frames over 67 roster entries in **43 KB** — about
+3 KB per battle-second. The caps are `REPLAY_MAX_FRAMES = 2400` (4 minutes at 10 Hz) and
+`REPLAY_MAX_ROSTER = 1500`; past either, recording stops and the report says
+"first 4 min" rather than silently truncating.
+
+Two details that matter:
+
+- **Playback rebuilds ordinary unit objects** from roster + frame and assigns them to
+  `G.units`, so the real `draw()` renders a replay with no special cases at all.
+- **Positions are interpolated** between the two nearest samples. At 10 Hz a unit covers
+  roughly 15 px between frames, and snapping through that reads as a stutter rather than
+  as an advance.
+
+Not reproduced: projectiles in flight, explosions, smoke, floating text. Those are
+transient FX carrying no state worth storing. Muzzle and hit flashes *are* recorded, so a
+firefight still looks like one.
+
+The sampler sits behind `G.creator`, so an ordinary battle carries no recorder and pays
+nothing for the feature. A replay lives in memory for the battle just fought and is offered
+on the battle report; a few minutes of frames dwarfs the entire career save, so none of it
+goes near `localStorage`.
+
+`replayClose()` restores the HQ values the battle actually ended on. Playback drives
+`G.hq`, and the report is built from `G` — without that, closing a replay mid-scrub would
+rewrite the result.
+
+## 11. Deliberately not built, and why
 
 **Blue off-map fire support.** See §3.2. Red-only, stated in the editor rather than
 silently absent.

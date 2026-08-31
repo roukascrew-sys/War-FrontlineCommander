@@ -8,6 +8,55 @@ engineering detail lives in the patch notes inside the game and in the commit hi
 
 ---
 
+## v1.30.0 — Replay
+
+Every Creator Mode battle now records itself, and the battle report hands it back: play,
+pause, scrub to any moment, 0.5× / 1× / 2×. Space plays and pauses, the arrow keys jump
+five seconds, Escape closes.
+
+### Why it's a recording and not a re-run
+
+The elegant version of replay is a seed. You store a few bytes, press play, and the game
+fights the battle again exactly as it did the first time. It's tiny, and you can post it.
+
+I couldn't do that here, and the reason is worth stating plainly rather than hiding. The
+simulation rolls dice in dozens of places — weapon spread, which lane the AI picks, where a
+unit scatters as it spawns, the AI's own choices. Making all of that reproducible means
+threading a controlled random number generator through every one of those places, which
+changes how the **live game** plays in order to add a feature to the sandbox. That is the
+wrong way round, so I recorded the battle instead.
+
+### What makes a recording cheap
+
+Splitting what changes from what doesn't.
+
+A unit's colour, size, sprite, category and name never change once it exists — so they're
+stored **once**, the first time that unit is seen. After that, each sample is five small
+numbers: which unit, where it is, how hurt it is, and whether it's firing, flinching,
+shielded or suppressed. Ten samples a second, with positions smoothed between them so the
+advance reads as an advance and not a stutter.
+
+A thirteen-second fight came out at **43 KB**.
+
+Playback rebuilds ordinary units from that and hands them to the normal renderer, so a
+replay looks exactly like the battle looked. Shells in flight and explosions aren't stored —
+they're momentary and carry no state worth keeping — but muzzle flashes and hit flashes are,
+so a firefight still reads as a firefight.
+
+### The boring, important parts
+
+Replays live in memory, for the battle you just watched. A few minutes of frames is far
+bigger than your entire career save, so none of this goes anywhere near your saved progress.
+
+An ordinary battle carries no recorder at all — the sampler sits behind the Creator Mode
+flag, so normal play pays nothing for the feature.
+
+And closing a replay hands the report back the HQ values the battle actually **ended** on.
+Playback drives those numbers as it scrubs, and the report is built from them; without that
+one line, closing a replay halfway through would have quietly rewritten the result.
+
+---
+
 ## v1.29.0 — Creator Mode
 
 You can now build a battle instead of only playing one.

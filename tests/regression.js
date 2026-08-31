@@ -3735,6 +3735,88 @@ const GROUP_FREE_CHANGES_MIRROR = 1;   // mirrors GROUP_FREE_CHANGES in the game
     ok(crCap.perSideB === crCap.expected && crCap.live <= crCap.cap,
       `[creator] the per-side opening cap holds at ${crCap.perSideB} and the field never exceeds the documented ${crCap.cap}-unit ceiling (started with ${crCap.live})`);
 
+    /* 33k. REPLAY. It is a RECORDING, not a re-simulation — the sim calls Math.random()
+       at dozens of sites, so a deterministic replay would mean changing the live game to
+       add a sandbox feature. What matters here is that it stays cheap (a bounded byte
+       budget), that it never touches a normal battle, and that closing it hands the report
+       back the state the fight actually ended on rather than wherever the scrub stopped. */
+    const crRep = await gp.evaluate(async () => {
+      showTitle(); await new Promise(r => setTimeout(r, 250));
+      const sc = creatorDefaultScenario();
+      sc.name = 'Replay Check';
+      sc.sides.B.control = 'ai'; sc.sides.R.control = 'ai';
+      sc.sides.B.cpMul = 3; sc.sides.R.cpMul = 3;
+      sc.sides.B.hqMul = 0.25; sc.sides.R.hqMul = 0.25;
+      sc.sides.B.opening = [{ key: 'tank', lane: 0, count: 3 }, { key: 'rifle', lane: 1, count: 5 }];
+      sc.sides.R.opening = [{ key: 'atgm', lane: 0, count: 3 }, { key: 'rifle', lane: 2, count: 5 }];
+      creatorLaunch(sc); G.speed = 2;
+      for (let i = 0; i < 400 && !G.over; i++) await new Promise(r => setTimeout(r, 50));
+      const R = LAST_REPLAY;
+      const rec = {
+        captured: !!R, frames: R ? R.rec.frames.length : 0, roster: R ? R.rec.roster.length : 0,
+        secs: R ? recSeconds(R.rec) : 0,
+        bytes: R ? R.rec.frames.reduce((n, f) => n + f.d.byteLength, 0) : 0,
+        typed: R ? (R.rec.frames[0].d instanceof Int16Array) : false,
+        endHqB: R ? R.hqB : null, endHqR: R ? R.hqR : null,
+        button: !!document.getElementById('crr-replay'),
+      };
+      // open it
+      const opened = replayOpen();
+      const atOpen = { opened, playing: G.replay.playing, units: G.units.length,
+                       bar: !document.getElementById('replaybar').classList.contains('hidden'),
+                       screens: [...document.querySelectorAll('.screen:not(.hidden)')].map(x => x.id).length,
+                       fx: G.projs.length + G.parts.length + G.floats.length };
+      // scrub to two different points and confirm the field genuinely differs
+      const s1 = (() => { G.replay.t = rec.secs * 0.15; G.replay.i = 0; replayApply();
+        return { t: G.replay.t, n: G.units.length, x: G.units.map(u => Math.round(u.x)).join() }; })();
+      const s2 = (() => { G.replay.t = rec.secs * 0.85; G.replay.i = 0; replayApply();
+        return { t: G.replay.t, n: G.units.length, x: G.units.map(u => Math.round(u.x)).join() }; })();
+      // interpolation: a point between two samples must not equal either neighbour exactly
+      const f0 = LAST_REPLAY.rec.frames[3], f1 = LAST_REPLAY.rec.frames[4];
+      G.replay.t = (f0.t + f1.t) / 2; G.replay.i = 0; replayApply();
+      const mid = G.units.length ? G.units[0].x : 0;
+      G.replay.t = f0.t; G.replay.i = 0; replayApply();
+      const at0 = G.units.length ? G.units[0].x : 0;
+      // transport
+      document.querySelector('[data-rp="sp"][data-v="2"]').click();
+      const speed = G.replay.speed;
+      document.querySelector('[data-rp="restart"]').click();
+      const restart = G.replay.t;
+      // close
+      document.querySelector('[data-rp="exit"]').click();
+      const closed = { replay: G.replay, bar: document.getElementById('replaybar').classList.contains('hidden'),
+                       report: !document.getElementById('creatorreport').classList.contains('hidden'),
+                       hqB: Math.round(G.hq.B), hqR: Math.round(G.hq.R) };
+      return { rec, atOpen, s1, s2, mid, at0, speed, restart, closed };
+    });
+    ok(crRep.rec.captured && crRep.rec.frames > 20 && crRep.rec.typed,
+      `[replay] a creator battle records itself — ${crRep.rec.frames} samples over ${Math.round(crRep.rec.secs)}s, frames stored as Int16Array`);
+    ok(crRep.rec.bytes / Math.max(1, crRep.rec.secs) < 20000,
+      `[replay] and stays cheap: ${Math.round(crRep.rec.bytes / 1024)} KB for the whole fight (~${Math.round(crRep.rec.bytes / Math.max(1, crRep.rec.secs) / 1024)} KB per battle-second) — the static half of every unit lives in the roster and is never re-stored`);
+    ok(crRep.atOpen.opened && crRep.atOpen.playing && crRep.atOpen.bar && crRep.atOpen.screens === 0 && crRep.atOpen.fx === 0,
+      '[replay] opening it clears the screens and the stale FX (nothing ages them — step() never runs during playback) and starts the transport');
+    ok(crRep.s1.x !== crRep.s2.x && crRep.s1.n > 0 && crRep.s2.n > 0,
+      `[replay] scrubbing rebuilds the field from the recording — ${crRep.s1.n} units early vs ${crRep.s2.n} late, in different places`);
+    ok(crRep.mid !== crRep.at0,
+      '[replay] positions are interpolated between samples rather than snapped to them — at 10Hz a unit covers ~15px per sample, and snapping through that reads as a stutter');
+    ok(crRep.speed === 2 && crRep.restart === 0,
+      '[replay] the transport works: speed and restart');
+    ok(crRep.closed.replay === null && crRep.closed.bar && crRep.closed.report,
+      '[replay] closing returns to the battle report');
+    ok(crRep.closed.hqB === crRep.rec.endHqB && crRep.closed.hqR === crRep.rec.endHqR,
+      `[replay] …with the HQ values the battle actually ENDED on (${crRep.closed.hqB}/${crRep.closed.hqR}), not wherever the scrub was left — playback drives G.hq, and the report is built from G`);
+
+    // 33l. a normal battle records nothing at all
+    const crNoRec = await gp.evaluate(async () => {
+      showTitle(); await new Promise(r => setTimeout(r, 250));
+      LAUNCH = null; sel.mode = 'skirmish'; sel.diff = 'recruit'; start();
+      G.prep = 0; G.frozen = false;
+      await new Promise(r => setTimeout(r, 900));
+      return { rec: !!G.rec, creator: !!G.creator, replay: !!G.replay };
+    });
+    ok(!crNoRec.rec && !crNoRec.creator && !crNoRec.replay,
+      '[replay] an ordinary battle carries no recorder at all — the sampler is behind the creator flag, so normal play pays nothing for the feature');
+
     // the boot-guard check above throws ONE error on purpose to prove a mid-battle fault no
     // longer covers a live match; everything else must still be clean
     const unexpected = gerr.filter(m => !/benign mid-battle blip/.test(m));

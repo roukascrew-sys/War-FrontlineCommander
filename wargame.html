@@ -1587,6 +1587,16 @@
     padding:7px 18px;background:#0a0e14e8;border-top:2px solid var(--line);font-size:11px;font-weight:800;
     letter-spacing:.6px;color:var(--dim);}
   #crobs .co-mid small{font-family:var(--mono);font-size:14px;color:var(--ink);letter-spacing:1px;}
+  /* replay transport */
+  #replaybar{position:absolute;left:0;right:0;bottom:0;z-index:17;display:flex;align-items:center;gap:8px;
+    padding:9px 14px;background:#0a0e14f2;border-top:2px solid var(--purple);font-family:var(--font);}
+  #replaybar button{padding:6px 11px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);
+    color:var(--dim);font-size:12px;font-weight:700;transition:.1s;}
+  #replaybar button:hover{color:var(--ink);border-color:var(--purple);}
+  #replaybar button.on{background:var(--purple);border-color:var(--purple);color:#0a0e14;}
+  #replaybar .rp-sp{display:flex;gap:3px;}
+  #replaybar #rp-time{font-family:var(--mono);font-size:12px;color:var(--ink);min-width:98px;text-align:center;}
+  #rp-scrub{flex:1;min-width:80px;accent-color:var(--purple);height:4px;cursor:pointer;}
   /* report */
   .crr-out{padding:14px;border-radius:11px;text-align:center;font-size:22px;font-weight:900;letter-spacing:1.5px;
     margin-bottom:12px;background:var(--panel);border:1px solid var(--line);}
@@ -2148,7 +2158,7 @@
     <div class="bf-m">The game couldn&rsquo;t start in this window.</div>
     <div class="bf-s">You&rsquo;re most likely previewing the file straight from an <b>email or Files attachment</b>. That preview blocks the game from running, and it can&rsquo;t be worked around from inside the page.</div>
     <div class="bf-s bf-fix"><b>Open it in a real browser instead:</b><br>tap the <b>share icon</b> (&#x2934;) &rarr; <b>Open in Safari</b> or <b>Chrome</b>.<br>If that option isn&rsquo;t offered, save the file to <b>Files</b> first, then open it from there in a browser &mdash; or just use the web link.</div>
-    <div class="bf-v">build <b id="bootfail-ver">1.29.0</b></div>
+    <div class="bf-v">build <b id="bootfail-ver">1.30.0</b></div>
   </div>
 </div>
 <div id="locktoast"></div>
@@ -2568,6 +2578,17 @@
   </div>
 
   <!-- RESULTS -->
+  <!-- 🎬 REPLAY TRANSPORT. Static markup on purpose — re-rendering it would drop the
+       scrub handle mid-drag, so only its values are updated. -->
+  <div id="replaybar" class="hidden">
+    <button data-rp="restart" title="Back to the start">⏮</button>
+    <button data-rp="play" id="rp-play" title="Play / pause">⏸</button>
+    <input type="range" id="rp-scrub" min="0" max="1000" value="0" step="1" aria-label="Scrub the replay">
+    <span id="rp-time">0:00 / 0:00</span>
+    <span class="rp-sp"><button data-rp="sp" data-v="0.5">0.5×</button><button data-rp="sp" data-v="1" class="on">1×</button><button data-rp="sp" data-v="2">2×</button></span>
+    <button data-rp="exit" title="Back to the report">✕ Close</button>
+  </div>
+
   <!-- 🎬 the observer strip: what replaces the commander's interface when nobody is commanding -->
   <div id="crobs" class="hidden"></div>
   <div class="screen hidden" id="results"></div>
@@ -4447,13 +4468,20 @@ const DIFFS={
        player starts with exactly what they used to have at the moment the fight began. */
 const PREP_MAX=180;        // hard cap, so an idle tab cannot sit frozen forever
 const PREP_GRANT_SECS=10;  // seconds of income granted up front, replacing prep-phase accrual
-const GAME_VERSION='1.29.0';
+const GAME_VERSION='1.30.0';
 // ── PATCH NOTES — quick bullets per version, newest first. Kept short on purpose; this is a
 // "what changed" skim, not a full commit log. ──
 // PHASE BOUNDARY: v1.9.0 is the first Phase 2 (Website / Lite-Version) release. Everything
 // v1.0.0–v1.8.0 was built during Phase 1 (Alpha & Playtesting). See PHASES.md at the repo root
 // for the full convention on how Phase 2 work is marked in this file going forward.
 const PATCH_NOTES=[
+  {v:'1.30.0',notes:[
+    '\ud83c\udfac REPLAY. Every Creator Mode battle now records itself, and the battle report offers it back: play, pause, scrub anywhere, 0.5\u00d7 / 1\u00d7 / 2\u00d7. Space plays and pauses, the arrow keys jump five seconds, Escape closes.',
+    'It is a RECORDING, not a re-run from a seed \u2014 and that was the whole design decision. The simulation rolls dice at dozens of places (weapon spread, lane picks, spawn scatter, the AI\u2019s own choices), so replaying from a seed would have meant changing how the LIVE game plays in order to add a sandbox feature. Wrong way round.',
+    'What makes a recording cheap is splitting what changes from what does not: each unit\u2019s look, size and name are stored ONCE when it first appears, and each sample after that is five small numbers \u2014 where it is, how hurt it is, and whether it is firing, flinching, shielded or suppressed. Ten samples a second, positions smoothed between them. A thirteen-second fight came to 43 KB.',
+    'Playback rebuilds ordinary units and hands them to the normal renderer, so a replay looks exactly like the battle did. Shells in flight and explosions are not stored \u2014 they are momentary and carry no state worth keeping \u2014 but muzzle flashes and hit flashes are, so a firefight still reads as a firefight.',
+    'Replays live in memory for the battle you just watched. A few minutes of frames is far bigger than your entire career save, so nothing about this goes near your saved progress, and an ordinary battle carries no recorder at all.',
+  ]},
   {v:'1.29.0',notes:[
     '\ud83c\udfac CREATOR MODE. Build a battle and watch it happen: pick both sides\u2019 doctrine, difficulty, stance, standing orders, roster, economy, HQ strength and exact opening forces, then fight it or sit back and watch. Real units, the nine real doctrines, the real difficulty profiles \u2014 the editor reads the game\u2019s own tables, so it can never offer you something that is not in the game.',
     '\ud83e\udde0 AI VERSUS AI. Set both commanders to AI and the SAME decision code that has always run the enemy runs both sides \u2014 including Legendary+, with its real budget discipline, its surge, its lane reads and its unit quality. It is not an aggression slider wearing the name. (Off-map fire support stays red-only for now: the strike layer aims at the blue half of the map and mirroring it properly is its own job.)',
@@ -6050,6 +6078,7 @@ function creatorApply(L){
   /* The per-side tally the battle report reads. G.kills counts only what BLUE killed,
      which describes a player's fight and not a fight between two AIs. */
   G.crStats={B:{spawned:0,lost:0,kills:0},R:{spawned:0,lost:0,kills:0}};
+  G.rec=recStart();   // 🎬 see the replay module — roster once, five Int16s per unit per sample
   G.laneTerrain=s.field.terrain.slice();
   /* Prep is the player's setup window. With nobody setting up it is a frozen field
      with a countdown on it, which is the opposite of watchable. */
@@ -7632,6 +7661,7 @@ function step(dt){
   spawnerTick(dt);            // production structures emit units
   aiStep(dt);
   updateUnits(dt);
+  if(G.creator&&G.rec)recSample();   // 🎬 one lightweight sample every 100ms of battle time
   if(!G.over)checkWin();
   updateProjs(dt);
   updateFX(dt);
@@ -9827,7 +9857,16 @@ function endGame(winner,reason){
      a counter. The submit function refuses creator entries independently (see
      LEADERBOARD_BACKEND.submit) so this gate is not the only thing standing between a
      hand-built 900k scenario and the public board. */
-  if(G.creator){ creatorShowReport(won,reason); return; }
+  if(G.creator){
+    /* The finished recording, stashed where the report can offer it. Held in memory
+       only: a few minutes of frames dwarfs the entire career save, so this never
+       goes near localStorage. hqB/hqR are kept so closing the replay can hand the
+       report back the values the battle actually ended on. */
+    if(G.rec&&G.rec.frames.length)
+      LAST_REPLAY={rec:G.rec,scenario:G.creatorScenario,hqB:G.hq.B,hqR:G.hq.R};
+    else LAST_REPLAY=null;
+    creatorShowReport(won,reason); return;
+  }
   // scoring
   let score=Math.round(G.dmgDealt*0.4+G.kills*12+G.bestCombo*20+(won?400:0));
   if(G.mode==='survival')score=Math.round(G.t*10+G.kills*12+G.wave*80);
@@ -11463,7 +11502,8 @@ function openMenu(){
   narrStop(); hideTut();
   document.getElementById('rivalbox').classList.remove('show');
   G=null; window.G=null; LAUNCH=null;
-  { const ob=document.getElementById('crobs'); if(ob)ob.classList.add('hidden'); }
+  { const ob=document.getElementById('crobs'); if(ob)ob.classList.add('hidden');
+    const rb=document.getElementById('replaybar'); if(rb)rb.classList.add('hidden'); }
   musicStart('menu'); musicSetTheme('menu');
   buildMenu(); refreshTopbar();
 }
@@ -11675,6 +11715,10 @@ function loop(now){
     if(sp>=2){ step(raw); if(!G.over)step(raw); }      // 2× = two capped sub-steps (no tunnelling)
     else step(raw*sp);                                  // 0.5× / 1× = scaled single step
   }
+  /* 🎬 A replay is not a paused battle: step() is never called (G.over is set), so the
+     player is what advances time and rebuilds G.units from the recording. draw() then
+     renders it with no idea it is looking at a recording. */
+  if(G&&G.replay)replayTick(raw);
   if(laneHintT>0){laneHintT-=raw;if(laneHintT<=0)document.getElementById('lanehint').style.opacity='0';}
   draw();
   syncHUD();
@@ -11693,6 +11737,20 @@ window.addEventListener('keydown',e=>{
   const openScr=document.querySelector('.screen:not(.hidden)');
   if(openScr && openScr.id!=='pauseScreen')return;
   const k=e.key.toLowerCase();
+  /* 🎬 A replay is not a battle, so the battle hotkeys would be commanding an army that
+     no longer exists. Space is the transport's play/pause (the same key it is everywhere
+     else that plays something back), the arrows scrub, and nothing else lands. */
+  if(G.replay){
+    const P=G.replay;
+    if(k===' '){ P.playing=!P.playing; e.preventDefault(); }
+    else if(k==='arrowleft'||k==='arrowright'){
+      P.t=Math.max(0,Math.min(replayEnd(),P.t+(k==='arrowright'?5:-5)));
+      P.i=0; P.playing=false; replayApply(); e.preventDefault();
+    }
+    else if(k==='escape'){ replayClose(); e.preventDefault(); return; }
+    replayBarSync(true);
+    return;
+  }
   if(k===' '){e.preventDefault();togglePause();return;}
   /* 🎬 A spectated battle keeps the time controls (pause above, speed below) and
      nothing else — every other hotkey commands an army the viewer does not have. */
@@ -13840,6 +13898,7 @@ document.getElementById('t-gauntlet').onclick=()=>openGauntlet();
 document.getElementById('gaunt-back').onclick=()=>showTitle();
 document.getElementById('t-creator').onclick=()=>creatorOpen();
 try{ wireCreator(); }catch(e){}
+try{ wireReplayBar(); }catch(e){}
 document.getElementById('gf-back').onclick=()=>{ if(_gfFrom==='gauntlet')openGauntlet(); else showTitle(); };
 document.getElementById('st-back').onclick=()=>showTitle();
 document.getElementById('dl-back').onclick=()=>{ if(_dlFrom==='settings')openSettings(); else showTitle(); };
@@ -14101,6 +14160,198 @@ function runLoader(){
 // future reordering a hard ReferenceError that kills the boot. `var` hoists, so the worst case
 // degrades to a harmless no-op instead of a dead game.
 var ATTRACT_STARTING=false;
+/* ═══════════════════════════════════════════════════════════════════════════════
+   🎬 REPLAY — watch the battle back
+   ═══════════════════════════════════════════════════════════════════════════════
+   WHY THIS IS A RECORDING AND NOT A RE-SIMULATION.
+   The obvious way to build replay is to re-run the fight from a seed. That is not
+   available here: the simulation calls Math.random() directly at dozens of sites —
+   weapon spread, lane picks, spawn scatter, the AI's own dice — so a deterministic
+   replay would mean threading a seeded RNG through every one of them, which changes
+   how the LIVE game plays in order to add a feature to the sandbox. That trade is
+   the wrong way round.
+
+   So this records what happened instead. The trick that makes it cheap is the split
+   between what changes and what doesn't:
+
+     · the ROSTER holds one clone of each unit the moment it first appears — colour,
+       sprite key, radius, category, name, every static field drawUnit() reads. Taken
+       once, never repeated.
+     · a FRAME holds only what moved: five Int16s per living unit (roster index, x, y,
+       hp as 0-255, and a bit field for muzzle flash / hit flash / shield / suppression),
+       plus both HQ values.
+
+   At 10 samples a second that is a few hundred bytes a frame rather than a few
+   hundred kilobytes, and playback rebuilds ordinary unit objects from roster + frame
+   so the REAL draw() renders it with no special cases at all.
+
+   What it does not reproduce: projectiles in flight, explosions, smoke and floating
+   text. Those are transient FX with no state worth storing, and units that fire,
+   flinch and die read perfectly well without them. Muzzle and hit flashes ARE
+   recorded, so a firefight still looks like a firefight.
+
+   Scope, deliberately: a replay lives in memory for the battle you just watched. It
+   is offered on the battle report and it is not written to the save — a few minutes
+   of frames is far larger than the entire career file, and localStorage is not the
+   place for it. ═════════════════════════════════════════════════════════════════ */
+const REPLAY_HZ=10;                    // samples per second of BATTLE time
+const REPLAY_DT=1/REPLAY_HZ;
+const REPLAY_MAX_FRAMES=2400;          // 4 minutes of battle at 10Hz
+const REPLAY_MAX_ROSTER=1500;          // distinct units across a whole fight
+let LAST_REPLAY=null;                  // the finished recording, offered on the report
+
+function recStart(){
+  return { roster:[], byId:new Map(), frames:[], next:0, truncated:false };
+}
+/* Called once per simulation step of a creator battle. Keyed off G.t rather than a
+   frame counter, so 2x speed (which runs step() twice a frame) samples the same
+   battle-time interval and the replay plays back at the speed it was fought. */
+function recSample(){
+  const R=G&&G.rec; if(!R||R.truncated)return;
+  if(G.t<R.next)return;
+  R.next=G.t+REPLAY_DT;
+  if(R.frames.length>=REPLAY_MAX_FRAMES){ R.truncated=true; return; }
+  const d=[];
+  for(const u of G.units){
+    if(!u.alive)continue;
+    let idx=R.byId.get(u.id);
+    if(idx===undefined){
+      if(R.roster.length>=REPLAY_MAX_ROSTER)continue;   // stop admitting new units, keep recording the rest
+      /* A shallow clone of the live unit. `tgt` is the one field that points at
+         another unit — kept out so a recording cannot pin a dead army in memory. */
+      const c=Object.assign({},u); c.tgt=null; c.spotted=true;
+      idx=R.roster.length; R.roster.push(c); R.byId.set(u.id,idx);
+    }
+    d.push(idx, Math.round(u.x), Math.round(u.y),
+      Math.max(0,Math.min(255,Math.round(255*u.hp/Math.max(1,u.maxHp)))),
+      (u.muzzle>0?1:0)|(u.hitFlash>0?2:0)|(u.shield?4:0)|((u.sup||0)>0.5?8:0));
+  }
+  R.frames.push({t:G.t,b:Math.round(G.hq.B),r:Math.round(G.hq.R),d:Int16Array.from(d)});
+}
+function recSeconds(R){ return (R&&R.frames.length)?R.frames[R.frames.length-1].t:0; }
+
+/* ── playback ─────────────────────────────────────────────────────────────── */
+function replayEnd(){ const P=G&&G.replay; return P?recSeconds(P.rec):0; }
+/* Rebuild G.units for the current playback time. Positions are interpolated between
+   the two nearest samples: at 10Hz a unit moves ~15px between frames, and snapping
+   through that reads as a stutter rather than as an advance. */
+function replayApply(){
+  const P=G.replay, R=P.rec, n=R.frames.length;
+  if(!n)return;
+  let i=P.i;
+  while(i<n-1 && R.frames[i+1].t<=P.t)i++;
+  while(i>0 && R.frames[i].t>P.t)i--;
+  P.i=i;
+  const f=R.frames[i], g=R.frames[Math.min(n-1,i+1)];
+  const span=g.t-f.t;
+  const a=span>1e-4?Math.max(0,Math.min(1,(P.t-f.t)/span)):0;
+  // where each unit is in the NEXT sample, so the tween has something to aim at
+  const nx=P.nx; nx.clear();
+  for(let k=0;k<g.d.length;k+=5)nx.set(g.d[k],k);
+  const out=[];
+  for(let k=0;k<f.d.length;k+=5){
+    const idx=f.d[k], base=R.roster[idx];
+    if(!base)continue;
+    let x=f.d[k+1], y=f.d[k+2];
+    const gk=nx.get(idx);
+    if(gk!==undefined){ x+=(g.d[gk+1]-x)*a; y+=(g.d[gk+2]-y)*a; }
+    const bits=f.d[k+4];
+    const u=Object.assign({},base);
+    u.x=x; u.y=y; u.alive=true; u.spotted=true;
+    u.hp=base.maxHp*(f.d[k+3]/255);
+    u.muzzle=(bits&1)?0.06:0; u.hitFlash=(bits&2)?0.08:0;
+    u.shield=!!(bits&4); u.sup=(bits&8)?1:0;
+    u.bob=base.bob+P.t*2.2;          // keep the marching gait alive during playback
+    out.push(u);
+  }
+  G.units=out;
+  G.hq.B=f.b; G.hq.R=f.r;
+}
+function replayTick(raw){
+  const P=G&&G.replay; if(!P)return;
+  if(P.playing){
+    const end=replayEnd();
+    P.t+=raw*(P.speed||1);
+    if(P.t>=end){ P.t=end; P.playing=false; }
+  }
+  replayApply();
+  replayBarSync();
+}
+/* Opened from the battle report, where G is still the battle that was just fought —
+   which is what lets playback reuse the real field, lanes, weather and HQ bars
+   instead of rebuilding a stage that would not match what was recorded. */
+function replayOpen(){
+  const R=LAST_REPLAY;
+  if(!R||!R.rec||!R.rec.frames.length||!G||G.rec!==R.rec)return false;
+  G.over=true; G.paused=false;
+  /* Transient FX belong to a fight that has finished. Left in place they would hang
+     frozen over the replay, because step() — which is what ages them — never runs. */
+  G.units=[]; G.projs=[]; G.parts=[]; G.floats=[]; G.rings=[]; G.drops=[]; G.smokes=[];
+  G.replay={rec:R.rec,t:0,i:0,playing:true,speed:1,nx:new Map()};
+  hideAllScreens();
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('btn-pause').classList.add('hidden');
+  const ob=document.getElementById('crobs'); if(ob)ob.classList.add('hidden');
+  const bar=document.getElementById('replaybar'); if(bar)bar.classList.remove('hidden');
+  ambientStop(); narrStop();
+  replayApply(); replayBarSync(true);
+  return true;
+}
+function replayClose(){
+  if(!G||!G.replay)return;
+  G.replay=null;
+  /* Playback drove G.hq to whatever moment it stopped on. The report is built from
+     G, so hand back the values the battle actually ended on before showing it again
+     — otherwise closing the replay halfway through would rewrite the result. */
+  if(LAST_REPLAY){ G.hq.B=LAST_REPLAY.hqB; G.hq.R=LAST_REPLAY.hqR; }
+  G.units=[];
+  const bar=document.getElementById('replaybar'); if(bar)bar.classList.add('hidden');
+  const rep=document.getElementById('creatorreport');
+  hideAllScreens('creatorreport');
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('btn-pause').classList.add('hidden');
+  if(rep&&rep.innerHTML)rep.classList.remove('hidden');
+  else showTitle();
+}
+let _rpBarAt=0;
+function replayBarSync(force){
+  const P=G&&G.replay; if(!P)return;
+  const now=performance.now();
+  if(!force&&now-_rpBarAt<100)return;
+  _rpBarAt=now;
+  const end=replayEnd()||1;
+  const scrub=document.getElementById('rp-scrub');
+  if(scrub&&document.activeElement!==scrub)scrub.value=String(Math.round(1000*P.t/end));
+  const t=document.getElementById('rp-time');
+  const mmss=v=>Math.floor(v/60)+':'+String(Math.floor(v%60)).padStart(2,'0');
+  if(t)t.textContent=mmss(P.t)+' / '+mmss(end);
+  const pb=document.getElementById('rp-play');
+  if(pb)pb.textContent=P.playing?'⏸':'▶';
+}
+function wireReplayBar(){
+  const bar=document.getElementById('replaybar'); if(!bar)return;
+  bar.addEventListener('click',ev=>{
+    const b=ev.target.closest('[data-rp]'); if(!b)return;
+    const P=G&&G.replay; if(!P)return;
+    const a=b.dataset.rp;
+    if(a==='play')P.playing=!P.playing;
+    else if(a==='restart'){ P.t=0; P.i=0; P.playing=true; }
+    else if(a==='sp'){
+      P.speed=parseFloat(b.dataset.v)||1;
+      bar.querySelectorAll('[data-rp="sp"]').forEach(x=>x.classList.toggle('on',x===b));
+    }
+    else if(a==='exit'){ replayClose(); return; }
+    replayApply(); replayBarSync(true);
+  });
+  const scrub=document.getElementById('rp-scrub');
+  if(scrub)scrub.addEventListener('input',()=>{
+    const P=G&&G.replay; if(!P)return;
+    P.t=(parseFloat(scrub.value)/1000)*(replayEnd()||1);
+    P.i=0; P.playing=false;
+    replayApply(); replayBarSync(true);
+  });
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════════
    CREATOR MODE — the authoring screen, the generator, the observer and the report
    ═══════════════════════════════════════════════════════════════════════════════
@@ -14592,6 +14843,8 @@ function creatorShowReport(won,reason){
     : `<p>Nothing the game thought worth announcing — a very quiet fight.</p>`;
   h+=`<div class="cr-note" style="margin-top:14px">🎬 Sandbox battle. No XP, no rank, no medals, no streak, and nothing submitted to any leaderboard.</div>`;
   h+=`<div class="cr-chips" style="margin-top:12px">`+
+     (LAST_REPLAY&&LAST_REPLAY.rec&&LAST_REPLAY.rec.frames.length
+       ? `<button class="cr-btn" id="crr-replay">▶ Watch the replay${LAST_REPLAY.rec.truncated?' (first 4 min)':''}</button>` : '')+
      `<button class="cr-btn" id="crr-again">↻ Run it again</button>`+
      `<button class="cr-btn" id="crr-edit">✎ Edit the scenario</button>`+
      `<button class="cr-btn" id="crr-copy">📋 Copy the scenario</button>`+
@@ -14606,6 +14859,7 @@ function creatorShowReport(won,reason){
   ambientStop();
   const scCopy=JSON.parse(JSON.stringify(s));
   document.getElementById('crr-back').onclick=()=>{ CREATOR.sc=scCopy; showTitle(); };
+  { const rb=document.getElementById('crr-replay'); if(rb)rb.onclick=()=>replayOpen(); }
   document.getElementById('crr-again').onclick=()=>{ CREATOR.sc=scCopy; creatorLaunch(scCopy); };
   document.getElementById('crr-edit').onclick=()=>{ CREATOR.sc=scCopy; creatorOpen(); };
   document.getElementById('crr-copy').onclick=()=>{
@@ -14653,7 +14907,8 @@ function showTitle(){
   if(!STORAGE_OK)storageWarn();
   if(!_comebackShown){ _comebackShown=true; showComeback(); }
   ambientStop(); infoClear();
-  { const ob=document.getElementById('crobs'); if(ob)ob.classList.add('hidden'); }
+  { const ob=document.getElementById('crobs'); if(ob)ob.classList.add('hidden');
+    const rb=document.getElementById('replaybar'); if(rb)rb.classList.add('hidden'); }
   hideAllScreens('title'); document.getElementById('hud').classList.add('hidden');
   document.getElementById('btn-pause').classList.add('hidden');
   document.getElementById('title').classList.remove('hidden');
