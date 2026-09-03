@@ -116,17 +116,23 @@ developed on AAPL+IBM and validated on MSFT+GOOG, which were held out.
 
 | | fixed rules | adaptive |
 |---|---|---|
-| Total return | +26.4% | +124.7% |
-| Max drawdown | 10.7% | 12.3% |
-| Win rate | 41.7% | 44.0% |
-| **Avg R-multiple** | **+0.17** | **+0.33** |
-| Profit factor | 1.43 | 1.96 |
-| **Rank corr with realized R** | — | **+0.291** |
-| Mean R, top 40% vs all | — | **+0.56 vs +0.19 (2.9×)** |
+| Total return | +26.4% | +127.3% |
+| Max drawdown | 10.7% | 13.2% |
+| Win rate | 41.7% | 46.1% |
+| **Avg R-multiple** | **+0.17** | **+0.35** |
+| Profit factor | 1.43 | 2.06 |
+| Sharpe | 0.39 | 0.88 |
+| Rank corr with realized R | — | +0.031 |
 
 Ranking quality is stable across time: AUC on win/loss computed *within* each of
 8 sub-periods averages 0.72 on dev and 0.72 held-out, with every block above 0.58
 including 2008 — so it is not an artifact of scores drifting with the win rate.
+
+**Read the next section before believing this table.** It credits the whole
+adaptive layer for a gap that controls show is almost entirely the widened
+candidate pool. Note also that rank correlation on this single seed is +0.031,
+essentially nothing — an earlier version of this table reported +0.291, which
+was inflated by the veto bug described above.
 
 ### Does the learning actually earn its keep? Mostly no — read this
 
