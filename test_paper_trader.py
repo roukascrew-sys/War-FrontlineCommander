@@ -10,7 +10,10 @@ never generates prices and always pulls real market data from yfinance.
 
 from __future__ import annotations
 
+import json
 import math
+import os
+import random
 import sys
 from datetime import datetime, timedelta, timezone
 
@@ -48,6 +51,9 @@ def make_cfg(**overrides) -> pt.Config:
     cfg.position_size_pct = 0.20
     cfg.max_gross_exposure = 1.0
     cfg.allow_fractional_equity = False
+    cfg.enable_adaptive = False          # fixed-rule tests; adaptive tests opt in
+    cfg.adaptive_seed = 7
+    cfg.output_dir = "/tmp/paper_trader_test_runs"
     for key, value in overrides.items():
         setattr(cfg, key, value)
     return cfg
@@ -661,6 +667,540 @@ def test_reports_written(tmp_dir: str = "/tmp/paper_trader_test_reports") -> Non
     check("reports: summary renders",
           "PAPER TRADING SUMMARY" in pt.render_summary(pf, cfg, pt.compute_metrics(pf)))
     shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+# =============================================================================
+#  Base-formula upgrades
+# =============================================================================
+
+def test_breakout_buffer_filters_marginal_pokes() -> None:
+    strat = pt.BreakoutStrategy(make_cfg(breakout_buffer_atr=0.5, use_trend_filter=False))
+    # ATR 2.0 -> buffer 1.0. Range high 104: a close of 104.5 is inside the buffer.
+    inside = _row(100, 105, 99, 104.5, atr=2.0, vol=300.0,
+                  donchian_high=104.0, donchian_low=90.0, vol_avg=100.0)
+    beyond = _row(100, 106, 99, 105.5, atr=2.0, vol=300.0,
+                  donchian_high=104.0, donchian_low=90.0, vol_avg=100.0)
+    check("buffer: marginal poke ignored", strat.entry_signal(inside).action == "none")
+    check("buffer: clean break taken", strat.entry_signal(beyond).action == "enter")
+
+
+def test_risk_parity_sizing() -> None:
+    # Stop 10%, huge trail so the hard stop is the nearer one. 2% risk budget on
+    # $10k = $200 at risk -> $2,000 notional, below the 50% ($5k) cap.
+    cfg = make_cfg(risk_per_trade_pct=0.02, stop_loss_pct=0.10, trail_atr_mult=100.0,
+                   position_size_pct=0.5, allow_fractional_equity=True)
+    pf = pt.Portfolio(cfg)
+    pf.mark_prices({"TEST": 100.0})
+    pos = pf.open_position(T0, "TEST", +1, 100.0, atr=1.0, reason="t")
+    check("risk sizing: notional = risk budget / stop distance",
+          pos is not None and close_to(pos.qty * pos.avg_entry, 2_000.0, 1.0),
+          f"notional={pos.qty * pos.avg_entry if pos else None}")
+    check("risk sizing: initial_risk_pct recorded",
+          pos is not None and close_to(pos.initial_risk_pct, 0.10))
+
+    # A tighter trailing stop (2 ATR of 1.0 on a $100 stock = 2%) defines the risk.
+    cfg2 = make_cfg(risk_per_trade_pct=0.02, stop_loss_pct=0.10, trail_atr_mult=2.0,
+                    position_size_pct=1.0, allow_fractional_equity=True)
+    pf2 = pt.Portfolio(cfg2)
+    pf2.mark_prices({"TEST": 100.0})
+    pos2 = pf2.open_position(T0, "TEST", +1, 100.0, atr=1.0, reason="t")
+    # Sizing estimates risk from the pre-slippage price; the position records it
+    # from the actual fill (100.1), so the recorded risk is 2/100.1, not 2/100.
+    check("risk sizing: nearer stop (trail) defines risk, measured at the fill",
+          pos2 is not None and close_to(pos2.initial_risk_pct, 2.0 / 100.1, 1e-9),
+          f"got {pos2.initial_risk_pct if pos2 else None}")
+    check("risk sizing: notional scales up with a tight stop, but cash-capped",
+          pos2 is not None and pos2.qty * pos2.avg_entry <= 10_000.0 + 1e-6)
+
+    # risk_per_trade_pct = 0 restores plain notional sizing.
+    cfg3 = make_cfg(risk_per_trade_pct=0.0, position_size_pct=0.3,
+                    allow_fractional_equity=True)
+    pf3 = pt.Portfolio(cfg3)
+    pf3.mark_prices({"TEST": 100.0})
+    pos3 = pf3.open_position(T0, "TEST", +1, 100.0, atr=1.0, reason="t")
+    check("risk sizing: disabled -> fixed notional",
+          pos3 is not None and close_to(pos3.qty * pos3.avg_entry, 3_000.0, 1.0))
+
+
+def test_exit_playbooks_resolve() -> None:
+    cfg = make_cfg(stop_loss_pct=0.10, trail_atr_mult=2.0, take_profit_pct=0.20)
+    tight = pt.resolve_exit_params(cfg, "tight")
+    loose = pt.resolve_exit_params(cfg, "loose")
+    base = pt.resolve_exit_params(cfg, "base")
+    unknown = pt.resolve_exit_params(cfg, "does-not-exist")
+    check("playbook: tight scales stop down", close_to(tight.stop_loss_pct, 0.06))
+    check("playbook: loose scales stop up", close_to(loose.stop_loss_pct, 0.15))
+    check("playbook: loose removes the target", loose.take_profit_pct == 0.0)
+    check("playbook: base is identity",
+          close_to(base.stop_loss_pct, 0.10) and close_to(base.trail_atr_mult, 2.0))
+    check("playbook: unknown name falls back to base", unknown.playbook == "base")
+
+    pf = pt.Portfolio(cfg)
+    pf.mark_prices({"TEST": 100.0})
+    pos = pf.open_position(T0, "TEST", +1, 100.0, atr=1.0, reason="t", exit_params=tight)
+    check("playbook: position carries its own stop",
+          pos is not None and close_to(pos.hard_stop, pos.avg_entry * 0.94, 1e-6))
+    check("playbook: position records playbook name", pos is not None and pos.playbook == "tight")
+
+
+def test_r_multiple_recorded() -> None:
+    cfg = make_cfg(stop_loss_pct=0.10, trail_atr_mult=100.0, allow_fractional_equity=True)
+    pf = pt.Portfolio(cfg)
+    pf.mark_prices({"TEST": 100.0})
+    pf.open_position(T0, "TEST", +1, 100.0, atr=1.0, reason="t")
+    pf.mark_prices({"TEST": 120.0})
+    trade = pf.close_position(T0 + timedelta(hours=1), "TEST", 120.0, "t")
+    # ~+20% on a 10% initial risk => roughly +2R (slightly less after slippage).
+    check("R-multiple: close_position returns the trade", trade is not None)
+    check("R-multiple: roughly +2R on a +20% move with a 10% stop",
+          trade is not None and 1.8 < trade.r_multiple < 2.0, f"got {trade.r_multiple if trade else None}")
+
+
+# =============================================================================
+#  Adaptive layer
+# =============================================================================
+
+def test_online_logit_learns_a_pattern() -> None:
+    rng = np.random.default_rng(0)
+    model = pt.OnlineLogit(3, lr=0.1, l2=0.001)
+    for _ in range(600):
+        x = [1.0, float(rng.uniform(-1, 1)), float(rng.uniform(-1, 1))]
+        y = 1.0 if x[1] > 0.1 else 0.0           # label depends on feature 1 only
+        model.update(x, y)
+    check("logit: positive class scored high", model.predict([1.0, 0.9, 0.0]) > 0.8,
+          f"got {model.predict([1.0, 0.9, 0.0]):.2f}")
+    check("logit: negative class scored low", model.predict([1.0, -0.9, 0.0]) < 0.2,
+          f"got {model.predict([1.0, -0.9, 0.0]):.2f}")
+    check("logit: irrelevant feature stays small",
+          abs(float(model.w[2])) < abs(float(model.w[1])) * 0.3,
+          f"w={model.w}")
+    acc = model.rolling_accuracy()
+    check("logit: rolling accuracy is high", acc is not None and acc > 0.85, f"acc={acc}")
+    cal = model.calibration()
+    check("logit: calibration reported", cal is not None and 0 <= cal[0] <= 1)
+
+
+def test_bandit_converges_to_best_arm() -> None:
+    rng = random.Random(3)
+    bandit = pt.ThompsonBandit(["a", "b", "c"], rng)
+    true_mean = {"a": -0.2, "b": 0.6, "c": 0.1}
+    picks = {"a": 0, "b": 0, "c": 0}
+    for _ in range(400):
+        arm = bandit.choose("ctx")
+        bandit.update("ctx", arm, rng.gauss(true_mean[arm], 0.5))
+        picks[arm] += 1
+    check("bandit: best arm chosen most often", picks["b"] > picks["a"] and picks["b"] > picks["c"],
+          f"picks={picks}")
+    check("bandit: best arm dominates", picks["b"] > 200, f"picks={picks}")
+    check("bandit: unknown context still returns an arm", bandit.choose("never-seen") in ("a", "b", "c"))
+    bandit.update("ctx", "zzz", 1.0)   # unknown arm must be ignored, not crash
+    check("bandit: describe renders", "b" in bandit.describe("ctx"))
+
+
+def test_entry_features_bounded() -> None:
+    cfg = make_cfg(crypto_universe=["BTC-USD"])
+    row = _row(100, 106, 99, 105, atr=2.0, vol=900.0,
+               donchian_high=104.0, donchian_low=90.0, vol_avg=100.0, sma_trend=95.0)
+    feats = pt.entry_features(row, cfg, "BTC-USD", +1, T0, sym_ewma_r=0.4)
+    check("features: length matches names", len(feats) == len(pt.FEATURE_NAMES))
+    check("features: all bounded in [-1, 1]", all(-1.0 - 1e-9 <= f <= 1.0 + 1e-9 for f in feats),
+          f"{feats}")
+    check("features: bias is 1", feats[0] == 1.0)
+    check("features: crypto flag set", feats[pt.FEATURE_NAMES.index("is_crypto")] == 1.0)
+    check("features: volume ratio saturates at 5x",
+          close_to(feats[pt.FEATURE_NAMES.index("vol_ratio")], 1.0))
+    short_feats = pt.entry_features(row, cfg, "TEST", -1, T0, 0.0)
+    check("features: direction sign carried", short_feats[pt.FEATURE_NAMES.index("direction")] == -1.0)
+
+
+def test_shadow_trade_labels_the_model() -> None:
+    cfg = make_cfg(enable_adaptive=True, stop_loss_pct=0.10, trail_atr_mult=100.0,
+                   take_profit_pct=0.0, vol_contraction_ratio=0.0)
+    learner = pt.AdaptiveLearner(cfg)
+    row = _row(100, 106, 99, 105, atr=2.0, vol=300.0,
+               donchian_high=104.0, donchian_low=90.0, vol_avg=100.0)
+    d = learner.decide_entry(T0, "TEST", +1, row)
+    check("shadow: warm-up decisions are taken at full size", d.take and d.size_mult == 1.0)
+    check("shadow: warm-up note explains itself", "warm-up" in d.note)
+    learner.register_signal(T0, "TEST", +1, row, d.features, d.context)
+    check("shadow: one shadow opened", "TEST" in learner.shadows)
+    learner.register_signal(T0, "TEST", +1, row, d.features, d.context)
+    check("shadow: no duplicate per symbol", len(learner.shadows) == 1)
+
+    # Price collapses through the 10% stop: shadow exits, model gets a loss label.
+    n_before = learner.model.n
+    learner.observe_bar("TEST", _row(90, 91, 88, 89, atr=2.0), T0 + timedelta(hours=1))
+    check("shadow: closed on stop", "TEST" not in learner.shadows)
+    check("shadow: model received one label", learner.model.n == n_before + 1)
+    check("shadow: labels counter bumped", learner.labels == 1)
+    check("shadow: symbol EWMA went negative", learner.sym_ewma_r.get("TEST", 0.0) < 0)
+
+    # A shadow that never exits is force-labeled after the max bar count.
+    cfg2 = make_cfg(enable_adaptive=True, adaptive_shadow_max_bars=5, stop_loss_pct=0.5,
+                    trail_atr_mult=100.0, take_profit_pct=0.0, vol_contraction_ratio=0.0)
+    l2 = pt.AdaptiveLearner(cfg2)
+    d2 = l2.decide_entry(T0, "TEST", +1, row)
+    l2.register_signal(T0, "TEST", +1, row, d2.features, d2.context)
+    for i in range(5):
+        l2.observe_bar("TEST", _row(105, 106, 104, 105, atr=2.0), T0 + timedelta(hours=i + 1))
+    check("shadow: expired after max bars", "TEST" not in l2.shadows and l2.model.n == 1)
+
+
+def test_learner_absolute_floor_veto() -> None:
+    """A uniformly pessimistic model is caught by the absolute floor, even when
+    every signal ranks the same relative to its peers."""
+    cfg = make_cfg(enable_adaptive=True, adaptive_min_samples=5, adaptive_skip_threshold=0.45,
+                   adaptive_skip_quantile=0.0, adaptive_exploration=0.0)
+    learner = pt.AdaptiveLearner(cfg)
+    row = _row(100, 106, 99, 105, atr=2.0, vol=300.0,
+               donchian_high=104.0, donchian_low=90.0, vol_avg=100.0)
+    learner.model.n = 10
+    learner.model.w[:] = 0.0
+    learner.model.w[0] = -3.0            # p ~ 0.05 for everything
+    d = learner.decide_entry(T0, "TEST", +1, row)
+    check("floor veto: low-probability signal rejected", not d.take, d.note)
+    check("floor veto: counted", learner.vetoes == 1)
+    check("floor veto: p reported", d.p_win is not None and d.p_win < 0.1)
+    check("floor veto: reason names the floor", "floor" in d.note, d.note)
+
+    learner.model.w[0] = +3.0            # p ~ 0.95 for everything
+    d2 = learner.decide_entry(T0, "TEST", +1, row)
+    check("floor veto: confident signal taken", d2.take, d2.note)
+
+
+def test_learner_rank_based_veto_and_sizing() -> None:
+    """Vetoing and sizing key off a signal's RANK among recent signals, so they
+    keep working when the model's probabilities all cluster near 0.5 — which is
+    the normal case, since every signal has already passed the entry gate."""
+    cfg = make_cfg(enable_adaptive=True, adaptive_min_samples=5, adaptive_skip_quantile=0.25,
+                   adaptive_skip_threshold=0.0, adaptive_exploration=0.0,
+                   adaptive_size_min_mult=0.5, adaptive_size_max_mult=1.5)
+    learner = pt.AdaptiveLearner(cfg)
+    learner.model.n = 100
+    # A realistic, tightly-clustered score history around 0.5.
+    learner.recent_scores = [0.45 + 0.001 * i for i in range(100)]   # 0.450 .. 0.549
+
+    cutoff = learner.quantile_cutoff()
+    check("rank veto: cutoff sits at the 25th percentile",
+          cutoff is not None and close_to(cutoff, 0.475, 1e-6), f"got {cutoff}")
+    check("rank: percentile of a mid score", close_to(learner.score_percentile(0.50), 0.50, 0.02))
+    check("rank: percentile of a top score", learner.score_percentile(0.60) > 0.95)
+
+    def decide_with_p(p: float) -> pt.EntryDecision:
+        """Force the model to output p by setting the bias only."""
+        learner.model.w[:] = 0.0
+        learner.model.w[0] = math.log(p / (1 - p))
+        row = _row(100, 106, 99, 105, atr=2.0, vol=300.0,
+                   donchian_high=104.0, donchian_low=90.0, vol_avg=100.0)
+        before = list(learner.recent_scores)
+        d = learner.decide_entry(T0, "TEST", +1, row)
+        learner.recent_scores = before      # keep the fixture history stable
+        return d
+
+    weak = decide_with_p(0.46)
+    check("rank veto: bottom-quartile signal vetoed despite p near 0.5", not weak.take, weak.note)
+    check("rank veto: reason names the quantile", "bottom" in weak.note, weak.note)
+
+    strong = decide_with_p(0.549)
+    check("rank sizing: top-ranked signal taken", strong.take, strong.note)
+    check("rank sizing: top rank gets max multiplier",
+          close_to(strong.size_mult, 1.5, 0.05), f"got {strong.size_mult}")
+
+    middle = decide_with_p(0.50)
+    check("rank sizing: mid rank gets mid multiplier",
+          middle.take and close_to(middle.size_mult, 1.0, 0.1), f"got {middle.size_mult}")
+
+    # Sizing is monotone in rank.
+    mults = [decide_with_p(p).size_mult for p in (0.48, 0.50, 0.52, 0.54)]
+    check("rank sizing: monotone in rank", all(a <= b for a, b in zip(mults, mults[1:])),
+          f"got {mults}")
+
+    # Exploration overrides a veto, at min size.
+    cfg_x = make_cfg(enable_adaptive=True, adaptive_min_samples=5, adaptive_exploration=1.0,
+                     adaptive_skip_quantile=0.25, adaptive_skip_threshold=0.0)
+    lx = pt.AdaptiveLearner(cfg_x)
+    lx.model.n = 100
+    lx.recent_scores = [0.45 + 0.001 * i for i in range(100)]
+    lx.model.w[:] = 0.0
+    lx.model.w[0] = math.log(0.46 / 0.54)
+    row = _row(100, 106, 99, 105, atr=2.0, vol=300.0,
+               donchian_high=104.0, donchian_low=90.0, vol_avg=100.0)
+    dx = lx.decide_entry(T0, "TEST", +1, row)
+    check("explore: vetoed signal still taken when exploring", dx.take and "explore" in dx.note)
+    check("explore: at min size", close_to(dx.size_mult, cfg_x.adaptive_size_min_mult))
+    check("explore: counted", lx.explores == 1)
+
+    # Warm-up and thin history must not veto anything.
+    cold = pt.AdaptiveLearner(make_cfg(enable_adaptive=True, adaptive_min_samples=50))
+    d_cold = cold.decide_entry(T0, "TEST", +1, row)
+    check("rank veto: silent during warm-up", d_cold.take and "warm-up" in d_cold.note)
+    check("rank veto: no cutoff without enough history", cold.quantile_cutoff() is None)
+    check("rank: neutral percentile without enough history",
+          close_to(cold.score_percentile(0.9), 0.5))
+
+
+def test_size_mult_respects_caps() -> None:
+    cfg = make_cfg(position_size_pct=0.4, adaptive_size_max_mult=2.0, risk_per_trade_pct=0.0,
+                   allow_fractional_equity=True)
+    pf = pt.Portfolio(cfg)
+    pf.mark_prices({"TEST": 100.0})
+    pos = pf.open_position(T0, "TEST", +1, 100.0, atr=1.0, reason="t", size_mult=5.0)
+    check("size cap: multiplier clamped to ADAPTIVE_SIZE_MAX_MULT",
+          pos is not None and pos.qty * pos.avg_entry <= 0.4 * 2.0 * 10_000 + 1.0,
+          f"notional={pos.qty * pos.avg_entry if pos else None}")
+    check("size cap: cash never negative", pf.cash >= 0)
+
+
+def test_learner_persistence_round_trip() -> None:
+    import shutil
+    path = "/tmp/paper_trader_test_brain/state.json"
+    shutil.rmtree(os.path.dirname(path), ignore_errors=True)
+    cfg = make_cfg(enable_adaptive=True)
+    a = pt.AdaptiveLearner(cfg)
+    a.model.w[:] = np.linspace(-1, 1, len(pt.FEATURE_NAMES))
+    a.model.n = 42
+    a.model.recent = [(0.6, 1.0), (0.3, 0.0)]
+    a.bandit.update("hivol_long", "runner", 1.2)
+    a.sym_ewma_r["TEST"] = 0.33
+    row = _row(100, 106, 99, 105, atr=2.0, vol=300.0,
+               donchian_high=104.0, donchian_low=90.0, vol_avg=100.0)
+    d = a.decide_entry(T0, "TEST", +1, row)
+    a.register_signal(T0, "TEST", +1, row, d.features, d.context)
+    a.signals, a.vetoes = 9, 2
+    a.save(path)
+    check("persist: file written", os.path.exists(path))
+    check("persist: dirty flag cleared", not a.dirty)
+
+    b = pt.AdaptiveLearner(cfg)
+    check("persist: load returns True", b.load(path))
+    check("persist: weights restored", np.allclose(a.model.w, b.model.w))
+    check("persist: sample count restored", b.model.n == 42)
+    check("persist: recent history restored", b.model.recent == a.model.recent)
+    check("persist: bandit stats restored",
+          close_to(b.bandit.stats["hivol_long"]["runner"][1], 1.2))
+    check("persist: symbol EWMA restored", close_to(b.sym_ewma_r["TEST"], 0.33))
+    check("persist: open shadow restored",
+          "TEST" in b.shadows and b.shadows["TEST"].entry_time == T0)
+    check("persist: counters restored", b.signals == 9 and b.vetoes == 2)
+
+    # Schema mismatch => refuse to load, stay fresh, don't crash.
+    with open(path, encoding="utf-8") as fh:
+        bad = json.load(fh)
+    bad["feature_names"] = ["something", "else"]
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(bad, fh)
+    c = pt.AdaptiveLearner(cfg)
+    check("persist: schema mismatch rejected", not c.load(path) and c.model.n == 0)
+
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("{not json")
+    check("persist: corrupt file tolerated", not pt.AdaptiveLearner(cfg).load(path))
+    check("persist: missing file tolerated", not pt.AdaptiveLearner(cfg).load(path + ".nope"))
+    shutil.rmtree(os.path.dirname(path), ignore_errors=True)
+
+
+def _scripted_frames(cfg: pt.Config, seed: int = 1) -> dict[str, pd.DataFrame]:
+    """Deterministic multi-symbol OHLCV fixture with repeated breakouts of both
+    kinds — ones that follow through and ones that fail — so the learner has
+    something to separate. Test scaffolding only; never used by paper_trader."""
+    rng = np.random.default_rng(seed)
+    frames = {}
+    for sym in ("AAA", "BBB", "CCC"):
+        closes, vols = [100.0], [1000.0]
+        for i in range(1, 400):
+            step = rng.normal(0, 0.4)
+            burst = (i % 40 == 0)
+            if burst:
+                # Half the bursts follow through (drift up), half fail (drift back).
+                follow = (i // 40) % 2 == 0
+                step += 6.0
+                vols.append(4000.0)
+                closes.append(closes[-1] + step)
+                for _ in range(8):
+                    closes.append(closes[-1] + (rng.normal(0.8, 0.3) if follow else rng.normal(-1.0, 0.3)))
+                    vols.append(1200.0)
+                continue
+            closes.append(max(closes[-1] + step, 5.0))
+            vols.append(1000.0 + rng.normal(0, 50))
+        n = len(closes)
+        idx = pd.date_range("2025-01-01", periods=n, freq="1h", tz="UTC")
+        c = np.asarray(closes)
+        df = pd.DataFrame({"open": c, "high": c * 1.004, "low": c * 0.996, "close": c,
+                           "volume": np.asarray(vols[:n])}, index=idx)
+        frames[sym] = pt.compute_indicators(df, cfg)
+    return frames
+
+
+def test_engine_adaptive_offline_and_compare() -> None:
+    import shutil
+    outdir = "/tmp/paper_trader_test_adaptive"
+    shutil.rmtree(outdir, ignore_errors=True)
+    common = dict(breakout_lookback=10, volume_lookback=10, atr_period=5,
+                  use_trend_filter=False, position_size_pct=0.3, max_open_positions=3,
+                  allow_fractional_equity=True, stop_loss_pct=0.05, take_profit_pct=0.0,
+                  trail_atr_mult=3.0, vol_contraction_ratio=0.0, breakout_buffer_atr=0.0,
+                  volume_spike_mult=1.5, adaptive_min_samples=8, adaptive_exploration=0.0,
+                  equity_universe=["AAA", "BBB", "CCC"], output_dir=outdir)
+    cfg_fixed = make_cfg(enable_adaptive=False, **common)
+    cfg_adapt = make_cfg(enable_adaptive=True, **common)
+    frames = _scripted_frames(cfg_fixed)
+
+    fixed = pt.Engine(cfg_fixed, os.path.join(outdir, "fixed"))
+    fixed.replay_frames(frames)
+    adapt = pt.Engine(cfg_adapt, os.path.join(outdir, "adaptive"))
+    adapt.replay_frames(frames)
+
+    check("engine/adaptive: fixed run traded", len(fixed.portfolio.closed_trades) > 3,
+          f"{len(fixed.portfolio.closed_trades)} trades")
+    check("engine/adaptive: learner saw signals", adapt.learner is not None and adapt.learner.signals > 0)
+    check("engine/adaptive: learner got labels", adapt.learner is not None and adapt.learner.model.n > 0,
+          f"n={adapt.learner.model.n if adapt.learner else None}")
+    check("engine/adaptive: model became ready", adapt.learner is not None and adapt.learner.ready)
+    check("engine/adaptive: bandit updated on real closes",
+          adapt.learner is not None and any(adapt.learner.bandit.stats.values()))
+    check("engine/adaptive: trades carry playbooks",
+          all(t.playbook in cfg_adapt.exit_playbooks for t in adapt.portfolio.closed_trades))
+    check("engine/adaptive: equity never negative",
+          all(eq >= 0 for _, eq in adapt.portfolio.equity_curve))
+    check("engine/adaptive: brain saved at end of replay", os.path.exists(adapt.brain_path))
+
+    m_fixed = pt.compute_metrics(fixed.portfolio)
+    m_adapt = pt.compute_metrics(adapt.portfolio)
+    text = pt.render_comparison(m_fixed, m_adapt)
+    check("compare: table renders both columns", "fixed rules" in text and "adaptive" in text)
+    summary = pt.render_summary(adapt.portfolio, cfg_adapt, m_adapt, adapt.learner)
+    check("compare: adaptive summary has learner section", "ADAPTIVE LEARNER" in summary)
+    files = pt.write_reports(adapt.portfolio, cfg_adapt, m_adapt, adapt.run_dir, adapt.learner)
+    with open(os.path.join(adapt.run_dir, "summary.json"), encoding="utf-8") as fh:
+        payload = json.load(fh)
+    check("compare: summary.json embeds adaptive state", payload.get("adaptive") is not None)
+    trades = pd.read_csv(os.path.join(adapt.run_dir, "trades.csv"))
+    check("compare: trades.csv has playbook and R columns",
+          {"playbook", "r_multiple", "size_mult"} <= set(trades.columns))
+
+    # Determinism: same seed, same data => identical outcome.
+    again = pt.Engine(make_cfg(enable_adaptive=True, **common), os.path.join(outdir, "again"))
+    again.replay_frames(frames)
+    check("compare: adaptive replay is deterministic under a seed",
+          close_to(again.portfolio.equity(), adapt.portfolio.equity(), 1e-6),
+          f"{again.portfolio.equity()} vs {adapt.portfolio.equity()}")
+    shutil.rmtree(outdir, ignore_errors=True)
+
+
+def _learnable_frames(cfg: pt.Config, seed: int = 1, n_sym: int = 4,
+                      bars: int = 3000) -> dict[str, pd.DataFrame]:
+    """Fixture with a DELIBERATELY learnable relationship: breakouts on a big
+    volume spike follow through, breakouts on a small one fail.
+
+    This exists to prove the learning pipeline can find a real relationship when
+    one is present. It is NOT evidence about live markets — real breakouts come
+    with no such guarantee, and this fixture is synthetic scaffolding, never a
+    data source for paper_trader itself."""
+    rng = np.random.default_rng(seed)
+    out: dict[str, pd.DataFrame] = {}
+    for s in range(n_sym):
+        closes, vols, i = [100.0], [1000.0], 1
+        while len(closes) < bars:
+            if i % 25 == 0:
+                strong = rng.random() < 0.5
+                vols.append(6000.0 if strong else 1600.0)
+                closes.append(closes[-1] + 5.0)
+                for _ in range(10):
+                    drift = rng.normal(0.9, 0.3) if strong else rng.normal(-0.9, 0.3)
+                    closes.append(max(closes[-1] + drift, 5.0))
+                    vols.append(1100.0)
+            else:
+                closes.append(max(closes[-1] + rng.normal(0, 0.4), 5.0))
+                vols.append(1000.0 + rng.normal(0, 40))
+            i += 1
+        c = np.asarray(closes[:bars])
+        idx = pd.date_range("2025-01-01", periods=bars, freq="1h", tz="UTC")
+        out[f"S{s}"] = pt.compute_indicators(pd.DataFrame(
+            {"open": c, "high": c * 1.004, "low": c * 0.996, "close": c,
+             "volume": np.asarray(vols[:bars])}, index=idx), cfg)
+    return out
+
+
+def test_learner_finds_a_real_relationship() -> None:
+    """End-to-end: on data where volume genuinely predicts follow-through, the
+    model should learn a positive volume weight, actually veto weak signals, and
+    lift the win rate versus the same rules with learning off."""
+    import shutil
+    outdir = "/tmp/paper_trader_test_learnable"
+    shutil.rmtree(outdir, ignore_errors=True)
+    common = dict(breakout_lookback=10, volume_lookback=10, atr_period=5,
+                  use_trend_filter=False, position_size_pct=0.25, max_open_positions=4,
+                  allow_fractional_equity=True, stop_loss_pct=0.05, take_profit_pct=0.0,
+                  trail_atr_mult=3.0, vol_contraction_ratio=0.0, breakout_buffer_atr=0.0,
+                  volume_spike_mult=1.4, adaptive_min_samples=40, adaptive_exploration=0.05,
+                  equity_universe=[f"S{i}" for i in range(4)], output_dir=outdir)
+    cfg_f = make_cfg(enable_adaptive=False, **common)
+    cfg_a = make_cfg(enable_adaptive=True, **common)
+
+    better, vetoed_any, weights = 0, 0, []
+    for seed in (1, 2, 3, 4):
+        frames = _learnable_frames(cfg_f, seed=seed)
+        f = pt.Engine(cfg_f, os.path.join(outdir, f"f{seed}"))
+        f.replay_frames(frames)
+        a = pt.Engine(cfg_a, os.path.join(outdir, f"a{seed}"))
+        a.replay_frames(frames)
+        mf, ma = pt.compute_metrics(f.portfolio), pt.compute_metrics(a.portfolio)
+        better += ma["win_rate_pct"] > mf["win_rate_pct"]
+        vetoed_any += (a.learner.vetoes > 0)
+        weights.append(float(a.learner.model.w[pt.FEATURE_NAMES.index("vol_ratio")]))
+
+    check("learnable: model puts positive weight on volume on every seed",
+          all(w > 0 for w in weights), f"weights={[round(w, 2) for w in weights]}")
+    check("learnable: veto engages on most seeds", vetoed_any >= 3,
+          f"vetoed on {vetoed_any}/4 seeds")
+    check("learnable: win rate improves on most seeds", better >= 3,
+          f"improved on {better}/4 seeds")
+    shutil.rmtree(outdir, ignore_errors=True)
+
+
+def test_adaptive_config_validation() -> None:
+    bad = {
+        "skip threshold >= 1": {"adaptive_skip_threshold": 1.0},
+        "exploration > 1": {"adaptive_exploration": 1.5},
+        "min mult > 1": {"adaptive_size_min_mult": 1.2},
+        "max mult < 1": {"adaptive_size_max_mult": 0.9},
+        "size * max mult > 100%": {"position_size_pct": 0.6, "adaptive_size_max_mult": 2.0},
+        "learning rate 0": {"adaptive_learning_rate": 0.0},
+        "too few samples": {"adaptive_min_samples": 1},
+        "playbooks without base": {"exit_playbooks": {"x": {"trail_mult": 1, "stop_mult": 1, "tp_mult": 1}}},
+        "playbook with zero stop": {"exit_playbooks": {"base": {"trail_mult": 1, "stop_mult": 0, "tp_mult": 1}}},
+        "negative risk per trade": {"risk_per_trade_pct": -0.01},
+        "negative breakout buffer": {"breakout_buffer_atr": -1.0},
+    }
+    for label, overrides in bad.items():
+        try:
+            pt.validate_config(make_cfg(**overrides))
+            check(f"adaptive validation: rejects {label}", False, "no error raised")
+        except pt.ConfigError:
+            check(f"adaptive validation: rejects {label}", True)
+
+    cfg = pt.apply_max_risk_profile(pt.build_config())
+    try:
+        pt.validate_config(cfg)
+        check("adaptive validation: max-risk profile with adaptive knobs still valid", True)
+    except pt.ConfigError as exc:
+        check("adaptive validation: max-risk profile with adaptive knobs still valid", False, str(exc))
+    check("adaptive validation: max-risk lowers the veto threshold",
+          cfg.adaptive_skip_threshold < pt.build_config().adaptive_skip_threshold)
+
+
+def test_cli_adaptive_flags() -> None:
+    args = pt.parse_args(["--replay", "--compare", "--no-adaptive", "--seed", "5",
+                          "--brain", "/tmp/x.json", "--fresh-brain"])
+    cfg = pt.apply_cli_overrides(pt.build_config(), args)
+    check("cli: --no-adaptive disables", not cfg.enable_adaptive)
+    check("cli: --seed applied", cfg.adaptive_seed == 5)
+    check("cli: --brain becomes absolute path", cfg.adaptive_state_file == "/tmp/x.json")
+    try:
+        pt.parse_args(["--compare"])
+        check("cli: --compare without --replay rejected", False, "no error")
+    except SystemExit:
+        check("cli: --compare without --replay rejected", True)
 
 
 def test_no_brokerage_surface() -> None:
