@@ -60,13 +60,27 @@ no capital, and labelling only whichever candidate arrived while no other shadow
 was open biased the training set badly enough to destroy the model's ranking.
 
 Vetoing is **rank-based**: it skips the weakest `ADAPTIVE_SKIP_QUANTILE` of
-recent signals rather than applying a fixed probability cutoff. That matters —
-every signal reaching the model has already passed the entry gate, so the raw
-probabilities cluster near 0.5 and an absolute threshold quietly stops binding.
-Ranking depends only on the model ordering signals correctly, not on it being
-calibrated. Position size scales with the same rank, and
-`ADAPTIVE_EXPLORATION` still takes a small slice of vetoed signals at minimum
-size so the model keeps getting labels on trades it dislikes.
+recent candidates rather than applying a fixed score cutoff. That matters —
+every candidate reaching the model has already cleared the range break, so raw
+scores bunch together and an absolute threshold quietly stops binding. Ranking
+depends only on the model ordering candidates correctly, not on it being
+calibrated. Position size scales with the same rank, and `ADAPTIVE_EXPLORATION`
+still takes a small slice of vetoed candidates at minimum size so the model
+keeps getting labels on trades it dislikes.
+
+The threshold is a **stochastic quantile tracker** — nudged down when it rejects
+too often and up when it rejects too rarely — rather than a value read off a
+sorted window. A static window goes stale as the model's score distribution
+drifts. The summary prints the realized veto rate next to the target so you can
+see it is honouring the config; the tests assert it holds under a drifting
+distribution and on unbounded score scales.
+
+`ADAPTIVE_SKIP_THRESHOLD` (an optional absolute floor, `None` by default) is
+scale-dependent and easy to get wrong: for `win` the score is a probability, but
+for `expected_r` it is a signed expected-R estimate centred near zero, where a
+floor of `0.0` rejects every negative-expectancy candidate — about half — rather
+than the configured 15%. That bug is why the default is now `None` and why
+validation range-checks the floor only for probability scores.
 
 **Exit bandit.** Thompson sampling over the `EXIT_PLAYBOOKS` presets
 (tight/base/runner/loose), keyed by volatility regime × direction and rewarded
@@ -113,8 +127,39 @@ developed on AAPL+IBM and validated on MSFT+GOOG, which were held out.
 Ranking quality is stable across time: AUC on win/loss computed *within* each of
 8 sub-periods averages 0.72 on dev and 0.72 held-out, with every block above 0.58
 including 2008 — so it is not an artifact of scores drifting with the win rate.
-Return, avg R and drawdown all move the right way together, which is what
-separates this from leverage.
+
+### Does the learning actually earn its keep? Mostly no — read this
+
+That headline table credits the whole adaptive layer, and that is misleading.
+Two controls were run over 12 seeds, each keeping the veto, sizing, exits and
+the widened candidate pool identical and changing **only** whether the model
+learns anything real: *random scores* (no learning at all) and *shuffled labels*
+(the full learning machinery trained on an R drawn from a different sample, so
+the R distribution survives but the feature-to-outcome link is destroyed).
+
+| variant | dev | held-out | all four |
+|---|---|---|---|
+| fixed rules (strict gate) | +9.9% | +14.9% | +26.4% |
+| wide pool + **random scores** | +58.0 ±14.3 | +34.2 ±18.8 | +116.1 ±31.4 |
+| wide pool + **shuffled labels** | +56.4 ±18.8 | +32.8 ±15.0 | +95.0 ±38.4 |
+| wide pool + **real learning** | +61.2 ±13.0 | +32.3 ±14.3 | +120.3 ±39.6 |
+
+**Real learning is statistically indistinguishable from both controls.** The
+seed-to-seed spread (13–40 points) dwarfs every gap between them, and avg
+R-multiple is flat across all three (≈0.28–0.32) on every set. Nearly all of the
+improvement over the fixed rules comes from **widening the candidate pool** —
+a rule change, not learning.
+
+The one thing that does separate real learning from its controls is rank
+correlation with realized R: around +0.05 to +0.07 where both controls sit at
+0.00 ±0.01. So the model *is* extracting a genuine signal. It is simply far too
+weak to move trading outcomes, and a long way below the ~0.48 the offline
+prequential harness measures over the full candidate stream.
+
+Treat the adaptive layer as instrumentation that has not yet paid for itself,
+and the wide candidate pool as the finding that actually mattered. The test
+suite runs these controls on a synthetic stream so the property is enforced
+rather than remembered.
 
 **Two earlier versions failed, and the failures were the useful part:**
 
@@ -147,19 +192,25 @@ top-ranked 40% as a multiple of the average candidate:
 | held-out | +0.053 / 1.12× | **+0.064 / 1.35×** |
 | all four | +0.192 / 1.63× | **+0.226 / 2.12×** |
 
-The trade-off is real and worth knowing: `win` converts its weaker ranking into
-slightly better realized trading (dev +64.0% / avg R +0.32 vs +63.1% / +0.28;
-held-out +37.8% / +0.33 vs +31.4% / +0.25), while `expected_r` ran a lower
-drawdown on the combined set (12.9% vs 15.3%). `--score-target win` switches.
+Returns run the other way and sit near the noise floor: on the combined set
+`expected_r` returns +135.1% ±24.1 with avg R +0.349, against `win` at +116.0%
+±25.4 and +0.313, with dev and held-out tied. `expected_r` is the default
+because it ranks by expected payoff by construction and costs nothing in return.
+`--score-target win` switches.
 
-Two caveats. A standalone offline harness scored these the *other* way round —
-`win` rho ~0.50 vs `expected_r` ~0.35 on dev, with seven regressor variants all
-losing. The harness scores every candidate; the live engine only labels the ones
-its position limits let through, so the streams differ. Trust the live numbers
-for how this program behaves, and treat the disagreement as a reminder that both
-are one 13-year window on four symbols. Separately, the veto stays deliberately
-light (0.15): a sweep on real bars found 0.15 beat both no veto and heavier
-vetoing on dev *and* held-out, with 0.60 worse than not vetoing at all.
+**An earlier version of this table was wrong.** It showed `expected_r` ranking
+ahead (rho 0.291 vs 0.200), which was an artefact of the `ADAPTIVE_SKIP_THRESHOLD`
+bug described above: the floor was rejecting ~50% of candidates under
+`expected_r` and ~11% under `win`, so the two were being compared in different
+selection regimes rather than like for like. With the bug fixed, `win` ranks
+better on the combined set.
+
+Do not read much into the choice either way — the controls below show the
+learned weights barely move trading outcomes at all. A standalone offline
+harness, which scores every candidate rather than only those position limits
+admit, ranks `win` well ahead (rho ~0.50 vs ~0.35 on dev). Separately, the veto
+stays deliberately light (0.15): a sweep found 0.15 beat both no veto and
+heavier vetoing on dev *and* held-out, with 0.60 worse than not vetoing at all.
 
 **Judge this by avg R-multiple and AUC, not by total return.** A higher return
 with a lower R-multiple is leverage wearing a lab coat — that is exactly how
@@ -251,7 +302,7 @@ dict to define your own profile — unknown keys fail loudly at startup.
 
 Single file on purpose — the tunables sit at the top, the logic below, and there
 is no import path to fight. `test_paper_trader.py` is a dependency-free
-verification suite (`python test_paper_trader.py`, ~10s) with 311 checks covering
+verification suite (`python test_paper_trader.py`, ~10s) with 323 checks covering
 P&L accounting, capital guardrails, exit logic, the calendar, config validation,
 the learners' mechanics, the skill gate, the CSV source including split
 adjustment, state persistence, and an end-to-end check that the learner finds a

@@ -118,29 +118,30 @@ ENABLE_ADAPTIVE: bool = True
 #   "expected_r" - Huber regression on tanh(R/2); ranks by predicted E[R].
 #   "win"        - logistic on the SIGN of R, each update weighted by |R|.
 #
-# These were measured two ways, and the two disagree, so both are recorded here.
-#
-# In the LIVE engine, "expected_r" ranks realized R better on every set --
+# Measured over 10 seeds, AFTER fixing the ADAPTIVE_SKIP_THRESHOLD bug below.
 # Spearman between score and realized R, and mean R of the top-ranked 40% as a
 # multiple of the average candidate:
-#       set     win rho / lift      expected_r rho / lift
-#       dev      +0.091 / 1.11x       +0.220 / 1.70x
-#       held     +0.053 / 1.12x       +0.064 / 1.35x
-#       all      +0.192 / 1.63x       +0.226 / 2.12x
-# It is the default because ranking by expected payoff is the stated objective
-# and this is the metric that measures it.
+#       set     win rho / lift          expected_r rho / lift
+#       dev      +0.049+-0.065 / 1.01     +0.080+-0.049 / 1.01
+#       held     +0.006+-0.083 / 1.08     +0.000+-0.087 / 1.08
+#       all      +0.168+-0.036 / 1.62     +0.055+-0.042 / 1.30
+# So "win" actually ranks R BETTER on the combined set, and the two tie
+# elsewhere. An earlier measurement appeared to favour "expected_r" (rho 0.291
+# vs 0.200); that was an artefact of the floor bug, which was rejecting ~50% of
+# candidates for "expected_r" and ~11% for "win" -- two different selection
+# regimes, not a like-for-like comparison.
 #
-# The trade-off is real: "win" still turns its weaker ranking into slightly
-# better realized trading (dev +64.0% / avg R +0.32 vs +63.1% / +0.28; held
-# +37.8% / +0.33 vs +31.4% / +0.25), while "expected_r" ran a lower drawdown on
-# the combined set (12.9% vs 15.3%). Switch with --score-target win.
+# Returns run the other way and are near the noise floor: on the combined set
+# expected_r +135.1%+-24.1 and avg R +0.349 against win +116.0%+-25.4 and
+# +0.313, with dev and held-out tied. "expected_r" stays the default because it
+# ranks by expected payoff by construction and costs nothing in return.
 #
-# A standalone offline harness scored the two the other way round (win rho ~0.50
-# vs expected_r ~0.35 on dev), and seven regressor variants lost there. The
-# offline harness scores every candidate; the live engine only ever labels the
-# candidates its position limits let through, so the streams differ. Trust the
-# live numbers for how this program behaves, and treat the gap as a reminder
-# that both are one 13-year window on four symbols.
+# Do not read much into the choice. Controls (see the README) show the learned
+# weights barely move trading outcomes either way; the widened candidate pool
+# does nearly all the work. A standalone offline harness, which scores every
+# candidate instead of only those the position limits admit, ranks "win" well
+# ahead (rho ~0.50 vs ~0.35 on dev) -- another reason to treat both targets as
+# roughly interchangeable here rather than as a settled result.
 ADAPTIVE_SCORE_TARGET: str = "expected_r"   # "expected_r" | "win"
 ADAPTIVE_STATE_FILE: str = "adaptive_state.json"   # under OUTPUT_DIR
 ADAPTIVE_MIN_SAMPLES: int = 40     # labeled signals before the model may veto entries
@@ -154,7 +155,13 @@ ADAPTIVE_MIN_SAMPLES: int = 40     # labeled signals before the model may veto e
 # 0.15 beat both 0.0 and heavier vetoing on dev AND held-out symbols; 0.60 was
 # clearly worse than not vetoing at all.
 ADAPTIVE_SKIP_QUANTILE: float = 0.15
-ADAPTIVE_SKIP_THRESHOLD: float = 0.0   # absolute floor on top of the quantile; 0 = off
+# Optional absolute floor on the score, applied on top of the quantile.
+# None = no floor, which is the default because the meaning of a raw score
+# depends entirely on ADAPTIVE_SCORE_TARGET: for "win" it is a probability in
+# [0, 1], but for "expected_r" it is a signed expected-R estimate centred near
+# zero, where a floor of 0.0 silently rejects every negative-expectancy
+# candidate -- around half of them -- instead of the configured 15%.
+ADAPTIVE_SKIP_THRESHOLD: float | None = None
 # With the learner on, propose candidates from the range break ALONE and let the
 # model rank them, instead of pre-filtering with the volume and trend rules.
 # Measured on real daily bars: on the strictly-filtered stream the model scores
@@ -246,7 +253,7 @@ MAX_RISK_PROFILE: dict[str, Any] = {
     "ALLOW_FRACTIONAL_EQUITY": True,
     "RISK_PER_TRADE_PCT": 0.05,    # 5% of equity at risk per trade
     "ADAPTIVE_SKIP_QUANTILE": 0.05,    # the learner vetoes less
-    "ADAPTIVE_SKIP_THRESHOLD": 0.0,
+    "ADAPTIVE_SKIP_THRESHOLD": None,
     "ADAPTIVE_SIZE_MAX_MULT": 2.0,     # ...and doubles down harder on confidence
 }
 
@@ -370,7 +377,7 @@ class Config:
     adaptive_state_file: str
     adaptive_min_samples: int
     adaptive_skip_quantile: float
-    adaptive_skip_threshold: float
+    adaptive_skip_threshold: float | None
     adaptive_exploration: float
     adaptive_learning_rate: float
     adaptive_l2: float
@@ -654,8 +661,14 @@ def validate_config(cfg: Config) -> None:
     # Adaptive layer.
     check(cfg.adaptive_min_samples >= 5,
           f"ADAPTIVE_MIN_SAMPLES must be >= 5; got {cfg.adaptive_min_samples}.")
-    check(0 <= cfg.adaptive_skip_threshold < 1.0,
-          f"ADAPTIVE_SKIP_THRESHOLD must be in [0, 1); got {cfg.adaptive_skip_threshold}.")
+    check(cfg.adaptive_skip_threshold is None or _finite(cfg.adaptive_skip_threshold),
+          f"ADAPTIVE_SKIP_THRESHOLD must be a finite number or None (no floor); "
+          f"got {cfg.adaptive_skip_threshold!r}.")
+    if cfg.adaptive_skip_threshold is not None and cfg.adaptive_score_target == "win":
+        check(0 <= cfg.adaptive_skip_threshold < 1.0,
+              f"With ADAPTIVE_SCORE_TARGET='win' the score is a probability, so "
+              f"ADAPTIVE_SKIP_THRESHOLD must be in [0, 1) or None; got "
+              f"{cfg.adaptive_skip_threshold}.")
     check(0 <= cfg.adaptive_skip_quantile < 1.0,
           f"ADAPTIVE_SKIP_QUANTILE must be in [0, 1); got {cfg.adaptive_skip_quantile}. "
           f"It is the fraction of the weakest signals to skip, not a probability.")
@@ -1932,7 +1945,9 @@ class AdaptiveLearner:
         self.shadows: dict[str, list[Position]] = {}
         self.sym_ewma_r: dict[str, float] = {}
         self.sym_atr_pct_ewma: dict[str, float] = {}
-        self.recent_scores: list[float] = []   # predicted p of recent signals, for ranking
+        self.recent_scores: list[float] = []   # scores of recent signals, for ranking
+        self._cutoff: float | None = None      # tracked veto threshold (see quantile_cutoff)
+        self._veto_flags: list[bool] = []      # realized veto outcomes, for reporting
         self.signals = self.taken = self.vetoes = self.explores = self.labels = 0
         self.last_label_ts: datetime | None = None
         self.loaded_from: str | None = None
@@ -1942,9 +1957,41 @@ class AdaptiveLearner:
     def ready(self) -> bool:
         return self.model.n >= self.cfg.adaptive_min_samples
 
+    _SCORE_WINDOW = 150
+
     def _record_score(self, p: float) -> None:
+        """Track recent scores and steer the veto threshold toward the target rate.
+
+        A threshold read off a long sorted window goes stale: the model keeps
+        learning, so its score distribution drifts, and a cutoff computed from
+        older, higher-scoring candidates rejects far more than the configured
+        share. Measured, a nominal 15% veto was rejecting 47% of candidates.
+
+        Instead the cutoff is a stochastic quantile estimator — nudged down when
+        it rejects too often and up when it rejects too rarely — which follows a
+        drifting distribution instead of lagging it. The step is scaled by the
+        spread of recent scores so it works for probabilities in [0, 1] and for
+        the unbounded scores of the expected-R model alike.
+        """
         self.recent_scores.append(p)
-        del self.recent_scores[:-300]
+        del self.recent_scores[:-self._SCORE_WINDOW]
+
+        q = self.cfg.adaptive_skip_quantile
+        if q <= 0:
+            return
+        window = self.recent_scores
+        if self._cutoff is None:
+            if len(window) < 20:
+                return
+            ordered = sorted(window)
+            self._cutoff = ordered[min(int(q * len(ordered)), len(ordered) - 1)]
+            return
+        lo, hi = min(window), max(window)
+        spread = (hi - lo) or (abs(self._cutoff) + 1e-6)
+        step = 0.05 * spread
+        # P(score <= cutoff) should equal q; push the cutoff back when it does not.
+        self._cutoff -= step * ((1.0 if p <= self._cutoff else 0.0) - q)
+        self._cutoff = _clip(self._cutoff, lo - spread, hi + spread)
 
     def has_demonstrated_skill(self) -> bool:
         """Has the model earned the right to bet MORE than the base size?
@@ -1969,12 +2016,17 @@ class AdaptiveLearner:
         return below / len(self.recent_scores)
 
     def quantile_cutoff(self) -> float | None:
-        """Score below which a signal counts as the weakest `skip_quantile` slice."""
-        q = self.cfg.adaptive_skip_quantile
-        if q <= 0 or len(self.recent_scores) < 20:
+        """Score at or below which a candidate counts as the weakest slice."""
+        if self.cfg.adaptive_skip_quantile <= 0:
             return None
-        ordered = sorted(self.recent_scores)
-        return ordered[min(int(q * len(ordered)), len(ordered) - 1)]
+        return self._cutoff
+
+    def realized_veto_rate(self) -> float | None:
+        """What share of recent candidates were actually vetoed — the check that
+        the threshold is doing what the config asked for."""
+        if not self._veto_flags:
+            return None
+        return sum(1.0 for f in self._veto_flags if f) / len(self._veto_flags)
 
     # -- regime + features -----------------------------------------------------
     def context(self, symbol: str, row: pd.Series, direction: int) -> str:
@@ -2070,10 +2122,13 @@ class AdaptiveLearner:
         # absolute floor (catches a model that has turned uniformly pessimistic).
         cutoff = self.quantile_cutoff()
         weak_rank = cutoff is not None and p <= cutoff
-        below_floor = p < cfg.adaptive_skip_threshold
+        below_floor = (cfg.adaptive_skip_threshold is not None
+                       and p < cfg.adaptive_skip_threshold)
+        self._veto_flags.append(bool(weak_rank or below_floor))
+        del self._veto_flags[:-200]
         if weak_rank or below_floor:
             why = (f"bottom {cfg.adaptive_skip_quantile:.0%} of recent signals"
-                   if weak_rank else f"p below floor {cfg.adaptive_skip_threshold:.2f}")
+                   if weak_rank else f"score below floor {cfg.adaptive_skip_threshold:.2f}")
             if self.rng.random() < cfg.adaptive_exploration:
                 self.explores += 1
                 return EntryDecision(True, cfg.adaptive_size_min_mult, ep, feats, ctx, p,
@@ -2114,6 +2169,7 @@ class AdaptiveLearner:
             "sym_ewma_r": self.sym_ewma_r,
             "sym_atr_pct_ewma": self.sym_atr_pct_ewma,
             "recent_scores": self.recent_scores,
+            "cutoff": self._cutoff,
             "shadows": [pos_dict(p) for lst in self.shadows.values() for p in lst],
             "counters": {"signals": self.signals, "taken": self.taken, "vetoes": self.vetoes,
                          "explores": self.explores, "labels": self.labels},
@@ -2147,6 +2203,8 @@ class AdaptiveLearner:
         self.sym_ewma_r = {k: float(v) for k, v in d.get("sym_ewma_r", {}).items()}
         self.sym_atr_pct_ewma = {k: float(v) for k, v in d.get("sym_atr_pct_ewma", {}).items()}
         self.recent_scores = [float(x) for x in d.get("recent_scores", [])]
+        saved_cutoff = d.get("cutoff")
+        self._cutoff = float(saved_cutoff) if saved_cutoff is not None else None
         self.shadows = {}
         for sd in d.get("shadows", []):
             try:
@@ -2223,8 +2281,11 @@ class AdaptiveLearner:
         rows.append(("  vetoed / explored", f"{self.vetoes} / {self.explores}"))
         cutoff = self.quantile_cutoff()
         if cutoff is not None:
+            realized = self.realized_veto_rate()
+            rate = (f"{realized:.0%} realized" if realized is not None else "n/a")
             rows.append(("  veto cutoff (rank-based)",
-                         f"p <= {cutoff:.3f}  (weakest {self.cfg.adaptive_skip_quantile:.0%})"))
+                         f"score <= {cutoff:.3f}  ({self.cfg.adaptive_skip_quantile:.0%} "
+                         f"target, {rate})"))
         rows.append(("Open shadow trades",
                      str(sum(len(v) for v in self.shadows.values()))))
         if self.model.n > 0:

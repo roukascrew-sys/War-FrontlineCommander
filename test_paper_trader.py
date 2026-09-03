@@ -1003,20 +1003,26 @@ def test_learner_rank_based_veto_and_sizing() -> None:
     keep working when the model's probabilities all cluster near 0.5 — which is
     the normal case, since every signal has already passed the entry gate."""
     cfg = make_cfg(enable_adaptive=True, adaptive_min_samples=5, adaptive_skip_quantile=0.25,
-                   adaptive_skip_threshold=0.0, adaptive_exploration=0.0,
+                   adaptive_skip_threshold=None, adaptive_exploration=0.0,
                    adaptive_size_min_mult=0.5, adaptive_size_max_mult=1.5,
                    adaptive_score_target="win")   # drives the logit via log-odds
     learner = pt.AdaptiveLearner(cfg)
     learner.model.n = 100
-    # A realistic, tightly-clustered score history around 0.5.
-    learner.recent_scores = [0.45 + 0.001 * i for i in range(100)]   # 0.450 .. 0.549
+    # A realistic, tightly-clustered STATIONARY score history around 0.5, fed
+    # through the tracker so the cutoff settles the way it does in a real run.
+    _rng = random.Random(0)
+    _vals = [0.45 + 0.001 * i for i in range(100)]                   # 0.450 .. 0.549
+    for _ in range(6):
+        _rng.shuffle(_vals)
+        for _v in _vals:
+            learner._record_score(_v)
     # Grant demonstrated skill so the size-up gate is open; it is tested separately.
     learner.model.recent = [(0.8, 2.0), (0.2, -1.0)] * 20   # perfectly ranked by R
     check("rank sizing: precondition — skill gate open", learner.has_demonstrated_skill())
 
     cutoff = learner.quantile_cutoff()
-    check("rank veto: cutoff sits at the 25th percentile",
-          cutoff is not None and close_to(cutoff, 0.475, 1e-6), f"got {cutoff}")
+    check("rank veto: cutoff lands near the 25th percentile",
+          cutoff is not None and 0.462 <= cutoff <= 0.492, f"got {cutoff}")
     check("rank: percentile of a mid score", close_to(learner.score_percentile(0.50), 0.50, 0.02))
     check("rank: percentile of a top score", learner.score_percentile(0.60) > 0.95)
 
@@ -1026,9 +1032,9 @@ def test_learner_rank_based_veto_and_sizing() -> None:
         learner.model.w[0] = math.log(p / (1 - p))
         row = _row(100, 106, 99, 105, atr=2.0, vol=300.0,
                    donchian_high=104.0, donchian_low=90.0, vol_avg=100.0)
-        before = list(learner.recent_scores)
+        before, before_cut = list(learner.recent_scores), learner._cutoff
         d = learner.decide_entry(T0, "TEST", +1, row)
-        learner.recent_scores = before      # keep the fixture history stable
+        learner.recent_scores, learner._cutoff = before, before_cut
         return d
 
     weak = decide_with_p(0.46)
@@ -1051,11 +1057,16 @@ def test_learner_rank_based_veto_and_sizing() -> None:
 
     # Exploration overrides a veto, at min size.
     cfg_x = make_cfg(enable_adaptive=True, adaptive_min_samples=5, adaptive_exploration=1.0,
-                     adaptive_skip_quantile=0.25, adaptive_skip_threshold=0.0,
+                     adaptive_skip_quantile=0.25, adaptive_skip_threshold=None,
                      adaptive_score_target="win")
     lx = pt.AdaptiveLearner(cfg_x)
     lx.model.n = 100
-    lx.recent_scores = [0.45 + 0.001 * i for i in range(100)]
+    _r2 = random.Random(0)
+    _v2 = [0.45 + 0.001 * i for i in range(100)]
+    for _ in range(6):
+        _r2.shuffle(_v2)
+        for _v in _v2:
+            lx._record_score(_v)
     lx.model.w[:] = 0.0
     lx.model.w[0] = math.log(0.46 / 0.54)
     row = _row(100, 106, 99, 105, atr=2.0, vol=300.0,
@@ -1074,6 +1085,51 @@ def test_learner_rank_based_veto_and_sizing() -> None:
           close_to(cold.score_percentile(0.9), 0.5))
 
 
+def test_veto_cutoff_tracks_drifting_scores() -> None:
+    """The veto must reject the configured share even as the model's score
+    distribution drifts. A cutoff read off a stale sorted window does not: it
+    was measured rejecting 47% of candidates against a 15% target."""
+    def realized_rate(scores: Sequence[float], q: float = 0.15) -> float:
+        L = pt.AdaptiveLearner(make_cfg(enable_adaptive=True, adaptive_skip_quantile=q,
+                                        adaptive_score_target="win"))
+        vetoed = seen = 0
+        for s in scores:
+            L._record_score(s)
+            cut = L.quantile_cutoff()
+            if cut is not None:
+                seen += 1
+                vetoed += (s <= cut)
+        return vetoed / max(seen, 1)
+
+    rng = random.Random(1)
+    stationary = [rng.gauss(0.5, 0.05) for _ in range(1200)]
+    rate = realized_rate(stationary)
+    check("veto cutoff: hits the target rate on a stable distribution",
+          0.09 <= rate <= 0.23, f"realized {rate:.0%} against a 15% target")
+
+    # Scores drift upward over time, exactly as a model that keeps learning does.
+    drifting = [rng.gauss(0.3 + 0.6 * i / 1200, 0.05) for i in range(1200)]
+    rate_drift = realized_rate(drifting)
+    check("veto cutoff: still hits the target while scores drift",
+          0.07 <= rate_drift <= 0.28, f"realized {rate_drift:.0%} against a 15% target")
+
+    # An unbounded score scale (the expected-R model) must work the same way.
+    wide = [rng.gauss(-2.0 + 8.0 * i / 1200, 1.5) for i in range(1200)]
+    rate_wide = realized_rate(wide)
+    check("veto cutoff: scale-free — works on unbounded scores",
+          0.07 <= rate_wide <= 0.28, f"realized {rate_wide:.0%} against a 15% target")
+
+    # A different target quantile must be honoured too.
+    rate_40 = realized_rate([rng.gauss(0.5, 0.05) for _ in range(1200)], q=0.40)
+    check("veto cutoff: follows the configured quantile",
+          0.32 <= rate_40 <= 0.48, f"realized {rate_40:.0%} against a 40% target")
+
+    off = pt.AdaptiveLearner(make_cfg(enable_adaptive=True, adaptive_skip_quantile=0.0))
+    for s in stationary[:100]:
+        off._record_score(s)
+    check("veto cutoff: disabled at quantile 0", off.quantile_cutoff() is None)
+
+
 def test_skill_gate_blocks_sizing_up() -> None:
     """A model that cannot beat a coin flip must not be allowed to bet bigger.
 
@@ -1083,7 +1139,7 @@ def test_skill_gate_blocks_sizing_up() -> None:
     stands between "adaptive" and "quietly levered".
     """
     cfg = make_cfg(enable_adaptive=True, adaptive_min_samples=5, adaptive_skip_quantile=0.0,
-                   adaptive_skip_threshold=0.0, adaptive_exploration=0.0,
+                   adaptive_skip_threshold=None, adaptive_exploration=0.0,
                    adaptive_size_min_mult=0.5, adaptive_size_max_mult=2.0,
                    adaptive_min_rank_corr_to_size_up=0.05, adaptive_min_accuracy_samples=30,
                    adaptive_score_target="win")
@@ -1365,9 +1421,73 @@ def test_learner_finds_a_real_relationship() -> None:
     shutil.rmtree(outdir, ignore_errors=True)
 
 
+def test_learning_beats_its_own_controls() -> None:
+    """Guard against fooling ourselves: the learned weights must beat controls
+    that keep every other moving part identical.
+
+    Two controls, both running the same veto, sizing and exit machinery:
+      * shuffled labels — trained on an R drawn from a different sample, so the
+        R distribution survives but the feature-to-outcome link is destroyed;
+      * random scores — no learning at all.
+    Rank correlation with realized R must be clearly positive for real learning
+    and near zero for both controls. If a control matches real learning, any
+    apparent gain is coming from the rules, not the model.
+    """
+    cfg = make_cfg(enable_adaptive=True, adaptive_min_samples=20,
+                   adaptive_score_target="win", adaptive_learning_rate=0.1,
+                   adaptive_l2=0.0)
+
+    class ShuffledLabels(pt.OnlineLogit):
+        def __init__(self, *a, **k):
+            super().__init__(*a, **k)
+            self._pool: list[float] = []
+            self._rng = random.Random(0)
+
+        def _learn(self, x, r):
+            self._pool.append(float(r))
+            del self._pool[:-300]
+            super()._learn(x, self._rng.choice(self._pool))
+
+    class RandomScore(pt.EntryModelBase):
+        def __init__(self, n):
+            super().__init__(n)
+            self._rng = random.Random(0)
+
+        def predict(self, x):
+            return self._rng.random()
+
+        def _learn(self, x, r):
+            pass
+
+    # A stream where one feature genuinely drives R.
+    rng = np.random.default_rng(4)
+    stream = []
+    for _ in range(700):
+        x = [1.0] + [float(rng.uniform(-1, 1)) for _ in range(len(pt.FEATURE_NAMES) - 1)]
+        r = float(np.clip(2.5 * x[1] + rng.normal(0, 0.8), -3, 5))
+        stream.append((x, r))
+
+    def rank_corr(model: pt.EntryModelBase) -> float:
+        for x, r in stream:
+            model.update(x, r)
+        rho = model.rolling_rank_corr()
+        return rho if rho is not None else 0.0
+
+    real = rank_corr(pt.OnlineLogit(len(pt.FEATURE_NAMES), 0.1, 0.0))
+    shuf = rank_corr(ShuffledLabels(len(pt.FEATURE_NAMES), 0.1, 0.0))
+    rand = rank_corr(RandomScore(len(pt.FEATURE_NAMES)))
+
+    check("controls: real learning ranks R", real > 0.25, f"rho={real:.3f}")
+    check("controls: shuffled labels rank at chance", abs(shuf) < 0.22, f"rho={shuf:.3f}")
+    check("controls: random scores rank at chance", abs(rand) < 0.22, f"rho={rand:.3f}")
+    check("controls: real learning clearly beats both controls",
+          real > abs(shuf) + 0.1 and real > abs(rand) + 0.1,
+          f"real={real:.3f} shuffled={shuf:.3f} random={rand:.3f}")
+
+
 def test_adaptive_config_validation() -> None:
     bad = {
-        "skip threshold >= 1": {"adaptive_skip_threshold": 1.0},
+        "skip threshold >= 1 for a probability score": {"adaptive_skip_threshold": 1.0, "adaptive_score_target": "win"},
         "exploration > 1": {"adaptive_exploration": 1.5},
         "min mult > 1": {"adaptive_size_min_mult": 1.2},
         "max mult < 1": {"adaptive_size_max_mult": 0.9},
@@ -1385,6 +1505,20 @@ def test_adaptive_config_validation() -> None:
             check(f"adaptive validation: rejects {label}", False, "no error raised")
         except pt.ConfigError:
             check(f"adaptive validation: rejects {label}", True)
+
+    # A signed floor is legal for expected_r (scores are not probabilities),
+    # and no floor at all is legal for either target.
+    for label, ov in (("signed floor with expected_r",
+                       {"adaptive_skip_threshold": -0.25,
+                        "adaptive_score_target": "expected_r"}),
+                      ("no floor", {"adaptive_skip_threshold": None})):
+        try:
+            pt.validate_config(make_cfg(**ov))
+            check(f"adaptive validation: accepts {label}", True)
+        except pt.ConfigError as exc:
+            check(f"adaptive validation: accepts {label}", False, str(exc))
+    check("adaptive validation: no absolute floor by default",
+          pt.build_config().adaptive_skip_threshold is None)
 
     cfg = pt.apply_max_risk_profile(pt.build_config())
     try:
