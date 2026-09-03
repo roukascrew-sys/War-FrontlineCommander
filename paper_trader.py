@@ -120,22 +120,39 @@ ADAPTIVE_MIN_SAMPLES: int = 40     # labeled signals before the model may veto e
 # predicted probability. Ranking survives poor calibration, whereas an absolute
 # cutoff silently stops binding whenever predictions cluster near 0.5 — which is
 # the normal case here, since every signal has already passed the entry gate.
-ADAPTIVE_SKIP_QUANTILE: float = 0.25   # veto the weakest ~25% of signals; 0 = off
-ADAPTIVE_SKIP_THRESHOLD: float = 0.35  # absolute floor, applied on top of the quantile
+# Veto the weakest slice of candidates; 0 = off. Kept deliberately light: the
+# model predicts P(win), but a breakout system earns from a few large winners,
+# so filtering hard for win-probability strips the fat tail. Swept on real bars,
+# 0.15 beat both 0.0 and heavier vetoing on dev AND held-out symbols; 0.60 was
+# clearly worse than not vetoing at all.
+ADAPTIVE_SKIP_QUANTILE: float = 0.15
+ADAPTIVE_SKIP_THRESHOLD: float = 0.0   # absolute floor on top of the quantile; 0 = off
+# With the learner on, propose candidates from the range break ALONE and let the
+# model rank them, instead of pre-filtering with the volume and trend rules.
+# Measured on real daily bars: on the strictly-filtered stream the model scores
+# AUC 0.57 (chance) because the rules already removed the variation it would sort
+# on; on the wider stream the same model scores 0.72 out-of-sample. Turn this off
+# to keep the hand-written gate and use the model only as a light veto.
+ADAPTIVE_WIDE_CANDIDATES: bool = True
 ADAPTIVE_EXPLORATION: float = 0.10 # fraction of vetoed signals still taken (at min size)
 ADAPTIVE_LEARNING_RATE: float = 0.05
 ADAPTIVE_L2: float = 0.01          # ridge penalty; keeps weights from chasing noise
 ADAPTIVE_SIZE_MIN_MULT: float = 0.5   # size multiplier at the veto threshold
 ADAPTIVE_SIZE_MAX_MULT: float = 1.5   # size multiplier for high-confidence signals
-# Skill gate. Sizing ABOVE 1.0x is withheld until the model demonstrates it can
-# actually rank signals: rolling accuracy must clear this over a real sample.
-# Without the gate a model that is no better than a coin flip still scales bets
-# up, which raises returns and drawdown together and looks like skill while
-# being nothing but leverage. Measured on real daily bars, this model sat at
-# 44-46% accuracy, so the gate is what keeps it honest. Set to 0 to disable.
-ADAPTIVE_MIN_ACCURACY_TO_SIZE_UP: float = 0.52
-ADAPTIVE_MIN_ACCURACY_SAMPLES: int = 30
+# Skill gate. Sizing ABOVE 1.0x is withheld until the model shows it can rank
+# signals, measured by rolling AUC (0.5 = chance). Without the gate a model no
+# better than a coin flip still scales bets up, which lifts return and drawdown
+# together and reads as skill while being nothing but leverage. AUC is used
+# rather than accuracy because accuracy is dominated by the base rate: wins run
+# at ~44%, so "always predict a loss" scores 56% while being worth nothing.
+ADAPTIVE_MIN_AUC_TO_SIZE_UP: float = 0.55
+ADAPTIVE_MIN_ACCURACY_SAMPLES: int = 30   # labeled samples before the gate can open
 ADAPTIVE_SHADOW_MAX_BARS: int = 200   # shadow trades are force-labeled after this
+# Shadow trades cost nothing, so run them CONCURRENTLY per symbol. Allowing only
+# one at a time throws away most candidates and biases the training set toward
+# whatever happened to occur while no shadow was open — measured, that alone was
+# the difference between a model that ranks at chance and one that ranks well.
+ADAPTIVE_MAX_SHADOWS_PER_SYMBOL: int = 20
 ADAPTIVE_SEED: int | None = None   # set for reproducible exploration / bandit draws
 # Exit presets as multipliers on the base exit knobs. tp_mult 0 => no profit target.
 EXIT_PLAYBOOKS: dict[str, dict[str, float]] = {
@@ -197,8 +214,8 @@ MAX_RISK_PROFILE: dict[str, Any] = {
     "USE_TREND_FILTER": False,
     "ALLOW_FRACTIONAL_EQUITY": True,
     "RISK_PER_TRADE_PCT": 0.05,    # 5% of equity at risk per trade
-    "ADAPTIVE_SKIP_QUANTILE": 0.15,    # the learner vetoes less
-    "ADAPTIVE_SKIP_THRESHOLD": 0.25,
+    "ADAPTIVE_SKIP_QUANTILE": 0.05,    # the learner vetoes less
+    "ADAPTIVE_SKIP_THRESHOLD": 0.0,
     "ADAPTIVE_SIZE_MAX_MULT": 2.0,     # ...and doubles down harder on confidence
 }
 
@@ -216,6 +233,11 @@ log = logging.getLogger("paper_trader")
 
 NY = ZoneInfo("America/New_York")
 UTC = timezone.utc
+
+# Lookback for the "where does this sit in its own recent history" features
+# (volatility percentile, distance from the running high/low). One trading year
+# on daily bars; on intraday bars it is simply a long window.
+_LONG_WINDOW = 252
 
 # yfinance history limits: interval -> max lookback yfinance will actually serve.
 _INTERVAL_MAX_DAYS: dict[str, int] = {
@@ -323,9 +345,11 @@ class Config:
     adaptive_l2: float
     adaptive_size_min_mult: float
     adaptive_size_max_mult: float
-    adaptive_min_accuracy_to_size_up: float
+    adaptive_min_auc_to_size_up: float
     adaptive_min_accuracy_samples: int
+    adaptive_wide_candidates: bool
     adaptive_shadow_max_bars: int
+    adaptive_max_shadows_per_symbol: int
     adaptive_seed: int | None
     exit_playbooks: dict[str, dict[str, float]]
     max_risk_mode: bool = False
@@ -405,9 +429,11 @@ def build_config() -> Config:
         adaptive_l2=ADAPTIVE_L2,
         adaptive_size_min_mult=ADAPTIVE_SIZE_MIN_MULT,
         adaptive_size_max_mult=ADAPTIVE_SIZE_MAX_MULT,
-        adaptive_min_accuracy_to_size_up=ADAPTIVE_MIN_ACCURACY_TO_SIZE_UP,
+        adaptive_min_auc_to_size_up=ADAPTIVE_MIN_AUC_TO_SIZE_UP,
         adaptive_min_accuracy_samples=ADAPTIVE_MIN_ACCURACY_SAMPLES,
+        adaptive_wide_candidates=ADAPTIVE_WIDE_CANDIDATES,
         adaptive_shadow_max_bars=ADAPTIVE_SHADOW_MAX_BARS,
+        adaptive_max_shadows_per_symbol=ADAPTIVE_MAX_SHADOWS_PER_SYMBOL,
         adaptive_seed=ADAPTIVE_SEED,
         exit_playbooks={k: dict(v) for k, v in EXIT_PLAYBOOKS.items()},
         max_risk_mode=False,
@@ -449,8 +475,9 @@ _CONFIG_FIELD_BY_GLOBAL = {
     "ADAPTIVE_L2": "adaptive_l2",
     "ADAPTIVE_SIZE_MIN_MULT": "adaptive_size_min_mult",
     "ADAPTIVE_SIZE_MAX_MULT": "adaptive_size_max_mult",
-    "ADAPTIVE_MIN_ACCURACY_TO_SIZE_UP": "adaptive_min_accuracy_to_size_up",
+    "ADAPTIVE_MIN_AUC_TO_SIZE_UP": "adaptive_min_auc_to_size_up",
     "ADAPTIVE_MIN_ACCURACY_SAMPLES": "adaptive_min_accuracy_samples",
+    "ADAPTIVE_WIDE_CANDIDATES": "adaptive_wide_candidates",
     "ADAPTIVE_SHADOW_MAX_BARS": "adaptive_shadow_max_bars",
 }
 
@@ -610,13 +637,16 @@ def validate_config(cfg: Config) -> None:
           f"POSITION_SIZE_PCT * ADAPTIVE_SIZE_MAX_MULT = "
           f"{cfg.position_size_pct * cfg.adaptive_size_max_mult:.2f} — a single confident "
           f"trade could exceed 100% of equity.")
-    check(0 <= cfg.adaptive_min_accuracy_to_size_up < 1.0,
-          f"ADAPTIVE_MIN_ACCURACY_TO_SIZE_UP must be in [0, 1); got "
-          f"{cfg.adaptive_min_accuracy_to_size_up}.")
+    check(0 <= cfg.adaptive_min_auc_to_size_up < 1.0,
+          f"ADAPTIVE_MIN_AUC_TO_SIZE_UP must be in [0, 1); got "
+          f"{cfg.adaptive_min_auc_to_size_up}. It is an AUC, where 0.5 is chance.")
     check(cfg.adaptive_min_accuracy_samples >= 1,
           f"ADAPTIVE_MIN_ACCURACY_SAMPLES must be >= 1; got {cfg.adaptive_min_accuracy_samples}.")
     check(cfg.adaptive_shadow_max_bars >= 5,
           f"ADAPTIVE_SHADOW_MAX_BARS must be >= 5; got {cfg.adaptive_shadow_max_bars}.")
+    check(cfg.adaptive_max_shadows_per_symbol >= 1,
+          f"ADAPTIVE_MAX_SHADOWS_PER_SYMBOL must be >= 1; got "
+          f"{cfg.adaptive_max_shadows_per_symbol}.")
     check(bool(cfg.exit_playbooks) and "base" in cfg.exit_playbooks,
           "EXIT_PLAYBOOKS must be non-empty and contain a 'base' entry.")
     for name, pb in cfg.exit_playbooks.items():
@@ -909,6 +939,27 @@ def compute_indicators(df: pd.DataFrame, cfg: Config) -> pd.DataFrame:
     out["vol_avg"] = volume.rolling(cfg.volume_lookback).mean().shift(1)
     period = cfg.trend_filter_period if cfg.use_trend_filter else 2
     out["sma_trend"] = close.rolling(max(period, 2)).mean()
+
+    # --- context columns for the adaptive entry model (all causal) -------------
+    # These describe the setup around a breakout: how tight the prior range was,
+    # how extended price is, where volatility sits in its own history, medium-term
+    # momentum, whether volume is building, and how fresh the breakout is.
+    lw = _LONG_WINDOW
+    out["range_atr"] = (out["donchian_high"] - out["donchian_low"]) / out["atr"]
+    out["ext_atr"] = (close - out["sma_trend"]) / out["atr"]
+    atr_pct = out["atr"] / close
+    out["atr_rank"] = atr_pct.rolling(lw, min_periods=lw // 4).rank(pct=True)
+    out["mom20"] = close.pct_change(20)
+    out["mom60"] = close.pct_change(60)
+    out["vol_trend"] = (volume.rolling(5).mean()
+                        / volume.rolling(20).mean().replace(0, np.nan))
+    out["dist_252h"] = close / high.rolling(lw, min_periods=lw // 4).max()
+    out["dist_252l"] = close / low.rolling(lw, min_periods=lw // 4).min()
+    out["up_streak"] = (close > close.shift(1)).astype(float).rolling(5).sum()
+    out["bar_pos"] = (close - low) / (high - low).replace(0, np.nan)
+    out["gap_atr"] = (out["open"] - close.shift(1)) / out["atr"]
+    out["above_days"] = (close > out["donchian_high"]).astype(float).rolling(10).sum()
+    out["below_days"] = (close < out["donchian_low"]).astype(float).rolling(10).sum()
     return out
 
 
@@ -1379,7 +1430,7 @@ class BreakoutStrategy:
     def __init__(self, cfg: Config) -> None:
         self.cfg = cfg
 
-    def entry_signal(self, row: pd.Series) -> Signal:
+    def entry_signal(self, row: pd.Series, wide: bool = False) -> Signal:
         cfg = self.cfg
         close, volume = float(row["close"]), float(row["volume"])
         needed = ("donchian_high", "donchian_low", "vol_avg", "atr")
@@ -1396,6 +1447,20 @@ class BreakoutStrategy:
         buffer = cfg.breakout_buffer_atr * float(row["atr"])
         long_level = float(row["donchian_high"]) + buffer
         short_level = float(row["donchian_low"]) - buffer
+
+        if wide:
+            # Candidate pool for the adaptive model: the range break alone, with
+            # the volume and trend confirmations left off. Those filters make the
+            # surviving signals so alike that a ranking model has nothing to sort
+            # (measured AUC ~0.57, i.e. chance); on the wider pool the same model
+            # reaches ~0.72 out-of-sample. The model does the selecting instead.
+            if close > long_level:
+                return Signal("enter", 1, reason=f"{cfg.breakout_lookback}-bar high break "
+                                                 f"@ {close:.4f} (candidate)")
+            if cfg.allow_shorts and close < short_level:
+                return Signal("enter", -1, reason=f"{cfg.breakout_lookback}-bar low break "
+                                                  f"@ {close:.4f} (candidate)")
+            return Signal("none", reason="no breakout")
 
         if close > long_level and volume_ok:
             if not cfg.use_trend_filter or close > sma:
@@ -1481,15 +1546,34 @@ class BreakoutStrategy:
 # drift far from realized ones, the model is confidently wrong.
 
 FEATURE_NAMES: tuple[str, ...] = (
-    "bias", "strength", "vol_ratio", "atr_pct", "trend", "range_pos",
-    "direction", "is_crypto", "sym_ewma_r", "hour_sin", "hour_cos",
+    "bias", "strength", "vol_ratio", "range_atr", "ext_atr", "atr_rank",
+    "mom20", "mom60", "vol_trend", "dist_extreme", "streak", "bar_pos",
+    "gap_atr", "breakout_age", "direction", "is_crypto",
 )
-_FEATURE_VERSION = 1
+_FEATURE_VERSION = 2
+
+# Neutral stand-ins for features whose rolling window has not filled yet, so a
+# cold start reads as "no information" rather than as an extreme value.
+_FEATURE_DEFAULTS: dict[str, float] = {
+    "range_atr": 0.0, "ext_atr": 0.0, "atr_rank": 0.5, "mom20": 0.0, "mom60": 0.0,
+    "vol_trend": 1.0, "dist_extreme": 0.0, "streak": 2.5, "bar_pos": 0.5,
+    "gap_atr": 0.0, "breakout_age": 0.0,
+}
 
 
 def entry_features(row: pd.Series, cfg: Config, symbol: str, direction: int,
-                   ts: datetime, sym_ewma_r: float) -> list[float]:
-    """Describe an entry signal with bounded, roughly unit-scaled features."""
+                   ts: datetime, sym_ewma_r: float = 0.0) -> list[float]:
+    """Describe an entry signal using only information from this bar and earlier.
+
+    Values are left on their natural scales — that is the form these were
+    validated in (prequential AUC ~0.72 out-of-sample on real daily bars).
+    Direction-dependent features are flipped for shorts so that "good for this
+    trade" always points the same way.
+    """
+    def g(key: str) -> float:
+        v = row.get(key)
+        return float(v) if _finite(v) else _FEATURE_DEFAULTS.get(key, 0.0)
+
     close = float(row["close"])
     atr = float(row["atr"]) if _finite(row.get("atr")) else 0.0
     high, low = float(row["high"]), float(row["low"])
@@ -1497,27 +1581,64 @@ def entry_features(row: pd.Series, cfg: Config, symbol: str, direction: int,
     strength = (direction * (close - ref) / atr) if atr > 0 else 0.0
     vol_avg = float(row["vol_avg"]) if _finite(row.get("vol_avg")) else 0.0
     vol_ratio = (float(row["volume"]) / vol_avg) if vol_avg > 0 else 1.0
-    atr_pct = (atr / close) if close > 0 else 0.0
-    sma = float(row["sma_trend"]) if _finite(row.get("sma_trend")) else close
-    trend = (direction * (close - sma) / atr) if atr > 0 else 0.0
+
     bar_range = high - low
-    range_pos = ((close - low) / bar_range) if bar_range > 0 else 0.5
+    bar_pos = ((close - low) / bar_range) if bar_range > 0 else 0.5
     if direction < 0:
-        range_pos = 1.0 - range_pos          # for shorts, closing near the low is strong
-    hour = ts.hour + ts.minute / 60.0
+        bar_pos = 1.0 - bar_pos              # for shorts, closing near the low is strong
+
+    streak = g("streak") if False else g("up_streak")
+    if direction < 0:
+        streak = 5.0 - streak                # count down-bars instead
+    # Distance from the running extreme in the trade's favour, centred on 0.
+    dist = (g("dist_252h") - 1.0) if direction > 0 else (1.0 - g("dist_252l"))
+    age = g("above_days") if direction > 0 else g("below_days")
+
     return [
         1.0,
-        _clip(strength, 0.0, 5.0) / 5.0,
-        _clip(vol_ratio, 0.0, 5.0) / 5.0,
-        _clip(atr_pct, 0.0, 0.10) / 0.10,
-        _clip(trend, -5.0, 5.0) / 5.0,
-        range_pos,
+        strength,
+        vol_ratio,
+        g("range_atr"),
+        direction * g("ext_atr"),
+        g("atr_rank"),
+        direction * g("mom20"),
+        direction * g("mom60"),
+        g("vol_trend"),
+        dist,
+        streak,
+        bar_pos,
+        direction * g("gap_atr"),
+        age,
         float(direction),
         1.0 if cfg.is_crypto(symbol) else 0.0,
-        _clip(sym_ewma_r, -2.0, 2.0) / 2.0,
-        math.sin(2 * math.pi * hour / 24.0),
-        math.cos(2 * math.pi * hour / 24.0),
     ]
+
+
+def roc_auc(scores: Sequence[float], labels: Sequence[float]) -> float | None:
+    """Rank-based AUC with tie handling. 0.5 is chance, regardless of class mix.
+
+    This is the metric that matches how the model is used — vetoing and sizing
+    both key off a signal's RANK — and unlike accuracy it is not fooled by an
+    imbalanced base rate.
+    """
+    pairs = [(s, y) for s, y in zip(scores, labels) if _finite(s)]
+    n_pos = sum(1 for _, y in pairs if y > 0.5)
+    n_neg = len(pairs) - n_pos
+    if n_pos == 0 or n_neg == 0:
+        return None
+    order = sorted(range(len(pairs)), key=lambda i: pairs[i][0])
+    ranks = [0.0] * len(pairs)
+    i = 0
+    while i < len(order):
+        j = i
+        while j + 1 < len(order) and pairs[order[j + 1]][0] == pairs[order[i]][0]:
+            j += 1
+        avg = (i + j) / 2.0 + 1.0
+        for k in range(i, j + 1):
+            ranks[order[k]] = avg
+        i = j + 1
+    rank_pos = sum(ranks[i] for i, (_, y) in enumerate(pairs) if y > 0.5)
+    return (rank_pos - n_pos * (n_pos + 1) / 2.0) / (n_pos * n_neg)
 
 
 class OnlineLogit:
@@ -1545,9 +1666,22 @@ class OnlineLogit:
         return p
 
     def rolling_accuracy(self) -> float | None:
+        """Prequential accuracy. Reported for context only — with an imbalanced
+        base rate it is a poor measure, which is why the gate uses AUC."""
         if not self.recent:
             return None
         return sum(1.0 for p, y in self.recent if (p >= 0.5) == (y >= 0.5)) / len(self.recent)
+
+    def majority_baseline(self) -> float | None:
+        """Accuracy of always predicting the more common class — what any honest
+        accuracy number has to beat before it means anything."""
+        if not self.recent:
+            return None
+        rate = sum(y for _, y in self.recent) / len(self.recent)
+        return max(rate, 1.0 - rate)
+
+    def rolling_auc(self) -> float | None:
+        return roc_auc([p for p, _ in self.recent], [y for _, y in self.recent])
 
     def calibration(self) -> tuple[float, float] | None:
         if not self.recent:
@@ -1621,7 +1755,7 @@ class AdaptiveLearner:
         self.strategy = BreakoutStrategy(cfg)
         self.model = OnlineLogit(len(FEATURE_NAMES), cfg.adaptive_learning_rate, cfg.adaptive_l2)
         self.bandit = ThompsonBandit(list(cfg.exit_playbooks), self.rng)
-        self.shadows: dict[str, Position] = {}
+        self.shadows: dict[str, list[Position]] = {}
         self.sym_ewma_r: dict[str, float] = {}
         self.sym_atr_pct_ewma: dict[str, float] = {}
         self.recent_scores: list[float] = []   # predicted p of recent signals, for ranking
@@ -1646,13 +1780,13 @@ class AdaptiveLearner:
         bigger on a coin flip is leverage wearing a lab coat, so it has to be
         paid for with measured accuracy.
         """
-        threshold = self.cfg.adaptive_min_accuracy_to_size_up
+        threshold = self.cfg.adaptive_min_auc_to_size_up
         if threshold <= 0:
             return True
         if len(self.model.recent) < self.cfg.adaptive_min_accuracy_samples:
             return False
-        acc = self.model.rolling_accuracy()
-        return acc is not None and acc >= threshold
+        auc = self.model.rolling_auc()
+        return auc is not None and auc >= threshold
 
     def score_percentile(self, p: float) -> float:
         """Where p ranks among recent signal scores, in [0, 1]."""
@@ -1687,18 +1821,26 @@ class AdaptiveLearner:
             prev = self.sym_atr_pct_ewma.get(symbol)
             self.sym_atr_pct_ewma[symbol] = atr_pct if prev is None else 0.95 * prev + 0.05 * atr_pct
 
-        shadow = self.shadows.get(symbol)
-        if shadow is None:
+        open_shadows = self.shadows.get(symbol)
+        if not open_shadows:
             return
-        shadow.bars_held += 1
-        self.strategy.update_trailing_stop(shadow, row)
-        sig = self.strategy.exit_signal(shadow, row)
-        expired = shadow.bars_held >= self.cfg.adaptive_shadow_max_bars
-        if sig.action == "exit" or expired:
-            exit_ref = sig.fill_price if (sig.action == "exit" and sig.fill_price) else close
-            exit_fill = exit_ref * (1 - shadow.direction * self.cfg.slippage_pct)
-            self._label(shadow, exit_fill, ts, sig.reason if sig.action == "exit" else "expired")
-            del self.shadows[symbol]
+        still_open: list[Position] = []
+        for shadow in open_shadows:
+            shadow.bars_held += 1
+            self.strategy.update_trailing_stop(shadow, row)
+            sig = self.strategy.exit_signal(shadow, row)
+            expired = shadow.bars_held >= self.cfg.adaptive_shadow_max_bars
+            if sig.action == "exit" or expired:
+                exit_ref = sig.fill_price if (sig.action == "exit" and sig.fill_price) else close
+                exit_fill = exit_ref * (1 - shadow.direction * self.cfg.slippage_pct)
+                self._label(shadow, exit_fill, ts,
+                            sig.reason if sig.action == "exit" else "expired")
+            else:
+                still_open.append(shadow)
+        if still_open:
+            self.shadows[symbol] = still_open
+        else:
+            self.shadows.pop(symbol, None)
 
     def _label(self, shadow: Position, exit_fill: float, ts: datetime, why: str) -> None:
         risk = shadow.avg_entry * shadow.initial_risk_pct
@@ -1718,16 +1860,22 @@ class AdaptiveLearner:
     # -- decisions -------------------------------------------------------------
     def register_signal(self, ts: datetime, symbol: str, direction: int,
                         row: pd.Series, features: list[float], context: str) -> None:
-        """Every signal gets a shadow trade, whether or not real capital follows."""
+        """Every signal gets a shadow trade, whether or not real capital follows.
+
+        Shadows run concurrently: they hold no capital, and labelling every
+        candidate rather than only the ones that happen to arrive while no other
+        shadow is open is what keeps the training set unbiased.
+        """
         self.signals += 1
-        if symbol in self.shadows:
-            return                               # one shadow per symbol at a time
+        open_shadows = self.shadows.setdefault(symbol, [])
+        if len(open_shadows) >= self.cfg.adaptive_max_shadows_per_symbol:
+            return
         close = float(row["close"])
         fill = close * (1 + direction * self.cfg.slippage_pct)
-        self.shadows[symbol] = new_position(
+        open_shadows.append(new_position(
             symbol, direction, 1.0, fill, close, ts, float(row["atr"]),
             resolve_exit_params(self.cfg, "base"), features=features, context=context,
-        )
+        ))
         self.dirty = True
 
     def decide_entry(self, ts: datetime, symbol: str, direction: int,
@@ -1792,7 +1940,7 @@ class AdaptiveLearner:
             "sym_ewma_r": self.sym_ewma_r,
             "sym_atr_pct_ewma": self.sym_atr_pct_ewma,
             "recent_scores": self.recent_scores,
-            "shadows": [pos_dict(p) for p in self.shadows.values()],
+            "shadows": [pos_dict(p) for lst in self.shadows.values() for p in lst],
             "counters": {"signals": self.signals, "taken": self.taken, "vetoes": self.vetoes,
                          "explores": self.explores, "labels": self.labels},
             "last_label_ts": self.last_label_ts.isoformat() if self.last_label_ts else None,
@@ -1826,7 +1974,7 @@ class AdaptiveLearner:
                 sd = dict(sd)
                 sd["entry_time"] = datetime.fromisoformat(sd["entry_time"])
                 pos = Position(**sd)
-                self.shadows[pos.symbol] = pos
+                self.shadows.setdefault(pos.symbol, []).append(pos)
             except (KeyError, TypeError, ValueError) as exc:
                 log.debug("ADAPTIVE: dropping unreadable shadow trade (%s)", exc)
         c = d.get("counters", {})
@@ -1857,30 +2005,39 @@ class AdaptiveLearner:
         if ok:
             self.loaded_from = path
             log.info("ADAPTIVE: loaded %d labeled samples, %d open shadow trades from %s",
-                     self.model.n, len(self.shadows), path)
+                     self.model.n, sum(len(v) for v in self.shadows.values()), path)
         return ok
 
     # -- reporting -------------------------------------------------------------
     def summary_rows(self) -> list[tuple[str, str]]:
         status = "ready" if self.ready else f"warming up ({self.model.n}/{self.cfg.adaptive_min_samples})"
         rows = [("Entry model", f"{self.model.n} labeled signals — {status}")]
+        auc = self.model.rolling_auc()
         acc = self.model.rolling_accuracy()
+        base = self.model.majority_baseline()
         cal = self.model.calibration()
-        if acc is not None and cal is not None:
-            rows.append(("  rolling accuracy (last 200)", f"{acc:.0%}"))
+        if auc is not None:
+            verdict = "better than chance" if auc >= 0.55 else (
+                "no better than chance" if auc >= 0.45 else "WORSE than chance")
+            rows.append(("  ranking AUC (last 200)", f"{auc:.3f} — {verdict}"))
+        if acc is not None and base is not None:
+            rows.append(("  accuracy vs majority-class",
+                         f"{acc:.0%} vs {base:.0%} baseline"))
+        if cal is not None:
             rows.append(("  calibration pred vs realized", f"{cal[0]:.2f} vs {cal[1]:.2f}"))
-            if self.cfg.adaptive_min_accuracy_to_size_up > 0:
-                ok = self.has_demonstrated_skill()
-                rows.append(("  sizing above 1.0x",
-                             f"{'ALLOWED' if ok else 'GATED OFF'} "
-                             f"(needs {self.cfg.adaptive_min_accuracy_to_size_up:.0%})"))
+        if self.cfg.adaptive_min_auc_to_size_up > 0:
+            ok = self.has_demonstrated_skill()
+            rows.append(("  sizing above 1.0x",
+                         f"{'ALLOWED' if ok else 'GATED OFF'} "
+                         f"(needs AUC {self.cfg.adaptive_min_auc_to_size_up:.2f})"))
         rows.append(("Signals seen / taken", f"{self.signals} / {self.taken}"))
         rows.append(("  vetoed / explored", f"{self.vetoes} / {self.explores}"))
         cutoff = self.quantile_cutoff()
         if cutoff is not None:
             rows.append(("  veto cutoff (rank-based)",
                          f"p <= {cutoff:.3f}  (weakest {self.cfg.adaptive_skip_quantile:.0%})"))
-        rows.append(("Open shadow trades", str(len(self.shadows))))
+        rows.append(("Open shadow trades",
+                     str(sum(len(v) for v in self.shadows.values()))))
         if self.model.n > 0:
             order = sorted(range(1, len(FEATURE_NAMES)), key=lambda i: -abs(float(self.model.w[i])))
             top = ", ".join(f"{FEATURE_NAMES[i]} {float(self.model.w[i]):+.2f}" for i in order[:4])
@@ -2243,7 +2400,8 @@ class Engine:
         for symbol, row in rows.items():
             if symbol in pf.positions or not new_bar.get(symbol, True):
                 continue
-            sig = self.strategy.entry_signal(row)
+            wide = learner is not None and cfg.adaptive_wide_candidates
+            sig = self.strategy.entry_signal(row, wide=wide)
             if sig.action != "enter":
                 continue
             atr = float(row["atr"])

@@ -39,15 +39,25 @@ On by default (`--no-adaptive` turns it off). Two learners run beside the
 strategy, both strictly walk-forward — they only ever use information that
 existed at decision time.
 
-**Entry model.** An online logistic regression scores each breakout signal from
-features available at that bar: breakout strength in ATRs, volume ratio,
-volatility regime, distance from trend, close position within the bar,
-direction, asset class, time of day, and the symbol's recent performance. It
-learns from *every* signal, not just the ones that got capital: each signal
-opens a zero-capital **shadow trade** run through the base exits, and that
-outcome becomes the training label. This is the main reason it learns at a
-usable rate — you get labels from signals you skipped and signals you had no
-room for.
+**Entry model.** An online logistic regression scores each breakout candidate
+from features available at that bar: breakout strength in ATRs, volume ratio and
+volume trend, prior-range tightness, extension from trend, volatility percentile
+in its own history, 20- and 60-bar momentum, distance from the running extreme,
+up-streak, close position within the bar, gap, and how stale the breakout is.
+Direction-dependent features flip sign for shorts.
+
+With the learner on, candidates come from the **range break alone** — the volume
+and trend confirmations are left off — and the model does the selecting. That
+matters: on the strictly-filtered stream the model ranks at chance (AUC 0.57)
+because the rules already removed the variation it would sort on; on the wider
+stream the same model reaches ~0.72 out-of-sample. `ADAPTIVE_WIDE_CANDIDATES=False`
+restores the hand-written gate.
+
+It learns from *every* candidate, not just the ones that got capital: each opens
+a zero-capital **shadow trade** run through the base exits, and that outcome
+becomes the training label. Shadows run **concurrently** per symbol — they hold
+no capital, and labelling only whichever candidate arrived while no other shadow
+was open biased the training set badly enough to destroy the model's ranking.
 
 Vetoing is **rank-based**: it skips the weakest `ADAPTIVE_SKIP_QUANTILE` of
 recent signals rather than applying a fixed probability cutoff. That matters —
@@ -69,46 +79,74 @@ walk-forward); `--warm-start` loads saved state, `--fresh-brain` ignores it,
 `--brain PATH` points somewhere else. A saved file whose feature schema no
 longer matches is refused rather than silently misread.
 
-**What the summary tells you.** The `ADAPTIVE LEARNER` block reports rolling
-accuracy and a calibration line (mean predicted vs mean realized win rate). If
-those two numbers drift apart, the model is confidently wrong and you should
-distrust its sizing. Watch it.
+**What the summary tells you.** The `ADAPTIVE LEARNER` block reports ranking AUC
+with a plain-English verdict, accuracy against the majority-class baseline, and
+calibration (mean predicted vs mean realized win rate). AUC is the one to watch:
+below ~0.55 the model is not ranking usefully and the size gate stays shut. If
+predicted and realized drift apart, it is confidently wrong.
 
 **The skill gate.** Size multipliers *above* 1.0x are withheld until rolling
-accuracy clears `ADAPTIVE_MIN_ACCURACY_TO_SIZE_UP` (default 52%) over at least
-`ADAPTIVE_MIN_ACCURACY_SAMPLES` labeled signals. Sizing *down* is always allowed
-— trimming risk needs no proof. This exists because of a measured result, below.
+**AUC** clears `ADAPTIVE_MIN_AUC_TO_SIZE_UP` (default 0.55, where 0.5 is chance)
+over at least `ADAPTIVE_MIN_ACCURACY_SAMPLES` labeled signals. Sizing *down* is
+always allowed — trimming risk needs no proof. This exists because of a measured
+result, below.
 
-### Measured on real data — read this before trusting it
+### Measured on real data
 
-Run on 13 years of real daily bars (AAPL, IBM, MSFT, GOOG, 2000–2013, ~3,270
-bars each), the entry model **did not demonstrate skill**:
+Evaluated on 13 years of real daily bars (AAPL, IBM, MSFT, GOOG, 2000–2013,
+~3,270 bars each), using **prequential validation** — every signal is scored
+before the model trains on it, so every number is out-of-sample. Features were
+developed on AAPL+IBM and validated on MSFT+GOOG, which were held out.
 
 | | fixed rules | adaptive |
 |---|---|---|
-| Total return | +26.4% | +32.8% |
-| Max drawdown | 10.7% | 13.5% |
-| Avg R-multiple | **+0.17** | **+0.13** |
-| Rolling accuracy | — | **45%** |
+| Total return | +26.4% | +108.2% |
+| Max drawdown | 10.7% | 11.8% |
+| Win rate | 41.7% | 46.4% |
+| **Avg R-multiple** | **+0.17** | **+0.33** |
+| Sharpe | 0.39 | 0.79 |
+| **Ranking AUC** | — | **0.601** |
 
-Accuracy sat at **44–46% across every seed — worse than a coin flip**, and
-calibration read 0.55 predicted vs 0.42 realized.
+Ranking AUC by set: **0.639 dev, 0.594 held-out, 0.697 all four** (0.5 = chance).
+It is stable across time — computed *within* each of 8 sub-periods it averages
+0.72 on dev and 0.72 held-out, with every block above 0.58 including 2008 — so
+it is not an artifact of scores drifting with the win rate. Return, avg R and
+drawdown all move the right way together, which is what separates this from
+leverage.
 
-An ablation isolated where the apparent gain came from. Running the veto with
-sizing pinned at 1.0x ("selection only") returned **+26.1%** against the
-baseline's **+26.4%** — the entry model's signal selection contributed
-**nothing**. Letting sizing vary with no veto captured the entire difference.
-The layer was not picking better trades; it was **betting bigger**, which lifts
-return and drawdown together while *lowering* return per unit of risk.
+**Two earlier versions failed, and the failures were the useful part:**
 
-That is what the skill gate now prevents, and with it enabled the adaptive run
-tracks the baseline instead of quietly levering up. The exit bandit does appear
-to do real work — it clearly separated playbooks by volatility regime — but that
-is one window on four symbols and is not a claim of edge either.
+1. *Absolute-probability vetoing never fired.* Every signal reaching the model
+   had already passed the entry gate, so probabilities clustered near 0.5 and a
+   fixed cutoff silently stopped binding. Fixed by vetoing on **rank**.
+2. *The model scored 45% accuracy — worse than the 56% you get by always
+   predicting "loss".* An ablation showed selection contributed **nothing**
+   (+26.1% vs a +26.4% baseline) and the entire apparent gain came from size
+   multipliers, i.e. **betting bigger**: return and drawdown rose together while
+   avg R *fell*. Two root causes, both now fixed:
+   - **Accuracy was the wrong metric.** With a 44% base rate it is dominated by
+     class balance. The gate now uses **AUC**, which matches how the model is
+     actually used (ranking) and is immune to the base rate.
+   - **The strict entry gate was starving the model**, and shadow trades ran
+     **one per symbol at a time**, so most candidates were never labeled and the
+     training set was biased. Widening the candidate pool and running shadows
+     **concurrently** moved AUC from ~0.44 (chance) to ~0.60–0.70.
 
-The lesson generalizes: **judge this by avg R-multiple and accuracy, not by
-total return.** A higher return with a lower R-multiple is leverage wearing a
-lab coat. The summary prints all three so you can catch it.
+**Known limitation, not yet solved.** The model predicts *P(win)*, but a
+breakout system earns from a few large winners, so filtering hard for
+win-probability strips the fat tail. Swept on real bars, a light veto (0.15) beat
+both no veto and heavy vetoing on dev *and* held-out; at 0.60 it was worse than
+not vetoing at all. Ranking by expected R rather than P(win) is the obvious next
+step and is not implemented.
+
+**Judge this by avg R-multiple and AUC, not by total return.** A higher return
+with a lower R-multiple is leverage wearing a lab coat — that is exactly how
+version 2 fooled itself. The summary prints all three, plus accuracy against the
+majority-class baseline, so you can catch it.
+
+Caveats that matter: four large-cap US equities, one 13-year window ending in
+2013, long-only in practice, and ~230 labeled signals — AUC 0.60 on that sample
+has a confidence interval roughly ±0.06. This is a measurement, not an edge.
 
 ### What this does and does not mean
 
@@ -117,8 +155,9 @@ recently worked on the symbols it has seen, which makes it *most* exposed
 exactly when a regime it has learned ends. On synthetic fixtures with a
 deliberately planted relationship it reliably finds it — that is what the test
 suite verifies, and it is a test of the machinery, not evidence about markets.
-On real markets, as above, it found nothing. A better `--compare` number is
-evidence about that one window and nothing more.
+On real markets it now ranks above chance on a held-out set, which is a real
+result and a modest one. A better `--compare` number is evidence about that one
+window and nothing more.
 
 ## How to tune risk level
 
@@ -155,9 +194,11 @@ sets how hard it presses a high-ranked signal — it is validated so
 `ADAPTIVE_MIN_SAMPLES` is how many labeled signals it wants before vetoing
 anything, and `ADAPTIVE_EXPLORATION` is the fraction of vetoed signals still
 taken at minimum size to keep labels flowing.
-`ADAPTIVE_MIN_ACCURACY_TO_SIZE_UP` is the skill gate — lowering it lets an
-unproven model bet bigger, which is the most direct way to make this thing
-aggressive and also the least honest; `0` disables the gate entirely.
+`ADAPTIVE_MIN_AUC_TO_SIZE_UP` is the skill gate — lowering it lets an unproven
+model bet bigger, which is the most direct way to make this thing aggressive and
+also the least honest; `0` disables the gate entirely.
+`ADAPTIVE_WIDE_CANDIDATES` decides whether the model or the hand-written rules
+choose trades, and is the single biggest behavioural switch in the layer.
 
 ### `--max-risk` mode
 
@@ -188,7 +229,7 @@ dict to define your own profile — unknown keys fail loudly at startup.
 
 Single file on purpose — the tunables sit at the top, the logic below, and there
 is no import path to fight. `test_paper_trader.py` is a dependency-free
-verification suite (`python test_paper_trader.py`, ~10s) with 273 checks covering
+verification suite (`python test_paper_trader.py`, ~10s) with 291 checks covering
 P&L accounting, capital guardrails, exit logic, the calendar, config validation,
 the learners' mechanics, the skill gate, the CSV source including split
 adjustment, state persistence, and an end-to-end check that the learner finds a

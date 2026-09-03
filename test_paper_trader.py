@@ -801,16 +801,59 @@ def test_entry_features_bounded() -> None:
     cfg = make_cfg(crypto_universe=["BTC-USD"])
     row = _row(100, 106, 99, 105, atr=2.0, vol=900.0,
                donchian_high=104.0, donchian_low=90.0, vol_avg=100.0, sma_trend=95.0)
-    feats = pt.entry_features(row, cfg, "BTC-USD", +1, T0, sym_ewma_r=0.4)
+    feats = pt.entry_features(row, cfg, "BTC-USD", +1, T0)
+    idx = {n: i for i, n in enumerate(pt.FEATURE_NAMES)}
     check("features: length matches names", len(feats) == len(pt.FEATURE_NAMES))
-    check("features: all bounded in [-1, 1]", all(-1.0 - 1e-9 <= f <= 1.0 + 1e-9 for f in feats),
-          f"{feats}")
+    check("features: all finite", all(math.isfinite(f) for f in feats), f"{feats}")
     check("features: bias is 1", feats[0] == 1.0)
-    check("features: crypto flag set", feats[pt.FEATURE_NAMES.index("is_crypto")] == 1.0)
-    check("features: volume ratio saturates at 5x",
-          close_to(feats[pt.FEATURE_NAMES.index("vol_ratio")], 1.0))
-    short_feats = pt.entry_features(row, cfg, "TEST", -1, T0, 0.0)
-    check("features: direction sign carried", short_feats[pt.FEATURE_NAMES.index("direction")] == -1.0)
+    check("features: crypto flag set", feats[idx["is_crypto"]] == 1.0)
+    # Natural scales are deliberate — this is the form validated out-of-sample.
+    check("features: volume ratio is the raw multiple",
+          close_to(feats[idx["vol_ratio"]], 9.0), f"got {feats[idx['vol_ratio']]}")
+    check("features: strength in ATRs above the range",
+          close_to(feats[idx["strength"]], (105 - 104) / 2.0))
+
+    short_feats = pt.entry_features(row, cfg, "TEST", -1, T0)
+    check("features: direction sign carried", short_feats[idx["direction"]] == -1.0)
+    check("features: bar_pos flipped for shorts",
+          close_to(feats[idx["bar_pos"]] + short_feats[idx["bar_pos"]], 1.0))
+
+    # Missing rolling windows fall back to neutral values, not extremes.
+    bare = _row(100, 106, 99, 105, atr=2.0, vol=300.0,
+                donchian_high=104.0, donchian_low=90.0, vol_avg=100.0)
+    bf = pt.entry_features(bare, cfg, "TEST", +1, T0)
+    check("features: cold-start atr_rank is neutral 0.5",
+          close_to(bf[idx["atr_rank"]], 0.5), f"got {bf[idx['atr_rank']]}")
+    check("features: cold-start vol_trend is neutral 1.0",
+          close_to(bf[idx["vol_trend"]], 1.0))
+    check("features: cold-start momentum is 0", close_to(bf[idx["mom60"]], 0.0))
+
+    # Directional features flip sign for shorts so "good" always points one way.
+    trend_row = _row(100, 106, 99, 105, atr=2.0, vol=300.0, donchian_high=104.0,
+                     donchian_low=90.0, vol_avg=100.0, mom60=0.3, ext_atr=1.5)
+    lf = pt.entry_features(trend_row, cfg, "TEST", +1, T0)
+    sf = pt.entry_features(trend_row, cfg, "TEST", -1, T0)
+    check("features: mom60 flips for shorts",
+          close_to(lf[idx["mom60"]], 0.3) and close_to(sf[idx["mom60"]], -0.3))
+    check("features: ext_atr flips for shorts",
+          close_to(lf[idx["ext_atr"]], 1.5) and close_to(sf[idx["ext_atr"]], -1.5))
+
+
+def test_roc_auc() -> None:
+    check("auc: perfect ranking", close_to(pt.roc_auc([0.1, 0.2, 0.8, 0.9], [0, 0, 1, 1]), 1.0))
+    check("auc: inverted ranking", close_to(pt.roc_auc([0.9, 0.8, 0.2, 0.1], [0, 0, 1, 1]), 0.0))
+    check("auc: all ties is chance", close_to(pt.roc_auc([0.5] * 4, [0, 1, 0, 1]), 0.5))
+    check("auc: single class is undefined", pt.roc_auc([0.1, 0.2], [1, 1]) is None)
+    check("auc: empty is undefined", pt.roc_auc([], []) is None)
+    # AUC ignores class imbalance, which is the whole reason the gate uses it.
+    scores = [0.1] * 90 + [0.9] * 10
+    labels = [0.0] * 90 + [1.0] * 10
+    check("auc: immune to a 90/10 base rate", close_to(pt.roc_auc(scores, labels), 1.0))
+
+    model = pt.OnlineLogit(2, lr=0.1, l2=0.0)
+    model.recent = [(0.2, 0.0), (0.8, 1.0), (0.3, 0.0), (0.7, 1.0)]
+    check("auc: exposed on the model", close_to(model.rolling_auc(), 1.0))
+    check("auc: majority baseline reported", close_to(model.majority_baseline(), 0.5))
 
 
 def test_shadow_trade_labels_the_model() -> None:
@@ -823,16 +866,26 @@ def test_shadow_trade_labels_the_model() -> None:
     check("shadow: warm-up decisions are taken at full size", d.take and d.size_mult == 1.0)
     check("shadow: warm-up note explains itself", "warm-up" in d.note)
     learner.register_signal(T0, "TEST", +1, row, d.features, d.context)
-    check("shadow: one shadow opened", "TEST" in learner.shadows)
-    learner.register_signal(T0, "TEST", +1, row, d.features, d.context)
-    check("shadow: no duplicate per symbol", len(learner.shadows) == 1)
+    check("shadow: one shadow opened", len(learner.shadows.get("TEST", [])) == 1)
+    learner.register_signal(T0 + timedelta(hours=1), "TEST", +1, row, d.features, d.context)
+    check("shadow: shadows run concurrently per symbol",
+          len(learner.shadows["TEST"]) == 2, f"got {len(learner.shadows['TEST'])}")
+
+    capped = pt.AdaptiveLearner(make_cfg(enable_adaptive=True,
+                                         adaptive_max_shadows_per_symbol=3))
+    for i in range(10):
+        capped.register_signal(T0 + timedelta(hours=i), "TEST", +1, row, d.features, d.context)
+    check("shadow: per-symbol cap respected", len(capped.shadows["TEST"]) == 3,
+          f"got {len(capped.shadows['TEST'])}")
+    check("shadow: every candidate still counted as a signal", capped.signals == 10)
 
     # Price collapses through the 10% stop: shadow exits, model gets a loss label.
     n_before = learner.model.n
-    learner.observe_bar("TEST", _row(90, 91, 88, 89, atr=2.0), T0 + timedelta(hours=1))
-    check("shadow: closed on stop", "TEST" not in learner.shadows)
-    check("shadow: model received one label", learner.model.n == n_before + 1)
-    check("shadow: labels counter bumped", learner.labels == 1)
+    learner.observe_bar("TEST", _row(90, 91, 88, 89, atr=2.0), T0 + timedelta(hours=2))
+    check("shadow: closed on stop", not learner.shadows.get("TEST"))
+    check("shadow: every concurrent shadow labeled", learner.model.n == n_before + 2,
+          f"got {learner.model.n - n_before}")
+    check("shadow: labels counter bumped", learner.labels == 2)
     check("shadow: symbol EWMA went negative", learner.sym_ewma_r.get("TEST", 0.0) < 0)
 
     # A shadow that never exits is force-labeled after the max bar count.
@@ -843,7 +896,8 @@ def test_shadow_trade_labels_the_model() -> None:
     l2.register_signal(T0, "TEST", +1, row, d2.features, d2.context)
     for i in range(5):
         l2.observe_bar("TEST", _row(105, 106, 104, 105, atr=2.0), T0 + timedelta(hours=i + 1))
-    check("shadow: expired after max bars", "TEST" not in l2.shadows and l2.model.n == 1)
+    check("shadow: expired after max bars",
+          not l2.shadows.get("TEST") and l2.model.n == 1)
 
 
 def test_learner_absolute_floor_veto() -> None:
@@ -880,7 +934,7 @@ def test_learner_rank_based_veto_and_sizing() -> None:
     # A realistic, tightly-clustered score history around 0.5.
     learner.recent_scores = [0.45 + 0.001 * i for i in range(100)]   # 0.450 .. 0.549
     # Grant demonstrated skill so the size-up gate is open; it is tested separately.
-    learner.model.recent = [(0.8, 1.0)] * 40
+    learner.model.recent = [(0.8, 1.0), (0.2, 0.0)] * 20   # perfectly ranked => AUC 1.0
     check("rank sizing: precondition — skill gate open", learner.has_demonstrated_skill())
 
     cutoff = learner.quantile_cutoff()
@@ -953,47 +1007,55 @@ def test_skill_gate_blocks_sizing_up() -> None:
     cfg = make_cfg(enable_adaptive=True, adaptive_min_samples=5, adaptive_skip_quantile=0.0,
                    adaptive_skip_threshold=0.0, adaptive_exploration=0.0,
                    adaptive_size_min_mult=0.5, adaptive_size_max_mult=2.0,
-                   adaptive_min_accuracy_to_size_up=0.52, adaptive_min_accuracy_samples=30)
+                   adaptive_min_auc_to_size_up=0.55, adaptive_min_accuracy_samples=30)
     row = _row(100, 106, 99, 105, atr=2.0, vol=300.0,
                donchian_high=104.0, donchian_low=90.0, vol_avg=100.0)
 
-    def learner_with(correct: int, total: int) -> pt.AdaptiveLearner:
+    def learner_with(auc_target: float, total: int) -> pt.AdaptiveLearner:
+        """Build a history whose ranking quality is roughly auc_target."""
         L = pt.AdaptiveLearner(cfg)
         L.model.n = 200
         L.recent_scores = [0.4 + 0.002 * i for i in range(100)]
-        # recent holds (predicted p, label); p>=0.5 vs label decides correctness.
-        L.model.recent = ([(0.9, 1.0)] * correct) + [(0.9, 0.0)] * (total - correct)
+        half = total // 2
+        good = int(round(auc_target * half))       # correctly-ordered pairs
+        recent = []
+        for i in range(half):
+            hi, lo = (1.0, 0.0) if i < good else (0.0, 1.0)
+            recent += [(0.9, hi), (0.1, lo)]
+        L.model.recent = recent
         L.model.w[:] = 0.0
         L.model.w[0] = 5.0            # top of the score range -> would want max size
         return L
 
-    thin = learner_with(20, 20)       # 100% accurate but only 20 samples
+    thin = learner_with(1.0, 20)      # perfect ranking but only 20 samples
     check("skill gate: closed on too few samples", not thin.has_demonstrated_skill())
     check("skill gate: thin history capped at 1.0x",
           close_to(thin.decide_entry(T0, "TEST", +1, row).size_mult, 1.0))
 
-    coin = learner_with(45, 100)      # 45% accuracy, like the real-data result
-    check("skill gate: closed below the accuracy threshold", not coin.has_demonstrated_skill())
+    coin = learner_with(0.5, 100)     # AUC ~0.5, chance — the real-data result
+    check("skill gate: closed at chance-level AUC", not coin.has_demonstrated_skill(),
+          f"auc={coin.model.rolling_auc()}")
     d_coin = coin.decide_entry(T0, "TEST", +1, row)
     check("skill gate: unskilled model capped at 1.0x", close_to(d_coin.size_mult, 1.0),
           f"got {d_coin.size_mult}")
     check("skill gate: reason is visible in the note", "gated" in d_coin.note, d_coin.note)
 
-    skilled = learner_with(70, 100)   # 70% accuracy
-    check("skill gate: open above the threshold", skilled.has_demonstrated_skill())
+    skilled = learner_with(0.9, 100)  # AUC ~0.9
+    check("skill gate: open above the threshold", skilled.has_demonstrated_skill(),
+          f"auc={skilled.model.rolling_auc()}")
     d_skill = skilled.decide_entry(T0, "TEST", +1, row)
     check("skill gate: skilled model may size up", d_skill.size_mult > 1.0,
           f"got {d_skill.size_mult}")
 
     # Sizing DOWN is always allowed — trimming risk needs no proof of skill.
-    shy = learner_with(45, 100)
+    shy = learner_with(0.5, 100)
     shy.model.w[0] = -5.0             # bottom of the range
     d_shy = shy.decide_entry(T0, "TEST", +1, row)
     check("skill gate: sizing down is never gated", d_shy.size_mult < 1.0,
           f"got {d_shy.size_mult}")
 
     # Threshold 0 disables the gate entirely.
-    off = make_cfg(enable_adaptive=True, adaptive_min_accuracy_to_size_up=0.0)
+    off = make_cfg(enable_adaptive=True, adaptive_min_auc_to_size_up=0.0)
     check("skill gate: disabled at threshold 0",
           pt.AdaptiveLearner(off).has_demonstrated_skill())
 
@@ -1039,7 +1101,7 @@ def test_learner_persistence_round_trip() -> None:
           close_to(b.bandit.stats["hivol_long"]["runner"][1], 1.2))
     check("persist: symbol EWMA restored", close_to(b.sym_ewma_r["TEST"], 0.33))
     check("persist: open shadow restored",
-          "TEST" in b.shadows and b.shadows["TEST"].entry_time == T0)
+          len(b.shadows.get("TEST", [])) == 1 and b.shadows["TEST"][0].entry_time == T0)
     check("persist: counters restored", b.signals == 9 and b.vetoes == 2)
 
     # Schema mismatch => refuse to load, stay fresh, don't crash.
@@ -1196,7 +1258,7 @@ def test_learner_finds_a_real_relationship() -> None:
     cfg_f = make_cfg(enable_adaptive=False, **common)
     cfg_a = make_cfg(enable_adaptive=True, **common)
 
-    better, vetoed_any, weights = 0, 0, []
+    better, vetoed_any, weights, aucs = 0, 0, [], []
     for seed in (1, 2, 3, 4):
         frames = _learnable_frames(cfg_f, seed=seed)
         f = pt.Engine(cfg_f, os.path.join(outdir, f"f{seed}"))
@@ -1207,9 +1269,16 @@ def test_learner_finds_a_real_relationship() -> None:
         better += ma["win_rate_pct"] > mf["win_rate_pct"]
         vetoed_any += (a.learner.vetoes > 0)
         weights.append(float(a.learner.model.w[pt.FEATURE_NAMES.index("vol_ratio")]))
+        auc = a.learner.model.rolling_auc()
+        if auc is not None:
+            aucs.append(auc)
 
     check("learnable: model puts positive weight on volume on every seed",
           all(w > 0 for w in weights), f"weights={[round(w, 2) for w in weights]}")
+    # The point of the whole layer: rank better than chance. 0.5 is a coin flip.
+    check("learnable: ranking AUC beats chance on every seed",
+          bool(aucs) and all(a > 0.55 for a in aucs),
+          f"aucs={[round(a, 3) for a in aucs]}")
     check("learnable: veto engages on most seeds", vetoed_any >= 3,
           f"vetoed on {vetoed_any}/4 seeds")
     check("learnable: win rate improves on most seeds", better >= 3,
@@ -1244,8 +1313,8 @@ def test_adaptive_config_validation() -> None:
         check("adaptive validation: max-risk profile with adaptive knobs still valid", True)
     except pt.ConfigError as exc:
         check("adaptive validation: max-risk profile with adaptive knobs still valid", False, str(exc))
-    check("adaptive validation: max-risk lowers the veto threshold",
-          cfg.adaptive_skip_threshold < pt.build_config().adaptive_skip_threshold)
+    check("adaptive validation: max-risk vetoes a smaller share of candidates",
+          cfg.adaptive_skip_quantile < pt.build_config().adaptive_skip_quantile)
 
 
 def test_cli_adaptive_flags() -> None:
