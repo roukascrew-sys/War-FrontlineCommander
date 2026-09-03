@@ -15,10 +15,19 @@ connects to a brokerage, never authenticates, and never places an order.
 ```bash
 pip install yfinance pandas numpy
 python paper_trader.py --replay --compare   # fixed rules vs adaptive on the same real bars
+python paper_trader.py --replay --source csv --csv-dir data --interval 1d  # offline, your own CSVs
 python paper_trader.py --once               # a single live evaluation cycle, then report
 python paper_trader.py                      # live paper loop every 5 min; Ctrl+C to stop + report
 python paper_trader.py --max-risk           # leverage, shorts, pyramiding (expect a blow-up)
 ```
+
+**Data sources.** `--source yfinance` (default) pulls over the network.
+`--source csv --csv-dir DIR` reads local `<SYMBOL>.csv` files — real data you
+already have, no network, which is what you want for reproducible backtests or
+behind a restrictive egress policy. Headers are matched case-insensitively with
+common aliases, and if an adjusted-close column is present OHLC are rescaled by
+`adj_close/close` so splits don't appear as fake breakouts. Both sources are
+real data; neither fabricates prices. `csv` is replay-only.
 
 Every run writes `runs/run_<timestamp>/` containing `trades.csv`, `fills.csv`,
 `equity_curve.csv`, `summary.json`, and `run.log`. `--validate-only` checks your
@@ -65,14 +74,51 @@ accuracy and a calibration line (mean predicted vs mean realized win rate). If
 those two numbers drift apart, the model is confidently wrong and you should
 distrust its sizing. Watch it.
 
+**The skill gate.** Size multipliers *above* 1.0x are withheld until rolling
+accuracy clears `ADAPTIVE_MIN_ACCURACY_TO_SIZE_UP` (default 52%) over at least
+`ADAPTIVE_MIN_ACCURACY_SAMPLES` labeled signals. Sizing *down* is always allowed
+— trimming risk needs no proof. This exists because of a measured result, below.
+
+### Measured on real data — read this before trusting it
+
+Run on 13 years of real daily bars (AAPL, IBM, MSFT, GOOG, 2000–2013, ~3,270
+bars each), the entry model **did not demonstrate skill**:
+
+| | fixed rules | adaptive |
+|---|---|---|
+| Total return | +26.4% | +32.8% |
+| Max drawdown | 10.7% | 13.5% |
+| Avg R-multiple | **+0.17** | **+0.13** |
+| Rolling accuracy | — | **45%** |
+
+Accuracy sat at **44–46% across every seed — worse than a coin flip**, and
+calibration read 0.55 predicted vs 0.42 realized.
+
+An ablation isolated where the apparent gain came from. Running the veto with
+sizing pinned at 1.0x ("selection only") returned **+26.1%** against the
+baseline's **+26.4%** — the entry model's signal selection contributed
+**nothing**. Letting sizing vary with no veto captured the entire difference.
+The layer was not picking better trades; it was **betting bigger**, which lifts
+return and drawdown together while *lowering* return per unit of risk.
+
+That is what the skill gate now prevents, and with it enabled the adaptive run
+tracks the baseline instead of quietly levering up. The exit bandit does appear
+to do real work — it clearly separated playbooks by volatility regime — but that
+is one window on four symbols and is not a claim of edge either.
+
+The lesson generalizes: **judge this by avg R-multiple and accuracy, not by
+total return.** A higher return with a lower R-multiple is leverage wearing a
+lab coat. The summary prints all three so you can catch it.
+
 ### What this does and does not mean
 
 The learner adapts; it does not manufacture an edge. It can only learn what has
 recently worked on the symbols it has seen, which makes it *most* exposed
 exactly when a regime it has learned ends. On synthetic fixtures with a
-deliberately learnable relationship it reliably finds it (that is what the test
-suite verifies). On real markets, a better `--compare` number is evidence about
-that one window and nothing more.
+deliberately planted relationship it reliably finds it — that is what the test
+suite verifies, and it is a test of the machinery, not evidence about markets.
+On real markets, as above, it found nothing. A better `--compare` number is
+evidence about that one window and nothing more.
 
 ## How to tune risk level
 
@@ -109,6 +155,9 @@ sets how hard it presses a high-ranked signal — it is validated so
 `ADAPTIVE_MIN_SAMPLES` is how many labeled signals it wants before vetoing
 anything, and `ADAPTIVE_EXPLORATION` is the fraction of vetoed signals still
 taken at minimum size to keep labels flowing.
+`ADAPTIVE_MIN_ACCURACY_TO_SIZE_UP` is the skill gate — lowering it lets an
+unproven model bet bigger, which is the most direct way to make this thing
+aggressive and also the least honest; `0` disables the gate entirely.
 
 ### `--max-risk` mode
 
@@ -139,7 +188,8 @@ dict to define your own profile — unknown keys fail loudly at startup.
 
 Single file on purpose — the tunables sit at the top, the logic below, and there
 is no import path to fight. `test_paper_trader.py` is a dependency-free
-verification suite (`python test_paper_trader.py`, ~9s) with 248 checks covering
+verification suite (`python test_paper_trader.py`, ~10s) with 273 checks covering
 P&L accounting, capital guardrails, exit logic, the calendar, config validation,
-the learners' mechanics, state persistence, and an end-to-end check that the
-learner actually finds a relationship when one is present.
+the learners' mechanics, the skill gate, the CSV source including split
+adjustment, state persistence, and an end-to-end check that the learner finds a
+relationship when one is present.

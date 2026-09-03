@@ -127,6 +127,14 @@ ADAPTIVE_LEARNING_RATE: float = 0.05
 ADAPTIVE_L2: float = 0.01          # ridge penalty; keeps weights from chasing noise
 ADAPTIVE_SIZE_MIN_MULT: float = 0.5   # size multiplier at the veto threshold
 ADAPTIVE_SIZE_MAX_MULT: float = 1.5   # size multiplier for high-confidence signals
+# Skill gate. Sizing ABOVE 1.0x is withheld until the model demonstrates it can
+# actually rank signals: rolling accuracy must clear this over a real sample.
+# Without the gate a model that is no better than a coin flip still scales bets
+# up, which raises returns and drawdown together and looks like skill while
+# being nothing but leverage. Measured on real daily bars, this model sat at
+# 44-46% accuracy, so the gate is what keeps it honest. Set to 0 to disable.
+ADAPTIVE_MIN_ACCURACY_TO_SIZE_UP: float = 0.52
+ADAPTIVE_MIN_ACCURACY_SAMPLES: int = 30
 ADAPTIVE_SHADOW_MAX_BARS: int = 200   # shadow trades are force-labeled after this
 ADAPTIVE_SEED: int | None = None   # set for reproducible exploration / bandit draws
 # Exit presets as multipliers on the base exit knobs. tp_mult 0 => no profit target.
@@ -143,6 +151,13 @@ COMMISSION_PER_TRADE: float = 0.0  # flat $ per fill
 ALLOW_FRACTIONAL_EQUITY: bool = False  # crypto is always fractional
 
 # ---- Data / loop -------------------------------------------------------------
+# "yfinance" pulls live/historical bars over the network. "csv" reads local
+# <SYMBOL>.csv files from CSV_DIR — real data you already have, no network, which
+# is what you want for offline backtests, reproducible runs, or an environment
+# whose egress policy blocks market-data hosts. Both are REAL data; neither
+# fabricates prices. The csv source is replay-only (there is nothing live to poll).
+DATA_SOURCE: str = "yfinance"      # "yfinance" | "csv"
+CSV_DIR: str = "data"              # directory of <SYMBOL>.csv when DATA_SOURCE="csv"
 BAR_INTERVAL: str = "5m"           # 1m,2m,5m,15m,30m,60m,90m,1h,1d,1wk
 HISTORY_PERIOD: str = "60d"        # must be legal for BAR_INTERVAL (validated)
 POLL_INTERVAL_SECONDS: int = 300
@@ -283,6 +298,8 @@ class Config:
     commission_per_trade: float
     allow_fractional_equity: bool
 
+    data_source: str
+    csv_dir: str
     bar_interval: str
     history_period: str
     poll_interval_seconds: int
@@ -306,6 +323,8 @@ class Config:
     adaptive_l2: float
     adaptive_size_min_mult: float
     adaptive_size_max_mult: float
+    adaptive_min_accuracy_to_size_up: float
+    adaptive_min_accuracy_samples: int
     adaptive_shadow_max_bars: int
     adaptive_seed: int | None
     exit_playbooks: dict[str, dict[str, float]]
@@ -363,6 +382,8 @@ def build_config() -> Config:
         slippage_pct=SLIPPAGE_PCT,
         commission_per_trade=COMMISSION_PER_TRADE,
         allow_fractional_equity=ALLOW_FRACTIONAL_EQUITY,
+        data_source=DATA_SOURCE,
+        csv_dir=CSV_DIR,
         bar_interval=BAR_INTERVAL,
         history_period=HISTORY_PERIOD,
         poll_interval_seconds=POLL_INTERVAL_SECONDS,
@@ -384,6 +405,8 @@ def build_config() -> Config:
         adaptive_l2=ADAPTIVE_L2,
         adaptive_size_min_mult=ADAPTIVE_SIZE_MIN_MULT,
         adaptive_size_max_mult=ADAPTIVE_SIZE_MAX_MULT,
+        adaptive_min_accuracy_to_size_up=ADAPTIVE_MIN_ACCURACY_TO_SIZE_UP,
+        adaptive_min_accuracy_samples=ADAPTIVE_MIN_ACCURACY_SAMPLES,
         adaptive_shadow_max_bars=ADAPTIVE_SHADOW_MAX_BARS,
         adaptive_seed=ADAPTIVE_SEED,
         exit_playbooks={k: dict(v) for k, v in EXIT_PLAYBOOKS.items()},
@@ -426,6 +449,8 @@ _CONFIG_FIELD_BY_GLOBAL = {
     "ADAPTIVE_L2": "adaptive_l2",
     "ADAPTIVE_SIZE_MIN_MULT": "adaptive_size_min_mult",
     "ADAPTIVE_SIZE_MAX_MULT": "adaptive_size_max_mult",
+    "ADAPTIVE_MIN_ACCURACY_TO_SIZE_UP": "adaptive_min_accuracy_to_size_up",
+    "ADAPTIVE_MIN_ACCURACY_SAMPLES": "adaptive_min_accuracy_samples",
     "ADAPTIVE_SHADOW_MAX_BARS": "adaptive_shadow_max_bars",
 }
 
@@ -515,6 +540,11 @@ def validate_config(cfg: Config) -> None:
         check(cfg.pyramid_trigger_pct > 0,
               "PYRAMID_TRIGGER_PCT must be > 0 when pyramiding is on.")
 
+    check(cfg.data_source in ("yfinance", "csv"),
+          f"DATA_SOURCE must be 'yfinance' or 'csv'; got {cfg.data_source!r}.")
+    if cfg.data_source == "csv":
+        check(os.path.isdir(cfg.csv_dir),
+              f"DATA_SOURCE='csv' but CSV_DIR={cfg.csv_dir!r} is not a directory.")
     check(cfg.bar_interval in _INTERVAL_SECONDS,
           f"BAR_INTERVAL={cfg.bar_interval!r} is not one of {sorted(_INTERVAL_SECONDS)}.")
     check(cfg.poll_interval_seconds >= 5,
@@ -522,7 +552,8 @@ def validate_config(cfg: Config) -> None:
     check(cfg.fetch_max_retries >= 1, "FETCH_MAX_RETRIES must be >= 1.")
     check(cfg.min_seconds_between_requests >= 0, "MIN_SECONDS_BETWEEN_REQUESTS must be >= 0.")
 
-    if cfg.bar_interval in _INTERVAL_SECONDS:
+    # yfinance-only limits: a local CSV is whatever length it is.
+    if cfg.bar_interval in _INTERVAL_SECONDS and cfg.data_source == "yfinance":
         try:
             want_days = _period_to_days(cfg.history_period)
         except ConfigError as exc:
@@ -579,6 +610,11 @@ def validate_config(cfg: Config) -> None:
           f"POSITION_SIZE_PCT * ADAPTIVE_SIZE_MAX_MULT = "
           f"{cfg.position_size_pct * cfg.adaptive_size_max_mult:.2f} — a single confident "
           f"trade could exceed 100% of equity.")
+    check(0 <= cfg.adaptive_min_accuracy_to_size_up < 1.0,
+          f"ADAPTIVE_MIN_ACCURACY_TO_SIZE_UP must be in [0, 1); got "
+          f"{cfg.adaptive_min_accuracy_to_size_up}.")
+    check(cfg.adaptive_min_accuracy_samples >= 1,
+          f"ADAPTIVE_MIN_ACCURACY_SAMPLES must be >= 1; got {cfg.adaptive_min_accuracy_samples}.")
     check(cfg.adaptive_shadow_max_bars >= 5,
           f"ADAPTIVE_SHADOW_MAX_BARS must be >= 5; got {cfg.adaptive_shadow_max_bars}.")
     check(bool(cfg.exit_playbooks) and "base" in cfg.exit_playbooks,
@@ -751,6 +787,91 @@ class DataFeed:
     def cached_age_minutes(self, symbol: str) -> float | None:
         ts = self._cached_at.get(symbol)
         return None if ts is None else (datetime.now(UTC) - ts).total_seconds() / 60
+
+
+class CsvFeed:
+    """Reads real OHLCV from local `<SYMBOL>.csv` files. No network.
+
+    Column names are matched case-insensitively and a few common aliases are
+    accepted, so files exported from most tools load unchanged. If the file
+    carries an adjusted-close column, OHLC are rescaled by adj_close/close so
+    splits and dividends do not show up as fake gaps — the same convention as
+    yfinance's auto_adjust, which the network feed uses. Skipping that step
+    would manufacture breakout signals at every split.
+    """
+
+    _DATE_ALIASES = ("date", "datetime", "timestamp", "time", "index")
+    _ADJ_ALIASES = ("adj_close", "adjclose", "adj._close", "adjusted_close", "adj")
+
+    def __init__(self, cfg: Config, directory: str | None = None) -> None:
+        self.cfg = cfg
+        self.directory = directory or cfg.csv_dir
+        self.consecutive_failures: dict[str, int] = {}
+
+    def _path_for(self, symbol: str) -> str | None:
+        for name in (f"{symbol}.csv", f"{symbol.upper()}.csv", f"{symbol.lower()}.csv",
+                     f"{symbol.replace('-', '_')}.csv"):
+            candidate = os.path.join(self.directory, name)
+            if os.path.exists(candidate):
+                return candidate
+        return None
+
+    def fetch(self, symbol: str) -> pd.DataFrame:
+        path = self._path_for(symbol)
+        if path is None:
+            self.consecutive_failures[symbol] = self.consecutive_failures.get(symbol, 0) + 1
+            raise DataUnavailable(f"{symbol}: no CSV found in {self.directory}")
+        try:
+            raw = pd.read_csv(path)
+        except (OSError, ValueError) as exc:
+            self.consecutive_failures[symbol] = self.consecutive_failures.get(symbol, 0) + 1
+            raise DataUnavailable(f"{symbol}: could not read {path} ({exc})") from exc
+
+        raw.columns = [str(c).strip().lower().replace(" ", "_") for c in raw.columns]
+        date_col = next((c for c in raw.columns if c in self._DATE_ALIASES), None)
+        if date_col is None:
+            raise DataUnavailable(f"{symbol}: {path} has no date column "
+                                  f"(looked for {', '.join(self._DATE_ALIASES)})")
+        raw = raw.set_index(date_col)
+
+        # Back out splits/dividends before the shared normalizer trims the columns.
+        adj_col = next((c for c in raw.columns if c in self._ADJ_ALIASES), None)
+        if adj_col is not None and "close" in raw.columns:
+            close = pd.to_numeric(raw["close"], errors="coerce")
+            adj = pd.to_numeric(raw[adj_col], errors="coerce")
+            ratio = (adj / close).replace([np.inf, -np.inf], np.nan)
+            if ratio.notna().any():
+                for col in ("open", "high", "low", "close"):
+                    if col in raw.columns:
+                        raw[col] = pd.to_numeric(raw[col], errors="coerce") * ratio
+
+        df = DataFeed._normalize(raw)
+        if df.empty:
+            self.consecutive_failures[symbol] = self.consecutive_failures.get(symbol, 0) + 1
+            raise DataUnavailable(f"{symbol}: {path} produced no usable rows")
+
+        # Honour HISTORY_PERIOD relative to the newest bar in the file.
+        try:
+            days = _period_to_days(self.cfg.history_period)
+        except ConfigError:
+            days = None
+        if days is not None:
+            cutoff = df.index[-1] - pd.Timedelta(days=days)
+            trimmed = df[df.index >= cutoff]
+            if len(trimmed) >= self.cfg.min_bars_required:
+                df = trimmed
+            else:
+                log.debug("%s: %s of history leaves only %d bars — using the full file (%d).",
+                          symbol, self.cfg.history_period, len(trimmed), len(df))
+        self.consecutive_failures[symbol] = 0
+        return df
+
+    def cached_age_minutes(self, symbol: str) -> float | None:
+        return None
+
+
+def make_feed(cfg: Config) -> DataFeed | CsvFeed:
+    return CsvFeed(cfg) if cfg.data_source == "csv" else DataFeed(cfg)
 
 
 def drop_partial_bar(df: pd.DataFrame, cfg: Config, now_utc: datetime) -> pd.DataFrame:
@@ -1517,6 +1638,22 @@ class AdaptiveLearner:
         self.recent_scores.append(p)
         del self.recent_scores[:-300]
 
+    def has_demonstrated_skill(self) -> bool:
+        """Has the model earned the right to bet MORE than the base size?
+
+        Ranking signals is a weaker claim than predicting them, so a model can
+        be useful for vetoing while still being too weak to size up on. Betting
+        bigger on a coin flip is leverage wearing a lab coat, so it has to be
+        paid for with measured accuracy.
+        """
+        threshold = self.cfg.adaptive_min_accuracy_to_size_up
+        if threshold <= 0:
+            return True
+        if len(self.model.recent) < self.cfg.adaptive_min_accuracy_samples:
+            return False
+        acc = self.model.rolling_accuracy()
+        return acc is not None and acc >= threshold
+
     def score_percentile(self, p: float) -> float:
         """Where p ranks among recent signal scores, in [0, 1]."""
         if len(self.recent_scores) < 10:
@@ -1626,8 +1763,13 @@ class AdaptiveLearner:
         # Size on rank, not raw probability, for the same calibration reason.
         rank = self.score_percentile(p)
         mult = cfg.adaptive_size_min_mult + rank * (cfg.adaptive_size_max_mult - cfg.adaptive_size_min_mult)
+        gated = ""
+        if mult > 1.0 and not self.has_demonstrated_skill():
+            mult = 1.0
+            gated = " [size-up gated: accuracy unproven]"
         return EntryDecision(True, mult, ep, feats, ctx, p,
-                             f"p={p:.2f} rank={rank:.2f} size x{mult:.2f}, exit={ep.playbook}")
+                             f"p={p:.2f} rank={rank:.2f} size x{mult:.2f}, "
+                             f"exit={ep.playbook}{gated}")
 
     def on_trade_closed(self, trade: ClosedTrade, pos: Position) -> None:
         self.taken += 1
@@ -1727,6 +1869,11 @@ class AdaptiveLearner:
         if acc is not None and cal is not None:
             rows.append(("  rolling accuracy (last 200)", f"{acc:.0%}"))
             rows.append(("  calibration pred vs realized", f"{cal[0]:.2f} vs {cal[1]:.2f}"))
+            if self.cfg.adaptive_min_accuracy_to_size_up > 0:
+                ok = self.has_demonstrated_skill()
+                rows.append(("  sizing above 1.0x",
+                             f"{'ALLOWED' if ok else 'GATED OFF'} "
+                             f"(needs {self.cfg.adaptive_min_accuracy_to_size_up:.0%})"))
         rows.append(("Signals seen / taken", f"{self.signals} / {self.taken}"))
         rows.append(("  vetoed / explored", f"{self.vetoes} / {self.explores}"))
         cutoff = self.quantile_cutoff()
@@ -1962,10 +2109,11 @@ def write_reports(pf: Portfolio, cfg: Config, m: dict[str, Any], run_dir: str,
 # =============================================================================
 
 class Engine:
-    def __init__(self, cfg: Config, run_dir: str, feed: DataFeed | None = None) -> None:
+    def __init__(self, cfg: Config, run_dir: str,
+                 feed: "DataFeed | CsvFeed | None" = None) -> None:
         self.cfg = cfg
         self.run_dir = run_dir
-        self.feed = feed or DataFeed(cfg)
+        self.feed = feed if feed is not None else make_feed(cfg)
         self.strategy = BreakoutStrategy(cfg)
         self.portfolio = Portfolio(cfg)
         self.learner: AdaptiveLearner | None = AdaptiveLearner(cfg) if cfg.enable_adaptive else None
@@ -2342,6 +2490,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     p.add_argument("--symbols", help="comma-separated universe override, e.g. TQQQ,BTC-USD")
     p.add_argument("--interval", help="override BAR_INTERVAL (e.g. 5m, 1h, 1d)")
     p.add_argument("--period", help="override HISTORY_PERIOD (e.g. 60d, 2y)")
+    p.add_argument("--source", choices=("yfinance", "csv"),
+                   help="where bars come from (default %(default)s); 'csv' reads local "
+                        "<SYMBOL>.csv files and needs no network" % {"default": DATA_SOURCE})
+    p.add_argument("--csv-dir", help=f"directory of <SYMBOL>.csv for --source csv "
+                                     f"(default {CSV_DIR!r})")
     p.add_argument("--poll", type=int, help="override POLL_INTERVAL_SECONDS")
     p.add_argument("--outdir", help=f"override OUTPUT_DIR (default {OUTPUT_DIR!r})")
     p.add_argument("--yes-i-understand-the-risk", action="store_true",
@@ -2383,6 +2536,10 @@ def apply_cli_overrides(cfg: Config, args: argparse.Namespace) -> Config:
         cfg.bar_interval = args.interval
     if args.period:
         cfg.history_period = args.period
+    if args.source:
+        cfg.data_source = args.source
+    if args.csv_dir:
+        cfg.csv_dir = args.csv_dir
     if args.poll is not None:
         cfg.poll_interval_seconds = args.poll
     if args.outdir:
@@ -2465,11 +2622,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         signal.signal(signal.SIGUSR1,
                       lambda *_: setattr(engine, "report_requested", True))
 
-    log.info("Mode=%s | adaptive=%s | universe=%s | interval=%s | period=%s | cash=$%s",
+    source = cfg.data_source + (f" ({cfg.csv_dir})" if cfg.data_source == "csv" else "")
+    log.info("Mode=%s | adaptive=%s | source=%s | universe=%s | interval=%s | period=%s | cash=$%s",
              "max-risk" if cfg.max_risk_mode else "standard",
-             "on" if cfg.enable_adaptive else "off",
+             "on" if cfg.enable_adaptive else "off", source,
              ",".join(cfg.universe), cfg.bar_interval, cfg.history_period,
              f"{cfg.starting_cash:,.2f}")
+    if cfg.data_source == "csv" and not args.replay:
+        log.warning("DATA_SOURCE='csv' is historical data with nothing to poll — "
+                    "use --replay (or --replay --compare).")
 
     # Live runs resume learning; replays start fresh unless asked, so a replay is
     # an honest walk-forward rather than a re-run over data the model has seen.

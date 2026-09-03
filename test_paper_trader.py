@@ -879,6 +879,9 @@ def test_learner_rank_based_veto_and_sizing() -> None:
     learner.model.n = 100
     # A realistic, tightly-clustered score history around 0.5.
     learner.recent_scores = [0.45 + 0.001 * i for i in range(100)]   # 0.450 .. 0.549
+    # Grant demonstrated skill so the size-up gate is open; it is tested separately.
+    learner.model.recent = [(0.8, 1.0)] * 40
+    check("rank sizing: precondition — skill gate open", learner.has_demonstrated_skill())
 
     cutoff = learner.quantile_cutoff()
     check("rank veto: cutoff sits at the 25th percentile",
@@ -937,6 +940,62 @@ def test_learner_rank_based_veto_and_sizing() -> None:
     check("rank veto: no cutoff without enough history", cold.quantile_cutoff() is None)
     check("rank: neutral percentile without enough history",
           close_to(cold.score_percentile(0.9), 0.5))
+
+
+def test_skill_gate_blocks_sizing_up() -> None:
+    """A model that cannot beat a coin flip must not be allowed to bet bigger.
+
+    Without this gate, size multipliers turn an unskilled model into plain
+    leverage: returns and drawdown both rise and it reads as skill. Measured on
+    real daily bars this model ran at 44-46% accuracy, so the gate is what
+    stands between "adaptive" and "quietly levered".
+    """
+    cfg = make_cfg(enable_adaptive=True, adaptive_min_samples=5, adaptive_skip_quantile=0.0,
+                   adaptive_skip_threshold=0.0, adaptive_exploration=0.0,
+                   adaptive_size_min_mult=0.5, adaptive_size_max_mult=2.0,
+                   adaptive_min_accuracy_to_size_up=0.52, adaptive_min_accuracy_samples=30)
+    row = _row(100, 106, 99, 105, atr=2.0, vol=300.0,
+               donchian_high=104.0, donchian_low=90.0, vol_avg=100.0)
+
+    def learner_with(correct: int, total: int) -> pt.AdaptiveLearner:
+        L = pt.AdaptiveLearner(cfg)
+        L.model.n = 200
+        L.recent_scores = [0.4 + 0.002 * i for i in range(100)]
+        # recent holds (predicted p, label); p>=0.5 vs label decides correctness.
+        L.model.recent = ([(0.9, 1.0)] * correct) + [(0.9, 0.0)] * (total - correct)
+        L.model.w[:] = 0.0
+        L.model.w[0] = 5.0            # top of the score range -> would want max size
+        return L
+
+    thin = learner_with(20, 20)       # 100% accurate but only 20 samples
+    check("skill gate: closed on too few samples", not thin.has_demonstrated_skill())
+    check("skill gate: thin history capped at 1.0x",
+          close_to(thin.decide_entry(T0, "TEST", +1, row).size_mult, 1.0))
+
+    coin = learner_with(45, 100)      # 45% accuracy, like the real-data result
+    check("skill gate: closed below the accuracy threshold", not coin.has_demonstrated_skill())
+    d_coin = coin.decide_entry(T0, "TEST", +1, row)
+    check("skill gate: unskilled model capped at 1.0x", close_to(d_coin.size_mult, 1.0),
+          f"got {d_coin.size_mult}")
+    check("skill gate: reason is visible in the note", "gated" in d_coin.note, d_coin.note)
+
+    skilled = learner_with(70, 100)   # 70% accuracy
+    check("skill gate: open above the threshold", skilled.has_demonstrated_skill())
+    d_skill = skilled.decide_entry(T0, "TEST", +1, row)
+    check("skill gate: skilled model may size up", d_skill.size_mult > 1.0,
+          f"got {d_skill.size_mult}")
+
+    # Sizing DOWN is always allowed — trimming risk needs no proof of skill.
+    shy = learner_with(45, 100)
+    shy.model.w[0] = -5.0             # bottom of the range
+    d_shy = shy.decide_entry(T0, "TEST", +1, row)
+    check("skill gate: sizing down is never gated", d_shy.size_mult < 1.0,
+          f"got {d_shy.size_mult}")
+
+    # Threshold 0 disables the gate entirely.
+    off = make_cfg(enable_adaptive=True, adaptive_min_accuracy_to_size_up=0.0)
+    check("skill gate: disabled at threshold 0",
+          pt.AdaptiveLearner(off).has_demonstrated_skill())
 
 
 def test_size_mult_respects_caps() -> None:
@@ -1201,6 +1260,107 @@ def test_cli_adaptive_flags() -> None:
         check("cli: --compare without --replay rejected", False, "no error")
     except SystemExit:
         check("cli: --compare without --replay rejected", True)
+
+
+def test_csv_feed() -> None:
+    """The local-CSV source: flexible columns, split adjustment, clean errors."""
+    import shutil
+    d = "/tmp/paper_trader_test_csv"
+    shutil.rmtree(d, ignore_errors=True)
+    os.makedirs(d, exist_ok=True)
+
+    # A 2:1 split: raw close halves, but Adj Close makes the series continuous.
+    rows = ["Date,Open,High,Low,Close,Volume,Adj Close"]
+    for i in range(60):
+        if i < 30:
+            px, adj = 100.0 + i, (100.0 + i) / 2
+        else:
+            px, adj = (100.0 + i) / 2, (100.0 + i) / 2
+        rows.append(f"2024-01-{i % 28 + 1:02d},{px},{px * 1.01},{px * 0.99},{px},1000,{adj}")
+    # Distinct dates so nothing is deduplicated away.
+    rows = [rows[0]] + [
+        f"{pd.Timestamp('2024-01-01') + pd.Timedelta(days=i):%Y-%m-%d},"
+        f"{(100.0 + i) if i < 30 else (100.0 + i) / 2},"
+        f"{((100.0 + i) if i < 30 else (100.0 + i) / 2) * 1.01},"
+        f"{((100.0 + i) if i < 30 else (100.0 + i) / 2) * 0.99},"
+        f"{(100.0 + i) if i < 30 else (100.0 + i) / 2},1000,{(100.0 + i) / 2}"
+        for i in range(60)
+    ]
+    with open(os.path.join(d, "TEST.csv"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(rows) + "\n")
+
+    cfg = make_cfg(data_source="csv", csv_dir=d, bar_interval="1d", history_period="max",
+                   equity_universe=["TEST"], crypto_universe=[])
+    feed = pt.make_feed(cfg)
+    check("csv feed: factory returns CsvFeed", isinstance(feed, pt.CsvFeed))
+    df = feed.fetch("TEST")
+    check("csv feed: all rows loaded", len(df) == 60, f"got {len(df)}")
+    check("csv feed: columns normalized",
+          list(df.columns) == ["open", "high", "low", "close", "volume"])
+    check("csv feed: index is tz-aware UTC", str(df.index.tz) == "UTC")
+    # Adjusted series must be continuous across the split.
+    jump = df["close"].pct_change().abs().max()
+    check("csv feed: split removed by adjustment", jump < 0.05,
+          f"largest bar-to-bar move {jump:.1%} — split not adjusted")
+    check("csv feed: adjusted close matches the adj column",
+          close_to(float(df["close"].iloc[0]), 50.0, 1e-6), f"got {df['close'].iloc[0]}")
+
+    # Lowercase/alias headers and a missing volume column.
+    with open(os.path.join(d, "ALT.csv"), "w", encoding="utf-8") as fh:
+        fh.write("timestamp,open,high,low,close\n")
+        for i in range(40):
+            p = 10.0 + i
+            fh.write(f"{pd.Timestamp('2024-01-01') + pd.Timedelta(days=i):%Y-%m-%d},"
+                     f"{p},{p * 1.01},{p * 0.99},{p}\n")
+    alt = feed.fetch("ALT")
+    check("csv feed: alias date column accepted", len(alt) == 40)
+    check("csv feed: missing volume filled with 0", close_to(float(alt["volume"].iloc[0]), 0.0))
+
+    # Case-insensitive filename lookup.
+    check("csv feed: symbol case tolerated", len(feed.fetch("test")) == 60)
+
+    # Failure modes are DataUnavailable, never a crash.
+    for sym, label in (("NOPE", "missing file"),):
+        try:
+            feed.fetch(sym)
+            check(f"csv feed: {label} raises DataUnavailable", False, "no error")
+        except pt.DataUnavailable:
+            check(f"csv feed: {label} raises DataUnavailable", True)
+    with open(os.path.join(d, "BAD.csv"), "w", encoding="utf-8") as fh:
+        fh.write("foo,bar\n1,2\n")
+    try:
+        feed.fetch("BAD")
+        check("csv feed: no date column raises DataUnavailable", False, "no error")
+    except pt.DataUnavailable:
+        check("csv feed: no date column raises DataUnavailable", True)
+
+    # HISTORY_PERIOD trims relative to the newest bar in the file.
+    cfg_short = make_cfg(data_source="csv", csv_dir=d, bar_interval="1d",
+                         history_period="30d", equity_universe=["TEST"], crypto_universe=[],
+                         breakout_lookback=5, volume_lookback=5, atr_period=3,
+                         use_trend_filter=False)
+    trimmed = pt.make_feed(cfg_short).fetch("TEST")
+    check("csv feed: history_period trims the window", len(trimmed) < 60,
+          f"got {len(trimmed)}")
+
+    # Config validation catches a bad directory.
+    try:
+        pt.validate_config(make_cfg(data_source="csv", csv_dir="/does/not/exist"))
+        check("csv feed: bad CSV_DIR rejected at startup", False, "no error")
+    except pt.ConfigError:
+        check("csv feed: bad CSV_DIR rejected at startup", True)
+    try:
+        pt.validate_config(make_cfg(data_source="nope"))
+        check("csv feed: unknown DATA_SOURCE rejected", False, "no error")
+    except pt.ConfigError:
+        check("csv feed: unknown DATA_SOURCE rejected", True)
+
+    # A csv-sourced engine can replay end to end.
+    engine = pt.Engine(cfg_short, "/tmp/paper_trader_test_csv/run")
+    engine.run_replay()
+    check("csv feed: engine replays from disk without network",
+          len(engine.portfolio.equity_curve) > 0)
+    shutil.rmtree(d, ignore_errors=True)
 
 
 def test_no_brokerage_surface() -> None:
