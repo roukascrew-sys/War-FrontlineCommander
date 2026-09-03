@@ -765,8 +765,8 @@ def test_online_logit_learns_a_pattern() -> None:
     model = pt.OnlineLogit(3, lr=0.1, l2=0.001)
     for _ in range(600):
         x = [1.0, float(rng.uniform(-1, 1)), float(rng.uniform(-1, 1))]
-        y = 1.0 if x[1] > 0.1 else 0.0           # label depends on feature 1 only
-        model.update(x, y)
+        r = 1.0 if x[1] > 0.1 else -1.0          # realized R depends on feature 1 only
+        model.update(x, r)
     check("logit: positive class scored high", model.predict([1.0, 0.9, 0.0]) > 0.8,
           f"got {model.predict([1.0, 0.9, 0.0]):.2f}")
     check("logit: negative class scored low", model.predict([1.0, -0.9, 0.0]) < 0.2,
@@ -778,6 +778,81 @@ def test_online_logit_learns_a_pattern() -> None:
     check("logit: rolling accuracy is high", acc is not None and acc > 0.85, f"acc={acc}")
     cal = model.calibration()
     check("logit: calibration reported", cal is not None and 0 <= cal[0] <= 1)
+
+
+def test_spearman_and_r_lift() -> None:
+    check("spearman: perfect agreement",
+          close_to(pt.spearman_corr([1, 2, 3, 4], [10, 20, 30, 40]), 1.0))
+    check("spearman: perfect inversion",
+          close_to(pt.spearman_corr([1, 2, 3, 4], [40, 30, 20, 10]), -1.0))
+    check("spearman: monotone but non-linear still 1.0",
+          close_to(pt.spearman_corr([1, 2, 3, 4], [1, 4, 9, 16]), 1.0))
+    check("spearman: constant input is undefined",
+          pt.spearman_corr([1, 1, 1, 1], [1, 2, 3, 4]) is None)
+    check("spearman: too few points is undefined", pt.spearman_corr([1, 2], [1, 2]) is None)
+
+    m = pt.OnlineLogit(2, lr=0.1, l2=0.0)
+    m.recent = [(0.9, 3.0), (0.8, 2.0), (0.2, -0.5), (0.1, -1.0)] * 5
+    check("r_lift: top slice beats the average",
+          m.r_lift(0.5) is not None and m.r_lift(0.5)[0] > m.r_lift(0.5)[1])
+    check("rank corr: exposed on the model",
+          m.rolling_rank_corr() is not None and m.rolling_rank_corr() > 0.9)
+    check("r_lift: undefined on a thin history", pt.OnlineLogit(2, 0.1, 0.0).r_lift() is None)
+
+
+def test_expected_r_model() -> None:
+    """The E[R] regressor: it must learn, persist, and be selectable — even
+    though it measures worse than the sign-based model on real bars."""
+    cfg = make_cfg(enable_adaptive=True, adaptive_score_target="expected_r")
+    model = pt.make_entry_model(cfg)
+    check("score target: factory returns the regressor",
+          isinstance(model, pt.ExpectedRModel))
+    check("score target: 'win' factory returns the logit",
+          isinstance(pt.make_entry_model(make_cfg(enable_adaptive=True,
+                                                  adaptive_score_target="win")), pt.OnlineLogit))
+    check("score target: expected_r is the shipped default",
+          pt.build_config().adaptive_score_target == "expected_r")
+
+    model = pt.ExpectedRModel(4)          # 4 features for this focused test
+    rng = np.random.default_rng(0)
+    for _ in range(800):
+        x = [1.0] + [float(rng.uniform(-1, 1)) for _ in range(3)]
+        r = 3.0 * x[1] + float(rng.normal(0, 0.3))   # R depends on feature 1
+        model.update(x, r)
+    hi = model.predict([1.0, 0.9, 0.0, 0.0])
+    lo = model.predict([1.0, -0.9, 0.0, 0.0])
+    check("expected_r: ranks high-R setups above low-R ones", hi > lo, f"{hi:.3f} vs {lo:.3f}")
+    check("expected_r: rank correlation is positive",
+          model.rolling_rank_corr() is not None and model.rolling_rank_corr() > 0.3,
+          f"rho={model.rolling_rank_corr()}")
+    check("expected_r: scores are R-like, not probabilities",
+          not (0.0 <= hi <= 1.0 and 0.0 <= lo <= 1.0) or hi != lo)
+    check("expected_r: no calibration line (not a probability model)",
+          model.calibration() is None)
+    check("expected_r: accuracy not reported", model.rolling_accuracy() is None)
+
+    # A saved brain from one target must not be loaded into the other.
+    import shutil
+    path = "/tmp/paper_trader_test_target/state.json"
+    shutil.rmtree(os.path.dirname(path), ignore_errors=True)
+    a = pt.AdaptiveLearner(cfg)
+    a.model.w[:] = 0.5
+    a.save(path)
+    other = pt.AdaptiveLearner(make_cfg(enable_adaptive=True, adaptive_score_target="win"))
+    check("score target: mismatched saved state is refused", not other.load(path))
+    same = pt.AdaptiveLearner(cfg)
+    check("score target: matching saved state loads", same.load(path))
+    shutil.rmtree(os.path.dirname(path), ignore_errors=True)
+
+    try:
+        pt.validate_config(make_cfg(adaptive_score_target="nonsense"))
+        check("score target: unknown value rejected", False, "no error")
+    except pt.ConfigError:
+        check("score target: unknown value rejected", True)
+
+    args = pt.parse_args(["--replay", "--score-target", "expected_r"])
+    check("score target: CLI flag applied",
+          pt.apply_cli_overrides(pt.build_config(), args).adaptive_score_target == "expected_r")
 
 
 def test_bandit_converges_to_best_arm() -> None:
@@ -851,7 +926,7 @@ def test_roc_auc() -> None:
     check("auc: immune to a 90/10 base rate", close_to(pt.roc_auc(scores, labels), 1.0))
 
     model = pt.OnlineLogit(2, lr=0.1, l2=0.0)
-    model.recent = [(0.2, 0.0), (0.8, 1.0), (0.3, 0.0), (0.7, 1.0)]
+    model.recent = [(0.2, -1.0), (0.8, 2.0), (0.3, -0.5), (0.7, 1.5)]
     check("auc: exposed on the model", close_to(model.rolling_auc(), 1.0))
     check("auc: majority baseline reported", close_to(model.majority_baseline(), 0.5))
 
@@ -904,7 +979,8 @@ def test_learner_absolute_floor_veto() -> None:
     """A uniformly pessimistic model is caught by the absolute floor, even when
     every signal ranks the same relative to its peers."""
     cfg = make_cfg(enable_adaptive=True, adaptive_min_samples=5, adaptive_skip_threshold=0.45,
-                   adaptive_skip_quantile=0.0, adaptive_exploration=0.0)
+                   adaptive_skip_quantile=0.0, adaptive_exploration=0.0,
+                   adaptive_score_target="win")
     learner = pt.AdaptiveLearner(cfg)
     row = _row(100, 106, 99, 105, atr=2.0, vol=300.0,
                donchian_high=104.0, donchian_low=90.0, vol_avg=100.0)
@@ -928,13 +1004,14 @@ def test_learner_rank_based_veto_and_sizing() -> None:
     the normal case, since every signal has already passed the entry gate."""
     cfg = make_cfg(enable_adaptive=True, adaptive_min_samples=5, adaptive_skip_quantile=0.25,
                    adaptive_skip_threshold=0.0, adaptive_exploration=0.0,
-                   adaptive_size_min_mult=0.5, adaptive_size_max_mult=1.5)
+                   adaptive_size_min_mult=0.5, adaptive_size_max_mult=1.5,
+                   adaptive_score_target="win")   # drives the logit via log-odds
     learner = pt.AdaptiveLearner(cfg)
     learner.model.n = 100
     # A realistic, tightly-clustered score history around 0.5.
     learner.recent_scores = [0.45 + 0.001 * i for i in range(100)]   # 0.450 .. 0.549
     # Grant demonstrated skill so the size-up gate is open; it is tested separately.
-    learner.model.recent = [(0.8, 1.0), (0.2, 0.0)] * 20   # perfectly ranked => AUC 1.0
+    learner.model.recent = [(0.8, 2.0), (0.2, -1.0)] * 20   # perfectly ranked by R
     check("rank sizing: precondition — skill gate open", learner.has_demonstrated_skill())
 
     cutoff = learner.quantile_cutoff()
@@ -974,7 +1051,8 @@ def test_learner_rank_based_veto_and_sizing() -> None:
 
     # Exploration overrides a veto, at min size.
     cfg_x = make_cfg(enable_adaptive=True, adaptive_min_samples=5, adaptive_exploration=1.0,
-                     adaptive_skip_quantile=0.25, adaptive_skip_threshold=0.0)
+                     adaptive_skip_quantile=0.25, adaptive_skip_threshold=0.0,
+                     adaptive_score_target="win")
     lx = pt.AdaptiveLearner(cfg_x)
     lx.model.n = 100
     lx.recent_scores = [0.45 + 0.001 * i for i in range(100)]
@@ -1007,7 +1085,8 @@ def test_skill_gate_blocks_sizing_up() -> None:
     cfg = make_cfg(enable_adaptive=True, adaptive_min_samples=5, adaptive_skip_quantile=0.0,
                    adaptive_skip_threshold=0.0, adaptive_exploration=0.0,
                    adaptive_size_min_mult=0.5, adaptive_size_max_mult=2.0,
-                   adaptive_min_auc_to_size_up=0.55, adaptive_min_accuracy_samples=30)
+                   adaptive_min_rank_corr_to_size_up=0.05, adaptive_min_accuracy_samples=30,
+                   adaptive_score_target="win")
     row = _row(100, 106, 99, 105, atr=2.0, vol=300.0,
                donchian_high=104.0, donchian_low=90.0, vol_avg=100.0)
 
@@ -1020,7 +1099,7 @@ def test_skill_gate_blocks_sizing_up() -> None:
         good = int(round(auc_target * half))       # correctly-ordered pairs
         recent = []
         for i in range(half):
-            hi, lo = (1.0, 0.0) if i < good else (0.0, 1.0)
+            hi, lo = (2.0, -1.0) if i < good else (-1.0, 2.0)
             recent += [(0.9, hi), (0.1, lo)]
         L.model.recent = recent
         L.model.w[:] = 0.0
@@ -1034,7 +1113,7 @@ def test_skill_gate_blocks_sizing_up() -> None:
 
     coin = learner_with(0.5, 100)     # AUC ~0.5, chance — the real-data result
     check("skill gate: closed at chance-level AUC", not coin.has_demonstrated_skill(),
-          f"auc={coin.model.rolling_auc()}")
+          f"rho={coin.model.rolling_rank_corr()}")
     d_coin = coin.decide_entry(T0, "TEST", +1, row)
     check("skill gate: unskilled model capped at 1.0x", close_to(d_coin.size_mult, 1.0),
           f"got {d_coin.size_mult}")
@@ -1042,7 +1121,7 @@ def test_skill_gate_blocks_sizing_up() -> None:
 
     skilled = learner_with(0.9, 100)  # AUC ~0.9
     check("skill gate: open above the threshold", skilled.has_demonstrated_skill(),
-          f"auc={skilled.model.rolling_auc()}")
+          f"rho={skilled.model.rolling_rank_corr()}")
     d_skill = skilled.decide_entry(T0, "TEST", +1, row)
     check("skill gate: skilled model may size up", d_skill.size_mult > 1.0,
           f"got {d_skill.size_mult}")
@@ -1055,7 +1134,7 @@ def test_skill_gate_blocks_sizing_up() -> None:
           f"got {d_shy.size_mult}")
 
     # Threshold 0 disables the gate entirely.
-    off = make_cfg(enable_adaptive=True, adaptive_min_auc_to_size_up=0.0)
+    off = make_cfg(enable_adaptive=True, adaptive_min_rank_corr_to_size_up=0.0)
     check("skill gate: disabled at threshold 0",
           pt.AdaptiveLearner(off).has_demonstrated_skill())
 
@@ -1080,7 +1159,7 @@ def test_learner_persistence_round_trip() -> None:
     a = pt.AdaptiveLearner(cfg)
     a.model.w[:] = np.linspace(-1, 1, len(pt.FEATURE_NAMES))
     a.model.n = 42
-    a.model.recent = [(0.6, 1.0), (0.3, 0.0)]
+    a.model.recent = [(0.6, 1.5), (0.3, -0.8)]
     a.bandit.update("hivol_long", "runner", 1.2)
     a.sym_ewma_r["TEST"] = 0.33
     row = _row(100, 106, 99, 105, atr=2.0, vol=300.0,

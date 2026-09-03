@@ -79,17 +79,19 @@ walk-forward); `--warm-start` loads saved state, `--fresh-brain` ignores it,
 `--brain PATH` points somewhere else. A saved file whose feature schema no
 longer matches is refused rather than silently misread.
 
-**What the summary tells you.** The `ADAPTIVE LEARNER` block reports ranking AUC
-with a plain-English verdict, accuracy against the majority-class baseline, and
-calibration (mean predicted vs mean realized win rate). AUC is the one to watch:
-below ~0.55 the model is not ranking usefully and the size gate stays shut. If
-predicted and realized drift apart, it is confidently wrong.
+**What the summary tells you.** The `ADAPTIVE LEARNER` block reports the rank
+correlation with realized R and a plain-English verdict, the mean R of its
+top-ranked 40% against the average candidate, AUC on win/loss, and — for the
+`win` model — accuracy against the majority-class baseline and calibration. Rank
+correlation is the one to watch: at or below 0 the model is not ranking usefully
+and the size gate stays shut. A negative value means it is ranking *backwards*.
 
-**The skill gate.** Size multipliers *above* 1.0x are withheld until rolling
-**AUC** clears `ADAPTIVE_MIN_AUC_TO_SIZE_UP` (default 0.55, where 0.5 is chance)
-over at least `ADAPTIVE_MIN_ACCURACY_SAMPLES` labeled signals. Sizing *down* is
-always allowed — trimming risk needs no proof. This exists because of a measured
-result, below.
+**The skill gate.** Size multipliers *above* 1.0x are withheld until the rolling
+**rank correlation between the model's score and realized R** clears
+`ADAPTIVE_MIN_RANK_CORR_TO_SIZE_UP` (default 0.05, where 0 means no
+relationship) over at least `ADAPTIVE_MIN_ACCURACY_SAMPLES` labeled signals —
+the objective itself rather than a proxy. Sizing *down* is always allowed:
+trimming risk needs no proof. This exists because of a measured result, below.
 
 ### Measured on real data
 
@@ -100,19 +102,19 @@ developed on AAPL+IBM and validated on MSFT+GOOG, which were held out.
 
 | | fixed rules | adaptive |
 |---|---|---|
-| Total return | +26.4% | +108.2% |
-| Max drawdown | 10.7% | 11.8% |
-| Win rate | 41.7% | 46.4% |
+| Total return | +26.4% | +124.7% |
+| Max drawdown | 10.7% | 12.3% |
+| Win rate | 41.7% | 44.0% |
 | **Avg R-multiple** | **+0.17** | **+0.33** |
-| Sharpe | 0.39 | 0.79 |
-| **Ranking AUC** | — | **0.601** |
+| Profit factor | 1.43 | 1.96 |
+| **Rank corr with realized R** | — | **+0.291** |
+| Mean R, top 40% vs all | — | **+0.56 vs +0.19 (2.9×)** |
 
-Ranking AUC by set: **0.639 dev, 0.594 held-out, 0.697 all four** (0.5 = chance).
-It is stable across time — computed *within* each of 8 sub-periods it averages
-0.72 on dev and 0.72 held-out, with every block above 0.58 including 2008 — so
-it is not an artifact of scores drifting with the win rate. Return, avg R and
-drawdown all move the right way together, which is what separates this from
-leverage.
+Ranking quality is stable across time: AUC on win/loss computed *within* each of
+8 sub-periods averages 0.72 on dev and 0.72 held-out, with every block above 0.58
+including 2008 — so it is not an artifact of scores drifting with the win rate.
+Return, avg R and drawdown all move the right way together, which is what
+separates this from leverage.
 
 **Two earlier versions failed, and the failures were the useful part:**
 
@@ -132,12 +134,32 @@ leverage.
      training set was biased. Widening the candidate pool and running shadows
      **concurrently** moved AUC from ~0.44 (chance) to ~0.60–0.70.
 
-**Known limitation, not yet solved.** The model predicts *P(win)*, but a
-breakout system earns from a few large winners, so filtering hard for
-win-probability strips the fat tail. Swept on real bars, a light veto (0.15) beat
-both no veto and heavy vetoing on dev *and* held-out; at 0.60 it was worse than
-not vetoing at all. Ranking by expected R rather than P(win) is the obvious next
-step and is not implemented.
+**Ranking by expected R.** `ADAPTIVE_SCORE_TARGET` chooses what the model scores
+candidates by: `expected_r` (default) is a Huber regression on `tanh(R/2)` that
+ranks by predicted payoff; `win` is a logistic on the *sign* of R with each
+update weighted by |R|. In the live engine `expected_r` ranks realized R better
+on every set — Spearman between score and realized R, and mean R of the
+top-ranked 40% as a multiple of the average candidate:
+
+| set | `win` rho / lift | `expected_r` rho / lift |
+|---|---|---|
+| dev | +0.091 / 1.11× | **+0.220 / 1.70×** |
+| held-out | +0.053 / 1.12× | **+0.064 / 1.35×** |
+| all four | +0.192 / 1.63× | **+0.226 / 2.12×** |
+
+The trade-off is real and worth knowing: `win` converts its weaker ranking into
+slightly better realized trading (dev +64.0% / avg R +0.32 vs +63.1% / +0.28;
+held-out +37.8% / +0.33 vs +31.4% / +0.25), while `expected_r` ran a lower
+drawdown on the combined set (12.9% vs 15.3%). `--score-target win` switches.
+
+Two caveats. A standalone offline harness scored these the *other* way round —
+`win` rho ~0.50 vs `expected_r` ~0.35 on dev, with seven regressor variants all
+losing. The harness scores every candidate; the live engine only labels the ones
+its position limits let through, so the streams differ. Trust the live numbers
+for how this program behaves, and treat the disagreement as a reminder that both
+are one 13-year window on four symbols. Separately, the veto stays deliberately
+light (0.15): a sweep on real bars found 0.15 beat both no veto and heavier
+vetoing on dev *and* held-out, with 0.60 worse than not vetoing at all.
 
 **Judge this by avg R-multiple and AUC, not by total return.** A higher return
 with a lower R-multiple is leverage wearing a lab coat — that is exactly how
@@ -194,9 +216,9 @@ sets how hard it presses a high-ranked signal — it is validated so
 `ADAPTIVE_MIN_SAMPLES` is how many labeled signals it wants before vetoing
 anything, and `ADAPTIVE_EXPLORATION` is the fraction of vetoed signals still
 taken at minimum size to keep labels flowing.
-`ADAPTIVE_MIN_AUC_TO_SIZE_UP` is the skill gate — lowering it lets an unproven
-model bet bigger, which is the most direct way to make this thing aggressive and
-also the least honest; `0` disables the gate entirely.
+`ADAPTIVE_MIN_RANK_CORR_TO_SIZE_UP` is the skill gate — lowering it lets an
+unproven model bet bigger, which is the most direct way to make this thing
+aggressive and also the least honest; `0` disables the gate entirely.
 `ADAPTIVE_WIDE_CANDIDATES` decides whether the model or the hand-written rules
 choose trades, and is the single biggest behavioural switch in the layer.
 
@@ -229,7 +251,7 @@ dict to define your own profile — unknown keys fail loudly at startup.
 
 Single file on purpose — the tunables sit at the top, the logic below, and there
 is no import path to fight. `test_paper_trader.py` is a dependency-free
-verification suite (`python test_paper_trader.py`, ~10s) with 291 checks covering
+verification suite (`python test_paper_trader.py`, ~10s) with 311 checks covering
 P&L accounting, capital guardrails, exit logic, the calendar, config validation,
 the learners' mechanics, the skill gate, the CSV source including split
 adjustment, state persistence, and an end-to-end check that the learner finds a

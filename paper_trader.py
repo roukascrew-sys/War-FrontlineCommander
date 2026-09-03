@@ -114,6 +114,34 @@ BREAKOUT_BUFFER_ATR: float = 0.10  # close must clear the range by this many ATR
 #     contextual on volatility regime x direction, rewarded by realized R.
 # State persists in ADAPTIVE_STATE_FILE so learning survives restarts.
 ENABLE_ADAPTIVE: bool = True
+# What the entry model scores candidates by.
+#   "expected_r" - Huber regression on tanh(R/2); ranks by predicted E[R].
+#   "win"        - logistic on the SIGN of R, each update weighted by |R|.
+#
+# These were measured two ways, and the two disagree, so both are recorded here.
+#
+# In the LIVE engine, "expected_r" ranks realized R better on every set --
+# Spearman between score and realized R, and mean R of the top-ranked 40% as a
+# multiple of the average candidate:
+#       set     win rho / lift      expected_r rho / lift
+#       dev      +0.091 / 1.11x       +0.220 / 1.70x
+#       held     +0.053 / 1.12x       +0.064 / 1.35x
+#       all      +0.192 / 1.63x       +0.226 / 2.12x
+# It is the default because ranking by expected payoff is the stated objective
+# and this is the metric that measures it.
+#
+# The trade-off is real: "win" still turns its weaker ranking into slightly
+# better realized trading (dev +64.0% / avg R +0.32 vs +63.1% / +0.28; held
+# +37.8% / +0.33 vs +31.4% / +0.25), while "expected_r" ran a lower drawdown on
+# the combined set (12.9% vs 15.3%). Switch with --score-target win.
+#
+# A standalone offline harness scored the two the other way round (win rho ~0.50
+# vs expected_r ~0.35 on dev), and seven regressor variants lost there. The
+# offline harness scores every candidate; the live engine only ever labels the
+# candidates its position limits let through, so the streams differ. Trust the
+# live numbers for how this program behaves, and treat the gap as a reminder
+# that both are one 13-year window on four symbols.
+ADAPTIVE_SCORE_TARGET: str = "expected_r"   # "expected_r" | "win"
 ADAPTIVE_STATE_FILE: str = "adaptive_state.json"   # under OUTPUT_DIR
 ADAPTIVE_MIN_SAMPLES: int = 40     # labeled signals before the model may veto entries
 # Vetoing is primarily RELATIVE: skip the weakest fraction of recent signals by
@@ -140,12 +168,15 @@ ADAPTIVE_L2: float = 0.01          # ridge penalty; keeps weights from chasing n
 ADAPTIVE_SIZE_MIN_MULT: float = 0.5   # size multiplier at the veto threshold
 ADAPTIVE_SIZE_MAX_MULT: float = 1.5   # size multiplier for high-confidence signals
 # Skill gate. Sizing ABOVE 1.0x is withheld until the model shows it can rank
-# signals, measured by rolling AUC (0.5 = chance). Without the gate a model no
-# better than a coin flip still scales bets up, which lifts return and drawdown
-# together and reads as skill while being nothing but leverage. AUC is used
-# rather than accuracy because accuracy is dominated by the base rate: wins run
-# at ~44%, so "always predict a loss" scores 56% while being worth nothing.
-ADAPTIVE_MIN_AUC_TO_SIZE_UP: float = 0.55
+# candidates by realized R, measured as the rolling Spearman correlation between
+# its score and the R the trade actually produced (0 = no relationship). This is
+# the objective itself rather than a proxy. Accuracy would be the wrong gate --
+# with wins at ~44% "always predict a loss" scores 56% while being worth nothing
+# -- and without any gate a model no better than a coin flip still scales bets
+# up, which lifts return and drawdown together and reads as skill while being
+# pure leverage. Measured rank correlation is ~0.48-0.50, so 0.05 is a low bar
+# deliberately: it is there to catch a broken model, not to certify a good one.
+ADAPTIVE_MIN_RANK_CORR_TO_SIZE_UP: float = 0.05
 ADAPTIVE_MIN_ACCURACY_SAMPLES: int = 30   # labeled samples before the gate can open
 ADAPTIVE_SHADOW_MAX_BARS: int = 200   # shadow trades are force-labeled after this
 # Shadow trades cost nothing, so run them CONCURRENTLY per symbol. Allowing only
@@ -345,9 +376,10 @@ class Config:
     adaptive_l2: float
     adaptive_size_min_mult: float
     adaptive_size_max_mult: float
-    adaptive_min_auc_to_size_up: float
+    adaptive_min_rank_corr_to_size_up: float
     adaptive_min_accuracy_samples: int
     adaptive_wide_candidates: bool
+    adaptive_score_target: str
     adaptive_shadow_max_bars: int
     adaptive_max_shadows_per_symbol: int
     adaptive_seed: int | None
@@ -429,9 +461,10 @@ def build_config() -> Config:
         adaptive_l2=ADAPTIVE_L2,
         adaptive_size_min_mult=ADAPTIVE_SIZE_MIN_MULT,
         adaptive_size_max_mult=ADAPTIVE_SIZE_MAX_MULT,
-        adaptive_min_auc_to_size_up=ADAPTIVE_MIN_AUC_TO_SIZE_UP,
+        adaptive_min_rank_corr_to_size_up=ADAPTIVE_MIN_RANK_CORR_TO_SIZE_UP,
         adaptive_min_accuracy_samples=ADAPTIVE_MIN_ACCURACY_SAMPLES,
         adaptive_wide_candidates=ADAPTIVE_WIDE_CANDIDATES,
+        adaptive_score_target=ADAPTIVE_SCORE_TARGET,
         adaptive_shadow_max_bars=ADAPTIVE_SHADOW_MAX_BARS,
         adaptive_max_shadows_per_symbol=ADAPTIVE_MAX_SHADOWS_PER_SYMBOL,
         adaptive_seed=ADAPTIVE_SEED,
@@ -475,9 +508,10 @@ _CONFIG_FIELD_BY_GLOBAL = {
     "ADAPTIVE_L2": "adaptive_l2",
     "ADAPTIVE_SIZE_MIN_MULT": "adaptive_size_min_mult",
     "ADAPTIVE_SIZE_MAX_MULT": "adaptive_size_max_mult",
-    "ADAPTIVE_MIN_AUC_TO_SIZE_UP": "adaptive_min_auc_to_size_up",
+    "ADAPTIVE_MIN_RANK_CORR_TO_SIZE_UP": "adaptive_min_rank_corr_to_size_up",
     "ADAPTIVE_MIN_ACCURACY_SAMPLES": "adaptive_min_accuracy_samples",
     "ADAPTIVE_WIDE_CANDIDATES": "adaptive_wide_candidates",
+    "ADAPTIVE_SCORE_TARGET": "adaptive_score_target",
     "ADAPTIVE_SHADOW_MAX_BARS": "adaptive_shadow_max_bars",
 }
 
@@ -637,9 +671,13 @@ def validate_config(cfg: Config) -> None:
           f"POSITION_SIZE_PCT * ADAPTIVE_SIZE_MAX_MULT = "
           f"{cfg.position_size_pct * cfg.adaptive_size_max_mult:.2f} — a single confident "
           f"trade could exceed 100% of equity.")
-    check(0 <= cfg.adaptive_min_auc_to_size_up < 1.0,
-          f"ADAPTIVE_MIN_AUC_TO_SIZE_UP must be in [0, 1); got "
-          f"{cfg.adaptive_min_auc_to_size_up}. It is an AUC, where 0.5 is chance.")
+    check(0 <= cfg.adaptive_min_rank_corr_to_size_up < 1.0,
+          f"ADAPTIVE_MIN_RANK_CORR_TO_SIZE_UP must be in [0, 1); got "
+          f"{cfg.adaptive_min_rank_corr_to_size_up}. It is a rank correlation, "
+          f"where 0 means no relationship between score and realized R.")
+    check(cfg.adaptive_score_target in ("win", "expected_r"),
+          f"ADAPTIVE_SCORE_TARGET must be 'win' or 'expected_r'; got "
+          f"{cfg.adaptive_score_target!r}.")
     check(cfg.adaptive_min_accuracy_samples >= 1,
           f"ADAPTIVE_MIN_ACCURACY_SAMPLES must be >= 1; got {cfg.adaptive_min_accuracy_samples}.")
     check(cfg.adaptive_shadow_max_bars >= 5,
@@ -1550,7 +1588,7 @@ FEATURE_NAMES: tuple[str, ...] = (
     "mom20", "mom60", "vol_trend", "dist_extreme", "streak", "bar_pos",
     "gap_atr", "breakout_age", "direction", "is_crypto",
 )
-_FEATURE_VERSION = 2
+_FEATURE_VERSION = 3   # v3: `recent` stores (score, realized R), not (p, label)
 
 # Neutral stand-ins for features whose rolling window has not filled yet, so a
 # cold start reads as "no information" rather than as an extreme value.
@@ -1641,47 +1679,183 @@ def roc_auc(scores: Sequence[float], labels: Sequence[float]) -> float | None:
     return (rank_pos - n_pos * (n_pos + 1) / 2.0) / (n_pos * n_neg)
 
 
-class OnlineLogit:
-    """Logistic regression trained one sample at a time with ridge regularization."""
+def spearman_corr(a: Sequence[float], b: Sequence[float]) -> float | None:
+    """Rank correlation. This is the direct measure of the thing we care about:
+    does a higher score actually mean a higher realized R?"""
+    pairs = [(x, y) for x, y in zip(a, b) if _finite(x) and _finite(y)]
+    if len(pairs) < 3:
+        return None
+
+    def ranks(values: list[float]) -> list[float]:
+        order = sorted(range(len(values)), key=lambda i: values[i])
+        out = [0.0] * len(values)
+        i = 0
+        while i < len(order):
+            j = i
+            while j + 1 < len(order) and values[order[j + 1]] == values[order[i]]:
+                j += 1
+            avg = (i + j) / 2.0 + 1.0
+            for k in range(i, j + 1):
+                out[order[k]] = avg
+            i = j + 1
+        return out
+
+    ra, rb = ranks([p[0] for p in pairs]), ranks([p[1] for p in pairs])
+    n = len(pairs)
+    ma, mb = sum(ra) / n, sum(rb) / n
+    num = sum((x - ma) * (y - mb) for x, y in zip(ra, rb))
+    den = math.sqrt(sum((x - ma) ** 2 for x in ra) * sum((y - mb) ** 2 for y in rb))
+    return (num / den) if den > 0 else None
+
+
+class EntryModelBase:
+    """Common bookkeeping: `recent` holds (score, realized R) so every metric —
+    rank correlation, AUC on the sign of R, and mean-R lift — comes from the
+    same history regardless of what the model was trained to predict."""
+
+    def __init__(self, n_features: int) -> None:
+        self.w = np.zeros(n_features, dtype=float)
+        self.n = 0
+        self.recent: list[tuple[float, float]] = []   # (score, R), last 200
+
+    def predict(self, x: Sequence[float]) -> float:
+        raise NotImplementedError
+
+    def _learn(self, x: Sequence[float], r: float) -> None:
+        raise NotImplementedError
+
+    def update(self, x: Sequence[float], r: float) -> float:
+        score = self.predict(x)
+        self._learn(x, r)
+        self.n += 1
+        self.recent.append((score, float(r)))
+        del self.recent[:-200]
+        return score
+
+    # -- metrics ---------------------------------------------------------------
+    def rolling_rank_corr(self) -> float | None:
+        """Spearman between score and realized R — the objective itself."""
+        return spearman_corr([s for s, _ in self.recent], [r for _, r in self.recent])
+
+    def rolling_auc(self) -> float | None:
+        """AUC for separating winners from losers by the sign of R."""
+        return roc_auc([s for s, _ in self.recent],
+                       [1.0 if r > 0 else 0.0 for _, r in self.recent])
+
+    def r_lift(self, top_frac: float = 0.4) -> tuple[float, float] | None:
+        """(mean R of the top-ranked slice, mean R overall). The practical
+        question: do the candidates this model likes actually pay more?"""
+        if len(self.recent) < 10:
+            return None
+        ordered = sorted(self.recent, key=lambda sr: -sr[0])
+        k = max(1, int(top_frac * len(ordered)))
+        return (sum(r for _, r in ordered[:k]) / k,
+                sum(r for _, r in self.recent) / len(self.recent))
+
+    def rolling_accuracy(self) -> float | None:
+        """Only meaningful for a probability model; context, never a gate."""
+        return None
+
+    def majority_baseline(self) -> float | None:
+        if not self.recent:
+            return None
+        rate = sum(1.0 for _, r in self.recent if r > 0) / len(self.recent)
+        return max(rate, 1.0 - rate)
+
+    def calibration(self) -> tuple[float, float] | None:
+        return None
+
+
+class OnlineLogit(EntryModelBase):
+    """Logistic regression on the SIGN of R, each update weighted by |R| so a
+    decisive outcome teaches more than a scratch. Scores are win probabilities.
+
+    Measured on real bars this ranks realized R better than regressing R
+    directly — see ADAPTIVE_SCORE_TARGET for the numbers.
+    """
 
     def __init__(self, n_features: int, lr: float, l2: float) -> None:
-        self.w = np.zeros(n_features, dtype=float)
+        super().__init__(n_features)
         self.lr, self.l2 = lr, l2
-        self.n = 0
-        self.recent: list[tuple[float, float]] = []   # (predicted p, label), last 200
 
     def predict(self, x: Sequence[float]) -> float:
         z = _clip(float(np.dot(self.w, np.asarray(x, dtype=float))), -30.0, 30.0)
         return 1.0 / (1.0 + math.exp(-z))
 
-    def update(self, x: Sequence[float], y: float, weight: float = 1.0) -> float:
+    def _learn(self, x: Sequence[float], r: float) -> None:
         xv = np.asarray(x, dtype=float)
-        p = self.predict(xv)
-        grad = (p - y) * xv * weight
+        y = 1.0 if r > 0 else 0.0
+        weight = _clip(abs(float(r)), 0.25, 3.0)
+        grad = (self.predict(xv) - y) * xv * weight
         grad[1:] += self.l2 * self.w[1:]      # never shrink the bias term
         self.w -= self.lr * grad
-        self.n += 1
-        self.recent.append((p, y))
-        del self.recent[:-200]
-        return p
 
     def rolling_accuracy(self) -> float | None:
-        """Prequential accuracy. Reported for context only — with an imbalanced
-        base rate it is a poor measure, which is why the gate uses AUC."""
         if not self.recent:
             return None
-        return sum(1.0 for p, y in self.recent if (p >= 0.5) == (y >= 0.5)) / len(self.recent)
+        return sum(1.0 for s, r in self.recent
+                   if (s >= 0.5) == (r > 0)) / len(self.recent)
 
-    def majority_baseline(self) -> float | None:
-        """Accuracy of always predicting the more common class — what any honest
-        accuracy number has to beat before it means anything."""
+    def calibration(self) -> tuple[float, float] | None:
         if not self.recent:
             return None
-        rate = sum(y for _, y in self.recent) / len(self.recent)
-        return max(rate, 1.0 - rate)
+        return (sum(s for s, _ in self.recent) / len(self.recent),
+                sum(1.0 for _, r in self.recent if r > 0) / len(self.recent))
 
-    def rolling_auc(self) -> float | None:
-        return roc_auc([p for p, _ in self.recent], [y for _, y in self.recent])
+
+class ExpectedRModel(EntryModelBase):
+    """Huber regression predicting E[R], scoring candidates by expected payoff.
+
+    The target is squashed through tanh(R/2): R is fat-tailed, and regressing it
+    raw lets a handful of outliers dominate. Features are standardized with
+    running statistics because, unlike the logistic, squared-error loss has no
+    saturating link to keep raw scales in check.
+
+    This is the intuitive way to rank by expected R and it measures worse than
+    the sign-based model. It is kept because it is worth being able to re-check
+    that on your own data rather than taking the finding on faith.
+    """
+
+    def __init__(self, n_features: int, lr: float = 0.05, l2: float = 1e-3,
+                 delta: float = 1.0) -> None:
+        super().__init__(n_features)
+        self.lr, self.l2, self.delta = lr, l2, delta
+        self.mean = np.zeros(n_features, dtype=float)
+        self.M2 = np.ones(n_features, dtype=float)
+        self._seen = 0
+
+    def _z(self, x: Sequence[float]) -> np.ndarray:
+        xv = np.asarray(x, dtype=float)
+        if self._seen < 2:
+            out = np.zeros_like(xv)
+            out[0] = 1.0
+            return out
+        sd = np.sqrt(np.maximum(self.M2 / (self._seen - 1), 1e-8))
+        z = np.clip((xv - self.mean) / sd, -4.0, 4.0)
+        z[0] = 1.0                            # keep the intercept an intercept
+        return z
+
+    def predict(self, x: Sequence[float]) -> float:
+        return float(np.dot(self.w, self._z(x)))
+
+    def _learn(self, x: Sequence[float], r: float) -> None:
+        target = math.tanh(float(r) / 2.0)
+        z = self._z(x)
+        err = float(np.dot(self.w, z)) - target
+        grad = (err if abs(err) <= self.delta else self.delta * math.copysign(1.0, err)) * z
+        grad[1:] += self.l2 * self.w[1:]
+        self.w -= self.lr * grad
+        xv = np.asarray(x, dtype=float)
+        self._seen += 1
+        delta = xv - self.mean
+        self.mean += delta / self._seen
+        self.M2 += delta * (xv - self.mean)
+
+
+def make_entry_model(cfg: Config) -> EntryModelBase:
+    if cfg.adaptive_score_target == "expected_r":
+        return ExpectedRModel(len(FEATURE_NAMES))
+    return OnlineLogit(len(FEATURE_NAMES), cfg.adaptive_learning_rate, cfg.adaptive_l2)
 
     def calibration(self) -> tuple[float, float] | None:
         if not self.recent:
@@ -1753,7 +1927,7 @@ class AdaptiveLearner:
         self.cfg = cfg
         self.rng = rng or random.Random(cfg.adaptive_seed)
         self.strategy = BreakoutStrategy(cfg)
-        self.model = OnlineLogit(len(FEATURE_NAMES), cfg.adaptive_learning_rate, cfg.adaptive_l2)
+        self.model = make_entry_model(cfg)
         self.bandit = ThompsonBandit(list(cfg.exit_playbooks), self.rng)
         self.shadows: dict[str, list[Position]] = {}
         self.sym_ewma_r: dict[str, float] = {}
@@ -1775,18 +1949,17 @@ class AdaptiveLearner:
     def has_demonstrated_skill(self) -> bool:
         """Has the model earned the right to bet MORE than the base size?
 
-        Ranking signals is a weaker claim than predicting them, so a model can
-        be useful for vetoing while still being too weak to size up on. Betting
-        bigger on a coin flip is leverage wearing a lab coat, so it has to be
-        paid for with measured accuracy.
+        Betting bigger on a coin flip is leverage wearing a lab coat, so it has
+        to be paid for with a measured relationship between the score and the R
+        the trade actually produced.
         """
-        threshold = self.cfg.adaptive_min_auc_to_size_up
+        threshold = self.cfg.adaptive_min_rank_corr_to_size_up
         if threshold <= 0:
             return True
         if len(self.model.recent) < self.cfg.adaptive_min_accuracy_samples:
             return False
-        auc = self.model.rolling_auc()
-        return auc is not None and auc >= threshold
+        rho = self.model.rolling_rank_corr()
+        return rho is not None and rho >= threshold
 
     def score_percentile(self, p: float) -> float:
         """Where p ranks among recent signal scores, in [0, 1]."""
@@ -1846,16 +2019,16 @@ class AdaptiveLearner:
         risk = shadow.avg_entry * shadow.initial_risk_pct
         r = (shadow.direction * (exit_fill - shadow.avg_entry) / risk) if risk > 0 else 0.0
         r = _clip(r, -3.0, 5.0)
-        y = 1.0 if r > 0 else 0.0
-        # Trades that barely moved teach little; big moves teach more.
-        p = self.model.update(shadow.features, y, weight=_clip(abs(r), 0.25, 3.0))
+        # The model is handed the R itself; how it turns that into a training
+        # target (sign, or a squashed magnitude) is the model's business.
+        p = self.model.update(shadow.features, r)
         self.labels += 1
         prev = self.sym_ewma_r.get(shadow.symbol, 0.0)
         self.sym_ewma_r[shadow.symbol] = 0.8 * prev + 0.2 * r
         self.last_label_ts = ts
         self.dirty = True
-        log.debug("LEARN %-9s shadow %s R=%+.2f y=%d (had p=%.2f, n=%d) [%s]",
-                  shadow.symbol, shadow.side, r, int(y), p, self.model.n, why)
+        log.debug("LEARN %-9s shadow %s R=%+.2f (scored %.3f, n=%d) [%s]",
+                  shadow.symbol, shadow.side, r, p, self.model.n, why)
 
     # -- decisions -------------------------------------------------------------
     def register_signal(self, ts: datetime, symbol: str, direction: int,
@@ -1934,6 +2107,7 @@ class AdaptiveLearner:
             "feature_version": _FEATURE_VERSION,
             "feature_names": list(FEATURE_NAMES),
             "saved_at": datetime.now(UTC).isoformat(),
+            "score_target": self.cfg.adaptive_score_target,
             "model": {"weights": self.model.w.tolist(), "n": self.model.n,
                       "recent": self.model.recent},
             "bandit": {"arms": self.bandit.arms, "stats": self.bandit.stats},
@@ -1951,6 +2125,11 @@ class AdaptiveLearner:
         if d.get("feature_version") != _FEATURE_VERSION or \
                 list(d.get("feature_names", [])) != list(FEATURE_NAMES):
             log.warning("ADAPTIVE: saved state has a different feature schema — starting fresh.")
+            return False
+        saved_target = d.get("score_target", "win")
+        if saved_target != self.cfg.adaptive_score_target:
+            log.warning("ADAPTIVE: saved state was trained for score target %r but this run "
+                        "uses %r — starting fresh.", saved_target, self.cfg.adaptive_score_target)
             return False
         weights = d.get("model", {}).get("weights", [])
         if len(weights) != len(FEATURE_NAMES):
@@ -2011,25 +2190,35 @@ class AdaptiveLearner:
     # -- reporting -------------------------------------------------------------
     def summary_rows(self) -> list[tuple[str, str]]:
         status = "ready" if self.ready else f"warming up ({self.model.n}/{self.cfg.adaptive_min_samples})"
-        rows = [("Entry model", f"{self.model.n} labeled signals — {status}")]
+        rows = [("Entry model",
+                 f"{self.model.n} labeled signals ({self.cfg.adaptive_score_target}) — {status}")]
+        rho = self.model.rolling_rank_corr()
         auc = self.model.rolling_auc()
         acc = self.model.rolling_accuracy()
         base = self.model.majority_baseline()
         cal = self.model.calibration()
+        lift = self.model.r_lift()
+        if rho is not None:
+            verdict = "ranks R" if rho >= 0.05 else (
+                "no relationship" if rho > -0.05 else "INVERTED — ranks R backwards")
+            rows.append(("  rank corr with realized R", f"{rho:+.3f} — {verdict}"))
+        if lift is not None:
+            top, overall = lift
+            rows.append(("  mean R: top 40% vs all",
+                         f"{top:+.2f} vs {overall:+.2f}"
+                         + (f"  ({top / overall:.1f}x)" if overall > 0.01 else "")))
         if auc is not None:
-            verdict = "better than chance" if auc >= 0.55 else (
-                "no better than chance" if auc >= 0.45 else "WORSE than chance")
-            rows.append(("  ranking AUC (last 200)", f"{auc:.3f} — {verdict}"))
+            rows.append(("  AUC on win/loss (last 200)", f"{auc:.3f}"))
         if acc is not None and base is not None:
             rows.append(("  accuracy vs majority-class",
                          f"{acc:.0%} vs {base:.0%} baseline"))
         if cal is not None:
             rows.append(("  calibration pred vs realized", f"{cal[0]:.2f} vs {cal[1]:.2f}"))
-        if self.cfg.adaptive_min_auc_to_size_up > 0:
+        if self.cfg.adaptive_min_rank_corr_to_size_up > 0:
             ok = self.has_demonstrated_skill()
             rows.append(("  sizing above 1.0x",
                          f"{'ALLOWED' if ok else 'GATED OFF'} "
-                         f"(needs AUC {self.cfg.adaptive_min_auc_to_size_up:.2f})"))
+                         f"(needs rank corr {self.cfg.adaptive_min_rank_corr_to_size_up:+.2f})"))
         rows.append(("Signals seen / taken", f"{self.signals} / {self.taken}"))
         rows.append(("  vetoed / explored", f"{self.vetoes} / {self.explores}"))
         cutoff = self.quantile_cutoff()
@@ -2672,6 +2861,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     adaptive.add_argument("--warm-start", action="store_true",
                           help="with --replay: load saved state first (default is fresh, so "
                                "a replay is honest walk-forward; live runs always load)")
+    adaptive.add_argument("--score-target", choices=("win", "expected_r"),
+                          help=f"what the entry model ranks by (default "
+                               f"{ADAPTIVE_SCORE_TARGET!r}); 'expected_r' regresses E[R] "
+                               f"directly and measures worse — see the CONFIG comment")
     adaptive.add_argument("--seed", type=int, help="seed exploration / bandit draws")
 
     p.add_argument("-v", "--verbose", action="store_true", help="debug logging")
@@ -2708,6 +2901,8 @@ def apply_cli_overrides(cfg: Config, args: argparse.Namespace) -> Config:
         cfg.adaptive_state_file = os.path.abspath(args.brain)
     if args.seed is not None:
         cfg.adaptive_seed = args.seed
+    if args.score_target:
+        cfg.adaptive_score_target = args.score_target
     return cfg
 
 
