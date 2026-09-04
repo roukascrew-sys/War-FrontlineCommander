@@ -39,25 +39,39 @@ On by default (`--no-adaptive` turns it off). Two learners run beside the
 strategy, both strictly walk-forward — they only ever use information that
 existed at decision time.
 
-**Entry model.** An online logistic regression scores each breakout candidate
-from features available at that bar: breakout strength in ATRs, volume ratio and
-volume trend, prior-range tightness, extension from trend, volatility percentile
-in its own history, 20- and 60-bar momentum, distance from the running extreme,
-up-streak, close position within the bar, gap, and how stale the breakout is.
-Direction-dependent features flip sign for shorts.
+**Entry model.** Scores each breakout candidate from features available at that
+bar: breakout strength in ATRs, volume ratio and volume trend, prior-range
+tightness, extension from trend, volatility percentile in its own history, 20-
+and 60-bar momentum, distance from the running extreme, up-streak, close
+position within the bar, gap, how stale the breakout is, **Kaufman efficiency
+ratio** (net travel over total travel — clean trend versus chop, which is the
+difference between a breakout from a base and one out of noise), and two
+**cross-sectional** features: the symbol's momentum rank against the rest of the
+universe today, and market breadth (the share of the universe above its own
+trend). Everything else is single-symbol time series; relative strength and
+breadth are a genuinely different axis. Direction-dependent features flip sign
+for shorts.
 
-With the learner on, candidates come from the **range break alone** — the volume
-and trend confirmations are left off — and the model does the selecting. That
-matters: on the strictly-filtered stream the model ranks at chance (AUC 0.57)
-because the rules already removed the variation it would sort on; on the wider
-stream the same model reaches ~0.72 out-of-sample. `ADAPTIVE_WIDE_CANDIDATES=False`
-restores the hand-written gate.
+Its veto and rank-sizing are **off by default** — measured, acting on its
+ranking costs return (see below). It still runs, and the summary reports what it
+would be doing, so you can watch whether it starts earning its keep on your data.
 
-It learns from *every* candidate, not just the ones that got capital: each opens
-a zero-capital **shadow trade** run through the base exits, and that outcome
-becomes the training label. Shadows run **concurrently** per symbol — they hold
-no capital, and labelling only whichever candidate arrived while no other shadow
-was open biased the training set badly enough to destroy the model's ranking.
+Candidates come from the **range break alone** — the volume and trend
+confirmations are left off. This is a plain rule change and does not depend on
+the learner (`ADAPTIVE_WIDE_CANDIDATES=False` restores the hand-written gate),
+but it came out of the learner: on the strictly-filtered stream the model ranked
+at chance because the rules had already removed the variation it would sort on.
+Widening the pool turns out to be the largest single improvement in the whole
+system, and it is the one the learning was useful for *finding* rather than
+performing.
+
+It learns from candidates it could not take as well as ones it did: each opens a
+zero-capital **shadow trade** run through the base exits, and that outcome
+becomes the training label. Shadows run **concurrently** per symbol — labelling
+only whichever candidate arrived while no other shadow was open biased the
+training set badly enough to destroy the model's ranking. By default it does
+*not* learn from candidates on symbols already held, because that population is
+not the one decisions are made about; see the covariate-shift section below.
 
 Vetoing is **rank-based**: it skips the weakest `ADAPTIVE_SKIP_QUANTILE` of
 recent candidates rather than applying a fixed score cutoff. That matters —
@@ -114,15 +128,24 @@ Evaluated on 13 years of real daily bars (AAPL, IBM, MSFT, GOOG, 2000–2013,
 before the model trains on it, so every number is out-of-sample. Features were
 developed on AAPL+IBM and validated on MSFT+GOOG, which were held out.
 
-| | fixed rules | adaptive |
+`--compare` runs the same rules with the learner off and on, so with the wide
+pool now independent of the learner it isolates **what the learning adds** —
+in practice the exit bandit, since the entry model's interventions ship off:
+
+| | learner off | learner on |
 |---|---|---|
-| Total return | +26.4% | +127.3% |
-| Max drawdown | 10.7% | 13.2% |
-| Win rate | 41.7% | 46.1% |
-| **Avg R-multiple** | **+0.17** | **+0.35** |
-| Profit factor | 1.43 | 2.06 |
-| Sharpe | 0.39 | 0.88 |
-| Rank corr with realized R | — | +0.031 |
+| Total return | +102.9% | +127.9% |
+| Max drawdown | 11.7% | 12.2% |
+| Win rate | 44.5% | 47.7% |
+| **Avg R-multiple** | **+0.28** | **+0.34** |
+| Profit factor | 1.84 | 2.11 |
+| Sharpe | 0.78 | 0.84 |
+| Rank corr with realized R | — | −0.050 |
+
+Against the original strict-gate rules the same run is +26.4% → +127.9%, but
+most of that is the wide pool rather than anything learned — see the
+decomposition below. Note the rank correlation of −0.050: the entry model is
+ranking at chance on the population it is applied to, and says so.
 
 Ranking quality is stable across time: AUC on win/loss computed *within* each of
 8 sub-periods averages 0.72 on dev and 0.72 held-out, with every block above 0.58
@@ -134,38 +157,59 @@ candidate pool. Note also that rank correlation on this single seed is +0.031,
 essentially nothing — an earlier version of this table reported +0.291, which
 was inflated by the veto bug described above.
 
-### Does the learning actually earn its keep? Mostly no — read this
+### What actually earns the improvement
 
-That headline table credits the whole adaptive layer, and that is misleading.
-Two controls were run over 12 seeds, each keeping the veto, sizing, exits and
-the widened candidate pool identical and changing **only** whether the model
-learns anything real: *random scores* (no learning at all) and *shuffled labels*
-(the full learning machinery trained on an R drawn from a different sample, so
-the R distribution survives but the feature-to-outcome link is destroyed).
+The headline table credits the whole adaptive layer. It shouldn't. Adding one
+component at a time, 5 seeds each:
 
 | variant | dev | held-out | all four |
 |---|---|---|---|
-| fixed rules (strict gate) | +9.9% | +14.9% | +26.4% |
-| wide pool + **random scores** | +58.0 ±14.3 | +34.2 ±18.8 | +116.1 ±31.4 |
-| wide pool + **shuffled labels** | +56.4 ±18.8 | +32.8 ±15.0 | +95.0 ±38.4 |
-| wide pool + **real learning** | +61.2 ±13.0 | +32.3 ±14.3 | +120.3 ±39.6 |
+| 1. fixed rules (strict gate) | +9.9% | +14.9% | +26.4% |
+| 2. **+ wide candidate pool**, no learner | +56.0 | +30.7 | +102.9 |
+| 3. **+ exit bandit** (shipped defaults) | **+63.4 ±14.9** | **+39.9 ±18.2** | **+130.9 ±27.7** |
+| 4. + entry veto & rank sizing | +61.9 ±19.0 | +39.4 ±19.7 | +108.5 ±32.9 |
+| 5. + correlation sizing 0.5 | +56.2 ±14.6 | +32.4 ±16.0 | +102.4 ±19.4 |
 
-**Real learning is statistically indistinguishable from both controls.** The
-seed-to-seed spread (13–40 points) dwarfs every gap between them, and avg
-R-multiple is flat across all three (≈0.28–0.32) on every set. Nearly all of the
-improvement over the fixed rules comes from **widening the candidate pool** —
-a rule change, not learning.
+**The wide candidate pool is the single biggest effect** — a rule change, not
+learning, and it came from noticing that the strict gate left the model nothing
+to rank. **The exit bandit is the one learned component that pays**: step 3 beats
+step 2 on return, avg R and Sharpe on all three sets (+7 / +9 / +28 points, with
+avg R 0.316/0.303/0.342 against 0.308/0.254/0.284). The effect is roughly
+0.5–1σ, consistent in direction everywhere, which is suggestive rather than
+conclusive.
 
-The one thing that does separate real learning from its controls is rank
-correlation with realized R: around +0.05 to +0.07 where both controls sit at
-0.00 ±0.01. So the model *is* extracting a genuine signal. It is simply far too
-weak to move trading outcomes, and a long way below the ~0.48 the offline
-prequential harness measures over the full candidate stream.
+**The entry model does not pay, and its interventions are off by default.**
+Turning its veto and rank-sizing on (step 4) costs return on all three sets.
 
-Treat the adaptive layer as instrumentation that has not yet paid for itself,
-and the wide candidate pool as the finding that actually mattered. The test
-suite runs these controls on a synthetic stream so the property is enforced
-rather than remembered.
+### Why the entry model fails: a covariate shift worth understanding
+
+Shadow trades are free, so an obvious improvement is to label *every* candidate,
+including ones on symbols already held. Doing that lifted measured rank
+correlation from ~0.05 to **+0.507 dev / +0.583 all-four** — a huge jump, and
+the controls (random scores, shuffled labels) stayed at 0.00, so the signal is
+real.
+
+It also made trading **worse** (dev +43.4 against +56.8, avg R 0.283 against
+0.347, drawdown 10.35 against 8.31).
+
+The reason is that those two populations are not the same. A decision is only
+ever made about a symbol we are *flat* in, but most candidates arrive while a
+position is already open, inside a trend that is already running. The model
+learns "trends continue", which is true and highly rankable on the training
+population — and close to useless on the subset it is actually applied to.
+Training only on the decision population (`ADAPTIVE_LEARN_FROM_HELD = False`,
+the default) drops measured rank correlation to **+0.029 dev / −0.041 held-out**
+and improves trading.
+
+So the honest reading is that the earlier 0.5 was a measurement on a population
+we never act on, and **on the population that matters the entry model has no
+demonstrable skill.** Flip `ADAPTIVE_LEARN_FROM_HELD = True` to reproduce both
+the impressive number and the worse results.
+
+Earlier controls over 12 seeds — *random scores* and *shuffled labels*, holding
+every other moving part fixed — put real learning within noise of both, which
+pointed the same way. The test suite runs those controls on a synthetic stream
+so the property is enforced rather than remembered.
 
 **Two earlier versions failed, and the failures were the useful part:**
 
@@ -259,6 +303,13 @@ fewer `MAX_OPEN_POSITIONS`, and a non-zero `DAILY_LOSS_LIMIT_PCT`.
 never owe money. Above `1.0` you are on simulated margin, and a gap through your
 stop can trigger a margin call that liquidates the whole book.
 
+**`CORRELATION_PENALTY`** scales a new position down by its average positive
+correlation with what is already held, on the grounds that four correlated names
+breaking out together are one bet in four pieces. Measured, it behaves as a pure
+de-levering dial: at 0.5 it cut both return and drawdown by roughly the same
+proportion and left avg R unchanged, so it is off by default. Turn it on when you
+want less risk, not more edge.
+
 **Sizing now defaults to risk parity.** `RISK_PER_TRADE_PCT` (default 2%) sizes
 each position so a stop-out costs about that share of equity, using whichever
 stop is nearer — hard or trailing. `POSITION_SIZE_PCT` remains a hard notional
@@ -308,7 +359,7 @@ dict to define your own profile — unknown keys fail loudly at startup.
 
 Single file on purpose — the tunables sit at the top, the logic below, and there
 is no import path to fight. `test_paper_trader.py` is a dependency-free
-verification suite (`python test_paper_trader.py`, ~10s) with 323 checks covering
+verification suite (`python test_paper_trader.py`, ~10s) with 352 checks covering
 P&L accounting, capital guardrails, exit logic, the calendar, config validation,
 the learners' mechanics, the skill gate, the CSV source including split
 adjustment, state persistence, and an end-to-end check that the learner finds a

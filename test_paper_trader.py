@@ -914,6 +914,145 @@ def test_entry_features_bounded() -> None:
           close_to(lf[idx["ext_atr"]], 1.5) and close_to(sf[idx["ext_atr"]], -1.5))
 
 
+def test_efficiency_ratio_and_cross_sectional() -> None:
+    """Trend-quality and universe-relative features."""
+    cfg = make_cfg(breakout_lookback=5, volume_lookback=5, atr_period=3)
+    n = 60
+    idx = pd.date_range("2025-01-01", periods=n, freq="1D", tz="UTC")
+
+    trend = np.linspace(100, 160, n)                       # clean one-way move
+    chop = 100 + 3 * np.array([(-1) ** i for i in range(n)])  # same ground, repeatedly
+    for name, series, expect_high in (("trend", trend, True), ("chop", chop, False)):
+        df = pd.DataFrame({"open": series, "high": series * 1.005, "low": series * 0.995,
+                           "close": series, "volume": np.full(n, 1000.0)}, index=idx)
+        er = float(pt.compute_indicators(df, cfg)["eff_ratio"].iloc[-1])
+        if expect_high:
+            check("eff_ratio: clean trend scores high", er > 0.8, f"got {er:.3f}")
+        else:
+            check("eff_ratio: chop scores low", er < 0.2, f"got {er:.3f}")
+
+    rows = {
+        "STRONG": _row(100, 101, 99, 100, mom60=0.40, sma_trend=90.0),
+        "MID": _row(100, 101, 99, 100, mom60=0.10, sma_trend=90.0),
+        "WEAK": _row(100, 101, 99, 100, mom60=-0.20, sma_trend=110.0),
+    }
+    xs = pt.cross_sectional_context(rows, cfg)
+    check("cross-sectional: strongest momentum ranks top",
+          close_to(xs["rs_rank"]["STRONG"], 1.0), f"got {xs['rs_rank']}")
+    check("cross-sectional: weakest ranks bottom", close_to(xs["rs_rank"]["WEAK"], 0.0))
+    check("cross-sectional: breadth is the share above trend",
+          close_to(xs["breadth"], 2 / 3), f"got {xs['breadth']}")
+
+    idx_map = {n: i for i, n in enumerate(pt.FEATURE_NAMES)}
+    strong = pt.entry_features(rows["STRONG"], cfg, "STRONG", +1, T0, 0.0, xs)
+    weak = pt.entry_features(rows["WEAK"], cfg, "WEAK", +1, T0, 0.0, xs)
+    check("cross-sectional: rs_rank centred and signed",
+          close_to(strong[idx_map["rs_rank"]], 0.5) and close_to(weak[idx_map["rs_rank"]], -0.5))
+    short = pt.entry_features(rows["STRONG"], cfg, "STRONG", -1, T0, 0.0, xs)
+    check("cross-sectional: rs_rank flips for shorts",
+          close_to(short[idx_map["rs_rank"]], -0.5))
+    check("cross-sectional: breadth flips for shorts",
+          close_to(strong[idx_map["breadth"]] + short[idx_map["breadth"]], 0.0))
+
+    bare = pt.entry_features(rows["MID"], cfg, "MID", +1, T0)
+    check("cross-sectional: neutral when no context supplied",
+          close_to(bare[idx_map["rs_rank"]], 0.0) and close_to(bare[idx_map["breadth"]], 0.0))
+    single = pt.cross_sectional_context({"ONLY": rows["MID"]}, cfg)
+    check("cross-sectional: single symbol is neutral, not degenerate",
+          close_to(single["rs_rank"]["ONLY"], 0.5))
+    check("cross-sectional: empty universe does not crash",
+          close_to(pt.cross_sectional_context({}, cfg)["breadth"], 0.5))
+
+
+def test_correlation_aware_sizing() -> None:
+    """Correlated names are one bet in several pieces; size them down."""
+    cfg = make_cfg(correlation_penalty=0.5, correlation_lookback=60,
+                   correlation_min_size_mult=0.35)
+    engine = pt.Engine(cfg, run_dir="/tmp")
+    rng = np.random.default_rng(3)
+    base_series = rng.normal(0, 0.01, 80)
+    for i in range(80):
+        engine._returns.setdefault("A", []).append(float(base_series[i]))
+        engine._returns.setdefault("CLONE", []).append(float(base_series[i]))       # corr ~ +1
+        engine._returns.setdefault("INVERSE", []).append(float(-base_series[i]))    # corr ~ -1
+        engine._returns.setdefault("INDEP", []).append(float(rng.normal(0, 0.01)))
+
+    check("correlation: identical series reads as fully correlated",
+          close_to(engine.book_correlation("CLONE", ["A"]), 1.0, 1e-6))
+    check("correlation: independent series reads near zero",
+          abs(engine.book_correlation("INDEP", ["A"])) < 0.3)
+    check("correlation: negative correlation is floored at 0, not rewarded",
+          close_to(engine.book_correlation("INVERSE", ["A"]), 0.0))
+
+    check("correlation: clone is sized down by the penalty",
+          close_to(engine.correlation_size_mult("CLONE", ["A"]), 0.5, 1e-6))
+    check("correlation: independent name keeps ~full size",
+          engine.correlation_size_mult("INDEP", ["A"]) > 0.85)
+    check("correlation: a diversifier is never shrunk",
+          close_to(engine.correlation_size_mult("INVERSE", ["A"]), 1.0))
+    check("correlation: empty book means no adjustment",
+          close_to(engine.correlation_size_mult("A", []), 1.0))
+    check("correlation: unknown symbol means no adjustment",
+          close_to(engine.correlation_size_mult("NEVER_SEEN", ["A"]), 1.0))
+
+    off = pt.Engine(make_cfg(correlation_penalty=0.0), run_dir="/tmp")
+    off._returns = dict(engine._returns)
+    check("correlation: disabled at penalty 0",
+          close_to(off.correlation_size_mult("CLONE", ["A"]), 1.0))
+
+    floor = pt.Engine(make_cfg(correlation_penalty=1.0,
+                               correlation_min_size_mult=0.35), run_dir="/tmp")
+    floor._returns = dict(engine._returns)
+    check("correlation: never shrinks below the floor",
+          close_to(floor.correlation_size_mult("CLONE", ["A"]), 0.35, 1e-6))
+
+    for bad, label in (({"correlation_penalty": 1.5}, "penalty > 1"),
+                       ({"correlation_lookback": 2}, "lookback too short"),
+                       ({"correlation_min_size_mult": 0.0}, "zero size floor")):
+        try:
+            pt.validate_config(make_cfg(**bad))
+            check(f"correlation: rejects {label}", False, "no error")
+        except pt.ConfigError:
+            check(f"correlation: rejects {label}", True)
+
+
+def test_learning_is_decoupled_from_trading_capacity() -> None:
+    """Candidates arriving while a position is open must still be labelled.
+
+    Scoring only the symbols we are flat in loses exactly the candidates that
+    occur inside a running trend, which is a biased sample, and it was the
+    difference between a live rank correlation of ~0.05 and ~0.5.
+    """
+    cfg = make_cfg(enable_adaptive=True, breakout_lookback=5, volume_lookback=5,
+                   atr_period=3, use_trend_filter=False, breakout_buffer_atr=0.0,
+                   volume_spike_mult=1.5, max_open_positions=1,
+                   allow_fractional_equity=True, equity_universe=["AAA", "BBB"],
+                   crypto_universe=[])
+    engine = pt.Engine(cfg, run_dir="/tmp")
+    row = _row(100, 106, 99, 105, atr=2.0, vol=300.0,
+               donchian_high=104.0, donchian_low=90.0, vol_avg=100.0)
+    engine.portfolio.mark_prices({"AAA": 105.0, "BBB": 105.0})
+
+    engine.process_bar(T0, {"AAA": row, "BBB": row})
+    check("decoupled: capacity limit respected", len(engine.portfolio.positions) == 1,
+          f"{list(engine.portfolio.positions)}")
+    check("decoupled: both candidates were scored", engine.learner.signals == 2,
+          f"got {engine.learner.signals}")
+
+    # Next bar: still holding, and a fresh candidate on the held symbol.
+    held = next(iter(engine.portfolio.positions))
+    before = engine.learner.signals
+    engine.process_bar(T0 + timedelta(days=1), {"AAA": row, "BBB": row})
+    check("decoupled: candidates on a held symbol are still scored",
+          engine.learner.signals == before + 2,
+          f"only {engine.learner.signals - before} of 2 scored while holding {held}")
+    check("decoupled: the held symbol has a live shadow of its own",
+          held in engine.learner.shadows and engine.learner.shadows[held],
+          f"shadows on {sorted(engine.learner.shadows)} while holding {held}")
+    check("decoupled: labels are flowing from the shadows",
+          engine.learner.model.n > 0, f"n={engine.learner.model.n}")
+
+
 def test_roc_auc() -> None:
     check("auc: perfect ranking", close_to(pt.roc_auc([0.1, 0.2, 0.8, 0.9], [0, 0, 1, 1]), 1.0))
     check("auc: inverted ranking", close_to(pt.roc_auc([0.9, 0.8, 0.2, 0.1], [0, 0, 1, 1]), 0.0))
@@ -1389,6 +1528,8 @@ def test_learner_finds_a_real_relationship() -> None:
                   allow_fractional_equity=True, stop_loss_pct=0.05, take_profit_pct=0.0,
                   trail_atr_mult=3.0, vol_contraction_ratio=0.0, breakout_buffer_atr=0.0,
                   volume_spike_mult=1.4, adaptive_min_samples=40, adaptive_exploration=0.05,
+                  adaptive_skip_quantile=0.15,   # defaults ship with the veto off
+                  adaptive_learn_from_held=True,
                   equity_universe=[f"S{i}" for i in range(4)], output_dir=outdir)
     cfg_f = make_cfg(enable_adaptive=False, **common)
     cfg_a = make_cfg(enable_adaptive=True, **common)
@@ -1526,8 +1667,8 @@ def test_adaptive_config_validation() -> None:
         check("adaptive validation: max-risk profile with adaptive knobs still valid", True)
     except pt.ConfigError as exc:
         check("adaptive validation: max-risk profile with adaptive knobs still valid", False, str(exc))
-    check("adaptive validation: max-risk vetoes a smaller share of candidates",
-          cfg.adaptive_skip_quantile < pt.build_config().adaptive_skip_quantile)
+    check("adaptive validation: max-risk lets the learner scale bets",
+          cfg.adaptive_size_max_mult > pt.build_config().adaptive_size_max_mult)
 
 
 def test_cli_adaptive_flags() -> None:

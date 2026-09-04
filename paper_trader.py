@@ -104,6 +104,15 @@ RISK_PER_TRADE_PCT: float = 0.02   # size so a stop-out costs ~this % of equity 
                                    # capped by POSITION_SIZE_PCT); 0 = fixed-notional sizing
 BREAKOUT_BUFFER_ATR: float = 0.10  # close must clear the range by this many ATRs
 
+# MAX_OPEN_POSITIONS counts positions as though they were independent bets, which
+# they are not: four correlated names breaking out together are close to one bet
+# in four pieces, and they draw down together. New positions are scaled down by
+# their average correlation with what is already held, so the book's effective
+# risk stays nearer its intended level. 0 disables the adjustment.
+CORRELATION_PENALTY: float = 0.0   # size x (1 - penalty * avg positive correlation)
+CORRELATION_LOOKBACK: int = 60     # bars of returns used to estimate correlation
+CORRELATION_MIN_SIZE_MULT: float = 0.35   # never shrink a position below this
+
 # ---- Adaptive layer ----------------------------------------------------------
 # Two learners run alongside the strategy and only ever use information that
 # was available at decision time (walk-forward, no lookahead):
@@ -154,7 +163,7 @@ ADAPTIVE_MIN_SAMPLES: int = 40     # labeled signals before the model may veto e
 # so filtering hard for win-probability strips the fat tail. Swept on real bars,
 # 0.15 beat both 0.0 and heavier vetoing on dev AND held-out symbols; 0.60 was
 # clearly worse than not vetoing at all.
-ADAPTIVE_SKIP_QUANTILE: float = 0.15
+ADAPTIVE_SKIP_QUANTILE: float = 0.0
 # Optional absolute floor on the score, applied on top of the quantile.
 # None = no floor, which is the default because the meaning of a raw score
 # depends entirely on ADAPTIVE_SCORE_TARGET: for "win" it is a probability in
@@ -169,11 +178,17 @@ ADAPTIVE_SKIP_THRESHOLD: float | None = None
 # on; on the wider stream the same model scores 0.72 out-of-sample. Turn this off
 # to keep the hand-written gate and use the model only as a light veto.
 ADAPTIVE_WIDE_CANDIDATES: bool = True
+# Whether the model also learns from candidates on symbols already held. Those
+# are free to label and triple the training set, but they are not the population
+# the model is applied to: a decision is only ever made about a symbol we are
+# flat in. Training on both and acting on one is a covariate shift, and it is
+# measurable -- see the README.
+ADAPTIVE_LEARN_FROM_HELD: bool = False
 ADAPTIVE_EXPLORATION: float = 0.10 # fraction of vetoed signals still taken (at min size)
 ADAPTIVE_LEARNING_RATE: float = 0.05
 ADAPTIVE_L2: float = 0.01          # ridge penalty; keeps weights from chasing noise
-ADAPTIVE_SIZE_MIN_MULT: float = 0.5   # size multiplier at the veto threshold
-ADAPTIVE_SIZE_MAX_MULT: float = 1.5   # size multiplier for high-confidence signals
+ADAPTIVE_SIZE_MIN_MULT: float = 1.0   # size multiplier at the weakest rank
+ADAPTIVE_SIZE_MAX_MULT: float = 1.0   # size multiplier at the strongest rank
 # Skill gate. Sizing ABOVE 1.0x is withheld until the model shows it can rank
 # candidates by realized R, measured as the rolling Spearman correlation between
 # its score and the R the trade actually produced (0 = no relationship). This is
@@ -252,9 +267,12 @@ MAX_RISK_PROFILE: dict[str, Any] = {
     "USE_TREND_FILTER": False,
     "ALLOW_FRACTIONAL_EQUITY": True,
     "RISK_PER_TRADE_PCT": 0.05,    # 5% of equity at risk per trade
-    "ADAPTIVE_SKIP_QUANTILE": 0.05,    # the learner vetoes less
     "ADAPTIVE_SKIP_THRESHOLD": None,
-    "ADAPTIVE_SIZE_MAX_MULT": 2.0,     # ...and doubles down harder on confidence
+    # Let the learner scale bets, which the measured defaults do not: on this
+    # data acting on its ranking hurt, so max-risk turning it on is part of the
+    # recklessness rather than an improvement.
+    "ADAPTIVE_SIZE_MIN_MULT": 0.5,
+    "ADAPTIVE_SIZE_MAX_MULT": 2.0,
 }
 
 # =============================================================================
@@ -353,6 +371,9 @@ class Config:
     maintenance_margin_pct: float
     risk_per_trade_pct: float
     breakout_buffer_atr: float
+    correlation_penalty: float
+    correlation_lookback: int
+    correlation_min_size_mult: float
 
     slippage_pct: float
     commission_per_trade: float
@@ -386,6 +407,7 @@ class Config:
     adaptive_min_rank_corr_to_size_up: float
     adaptive_min_accuracy_samples: int
     adaptive_wide_candidates: bool
+    adaptive_learn_from_held: bool
     adaptive_score_target: str
     adaptive_shadow_max_bars: int
     adaptive_max_shadows_per_symbol: int
@@ -442,6 +464,9 @@ def build_config() -> Config:
         maintenance_margin_pct=MAINTENANCE_MARGIN_PCT,
         risk_per_trade_pct=RISK_PER_TRADE_PCT,
         breakout_buffer_atr=BREAKOUT_BUFFER_ATR,
+        correlation_penalty=CORRELATION_PENALTY,
+        correlation_lookback=CORRELATION_LOOKBACK,
+        correlation_min_size_mult=CORRELATION_MIN_SIZE_MULT,
         slippage_pct=SLIPPAGE_PCT,
         commission_per_trade=COMMISSION_PER_TRADE,
         allow_fractional_equity=ALLOW_FRACTIONAL_EQUITY,
@@ -471,6 +496,7 @@ def build_config() -> Config:
         adaptive_min_rank_corr_to_size_up=ADAPTIVE_MIN_RANK_CORR_TO_SIZE_UP,
         adaptive_min_accuracy_samples=ADAPTIVE_MIN_ACCURACY_SAMPLES,
         adaptive_wide_candidates=ADAPTIVE_WIDE_CANDIDATES,
+        adaptive_learn_from_held=ADAPTIVE_LEARN_FROM_HELD,
         adaptive_score_target=ADAPTIVE_SCORE_TARGET,
         adaptive_shadow_max_bars=ADAPTIVE_SHADOW_MAX_BARS,
         adaptive_max_shadows_per_symbol=ADAPTIVE_MAX_SHADOWS_PER_SYMBOL,
@@ -506,6 +532,9 @@ _CONFIG_FIELD_BY_GLOBAL = {
     "COMMISSION_PER_TRADE": "commission_per_trade",
     "RISK_PER_TRADE_PCT": "risk_per_trade_pct",
     "BREAKOUT_BUFFER_ATR": "breakout_buffer_atr",
+    "CORRELATION_PENALTY": "correlation_penalty",
+    "CORRELATION_LOOKBACK": "correlation_lookback",
+    "CORRELATION_MIN_SIZE_MULT": "correlation_min_size_mult",
     "ENABLE_ADAPTIVE": "enable_adaptive",
     "ADAPTIVE_MIN_SAMPLES": "adaptive_min_samples",
     "ADAPTIVE_SKIP_QUANTILE": "adaptive_skip_quantile",
@@ -518,6 +547,7 @@ _CONFIG_FIELD_BY_GLOBAL = {
     "ADAPTIVE_MIN_RANK_CORR_TO_SIZE_UP": "adaptive_min_rank_corr_to_size_up",
     "ADAPTIVE_MIN_ACCURACY_SAMPLES": "adaptive_min_accuracy_samples",
     "ADAPTIVE_WIDE_CANDIDATES": "adaptive_wide_candidates",
+    "ADAPTIVE_LEARN_FROM_HELD": "adaptive_learn_from_held",
     "ADAPTIVE_SCORE_TARGET": "adaptive_score_target",
     "ADAPTIVE_SHADOW_MAX_BARS": "adaptive_shadow_max_bars",
 }
@@ -657,6 +687,13 @@ def validate_config(cfg: Config) -> None:
           f"RISK_PER_TRADE_PCT must be in [0, 0.5]; got {cfg.risk_per_trade_pct}.")
     check(cfg.breakout_buffer_atr >= 0,
           f"BREAKOUT_BUFFER_ATR must be >= 0; got {cfg.breakout_buffer_atr}.")
+    check(0 <= cfg.correlation_penalty <= 1.0,
+          f"CORRELATION_PENALTY must be in [0, 1]; got {cfg.correlation_penalty}.")
+    check(cfg.correlation_lookback >= 5,
+          f"CORRELATION_LOOKBACK must be >= 5; got {cfg.correlation_lookback}.")
+    check(0 < cfg.correlation_min_size_mult <= 1.0,
+          f"CORRELATION_MIN_SIZE_MULT must be in (0, 1]; got "
+          f"{cfg.correlation_min_size_mult}.")
 
     # Adaptive layer.
     check(cfg.adaptive_min_samples >= 5,
@@ -1011,7 +1048,52 @@ def compute_indicators(df: pd.DataFrame, cfg: Config) -> pd.DataFrame:
     out["gap_atr"] = (out["open"] - close.shift(1)) / out["atr"]
     out["above_days"] = (close > out["donchian_high"]).astype(float).rolling(10).sum()
     out["below_days"] = (close < out["donchian_low"]).astype(float).rolling(10).sum()
+
+    # Kaufman efficiency ratio: net travel divided by total travel over the same
+    # window. Near 1 means a clean directional move, near 0 means the price
+    # covered the same ground repeatedly. Breakouts out of chop fail far more
+    # often than breakouts out of a clean base, and no other feature here
+    # separates those two cases.
+    er_n = 20
+    net = (close - close.shift(er_n)).abs()
+    travel = close.diff().abs().rolling(er_n).sum()
+    out["eff_ratio"] = net / travel.replace(0, np.nan)
     return out
+
+
+def cross_sectional_context(rows: dict[str, pd.Series], cfg: Config) -> dict[str, Any]:
+    """Universe-relative stats for one bar, using only this bar's information.
+
+    Everything else the model sees is single-symbol time series. These two are
+    cross-sectional, which is a genuinely different axis:
+
+    * `rs_rank` - where a symbol's medium-term momentum sits against its peers
+      today. Relative strength is one of the most durable effects in equities,
+      and it is invisible to any per-symbol feature.
+    * `breadth` - the share of the universe trading above its own trend. A
+      breakout while most names are advancing is a different proposition from
+      the same breakout while everything else is rolling over.
+    """
+    moms: dict[str, float] = {}
+    above = 0.0
+    counted = 0
+    for symbol, row in rows.items():
+        mom = row.get("mom60")
+        if _finite(mom):
+            moms[symbol] = float(mom)
+        close, sma = row.get("close"), row.get("sma_trend")
+        if _finite(close) and _finite(sma):
+            counted += 1
+            above += 1.0 if float(close) > float(sma) else 0.0
+
+    ranks: dict[str, float] = {}
+    if len(moms) > 1:
+        order = sorted(moms, key=lambda s: moms[s])
+        for i, symbol in enumerate(order):
+            ranks[symbol] = i / (len(order) - 1)
+    else:
+        ranks = {s: 0.5 for s in moms}
+    return {"rs_rank": ranks, "breadth": (above / counted) if counted else 0.5}
 
 
 def _finite(value: Any) -> bool:
@@ -1599,21 +1681,23 @@ class BreakoutStrategy:
 FEATURE_NAMES: tuple[str, ...] = (
     "bias", "strength", "vol_ratio", "range_atr", "ext_atr", "atr_rank",
     "mom20", "mom60", "vol_trend", "dist_extreme", "streak", "bar_pos",
-    "gap_atr", "breakout_age", "direction", "is_crypto",
+    "gap_atr", "breakout_age", "eff_ratio", "rs_rank", "breadth",
+    "direction", "is_crypto",
 )
-_FEATURE_VERSION = 3   # v3: `recent` stores (score, realized R), not (p, label)
+_FEATURE_VERSION = 4   # v4: adds trend efficiency and cross-sectional features
 
 # Neutral stand-ins for features whose rolling window has not filled yet, so a
 # cold start reads as "no information" rather than as an extreme value.
 _FEATURE_DEFAULTS: dict[str, float] = {
     "range_atr": 0.0, "ext_atr": 0.0, "atr_rank": 0.5, "mom20": 0.0, "mom60": 0.0,
     "vol_trend": 1.0, "dist_extreme": 0.0, "streak": 2.5, "bar_pos": 0.5,
-    "gap_atr": 0.0, "breakout_age": 0.0,
+    "gap_atr": 0.0, "breakout_age": 0.0, "eff_ratio": 0.3,
 }
 
 
 def entry_features(row: pd.Series, cfg: Config, symbol: str, direction: int,
-                   ts: datetime, sym_ewma_r: float = 0.0) -> list[float]:
+                   ts: datetime, sym_ewma_r: float = 0.0,
+                   xs: dict[str, Any] | None = None) -> list[float]:
     """Describe an entry signal using only information from this bar and earlier.
 
     Values are left on their natural scales — that is the form these were
@@ -1660,6 +1744,11 @@ def entry_features(row: pd.Series, cfg: Config, symbol: str, direction: int,
         bar_pos,
         direction * g("gap_atr"),
         age,
+        g("eff_ratio"),
+        # Cross-sectional pair, centred on 0 and flipped for shorts so that
+        # "favourable for this trade" always points the same way.
+        direction * (float((xs or {}).get("rs_rank", {}).get(symbol, 0.5)) - 0.5),
+        direction * (float((xs or {}).get("breadth", 0.5)) - 0.5),
         float(direction),
         1.0 if cfg.is_crypto(symbol) else 0.0,
     ]
@@ -2104,10 +2193,10 @@ class AdaptiveLearner:
         self.dirty = True
 
     def decide_entry(self, ts: datetime, symbol: str, direction: int,
-                     row: pd.Series) -> EntryDecision:
+                     row: pd.Series, xs: dict[str, Any] | None = None) -> EntryDecision:
         cfg = self.cfg
         feats = entry_features(row, cfg, symbol, direction, ts,
-                               self.sym_ewma_r.get(symbol, 0.0))
+                               self.sym_ewma_r.get(symbol, 0.0), xs)
         ctx = self.context(symbol, row, direction)
         ep = resolve_exit_params(cfg, self.bandit.choose(ctx))
 
@@ -2531,6 +2620,50 @@ class Engine:
         self.report_requested = False
         self.cycle = 0
         self._last_bar_seen: dict[str, pd.Timestamp] = {}
+        self._returns: dict[str, list[float]] = {}   # recent bar returns, for correlation
+        self._last_close: dict[str, float] = {}
+
+    # -- correlation between a candidate and the current book ------------------
+    def _track_returns(self, symbol: str, close: float) -> None:
+        prev = self._last_close.get(symbol)
+        self._last_close[symbol] = close
+        if prev and prev > 0 and close > 0:
+            series = self._returns.setdefault(symbol, [])
+            series.append(close / prev - 1.0)
+            del series[:-self.cfg.correlation_lookback]
+
+    def book_correlation(self, symbol: str, held: Iterable[str]) -> float:
+        """Average positive correlation between `symbol` and the open book.
+
+        Only positive correlation is penalised: a negatively correlated position
+        diversifies the book rather than concentrating it, and shrinking it would
+        be backwards.
+        """
+        mine = self._returns.get(symbol, [])
+        if len(mine) < 10:
+            return 0.0
+        scores: list[float] = []
+        for other in held:
+            theirs = self._returns.get(other, [])
+            n = min(len(mine), len(theirs))
+            if n < 10:
+                continue
+            a = np.asarray(mine[-n:], dtype=float)
+            b = np.asarray(theirs[-n:], dtype=float)
+            if a.std() <= 0 or b.std() <= 0:
+                continue
+            corr = float(np.corrcoef(a, b)[0, 1])
+            if _finite(corr):
+                scores.append(max(corr, 0.0))
+        return (sum(scores) / len(scores)) if scores else 0.0
+
+    def correlation_size_mult(self, symbol: str, held: Iterable[str]) -> float:
+        cfg = self.cfg
+        if cfg.correlation_penalty <= 0:
+            return 1.0
+        corr = self.book_correlation(symbol, held)
+        return _clip(1.0 - cfg.correlation_penalty * corr,
+                     cfg.correlation_min_size_mult, 1.0)
 
     # -- adaptive state --------------------------------------------------------
     def load_brain(self) -> bool:
@@ -2607,10 +2740,14 @@ class Engine:
         new_bar = new_bar or {s: True for s in rows}
         learner = self.learner
 
-        # 0) Let the learner see every closed bar: regime tracking + shadow trades.
-        if learner is not None:
-            for symbol, row in rows.items():
-                if new_bar.get(symbol, True):
+        # 0) Per-bar bookkeeping: return history for correlation, then let the
+        #    learner see the bar for regime tracking and shadow-trade progress.
+        for symbol, row in rows.items():
+            if new_bar.get(symbol, True):
+                close = row.get("close")
+                if _finite(close):
+                    self._track_returns(symbol, float(close))
+                if learner is not None:
                     learner.observe_bar(symbol, row, ts)
 
         # 1) Manage open positions first — exits free up capital for entries.
@@ -2645,44 +2782,59 @@ class Engine:
             if pf.halted_reason and pf.halted_reason.startswith("daily loss"):
                 pf.halted_reason = None
 
-        # 3) Candidate entries, strongest breakout first.
-        candidates: list[tuple[float, str, Signal, pd.Series]] = []
+        # 3) Score EVERY candidate on this bar, then trade the subset we can.
+        #
+        # Learning is deliberately decoupled from trading capacity. Scoring only
+        # the symbols we are flat in throws away every candidate that appears
+        # while a position is open — and those are not a random sample, they are
+        # the ones occurring inside trends already running, which skews the
+        # training set toward whatever happens between trades. Shadow trades
+        # cost nothing, so every candidate gets scored and labelled and only the
+        # trading decision is capacity-limited.
+        # The wide pool is a rule change, not a learned one, so it does not
+        # depend on the learner being enabled.
+        wide = cfg.adaptive_wide_candidates
+        xs = cross_sectional_context(rows, cfg) if learner is not None else None
+        candidates: list[tuple[float, str, Signal, pd.Series, EntryDecision | None]] = []
         for symbol, row in rows.items():
-            if symbol in pf.positions or not new_bar.get(symbol, True):
+            if not new_bar.get(symbol, True):
                 continue
-            wide = learner is not None and cfg.adaptive_wide_candidates
             sig = self.strategy.entry_signal(row, wide=wide)
             if sig.action != "enter":
                 continue
+            held = symbol in pf.positions
+            decision: EntryDecision | None = None
+            if learner is not None and (cfg.adaptive_learn_from_held or not held):
+                decision = learner.decide_entry(ts, symbol, sig.direction, row, xs)
+                learner.register_signal(ts, symbol, sig.direction, row,
+                                        decision.features, decision.context)
+            if held:
+                continue          # already invested; the shadow above still teaches us
             atr = float(row["atr"])
             close = float(row["close"])
             ref = float(row["donchian_high"]) if sig.direction > 0 else float(row["donchian_low"])
             strength = abs(close - ref) / atr if atr > 0 else 0.0
-            candidates.append((strength, symbol, sig, row))
+            candidates.append((strength, symbol, sig, row, decision))
 
-        for _, symbol, sig, row in sorted(candidates, key=lambda c: -c[0]):
-            decision: EntryDecision | None = None
-            if learner is not None:
-                decision = learner.decide_entry(ts, symbol, sig.direction, row)
-                # The shadow trade is registered before any capacity check so the
-                # model still learns from signals we had no room to take.
-                learner.register_signal(ts, symbol, sig.direction, row,
-                                        decision.features, decision.context)
+        for _, symbol, sig, row, decision in sorted(candidates, key=lambda c: -c[0]):
             if len(pf.positions) >= cfg.max_open_positions:
                 pf.reject(ts, symbol, f"at MAX_OPEN_POSITIONS ({cfg.max_open_positions})")
                 continue
             if decision is not None and not decision.take:
                 pf.reject(ts, symbol, f"learner {decision.note}")
                 continue
+            corr_mult = self.correlation_size_mult(symbol, pf.positions)
+            note = "" if corr_mult >= 0.999 else f" | corr x{corr_mult:.2f}"
             if decision is not None:
                 pf.open_position(ts, symbol, sig.direction, float(row["close"]),
-                                 float(row["atr"]), f"{sig.reason} | {decision.note}",
+                                 float(row["atr"]), f"{sig.reason} | {decision.note}{note}",
                                  exit_params=decision.exit_params,
-                                 size_mult=decision.size_mult,
+                                 size_mult=decision.size_mult * corr_mult,
                                  features=decision.features, context=decision.context)
             else:
                 pf.open_position(ts, symbol, sig.direction, float(row["close"]),
-                                 float(row["atr"]), sig.reason)
+                                 float(row["atr"]), sig.reason + note,
+                                 size_mult=corr_mult)
 
         pf.enforce_solvency(ts)
         if pf.blown_up:
